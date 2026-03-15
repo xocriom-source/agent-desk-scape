@@ -1,4 +1,4 @@
-import { Bot, Armchair, Plus, Zap, LayoutGrid, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from "lucide-react";
+import { Bot, Armchair, Plus, Zap, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface ActionBarProps {
@@ -22,18 +22,18 @@ export function ActionBar({ onMove }: ActionBarProps) {
         transition={{ duration: 0.3, delay: 0.2 }}
         className="glass-panel rounded-2xl p-2 shadow-lg flex flex-col items-center gap-1 md:hidden"
       >
-        <button onClick={() => onMove(0, -1)} className="p-2 rounded-lg hover:bg-muted/30 active:bg-muted/50">
+        <button onClick={() => onMove(0, -1)} className="p-2.5 rounded-lg hover:bg-muted/30 active:bg-muted/50 active:scale-95 transition-all">
           <ArrowUp className="w-5 h-5 text-foreground" />
         </button>
         <div className="flex gap-1">
-          <button onClick={() => onMove(-1, 0)} className="p-2 rounded-lg hover:bg-muted/30 active:bg-muted/50">
+          <button onClick={() => onMove(-1, 0)} className="p-2.5 rounded-lg hover:bg-muted/30 active:bg-muted/50 active:scale-95 transition-all">
             <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
-          <button onClick={() => onMove(1, 0)} className="p-2 rounded-lg hover:bg-muted/30 active:bg-muted/50">
+          <button onClick={() => onMove(1, 0)} className="p-2.5 rounded-lg hover:bg-muted/30 active:bg-muted/50 active:scale-95 transition-all">
             <ArrowRight className="w-5 h-5 text-foreground" />
           </button>
         </div>
-        <button onClick={() => onMove(0, 1)} className="p-2 rounded-lg hover:bg-muted/30 active:bg-muted/50">
+        <button onClick={() => onMove(0, 1)} className="p-2.5 rounded-lg hover:bg-muted/30 active:bg-muted/50 active:scale-95 transition-all">
           <ArrowDown className="w-5 h-5 text-foreground" />
         </button>
       </motion.div>
@@ -52,16 +52,8 @@ export function ActionBar({ onMove }: ActionBarProps) {
               action.accent ? "bg-accent/20 hover:bg-accent/30" : "hover:bg-muted/30"
             }`}
           >
-            <action.icon
-              className={`w-5 h-5 group-hover:scale-110 transition-transform ${
-                action.accent ? "text-accent" : "text-foreground"
-              }`}
-            />
-            <span
-              className={`text-[10px] font-display font-medium ${
-                action.accent ? "text-accent" : "text-muted-foreground group-hover:text-foreground"
-              } transition-colors`}
-            >
+            <action.icon className={`w-5 h-5 group-hover:scale-110 transition-transform ${action.accent ? "text-accent" : "text-foreground"}`} />
+            <span className={`text-[10px] font-display font-medium ${action.accent ? "text-accent" : "text-muted-foreground group-hover:text-foreground"} transition-colors`}>
               {action.label}
             </span>
           </button>
@@ -76,9 +68,9 @@ export function ActionBar({ onMove }: ActionBarProps) {
         className="glass-panel rounded-2xl px-3 py-2 shadow-lg hidden md:block"
       >
         <p className="text-[10px] text-muted-foreground font-display">
-          <span className="font-semibold text-foreground">WASD</span> mover •{" "}
+          <span className="font-semibold text-foreground">←↑↓→</span> mover •{" "}
           <span className="font-semibold text-foreground">ESPAÇO</span> interagir •{" "}
-          <span className="font-semibold text-foreground">CLICK</span> selecionar
+          <span className="font-semibold text-foreground">ESC</span> fechar
         </p>
       </motion.div>
     </div>
