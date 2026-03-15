@@ -377,24 +377,20 @@ function BuildingExterior({
       </mesh>
       <pointLight position={[cx, foundH + wallH * 0.7, northZ + wallT + 0.4]} intensity={0.35} distance={5} color="#FF6B00" />
 
-      {/* ── Neighboring city buildings ── */}
+      {/* ── Neighboring city buildings (same ground level, moderate heights) ── */}
       {/* Behind (north) */}
-      <CityBuilding position={[cx - 6, 0, northZ - 5]} width={4} depth={3} height={4.5} color="#7A6B5A" />
-      <CityBuilding position={[cx + 2, 0, northZ - 6]} width={5} depth={3.5} height={6} color="#6B5A4A" />
-      <CityBuilding position={[cx + 9, 0, northZ - 4.5]} width={3.5} depth={3} height={3.5} color="#8A7A6A" />
-      <CityBuilding position={[cx - 12, 0, northZ - 7]} width={4.5} depth={4} height={5.5} color="#5A4A3A" />
+      <CityBuilding position={[cx - 5, 0, northZ - 4]} width={3.5} depth={2.5} height={2} color="#7A6B5A" />
+      <CityBuilding position={[cx + 3, 0, northZ - 5]} width={4} depth={3} height={2.5} color="#6B5A4A" />
+      <CityBuilding position={[cx + 9, 0, northZ - 3.5]} width={3} depth={2.5} height={1.8} color="#8A7A6A" />
       {/* Left (west) */}
-      <CityBuilding position={[westX - 5, 0, cz - 4]} width={3} depth={4} height={5} color="#6A5848" />
-      <CityBuilding position={[westX - 4.5, 0, cz + 3]} width={3.5} depth={3.5} height={3.8} color="#7A6858" />
+      <CityBuilding position={[westX - 4, 0, cz - 3]} width={2.5} depth={3} height={2.2} color="#6A5848" />
+      <CityBuilding position={[westX - 4, 0, cz + 4]} width={3} depth={3} height={1.6} color="#7A6858" />
       {/* Right (east) */}
-      <CityBuilding position={[eastX + 5, 0, cz - 2]} width={4} depth={3.5} height={4.2} color="#5A5040" />
-      <CityBuilding position={[eastX + 4, 0, cz + 5]} width={3} depth={4} height={5.5} color="#6A6050" />
-      {/* Behind far */}
-      <CityBuilding position={[cx - 3, 0, northZ - 12]} width={6} depth={4} height={8} color="#5A4A3A" />
-      <CityBuilding position={[cx + 8, 0, northZ - 11]} width={5} depth={3} height={7} color="#6A5848" />
-      {/* Far sides */}
-      <CityBuilding position={[westX - 10, 0, cz]} width={4} depth={5} height={6.5} color="#4A4038" />
-      <CityBuilding position={[eastX + 10, 0, cz + 2]} width={5} depth={4} height={5} color="#5A5040" />
+      <CityBuilding position={[eastX + 4, 0, cz - 1]} width={3} depth={3} height={2} color="#5A5040" />
+      <CityBuilding position={[eastX + 4, 0, cz + 5]} width={2.5} depth={3} height={2.4} color="#6A6050" />
+      {/* Far background */}
+      <CityBuilding position={[cx - 2, 0, northZ - 10]} width={5} depth={3} height={3} color="#5A4A3A" />
+      <CityBuilding position={[cx + 8, 0, northZ - 9]} width={4} depth={2.5} height={2.8} color="#6A5848" />
 
       {/* ── Street lights ── */}
       {[[-3, 1], [3, 1], [-3, -1], [3, -1]].map(([ox, oz], i) => (
