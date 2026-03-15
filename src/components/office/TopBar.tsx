@@ -91,6 +91,8 @@ export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onRo
           {onOpenNPCs && <NavBtn onClick={onOpenNPCs} title="NPCs" icon={Star} color="#A78BFA" />}
           {onOpenObservation && <NavBtn onClick={onOpenObservation} title="Observation Lab" icon={Eye} color="#06B6D4" />}
           {onOpenDistricts && <NavBtn onClick={onOpenDistricts} title="Distritos" icon={MapPin} color="#10B981" />}
+          {onOpenEvents && <NavBtn onClick={onOpenEvents} title="Eventos" icon={Calendar} color="#EF4444" badge={notifications.events} />}
+          {onOpenCityChat && <NavBtn onClick={onOpenCityChat} title="Chat da Cidade" icon={Globe} color="#3B82F6" />}
         </div>
       </div>
 
