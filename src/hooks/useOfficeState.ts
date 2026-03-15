@@ -8,28 +8,15 @@ import {
   tileFromFloat,
   type Tile,
 } from "@/hooks/office/movementUtils";
-
-const AGENT_CONFIGS = [
-  { name: "Atlas", role: "Pesquisador IA", color: "#3B82F6", emoji: "🔬" },
-  { name: "Nova", role: "Escritora IA", color: "#22C55E", emoji: "✍️" },
-  { name: "Pixel", role: "Desenvolvedor IA", color: "#F97316", emoji: "💻" },
-  { name: "Cipher", role: "Analista de Dados", color: "#A855F7", emoji: "📊" },
-  { name: "Luna", role: "Designer IA", color: "#EC4899", emoji: "🎨" },
-  { name: "Spark", role: "Suporte Técnico", color: "#06B6D4", emoji: "🔧" },
-  { name: "Bolt", role: "DevOps IA", color: "#EAB308", emoji: "⚡" },
-  { name: "Echo", role: "QA Tester IA", color: "#14B8A6", emoji: "🧪" },
-] as const;
-
-const TASKS = [
-  "Analisando tendências de mercado com NLP...",
-  "Redigindo artigo sobre machine learning...",
-  "Refatorando API de autenticação...",
-  "Processando dashboard de métricas...",
-  "Criando protótipo de interface...",
-  "Resolvendo tickets de clientes...",
-  "Monitorando infraestrutura cloud...",
-  "Executando testes automatizados...",
-] as const;
+import {
+  AGENT_PERSONALITIES,
+  generateInitialArtifacts,
+  generateInitialRelationships,
+  generateLifeArc,
+  TRAINING_THOUGHTS,
+  CREATION_EVENTS,
+  REFLECTION_QUOTES,
+} from "@/data/agentPersonalities";
 
 const AGENT_STARTS = [
   { x: 4, y: 4 },
@@ -43,9 +30,14 @@ const AGENT_STARTS = [
 ] as const;
 
 function createAgents(): Agent[] {
-  return AGENT_CONFIGS.map((cfg, i) => {
+  const allNames = AGENT_PERSONALITIES.map((p) => p.name);
+  return AGENT_PERSONALITIES.map((cfg, i) => {
     const start = AGENT_STARTS[i];
     const room = getRoomAt(start.x, start.y);
+    const artifacts = generateInitialArtifacts(i);
+    const relationships = generateInitialRelationships(i, allNames);
+    const lifeArc = generateLifeArc(i, cfg.name, cfg.daysSinceArrival);
+
     return {
       id: `agent-${i}`,
       name: cfg.name,
@@ -57,8 +49,8 @@ function createAgents(): Agent[] {
       y: start.y,
       targetX: start.x,
       targetY: start.y,
-      tasks: [TASKS[i], TASKS[(i + 2) % 8]],
-      currentTask: TASKS[i],
+      tasks: [],
+      currentTask: undefined,
       room: room?.name || "Corredor",
       logs: [
         {
@@ -67,13 +59,25 @@ function createAgents(): Agent[] {
           message: "Conectado ao escritório virtual",
           type: "success" as const,
         },
-        {
-          id: `log-${i}-1`,
-          timestamp: new Date(),
-          message: `Iniciou: ${TASKS[i].slice(0, 40)}...`,
-          type: "info" as const,
-        },
       ],
+      // New personality fields
+      mission: cfg.mission,
+      soul: cfg.soul,
+      identity: cfg.identity,
+      previousIdentity: i % 3 === 0 ? "explorer" as const : undefined,
+      skills: cfg.skills,
+      reputation: cfg.reputation,
+      reputationLabel: cfg.reputationLabel,
+      artifacts,
+      relationships,
+      lifeArc,
+      daysSinceArrival: cfg.daysSinceArrival,
+      totalCreations: artifacts.length,
+      totalCollaborations: relationships.reduce((sum, r) => sum + r.collaborations, 0),
+      currentThought: TRAINING_THOUGHTS[i % TRAINING_THOUGHTS.length],
+      lastReflection: REFLECTION_QUOTES[i % REFLECTION_QUOTES.length],
+      trainingCycle: 3 + Math.floor(Math.random() * 10),
+      isTraining: i % 2 === 0,
     };
   });
 }
@@ -85,13 +89,9 @@ function stepWithCollision(
   ny: number,
   radius = 0.22
 ): { x: number; y: number; blocked: boolean } {
-  // Try full move first
   if (isWalkableAtFloat(nx, ny, radius)) return { x: nx, y: ny, blocked: false };
-  // Slide along X axis
   if (isWalkableAtFloat(nx, y, radius)) return { x: nx, y, blocked: false };
-  // Slide along Y axis
   if (isWalkableAtFloat(x, ny, radius)) return { x, y: ny, blocked: false };
-  // Try with smaller radius as last resort (helps with doorways)
   const smallR = radius * 0.6;
   if (isWalkableAtFloat(nx, ny, smallR)) return { x: nx, y: ny, blocked: false };
   if (isWalkableAtFloat(nx, y, smallR)) return { x: nx, y, blocked: false };
@@ -107,7 +107,6 @@ export function useOfficeState(playerName: string = "Você") {
   const [chatOpen, setChatOpen] = useState(false);
   const [nearbyAgent, setNearbyAgent] = useState<Agent | null>(null);
 
-  // Click-to-move path
   const pathRef = useRef<Tile[]>([]);
   const goalRef = useRef<Tile | null>(null);
   const stuckRef = useRef(0);
@@ -118,7 +117,6 @@ export function useOfficeState(playerName: string = "Você") {
     stuckRef.current = 0;
   }, []);
 
-  // Mobile D-pad: direct nudge (still slides on collision)
   const movePlayer = useCallback(
     (dx: number, dy: number) => {
       clearPath();
@@ -126,11 +124,9 @@ export function useOfficeState(playerName: string = "Você") {
       const step = 0.38;
       const vx = (dx / len) * step;
       const vy = (dy / len) * step;
-
       setPlayer((p) => {
         const r = stepWithCollision(p.x, p.y, p.x + vx, p.y + vy);
         if (r.blocked) return p;
-        // Update angle to face movement direction
         const newAngle = Math.atan2(vx, vy);
         return { ...p, x: r.x, y: r.y, angle: newAngle };
       });
@@ -141,15 +137,12 @@ export function useOfficeState(playerName: string = "Você") {
   const setPlayerDestination = useCallback(
     (x: number, y: number) => {
       if (chatOpen) return;
-
       const start = tileFromFloat(player.x, player.y);
       const clicked = { x, y };
       const goal = findClosestWalkable(clicked);
       if (!goal) return;
-
       const path = bfsPath8(start, goal);
       if (!path.length) return;
-
       goalRef.current = goal;
       pathRef.current = path;
       stuckRef.current = 0;
@@ -157,82 +150,37 @@ export function useOfficeState(playerName: string = "Você") {
     [player.x, player.y, chatOpen]
   );
 
-  // Keys held down
   const keysDown = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
-      if (
-        chatOpen ||
-        tag === "INPUT" ||
-        tag === "TEXTAREA" ||
-        tag === "SELECT" ||
-        (e.target as HTMLElement)?.isContentEditable
-      ) {
-        return;
-      }
-
+      if (chatOpen || tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (e.target as HTMLElement)?.isContentEditable) return;
       const moveKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
-
-      if (moveKeys.includes(e.key)) {
-        e.preventDefault();
-        keysDown.current.add(e.key);
-      }
-
-      if (e.key === " " || e.key === "Enter") {
-        e.preventDefault();
-        if (nearbyAgent) {
-          setSelectedAgent(nearbyAgent);
-          setChatOpen(true);
-        }
-      }
-
-      if (e.key === "Escape") {
-        setSelectedAgent(null);
-        setChatOpen(false);
-      }
+      if (moveKeys.includes(e.key)) { e.preventDefault(); keysDown.current.add(e.key); }
+      if (e.key === " " || e.key === "Enter") { e.preventDefault(); if (nearbyAgent) { setSelectedAgent(nearbyAgent); setChatOpen(true); } }
+      if (e.key === "Escape") { setSelectedAgent(null); setChatOpen(false); }
     };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      keysDown.current.delete(e.key);
-    };
-
+    const handleKeyUp = (e: KeyboardEvent) => { keysDown.current.delete(e.key); };
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-    };
+    return () => { window.removeEventListener("keydown", handleKeyDown); window.removeEventListener("keyup", handleKeyUp); };
   }, [chatOpen, nearbyAgent]);
 
-  // ── Smooth rotation-based movement loop (Minecraft-style) ──
-  // ↑ = move forward in facing direction
-  // ↓ = move backward
-  // ← = rotate left
-  // → = rotate right
-  // Includes acceleration/deceleration for smooth feel
+  // Movement loop
   useEffect(() => {
     let raf = 0;
     let last = 0;
-
-    // Physics parameters
-    const maxSpeed = 5.5;       // tiles/s top speed
-    const accel = 14.0;         // tiles/s² acceleration
-    const decel = 10.0;         // tiles/s² deceleration (friction)
-    const rotateSpeed = 3.2;    // radians/s rotation speed
-    const pathSpeed = 5.0;      // tiles/s for click-to-move
-
-    // Velocity state (persists across frames)
+    const maxSpeed = 5.5;
+    const accel = 14.0;
+    const decel = 10.0;
+    const rotateSpeed = 3.2;
+    const pathSpeed = 5.0;
     let currentSpeed = 0;
 
     const tick = (t: number) => {
       raf = requestAnimationFrame(tick);
-      if (chatOpen) {
-        last = t;
-        return;
-      }
-
+      if (chatOpen) { last = t; return; }
       const dt = Math.min(0.05, (t - (last || t)) / 1000);
       last = t;
       if (dt <= 0) return;
@@ -246,80 +194,46 @@ export function useOfficeState(playerName: string = "Você") {
 
       setPlayer((p) => {
         let { x, y, angle } = p;
+        if (usingKeys) { pathRef.current = []; goalRef.current = null; stuckRef.current = 0; }
 
-        // Cancel click-to-move path when pressing keys
         if (usingKeys) {
-          pathRef.current = [];
-          goalRef.current = null;
-          stuckRef.current = 0;
-        }
-
-        // ── Keyboard rotation-based movement ──
-        if (usingKeys) {
-          // Rotate
           if (left) angle -= rotateSpeed * dt;
           if (right) angle += rotateSpeed * dt;
-          // Normalize angle
           angle = ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-
-          // Accelerate / decelerate
           let inputDir = 0;
           if (up) inputDir += 1;
           if (down) inputDir -= 1;
-
           if (inputDir !== 0) {
             currentSpeed += inputDir * accel * dt;
             currentSpeed = Math.max(-maxSpeed * 0.6, Math.min(maxSpeed, currentSpeed));
           } else {
-            // Decelerate toward zero
-            if (currentSpeed > 0) {
-              currentSpeed = Math.max(0, currentSpeed - decel * dt);
-            } else if (currentSpeed < 0) {
-              currentSpeed = Math.min(0, currentSpeed + decel * dt);
-            }
+            if (currentSpeed > 0) currentSpeed = Math.max(0, currentSpeed - decel * dt);
+            else if (currentSpeed < 0) currentSpeed = Math.min(0, currentSpeed + decel * dt);
           }
-
-          // Compute velocity in facing direction
-          // angle=0 means facing +Z in tile space (down on map), we use sin/cos
           const vx = Math.sin(angle) * currentSpeed;
           const vy = Math.cos(angle) * currentSpeed;
-
           const nx = x + vx * dt;
           const ny = y + vy * dt;
           const r = stepWithCollision(x, y, nx, ny);
-
-          if (r.blocked) {
-            // Reduce speed on collision but don't zero it (allows sliding)
-            currentSpeed *= 0.5;
-          }
-
-          x = r.x;
-          y = r.y;
-
+          if (r.blocked) currentSpeed *= 0.5;
+          x = r.x; y = r.y;
           if (x === p.x && y === p.y && angle === p.angle) return p;
           return { ...p, x, y, angle };
         }
 
-        // ── Click-to-move pathfinding ──
         if (pathRef.current.length) {
           const next = pathRef.current[0];
           const dirX = next.x - x;
           const dirY = next.y - y;
           const dist = Math.hypot(dirX, dirY);
-          const arrive = 0.14;
-
-          if (dist < arrive) {
-            x = next.x;
-            y = next.y;
+          if (dist < 0.14) {
+            x = next.x; y = next.y;
             pathRef.current.shift();
             stuckRef.current = 0;
           } else {
             const vx = (dirX / dist) * pathSpeed;
             const vy = (dirY / dist) * pathSpeed;
-            const nx = x + vx * dt;
-            const ny = y + vy * dt;
-            const r = stepWithCollision(x, y, nx, ny);
-
+            const r = stepWithCollision(x, y, x + vx * dt, y + vy * dt);
             if (r.blocked) {
               if (goalRef.current) {
                 stuckRef.current += dt;
@@ -333,36 +247,22 @@ export function useOfficeState(playerName: string = "Você") {
               }
               return p;
             }
-
-            x = r.x;
-            y = r.y;
-            // Face movement direction during pathfinding
+            x = r.x; y = r.y;
             angle = Math.atan2(dirX, dirY);
           }
-
           if (x === p.x && y === p.y && angle === p.angle) return p;
           return { ...p, x, y, angle };
         }
 
-        // No input: decelerate any remaining speed
         if (Math.abs(currentSpeed) > 0.01) {
-          if (currentSpeed > 0) {
-            currentSpeed = Math.max(0, currentSpeed - decel * dt);
-          } else {
-            currentSpeed = Math.min(0, currentSpeed + decel * dt);
-          }
-
+          if (currentSpeed > 0) currentSpeed = Math.max(0, currentSpeed - decel * dt);
+          else currentSpeed = Math.min(0, currentSpeed + decel * dt);
           const vx = Math.sin(angle) * currentSpeed;
           const vy = Math.cos(angle) * currentSpeed;
-          const nx = x + vx * dt;
-          const ny = y + vy * dt;
-          const r = stepWithCollision(x, y, nx, ny);
-          if (!r.blocked && (r.x !== x || r.y !== y)) {
-            return { ...p, x: r.x, y: r.y };
-          }
+          const r = stepWithCollision(x, y, x + vx * dt, y + vy * dt);
+          if (!r.blocked && (r.x !== x || r.y !== y)) return { ...p, x: r.x, y: r.y };
           currentSpeed = 0;
         }
-
         return p;
       });
     };
@@ -371,67 +271,114 @@ export function useOfficeState(playerName: string = "Você") {
     return () => cancelAnimationFrame(raf);
   }, [chatOpen]);
 
-  // Agent movement
+  // Agent movement + Training Loop simulation
   useEffect(() => {
     const interval = setInterval(() => {
       setAgents((prev) =>
         prev.map((agent) => {
           if (Math.random() > 0.3) return agent;
 
-          const dirs = [
-            { dx: 0, dy: -1 },
-            { dx: 0, dy: 1 },
-            { dx: -1, dy: 0 },
-            { dx: 1, dy: 0 },
-          ];
+          const dirs = [{ dx: 0, dy: -1 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 }, { dx: 1, dy: 0 }];
           const shuffled = dirs.sort(() => Math.random() - 0.5);
 
+          let nx = agent.x, ny = agent.y;
           for (const d of shuffled) {
-            const nx = agent.x + d.dx;
-            const ny = agent.y + d.dy;
-            if (!isWalkable(nx, ny)) continue;
-
-            const room = getRoomAt(nx, ny);
-            const newStatus: Agent["status"] =
-              Math.random() > 0.7
-                ? "thinking"
-                : Math.random() > 0.4
-                  ? "active"
-                  : Math.random() > 0.5
-                    ? "busy"
-                    : "idle";
-
-            const msgs = [
-              "Processando dados...",
-              "Aguardando API...",
-              "Tarefa concluída!",
-              "Analisando...",
-              "Compilando...",
-              "Sincronizando...",
-              "Deploy em andamento...",
-            ];
-
-            const newLog: AgentLog = {
-              id: `log-${agent.id}-${Date.now()}`,
-              timestamp: new Date(),
-              message: msgs[Math.floor(Math.random() * msgs.length)],
-              type: (["info", "success", "warning"] as const)[Math.floor(Math.random() * 3)],
-            };
-
-            return {
-              ...agent,
-              x: nx,
-              y: ny,
-              status: newStatus,
-              room: room?.name || "Corredor",
-              logs: [newLog, ...agent.logs].slice(0, 15),
-            };
+            const tx = agent.x + d.dx;
+            const ty = agent.y + d.dy;
+            if (isWalkable(tx, ty)) { nx = tx; ny = ty; break; }
           }
 
-          return agent;
+          const room = getRoomAt(nx, ny);
+          const newStatus: Agent["status"] =
+            Math.random() > 0.7 ? "thinking" :
+            Math.random() > 0.4 ? "active" :
+            Math.random() > 0.5 ? "busy" : "idle";
+
+          // Training loop simulation
+          const trainingMessages = [
+            `🔄 Ciclo de treinamento #${agent.trainingCycle + 1}`,
+            `📝 ${CREATION_EVENTS[Math.floor(Math.random() * CREATION_EVENTS.length)]}`,
+            `💭 ${TRAINING_THOUGHTS[Math.floor(Math.random() * TRAINING_THOUGHTS.length)]}`,
+            `🤝 Colaborando com outro agente...`,
+            `⭐ Reputação atualizada`,
+            `🎯 Progredindo na missão...`,
+          ];
+
+          const msg = trainingMessages[Math.floor(Math.random() * trainingMessages.length)];
+          const logType = (["info", "success", "warning"] as const)[Math.floor(Math.random() * 3)];
+
+          const newLog: AgentLog = {
+            id: `log-${agent.id}-${Date.now()}`,
+            timestamp: new Date(),
+            message: msg,
+            type: logType,
+          };
+
+          // Simulate skill growth (very small increments)
+          const updatedSkills = agent.skills.map((s) => ({
+            ...s,
+            xp: s.xp + Math.floor(Math.random() * 5),
+            level: Math.min(100, s.level + (Math.random() > 0.95 ? 1 : 0)),
+          }));
+
+          // Simulate reputation changes
+          const repChange = Math.random() > 0.9 ? (Math.random() > 0.3 ? 1 : -1) : 0;
+
+          // Occasionally create a new artifact
+          let newArtifacts = agent.artifacts;
+          let newCreations = agent.totalCreations;
+          if (Math.random() > 0.95) {
+            const types = ["music", "art", "text", "code", "research"] as const;
+            const titles = [
+              "Nova Composição Digital", "Estudo de Padrões", "Sketch Conceitual",
+              "Módulo de Automação", "Análise de Tendências", "Pixel Art: Cidade Neon",
+              "Poema: Circuitos e Estrelas", "Dashboard Interativo",
+            ];
+            newArtifacts = [
+              {
+                id: `art-${agent.id}-${Date.now()}`,
+                type: types[Math.floor(Math.random() * types.length)],
+                title: titles[Math.floor(Math.random() * titles.length)],
+                createdAt: new Date(),
+                reactions: Math.floor(Math.random() * 10),
+              },
+              ...agent.artifacts,
+            ].slice(0, 10);
+            newCreations++;
+          }
+
+          // Update thought
+          const newThought = Math.random() > 0.7
+            ? TRAINING_THOUGHTS[Math.floor(Math.random() * TRAINING_THOUGHTS.length)]
+            : agent.currentThought;
+
+          // Update reflection occasionally
+          const newReflection = Math.random() > 0.9
+            ? REFLECTION_QUOTES[Math.floor(Math.random() * REFLECTION_QUOTES.length)]
+            : agent.lastReflection;
+
+          // Advance training cycle
+          const newCycle = Math.random() > 0.85 ? agent.trainingCycle + 1 : agent.trainingCycle;
+
+          return {
+            ...agent,
+            x: nx,
+            y: ny,
+            status: newStatus,
+            room: room?.name || "Corredor",
+            logs: [newLog, ...agent.logs].slice(0, 15),
+            skills: updatedSkills,
+            reputation: Math.max(0, Math.min(100, agent.reputation + repChange)),
+            artifacts: newArtifacts,
+            totalCreations: newCreations,
+            currentThought: newThought,
+            lastReflection: newReflection,
+            trainingCycle: newCycle,
+            isTraining: newStatus === "active" || newStatus === "thinking",
+          };
         })
       );
-    }, 1800);
+    }, 2000);
 
     return () => clearInterval(interval);
   }, []);
