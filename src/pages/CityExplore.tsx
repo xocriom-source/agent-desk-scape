@@ -218,6 +218,32 @@ export default function CityExplore() {
                 <button onClick={() => setShowRanking(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
                   <Award className="w-3.5 h-3.5" />
                 </button>
+                {/* Workspace tools */}
+                <button onClick={() => setShowMeeting(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-red-700/30 text-red-400 hover:bg-red-400/10 transition-all text-xs font-medium" title="Reuniões">
+                  <Video className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => setShowTeamChat(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Team Chat">
+                  <Hash className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => setShowFocusMode(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Foco">
+                  <Eye className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => setShowAnalytics(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Analytics">
+                  <BarChart3 className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => setShowEvents(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Eventos">
+                  <Calendar className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => setShowScreenShare(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Compartilhar">
+                  <Monitor className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => setShowIntegrations(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Integrações">
+                  <Link2 className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => setShowEngagement(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Engajamento">
+                  <Gamepad2 className="w-3.5 h-3.5" />
+                </button>
+
                 <button onClick={() => navigate("/ecosystem")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-violet-700/30 text-violet-400 hover:bg-violet-400/10 transition-all text-xs font-medium" title="Ecosystem">
                   <Dna className="w-3.5 h-3.5" />
                 </button>
