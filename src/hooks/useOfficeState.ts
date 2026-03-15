@@ -1,134 +1,163 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import type { Agent, AgentLog, FurnitureItem } from "@/types/agent";
+import type { Agent, AgentLog, Player } from "@/types/agent";
+import { isWalkable, ROOMS } from "@/data/officeMap";
 
 const AGENT_CONFIGS = [
-  { name: "Atlas", role: "Pesquisador", color: "#4F8EF7", emoji: "🔬" },
-  { name: "Nova", role: "Escritora", color: "#10B981", emoji: "✍️" },
-  { name: "Pixel", role: "Desenvolvedor", color: "#F59E0B", emoji: "💻" },
-  { name: "Cipher", role: "Analista", color: "#8B5CF6", emoji: "📊" },
-  { name: "Luna", role: "Designer", color: "#EC4899", emoji: "🎨" },
-  { name: "Spark", role: "Suporte", color: "#06B6D4", emoji: "📞" },
+  { name: "Atlas", role: "Pesquisador IA", color: "#3B82F6", emoji: "🔬" },
+  { name: "Nova", role: "Escritora IA", color: "#22C55E", emoji: "✍️" },
+  { name: "Pixel", role: "Desenvolvedor IA", color: "#F97316", emoji: "💻" },
+  { name: "Cipher", role: "Analista de Dados", color: "#A855F7", emoji: "📊" },
+  { name: "Luna", role: "Designer IA", color: "#EC4899", emoji: "🎨" },
+  { name: "Spark", role: "Suporte Técnico", color: "#06B6D4", emoji: "🔧" },
+  { name: "Bolt", role: "DevOps IA", color: "#EAB308", emoji: "⚡" },
+  { name: "Echo", role: "QA Tester IA", color: "#14B8A6", emoji: "🧪" },
 ];
 
 const TASKS = [
-  "Analisando dados de mercado...",
-  "Escrevendo relatório trimestral...",
-  "Refatorando módulo de autenticação...",
-  "Gerando wireframes de UI...",
-  "Respondendo tickets de suporte...",
-  "Pesquisando tendências de IA...",
+  "Analisando tendências de mercado com NLP...",
+  "Redigindo artigo sobre machine learning...",
+  "Refatorando API de autenticação...",
+  "Processando dashboard de métricas...",
+  "Criando protótipo de interface...",
+  "Resolvendo tickets de clientes...",
+  "Monitorando infraestrutura cloud...",
+  "Executando testes automatizados...",
 ];
 
-const WALKABLE_POSITIONS = [
-  { x: 2, z: 2 }, { x: 4, z: 2 }, { x: 6, z: 2 }, { x: 8, z: 2 },
-  { x: 2, z: 4 }, { x: 4, z: 4 }, { x: 6, z: 4 }, { x: 8, z: 4 },
-  { x: 2, z: 6 }, { x: 4, z: 6 }, { x: 6, z: 6 }, { x: 8, z: 6 },
-  { x: 3, z: 3 }, { x: 5, z: 3 }, { x: 7, z: 3 }, { x: 5, z: 5 },
-  { x: 3, z: 7 }, { x: 7, z: 7 }, { x: 5, z: 7 },
+// Starting positions for agents in different rooms
+const AGENT_STARTS = [
+  { x: 3, y: 3, room: "Área de Trabalho" },
+  { x: 6, y: 3, room: "Área de Trabalho" },
+  { x: 9, y: 6, room: "Área de Trabalho" },
+  { x: 3, y: 6, room: "Área de Trabalho" },
+  { x: 17, y: 4, room: "Sala de Reuniões" },
+  { x: 3, y: 14, room: "Lounge" },
+  { x: 17, y: 12, room: "Servidor / Infra" },
+  { x: 13, y: 15, room: "Recepção" },
 ];
 
 function createAgents(): Agent[] {
-  return AGENT_CONFIGS.map((cfg, i) => ({
-    id: `agent-${i}`,
-    name: cfg.name,
-    role: cfg.role,
-    color: cfg.color,
-    status: (["active", "thinking", "idle"] as const)[i % 3],
-    avatar: i,
-    position: { x: 2 + (i % 3) * 3, z: 2 + Math.floor(i / 3) * 4 },
-    tasks: [TASKS[i], TASKS[(i + 1) % 6]],
-    currentTask: TASKS[i],
-    logs: [
-      {
-        id: `log-${i}-1`,
-        timestamp: new Date(Date.now() - Math.random() * 3600000),
-        message: `${cfg.name} iniciou: ${TASKS[i]}`,
-        type: "info" as const,
-      },
-      {
-        id: `log-${i}-2`,
-        timestamp: new Date(),
-        message: `${cfg.name} completou subtarefa com sucesso`,
-        type: "success" as const,
-      },
-    ],
-  }));
+  return AGENT_CONFIGS.map((cfg, i) => {
+    const start = AGENT_STARTS[i];
+    return {
+      id: `agent-${i}`,
+      name: cfg.name,
+      role: cfg.role,
+      color: cfg.color,
+      status: (["active", "thinking", "idle", "busy"] as const)[i % 4],
+      avatar: i,
+      x: start.x,
+      y: start.y,
+      targetX: start.x,
+      targetY: start.y,
+      tasks: [TASKS[i], TASKS[(i + 2) % 8]],
+      currentTask: TASKS[i],
+      room: start.room,
+      logs: [
+        {
+          id: `log-${i}-0`,
+          timestamp: new Date(Date.now() - 60000),
+          message: `Conectado ao escritório virtual`,
+          type: "success" as const,
+        },
+        {
+          id: `log-${i}-1`,
+          timestamp: new Date(),
+          message: `Iniciou: ${TASKS[i].slice(0, 40)}...`,
+          type: "info" as const,
+        },
+      ],
+    };
+  });
 }
-
-const defaultFurniture: FurnitureItem[] = [
-  // Desks row 1
-  { id: "d1", type: "desk", position: { x: 2, z: 1.5 }, rotation: 0, size: { w: 2, h: 1 } },
-  { id: "d2", type: "desk", position: { x: 5, z: 1.5 }, rotation: 0, size: { w: 2, h: 1 } },
-  { id: "d3", type: "desk", position: { x: 8, z: 1.5 }, rotation: 0, size: { w: 2, h: 1 } },
-  // Desks row 2
-  { id: "d4", type: "desk", position: { x: 2, z: 5.5 }, rotation: 0, size: { w: 2, h: 1 } },
-  { id: "d5", type: "desk", position: { x: 5, z: 5.5 }, rotation: 0, size: { w: 2, h: 1 } },
-  { id: "d6", type: "desk", position: { x: 8, z: 5.5 }, rotation: 0, size: { w: 2, h: 1 } },
-  // Chairs
-  { id: "c1", type: "chair", position: { x: 2, z: 2.5 }, rotation: Math.PI, size: { w: 0.6, h: 0.6 } },
-  { id: "c2", type: "chair", position: { x: 5, z: 2.5 }, rotation: Math.PI, size: { w: 0.6, h: 0.6 } },
-  { id: "c3", type: "chair", position: { x: 8, z: 2.5 }, rotation: Math.PI, size: { w: 0.6, h: 0.6 } },
-  // Plants
-  { id: "p1", type: "plant", position: { x: 0.5, z: 0.5 }, size: { w: 0.5, h: 0.5 } },
-  { id: "p2", type: "plant", position: { x: 9.5, z: 0.5 }, size: { w: 0.5, h: 0.5 } },
-  { id: "p3", type: "plant", position: { x: 0.5, z: 8.5 }, size: { w: 0.5, h: 0.5 } },
-  // Meeting area
-  { id: "w1", type: "whiteboard", position: { x: 5, z: 8.5 }, rotation: 0, size: { w: 2, h: 0.2 } },
-  { id: "s1", type: "sofa", position: { x: 9.5, z: 4 }, rotation: Math.PI / 2, size: { w: 1, h: 2 } },
-  // Server
-  { id: "sv1", type: "server", position: { x: 0.5, z: 4 }, size: { w: 0.6, h: 1.5 } },
-  // Coffee
-  { id: "cf1", type: "coffee", position: { x: 9.5, z: 8.5 }, size: { w: 0.6, h: 0.6 } },
-  // Monitors on desks
-  { id: "m1", type: "monitor", position: { x: 2, z: 1.2 }, size: { w: 0.5, h: 0.3 } },
-  { id: "m2", type: "monitor", position: { x: 5, z: 1.2 }, size: { w: 0.5, h: 0.3 } },
-  { id: "m3", type: "monitor", position: { x: 8, z: 1.2 }, size: { w: 0.5, h: 0.3 } },
-];
 
 export function useOfficeState() {
   const [agents, setAgents] = useState<Agent[]>(createAgents);
-  const [furniture] = useState<FurnitureItem[]>(defaultFurniture);
+  const [player, setPlayer] = useState<Player>({ x: 13, y: 18, name: "Você" });
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [showActivityLog, setShowActivityLog] = useState(true);
-  const intervalRef = useRef<ReturnType<typeof setInterval>>();
+  const [chatOpen, setChatOpen] = useState(false);
+  const [nearbyAgent, setNearbyAgent] = useState<Agent | null>(null);
 
-  // Simulate agent movement
+  // Agent autonomous movement
   useEffect(() => {
-    intervalRef.current = setInterval(() => {
+    const interval = setInterval(() => {
       setAgents((prev) =>
         prev.map((agent) => {
-          if (Math.random() > 0.3) return agent;
-          const target =
-            WALKABLE_POSITIONS[Math.floor(Math.random() * WALKABLE_POSITIONS.length)];
-          const newStatus: Agent["status"] =
-            Math.random() > 0.6 ? "thinking" : Math.random() > 0.3 ? "active" : "idle";
+          // Only move sometimes
+          if (Math.random() > 0.25) return agent;
 
-          const newLog: AgentLog = {
-            id: `log-${agent.id}-${Date.now()}`,
-            timestamp: new Date(),
-            message:
-              newStatus === "thinking"
-                ? `${agent.name} está processando tarefa...`
-                : newStatus === "active"
-                ? `${agent.name} moveu para nova posição`
-                : `${agent.name} está aguardando`,
-            type: newStatus === "thinking" ? "warning" : newStatus === "active" ? "info" : "success",
-          };
+          // Pick a random adjacent walkable tile
+          const dirs = [
+            { dx: 0, dy: -1 },
+            { dx: 0, dy: 1 },
+            { dx: -1, dy: 0 },
+            { dx: 1, dy: 0 },
+          ];
+          const shuffled = dirs.sort(() => Math.random() - 0.5);
 
-          return {
-            ...agent,
-            position: target,
-            status: newStatus,
-            logs: [newLog, ...agent.logs].slice(0, 10),
-          };
+          for (const d of shuffled) {
+            const nx = agent.x + d.dx;
+            const ny = agent.y + d.dy;
+            if (isWalkable(nx, ny)) {
+              // Find which room agent is in
+              const room = ROOMS.find(
+                (r) => nx >= r.x && nx < r.x + r.w && ny >= r.y && ny < r.y + r.h
+              );
+
+              const newStatus: Agent["status"] =
+                Math.random() > 0.7
+                  ? "thinking"
+                  : Math.random() > 0.4
+                  ? "active"
+                  : Math.random() > 0.5
+                  ? "busy"
+                  : "idle";
+
+              const logMessages = [
+                `Moveu-se para ${room?.name || "corredor"}`,
+                `Processando dados...`,
+                `Aguardando resposta da API...`,
+                `Tarefa concluída com sucesso!`,
+                `Analisando resultados...`,
+              ];
+
+              const newLog: AgentLog = {
+                id: `log-${agent.id}-${Date.now()}`,
+                timestamp: new Date(),
+                message: logMessages[Math.floor(Math.random() * logMessages.length)],
+                type: (["info", "success", "warning"] as const)[
+                  Math.floor(Math.random() * 3)
+                ],
+              };
+
+              return {
+                ...agent,
+                x: nx,
+                y: ny,
+                status: newStatus,
+                room: room?.name || agent.room,
+                logs: [newLog, ...agent.logs].slice(0, 15),
+              };
+            }
+          }
+          return agent;
         })
       );
-    }, 3000);
+    }, 1500);
 
-    return () => clearInterval(intervalRef.current);
+    return () => clearInterval(interval);
   }, []);
 
-  // Keep selectedAgent in sync
+  // Check proximity to agents
+  useEffect(() => {
+    const nearby = agents.find(
+      (a) => Math.abs(a.x - player.x) <= 1 && Math.abs(a.y - player.y) <= 1
+    );
+    setNearbyAgent(nearby || null);
+  }, [player, agents]);
+
+  // Keep selectedAgent synced
   useEffect(() => {
     if (selectedAgent) {
       const updated = agents.find((a) => a.id === selectedAgent.id);
@@ -136,26 +165,80 @@ export function useOfficeState() {
     }
   }, [agents, selectedAgent]);
 
+  // Player movement
+  const movePlayer = useCallback(
+    (dx: number, dy: number) => {
+      setPlayer((p) => {
+        const nx = p.x + dx;
+        const ny = p.y + dy;
+        if (isWalkable(nx, ny)) {
+          return { ...p, x: nx, y: ny };
+        }
+        return p;
+      });
+    },
+    []
+  );
+
+  // Keyboard controls
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (chatOpen) return; // Don't move while chatting
+      switch (e.key) {
+        case "ArrowUp":
+        case "w":
+        case "W":
+          e.preventDefault();
+          movePlayer(0, -1);
+          break;
+        case "ArrowDown":
+        case "s":
+        case "S":
+          e.preventDefault();
+          movePlayer(0, 1);
+          break;
+        case "ArrowLeft":
+        case "a":
+        case "A":
+          e.preventDefault();
+          movePlayer(-1, 0);
+          break;
+        case "ArrowRight":
+        case "d":
+        case "D":
+          e.preventDefault();
+          movePlayer(1, 0);
+          break;
+        case " ":
+          e.preventDefault();
+          if (nearbyAgent) {
+            setSelectedAgent(nearbyAgent);
+            setChatOpen(true);
+          }
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [movePlayer, chatOpen, nearbyAgent]);
+
   const allLogs = agents
     .flatMap((a) => a.logs.map((l) => ({ ...l, agentName: a.name, agentColor: a.color })))
     .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-    .slice(0, 30);
-
-  const selectAgent = useCallback((agent: Agent | null) => {
-    setSelectedAgent(agent);
-  }, []);
-
-  const toggleActivityLog = useCallback(() => {
-    setShowActivityLog((p) => !p);
-  }, []);
+    .slice(0, 40);
 
   return {
     agents,
-    furniture,
+    player,
     selectedAgent,
-    selectAgent,
+    setSelectedAgent,
     showActivityLog,
-    toggleActivityLog,
+    toggleActivityLog: () => setShowActivityLog((p) => !p),
     allLogs,
+    chatOpen,
+    setChatOpen,
+    nearbyAgent,
+    movePlayer,
   };
 }

@@ -1,4 +1,4 @@
-export type AgentStatus = "active" | "idle" | "thinking";
+export type AgentStatus = "active" | "idle" | "thinking" | "busy";
 
 export interface Agent {
   id: string;
@@ -7,11 +7,14 @@ export interface Agent {
   status: AgentStatus;
   avatar: number;
   color: string;
-  position: { x: number; z: number };
-  targetPosition?: { x: number; z: number };
-  tasks: string[];
+  x: number;
+  y: number;
+  targetX: number;
+  targetY: number;
   currentTask?: string;
+  tasks: string[];
   logs: AgentLog[];
+  room: string;
 }
 
 export interface AgentLog {
@@ -21,19 +24,11 @@ export interface AgentLog {
   type: "info" | "success" | "warning" | "error";
 }
 
-export interface FurnitureItem {
-  id: string;
-  type: "desk" | "chair" | "plant" | "bookshelf" | "coffee" | "monitor" | "sofa" | "whiteboard" | "server";
-  position: { x: number; z: number };
-  rotation?: number;
-  size: { w: number; h: number };
+export interface Player {
+  x: number;
+  y: number;
+  name: string;
 }
 
-export interface OfficeRoom {
-  id: string;
-  name: string;
-  width: number;
-  depth: number;
-  agents: Agent[];
-  furniture: FurnitureItem[];
-}
+// 0 = floor, 1 = wall, 2 = carpet, 3 = desk, 4 = empty/outside
+export type TileType = 0 | 1 | 2 | 3 | 4;
