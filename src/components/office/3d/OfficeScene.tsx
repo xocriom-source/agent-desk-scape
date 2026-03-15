@@ -32,12 +32,8 @@ function ExteriorGround({ cx, cz }: { cx: number; cz: number }) {
     </mesh>
   );
 }
-      </mesh>
-      {/* Decorative tile pattern */}
-      <mesh position={[0, 0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[1.5, 2, 32]} />
-        <meshStandardMaterial color="#8A7A60" />
-      </mesh>
+
+
       <mesh position={[0, 0.016, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.5, 0.8, 32]} />
         <meshStandardMaterial color="#908868" />
