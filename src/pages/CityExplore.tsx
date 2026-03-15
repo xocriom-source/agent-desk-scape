@@ -14,6 +14,15 @@ import { CityMiniMap } from "@/components/city/CityMiniMap";
 import { CinematicIntro } from "@/components/city/CinematicIntro";
 import { CityMarketplace } from "@/components/city/CityMarketplace";
 import { useCityBuildings } from "@/hooks/useCityBuildings";
+import { ProximityChat } from "@/components/collaboration/ProximityChat";
+import { InteractiveObjects } from "@/components/collaboration/InteractiveObjects";
+import { UserStatusSystem, type UserStatus } from "@/components/collaboration/UserStatusSystem";
+import { TeleportSystem } from "@/components/collaboration/TeleportSystem";
+import { PersonalAgent } from "@/components/collaboration/PersonalAgent";
+import { TeamAgents } from "@/components/collaboration/TeamAgents";
+import { PublicWorkspaces } from "@/components/collaboration/PublicWorkspaces";
+import { MessengerHub } from "@/components/collaboration/MessengerHub";
+import { AgentTraining } from "@/components/collaboration/AgentTraining";
 import type { TransportType } from "@/types/building";
 import logo from "@/assets/logo.png";
 
