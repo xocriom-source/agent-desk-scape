@@ -630,17 +630,25 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
   // Keyboard movement
   useEffect(() => {
     const keys = new Set<string>();
-    const onDown = (e: KeyboardEvent) => keys.add(e.key);
-    const onUp = (e: KeyboardEvent) => keys.delete(e.key);
+    const onDown = (e: KeyboardEvent) => {
+      keys.add(e.key.toLowerCase());
+      // Toggle vehicle with E key
+      if (e.key.toLowerCase() === "e" && onVehicleToggle) {
+        onVehicleToggle(!inVehicle);
+      }
+    };
+    const onUp = (e: KeyboardEvent) => keys.delete(e.key.toLowerCase());
     window.addEventListener("keydown", onDown);
     window.addEventListener("keyup", onUp);
 
+    const speed = inVehicle ? 0.6 : 0.3;
+
     const interval = setInterval(() => {
       let dx = 0, dz = 0;
-      if (keys.has("ArrowUp") || keys.has("w")) dz -= 0.3;
-      if (keys.has("ArrowDown") || keys.has("s")) dz += 0.3;
-      if (keys.has("ArrowLeft") || keys.has("a")) dx -= 0.3;
-      if (keys.has("ArrowRight") || keys.has("d")) dx += 0.3;
+      if (keys.has("arrowup") || keys.has("w")) dz -= speed;
+      if (keys.has("arrowdown") || keys.has("s")) dz += speed;
+      if (keys.has("arrowleft") || keys.has("a")) dx -= speed;
+      if (keys.has("arrowright") || keys.has("d")) dx += speed;
       if (dx !== 0 || dz !== 0) {
         setPlayerPos(prev => {
           const newPos: [number, number, number] = [
@@ -659,7 +667,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
       window.removeEventListener("keyup", onUp);
       clearInterval(interval);
     };
-  }, [updateCameraCenter]);
+  }, [updateCameraCenter, inVehicle, onVehicleToggle]);
 
   // Map dynamic buildings to scene-scale positions
   const dynamicBuildings = useMemo(() => {
