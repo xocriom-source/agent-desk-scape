@@ -68,9 +68,10 @@ export function ActionBar({ onMove }: ActionBarProps) {
         className="glass-panel rounded-2xl px-3 py-2 shadow-lg hidden md:block"
       >
         <p className="text-[10px] text-muted-foreground font-display">
-          <span className="font-semibold text-foreground">←↑↓→</span> mover •{" "}
-          <span className="font-semibold text-foreground">ESPAÇO</span> interagir •{" "}
-          <span className="font-semibold text-foreground">ESC</span> fechar
+          <span className="font-semibold text-foreground">WASD/←↑↓→</span> mover •{" "}
+          <span className="font-semibold text-foreground">SCROLL</span> zoom •{" "}
+          <span className="font-semibold text-foreground">ARRASTAR</span> câmera •{" "}
+          <span className="font-semibold text-foreground">ESPAÇO</span> interagir
         </p>
       </motion.div>
     </div>
