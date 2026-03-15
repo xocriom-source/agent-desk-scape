@@ -749,9 +749,14 @@ export function OfficeScene({
         {/* ── User's Building ── */}
         <BuildingExterior rooms={rooms} clickEnabled={!editMode} onFloorClick={(x, y) => onMapClick?.(x, y)} />
 
-        {/* ── Distant Skyline (decorative only) ── */}
+        {/* ── Distant Skyline ── */}
         {skylineBuildings.map((b, i) => (
           <SkylineBuilding key={`sky-${i}`} position={b.pos} width={b.w} height={b.h} color={b.color} />
+        ))}
+
+        {/* ── Street Lamps ── */}
+        {streetLamps.map((pos, i) => (
+          <StreetLamp key={`lamp-${i}`} position={pos} />
         ))}
 
         {/* ── Interior objects at building height ── */}

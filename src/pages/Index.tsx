@@ -100,6 +100,8 @@ const Index = () => {
 
   const handleSaveCharacter = (config: PlayerConfig) => {
     setPlayerConfig(config);
+    localStorage.setItem("playerConfig", JSON.stringify(config));
+    localStorage.setItem("playerName", config.name);
     const user = localStorage.getItem("agentoffice_user");
     if (user) {
       const parsed = JSON.parse(user);
