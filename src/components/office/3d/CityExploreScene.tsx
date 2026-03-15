@@ -682,10 +682,10 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
   }, [visibleBuildings]);
 
   return (
-    <div className="absolute inset-0">
+    <div className="absolute inset-0 w-full h-full">
       <Canvas
         shadows
-        style={{ touchAction: "none" }}
+        style={{ touchAction: "none", width: "100%", height: "100%", display: "block" }}
         camera={{ position: [12, 15, 18], fov: 40, near: 0.1, far: 250 }}
         gl={{ antialias: true }}
         onCreated={({ gl }) => {
