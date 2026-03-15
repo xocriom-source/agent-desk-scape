@@ -255,6 +255,7 @@ export default function CityExplore() {
           <CityAdPlacement isOpen={showAds} onClose={() => setShowAds(false)} />
           <VehicleShop isOpen={showVehicleShop} onClose={() => setShowVehicleShop(false)} currentVehicle={currentVehicle} onSelect={handleVehicleSelect} />
           <DailyMissions isOpen={showMissions} onClose={() => setShowMissions(false)} />
+          <CityMarketplace isOpen={showMarketplace} onClose={() => setShowMarketplace(false)} />
         </>
       )}
     </div>
