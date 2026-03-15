@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Building2, Users2, Trophy, Megaphone, Plane, Search, ShoppingBag, MessageCircle, Target, Car, Award } from "lucide-react";
+import { ArrowLeft, Building2, Users2, Trophy, Megaphone, Plane, Search, ShoppingBag, MessageCircle, Target, Car, Award, Briefcase } from "lucide-react";
 import { motion } from "framer-motion";
 import { CityExploreScene } from "@/components/office/3d/CityExploreScene";
 import { CityLeaderboard } from "@/components/city/CityLeaderboard";
