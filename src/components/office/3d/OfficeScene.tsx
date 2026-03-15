@@ -583,7 +583,7 @@ function WalkingDust({ player }: { player: Player }) {
   );
 }
 
-// ── Player 3D (rotation-based, smooth interpolation) ──
+// ── Player 3D (fast interpolation, no lag) ──
 function Player3D({ player, config }: { player: Player; config?: { color: string; skinTone?: string } }) {
   const ref = useRef<THREE.Group>(null);
   const smoothPos = useRef(new THREE.Vector3(player.x * S, 0, player.y * S));
@@ -592,44 +592,58 @@ function Player3D({ player, config }: { player: Player; config?: { color: string
   const rightLeg = useRef<THREE.Mesh>(null);
   const leftArm = useRef<THREE.Mesh>(null);
   const rightArm = useRef<THREE.Mesh>(null);
+  const prevPos = useRef({ x: player.x, y: player.y });
 
   const color = config?.color || "#4F46E5";
   const skin = config?.skinTone === "light" ? "#FDDCB5" : config?.skinTone === "dark" ? "#8D5B3E" : config?.skinTone === "tan" ? "#C8956C" : "#E8B88A";
 
-  useFrame(() => {
+  useFrame((_, delta) => {
     if (!ref.current) return;
+    const dt = Math.min(delta, 0.05);
 
     const tx = player.x * S;
     const tz = player.y * S;
-    const lerpPos = 0.18;
-    const lerpRot = 0.12;
 
-    smoothPos.current.x += (tx - smoothPos.current.x) * lerpPos;
-    smoothPos.current.z += (tz - smoothPos.current.z) * lerpPos;
+    // Delta-time based exponential interpolation (frame-rate independent)
+    // Higher factor = snappier response. 1 - e^(-speed*dt) gives consistent feel across framerates
+    const posFactor = 1 - Math.exp(-18 * dt);  // Very responsive position tracking
+    const rotFactor = 1 - Math.exp(-14 * dt);  // Responsive rotation
 
-    const dx = Math.abs(tx - smoothPos.current.x);
-    const dz = Math.abs(tz - smoothPos.current.z);
-    const moving = dx > 0.003 || dz > 0.003;
+    smoothPos.current.x += (tx - smoothPos.current.x) * posFactor;
+    smoothPos.current.z += (tz - smoothPos.current.z) * posFactor;
+
+    // Snap if very close to avoid perpetual micro-drift
+    if (Math.abs(tx - smoothPos.current.x) < 0.0005) smoothPos.current.x = tx;
+    if (Math.abs(tz - smoothPos.current.z) < 0.0005) smoothPos.current.z = tz;
+
+    // Detect movement from actual position changes
+    const speed = Math.hypot(player.x - prevPos.current.x, player.y - prevPos.current.y);
+    const moving = speed > 0.001;
+    prevPos.current = { x: player.x, y: player.y };
 
     ref.current.position.set(smoothPos.current.x, 0, smoothPos.current.z);
 
+    // Walking bounce or idle bob
     if (moving) {
       ref.current.position.y = Math.abs(Math.sin(Date.now() * 0.015)) * 0.025;
     } else {
       ref.current.position.y = Math.sin(Date.now() * 0.003) * 0.008;
     }
 
+    // Smooth angle interpolation
     let diff = player.angle - smoothAngle.current;
     while (diff > Math.PI) diff -= Math.PI * 2;
     while (diff < -Math.PI) diff += Math.PI * 2;
-    smoothAngle.current += diff * lerpRot;
+    smoothAngle.current += diff * rotFactor;
     ref.current.rotation.y = smoothAngle.current;
 
+    // Limb animations
     const swing = moving ? Math.sin(Date.now() * 0.016) * 0.5 : 0;
-    if (leftLeg.current) leftLeg.current.rotation.x = moving ? swing : leftLeg.current.rotation.x * 0.85;
-    if (rightLeg.current) rightLeg.current.rotation.x = moving ? -swing : rightLeg.current.rotation.x * 0.85;
-    if (leftArm.current) leftArm.current.rotation.x = moving ? -swing * 0.5 : leftArm.current.rotation.x * 0.85;
-    if (rightArm.current) rightArm.current.rotation.x = moving ? swing * 0.5 : rightArm.current.rotation.x * 0.85;
+    const dampFactor = 1 - Math.exp(-8 * dt);
+    if (leftLeg.current) leftLeg.current.rotation.x += ((moving ? swing : 0) - leftLeg.current.rotation.x) * dampFactor;
+    if (rightLeg.current) rightLeg.current.rotation.x += ((moving ? -swing : 0) - rightLeg.current.rotation.x) * dampFactor;
+    if (leftArm.current) leftArm.current.rotation.x += ((moving ? -swing * 0.5 : 0) - leftArm.current.rotation.x) * dampFactor;
+    if (rightArm.current) rightArm.current.rotation.x += ((moving ? swing * 0.5 : 0) - rightArm.current.rotation.x) * dampFactor;
   });
 
   return (
@@ -695,19 +709,21 @@ function Player3D({ player, config }: { player: Player; config?: { color: string
   );
 }
 
-// ── Camera target tracker ──
+// ── Camera target tracker (single-stage, delta-time based) ──
 function CameraTarget({ player, controlsRef }: { player: Player; controlsRef: React.RefObject<any> }) {
-  const targetPos = useRef(new THREE.Vector3(player.x * S, 0, player.y * S));
+  useFrame((_, delta) => {
+    if (!controlsRef.current) return;
+    const dt = Math.min(delta, 0.05);
+    const factor = 1 - Math.exp(-8 * dt); // Smooth but responsive
 
-  useFrame(() => {
     const px = player.x * S;
     const pz = player.y * S;
-    targetPos.current.x += (px - targetPos.current.x) * 0.08;
-    targetPos.current.z += (pz - targetPos.current.z) * 0.08;
+    const target = controlsRef.current.target;
 
-    if (controlsRef.current) {
-      controlsRef.current.target.lerp(targetPos.current, 0.2);
-    }
+    target.x += (px - target.x) * factor;
+    target.z += (pz - target.z) * factor;
+    // Keep y at ground level
+    target.y += (0 - target.y) * factor;
   });
 
   return null;
