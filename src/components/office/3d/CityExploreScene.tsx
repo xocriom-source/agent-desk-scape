@@ -198,8 +198,7 @@ function CityPlaza() {
           <sphereGeometry args={[0.1, 12, 12]} />
           <meshStandardMaterial color="#C0A870" metalness={0.6} roughness={0.3} />
         </mesh>
-        {/* Water glow */}
-        <pointLight position={[0, 0.4, 0]} intensity={0.5} distance={4} color="#4AC0FF" />
+        {/* Water glow - emissive only, no pointLight */}
       </group>
 
       {/* ── Trees (6 around plaza) ── */}
