@@ -44,6 +44,7 @@ const App = () => (
             <Route path="/find-building" element={<ProtectedRoute><FindMyBuilding /></ProtectedRoute>} />
             <Route path="/building/:id" element={<ProtectedRoute><BuildingInterior /></ProtectedRoute>} />
             <Route path="/ecosystem" element={<ProtectedRoute><EcosystemHub /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
