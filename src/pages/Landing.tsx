@@ -8,7 +8,7 @@ import {
   Radio, CheckCircle2, ImageIcon, BarChart3, Store, Vote,
   Database, Palette, Eye, Rocket, Globe, Heart, TrendingUp,
   Music, Code, BookOpen, Wrench, Crown, Award, Flame,
-  Map, Server, Home, Landmark, Flag, Users2, Briefcase
+  Map, Server, Home, Landmark, Flag, Users2, Briefcase, MapPin
 } from "lucide-react";
 import heroImg from "@/assets/hero-office.png";
 import featureCollab from "@/assets/feature-collab.png";
