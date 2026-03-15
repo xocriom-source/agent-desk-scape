@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Settings, Wifi, LogOut, Palette, Home, Clock, MessageSquare, CheckCircle2, Radio, ImageIcon, BarChart3, Store, Vote, Sparkles, Database, Shield, MapPin, Star, Eye, Calendar, Globe } from "lucide-react";
+import { Settings, Wifi, LogOut, Palette, Home, Clock, MessageSquare, CheckCircle2, Radio, ImageIcon, BarChart3, Store, Vote, Sparkles, Database, Shield, MapPin, Star, Eye, Calendar, Globe, Map } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import logo from "@/assets/logo.png";
 import type { Agent } from "@/types/agent";
 
@@ -51,7 +52,7 @@ function LocalClock() {
 
 function NavBtn({ onClick, title, icon: Icon, color, badge }: { onClick?: () => void; title: string; icon: typeof MessageSquare; color: string; badge?: number }) {
   return (
-    <button onClick={onClick} className="relative p-2 rounded-xl hover:bg-muted/30 transition-colors" title={title}>
+    <button onClick={onClick} className="relative p-2 rounded-xl hover:bg-muted/30 transition-colors shrink-0" title={title}>
       <Icon className="w-4 h-4" style={{ color }} />
       {badge && badge > 0 && (
         <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-3.5 flex items-center justify-center bg-destructive text-destructive-foreground text-[8px] font-bold rounded-full px-0.5">
@@ -63,30 +64,39 @@ function NavBtn({ onClick, title, icon: Icon, color, badge }: { onClick?: () => 
 }
 
 export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onRoomEditor, onLogout, onOpenFeed, onOpenTasks, onOpenMessaging, onOpenGallery, onOpenAnalytics, onOpenMarketplace, onOpenGovernance, onOpenStudios, onOpenMemory, onOpenCommand, onOpenArtifacts, onOpenNPCs, onOpenObservation, onOpenDistricts, onOpenEvents, onOpenCityChat, notifications = {} }: TopBarProps) {
+  const navigate = useNavigate();
+
   return (
-    <div className="absolute top-3 left-3 right-3 z-20 flex items-center justify-between pointer-events-none">
-      <div className="flex items-center gap-2 pointer-events-auto">
-        <div className="glass-panel rounded-2xl px-4 py-2.5 flex items-center gap-3 shadow-lg">
-          <img src={logo} alt="AgentOffice" className="w-8 h-8" />
+    <div className="absolute top-3 left-3 right-3 z-20 flex items-start justify-between pointer-events-none gap-2">
+      <div className="flex items-center gap-2 pointer-events-auto flex-shrink-0">
+        <div className="glass-panel rounded-2xl px-3 py-2 flex items-center gap-2 shadow-lg">
+          <img src={logo} alt="AgentOffice" className="w-7 h-7" />
           <div>
             <span className="font-display font-bold text-foreground text-sm block leading-tight">AgentOffice</span>
             <span className="text-[10px] text-muted-foreground">Empresa Virtual de IA</span>
           </div>
         </div>
         <LocalClock />
+      </div>
 
-        {/* Feature buttons with badges */}
-        <div className="glass-panel rounded-2xl flex items-center gap-0.5 px-1 py-1 shadow-lg">
+      {/* Feature buttons - scrollable on smaller screens */}
+      <div className="flex-1 min-w-0 pointer-events-auto mx-2">
+        <div className="glass-panel rounded-2xl flex items-center gap-0.5 px-1.5 py-1 shadow-lg overflow-x-auto scrollbar-hide">
+          {/* City navigation */}
+          <NavBtn onClick={() => navigate("/city-explore")} title="Explorar Cidade" icon={Map} color="#10B981" />
+          <div className="w-px h-5 bg-border/50 mx-0.5 shrink-0" />
           {onOpenFeed && <NavBtn onClick={onOpenFeed} title="Feed Social" icon={MessageSquare} color="hsl(239 84% 67%)" badge={notifications.feed} />}
           {onOpenTasks && <NavBtn onClick={onOpenTasks} title="Task Engine" icon={CheckCircle2} color="hsl(160 84% 39%)" badge={notifications.tasks} />}
           {onOpenMessaging && <NavBtn onClick={onOpenMessaging} title="Mensagens" icon={Radio} color="#4ECDC4" badge={notifications.messages} />}
           {onOpenGallery && <NavBtn onClick={onOpenGallery} title="Galeria" icon={ImageIcon} color="#FF6BB5" />}
           {onOpenStudios && <NavBtn onClick={onOpenStudios} title="Estúdios" icon={Sparkles} color="#FFB347" />}
           {onOpenAnalytics && <NavBtn onClick={onOpenAnalytics} title="Analytics" icon={BarChart3} color="#A78BFA" />}
+          <div className="w-px h-5 bg-border/50 mx-0.5 shrink-0" />
           {onOpenMarketplace && <NavBtn onClick={onOpenMarketplace} title="Marketplace" icon={Store} color="hsl(160 84% 39%)" />}
           {onOpenGovernance && <NavBtn onClick={onOpenGovernance} title="Governança" icon={Vote} color="hsl(239 84% 67%)" badge={notifications.governance} />}
           {onOpenMemory && <NavBtn onClick={onOpenMemory} title="Memória" icon={Database} color="#06B6D4" />}
           {onOpenCommand && <NavBtn onClick={onOpenCommand} title="Command Center" icon={Shield} color="#EF4444" />}
+          <div className="w-px h-5 bg-border/50 mx-0.5 shrink-0" />
           {onOpenArtifacts && <NavBtn onClick={onOpenArtifacts} title="Artefatos" icon={Sparkles} color="#F59E0B" />}
           {onOpenNPCs && <NavBtn onClick={onOpenNPCs} title="NPCs" icon={Star} color="#A78BFA" />}
           {onOpenObservation && <NavBtn onClick={onOpenObservation} title="Observation Lab" icon={Eye} color="#06B6D4" />}
@@ -97,41 +107,41 @@ export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onRo
       </div>
 
       {nearbyAgent && (
-        <div className="glass-panel rounded-2xl px-4 py-2 flex items-center gap-2 pointer-events-auto shadow-lg animate-pulse">
+        <div className="glass-panel rounded-2xl px-3 py-2 flex items-center gap-2 pointer-events-auto shadow-lg animate-pulse shrink-0">
           <div className="w-2 h-2 rounded-full" style={{ backgroundColor: nearbyAgent.color }} />
-          <span className="text-xs text-foreground font-medium">{nearbyAgent.name} está perto</span>
-          <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full">ESPAÇO para interagir</span>
+          <span className="text-xs text-foreground font-medium">{nearbyAgent.name}</span>
+          <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">ESPAÇO</span>
         </div>
       )}
 
-      <div className="flex items-center gap-2 pointer-events-auto">
-        <div className="glass-panel rounded-2xl px-4 py-2.5 flex items-center gap-3 shadow-lg">
-          <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 pointer-events-auto shrink-0">
+        <div className="glass-panel rounded-2xl px-3 py-2 flex items-center gap-2 shadow-lg">
+          <div className="flex items-center gap-1">
             <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-            <span className="text-xs font-display text-foreground font-medium">{activeCount} ativos</span>
+            <span className="text-[11px] font-display text-foreground font-medium">{activeCount}</span>
           </div>
-          <div className="w-px h-4 bg-border" />
-          <div className="flex items-center gap-1.5">
+          <div className="w-px h-3.5 bg-border" />
+          <div className="flex items-center gap-1">
             <Wifi className="w-3 h-3 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">{agentCount} agentes</span>
+            <span className="text-[11px] text-muted-foreground">{agentCount}</span>
           </div>
         </div>
 
         {onRoomEditor && (
-          <button onClick={onRoomEditor} className="glass-panel rounded-2xl p-2.5 hover:bg-muted/30 transition-colors shadow-lg" title="Editor de Salas">
+          <button onClick={onRoomEditor} className="glass-panel rounded-2xl p-2 hover:bg-muted/30 transition-colors shadow-lg" title="Editor de Salas">
             <Home className="w-4 h-4 text-foreground" />
           </button>
         )}
         {onCustomize && (
-          <button onClick={onCustomize} className="glass-panel rounded-2xl p-2.5 hover:bg-muted/30 transition-colors shadow-lg" title="Personalizar">
+          <button onClick={onCustomize} className="glass-panel rounded-2xl p-2 hover:bg-muted/30 transition-colors shadow-lg" title="Personalizar">
             <Palette className="w-4 h-4 text-foreground" />
           </button>
         )}
-        <button className="glass-panel rounded-2xl p-2.5 hover:bg-muted/30 transition-colors shadow-lg">
+        <button className="glass-panel rounded-2xl p-2 hover:bg-muted/30 transition-colors shadow-lg">
           <Settings className="w-4 h-4 text-foreground" />
         </button>
         {onLogout && (
-          <button onClick={onLogout} className="glass-panel rounded-2xl p-2.5 hover:bg-destructive/20 transition-colors shadow-lg" title="Sair">
+          <button onClick={onLogout} className="glass-panel rounded-2xl p-2 hover:bg-destructive/20 transition-colors shadow-lg" title="Sair">
             <LogOut className="w-4 h-4 text-foreground" />
           </button>
         )}
