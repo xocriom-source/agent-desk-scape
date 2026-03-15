@@ -672,43 +672,46 @@ export function OfficeScene({
           onFloorClick={(x, y) => onMapClick?.(x, y)}
         />
 
-        {/* Rooms */}
-        {rooms.map((room) => (
-          <Room3D
-            key={room.id}
-            room={room}
-            clickEnabled={!editMode}
-            onFloorClick={(x, y) => onMapClick?.(x, y)}
-          />
-        ))}
+        {/* All interior objects raised by foundation height */}
+        <group position={[0, 0.25, 0]}>
+          {/* Rooms */}
+          {rooms.map((room) => (
+            <Room3D
+              key={room.id}
+              room={room}
+              clickEnabled={!editMode}
+              onFloorClick={(x, y) => onMapClick?.(x, y)}
+            />
+          ))}
 
-        {/* Furniture */}
-        {furniture.map(f => (
-          <FurnitureModel
-            key={f.id}
-            type={f.type}
-            position={[f.x * S, 0, f.y * S]}
-            editMode={editMode}
-            selected={selectedFurnitureId === f.id}
-            hovered={hoveredFurnitureId === f.id}
-            onClick={() => onFurnitureClick?.(f.id)}
-            onPointerOver={() => onFurnitureHover?.(f.id)}
-            onPointerOut={() => onFurnitureHover?.(null)}
-          />
-        ))}
+          {/* Furniture */}
+          {furniture.map(f => (
+            <FurnitureModel
+              key={f.id}
+              type={f.type}
+              position={[f.x * S, 0, f.y * S]}
+              editMode={editMode}
+              selected={selectedFurnitureId === f.id}
+              hovered={hoveredFurnitureId === f.id}
+              onClick={() => onFurnitureClick?.(f.id)}
+              onPointerOver={() => onFurnitureHover?.(f.id)}
+              onPointerOut={() => onFurnitureHover?.(null)}
+            />
+          ))}
 
-        {/* Agents */}
-        {agents.map(agent => (
-          <Agent3D
-            key={agent.id}
-            agent={agent}
-            selected={agent.id === selectedAgentId}
-            onClick={() => onAgentClick(agent)}
-          />
-        ))}
+          {/* Agents */}
+          {agents.map(agent => (
+            <Agent3D
+              key={agent.id}
+              agent={agent}
+              selected={agent.id === selectedAgentId}
+              onClick={() => onAgentClick(agent)}
+            />
+          ))}
 
-        {/* Player */}
-        <Player3D player={player} config={playerConfig} />
+          {/* Player */}
+          <Player3D player={player} config={playerConfig} />
+        </group>
       </Canvas>
     </div>
   );
