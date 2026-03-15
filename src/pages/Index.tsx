@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { OfficeCanvas } from "@/components/office/OfficeCanvas";
+import { OfficeScene } from "@/components/office/3d/OfficeScene";
 import { TopBar } from "@/components/office/TopBar";
 import { ActionBar } from "@/components/office/ActionBar";
 import { ActivityLog } from "@/components/office/ActivityLog";
@@ -16,6 +16,9 @@ const Index = () => {
   const [showRoomEditor, setShowRoomEditor] = useState(false);
   const [rooms, setLocalRooms] = useState<RoomDef[]>(() => [...DEFAULT_ROOMS]);
   const [furnitureItems, setLocalFurniture] = useState<FurnitureItem[]>(() => [...DEFAULT_FURNITURE]);
+  const [editMode, setEditMode] = useState(false);
+  const [selectedFurnitureId, setSelectedFurnitureId] = useState<string | null>(null);
+  const [hoveredFurnitureId, setHoveredFurnitureId] = useState<string | null>(null);
   const [playerConfig, setPlayerConfig] = useState<PlayerConfig>({
     name: "Chefe",
     color: "#4F46E5",
@@ -57,6 +60,27 @@ const Index = () => {
     setFurniture(items);
   };
 
+  const handleFurnitureClick = (id: string) => {
+    if (editMode) {
+      setSelectedFurnitureId(prev => prev === id ? null : id);
+    }
+  };
+
+  const handleDeleteSelectedFurniture = () => {
+    if (selectedFurnitureId) {
+      handleUpdateFurniture(furnitureItems.filter(f => f.id !== selectedFurnitureId));
+      setSelectedFurnitureId(null);
+    }
+  };
+
+  const handleMoveFurniture = (dx: number, dz: number) => {
+    if (selectedFurnitureId) {
+      handleUpdateFurniture(furnitureItems.map(f =>
+        f.id === selectedFurnitureId ? { ...f, x: f.x + dx, y: f.y + dz } : f
+      ));
+    }
+  };
+
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-canvas select-none">
       <TopBar
@@ -64,24 +88,48 @@ const Index = () => {
         activeCount={agents.filter((a) => a.status === "active").length}
         nearbyAgent={nearbyAgent}
         onCustomize={() => setShowCustomizer(true)}
-        onRoomEditor={() => setShowRoomEditor(true)}
+        onRoomEditor={() => { setShowRoomEditor(true); setEditMode(true); }}
         onLogout={() => {
           localStorage.removeItem("agentoffice_user");
           navigate("/");
         }}
       />
 
-      <OfficeCanvas
+      <OfficeScene
         agents={agents}
         player={{ ...player, name: playerConfig.name }}
         playerConfig={playerConfig}
         selectedAgentId={selectedAgent?.id}
         onAgentClick={setSelectedAgent}
+        editMode={editMode}
+        selectedFurnitureId={selectedFurnitureId}
+        hoveredFurnitureId={hoveredFurnitureId}
+        onFurnitureClick={handleFurnitureClick}
+        onFurnitureHover={setHoveredFurnitureId}
       />
+
+      {/* Edit mode toolbar */}
+      {editMode && selectedFurnitureId && (
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 glass-panel rounded-2xl px-4 py-3 flex items-center gap-3 shadow-xl">
+          <span className="text-xs font-medium text-foreground">Mover item:</span>
+          <div className="flex gap-1">
+            <button onClick={() => handleMoveFurniture(-1, 0)} className="px-2 py-1 bg-muted rounded-lg text-sm hover:bg-muted/70">←</button>
+            <button onClick={() => handleMoveFurniture(0, -1)} className="px-2 py-1 bg-muted rounded-lg text-sm hover:bg-muted/70">↑</button>
+            <button onClick={() => handleMoveFurniture(0, 1)} className="px-2 py-1 bg-muted rounded-lg text-sm hover:bg-muted/70">↓</button>
+            <button onClick={() => handleMoveFurniture(1, 0)} className="px-2 py-1 bg-muted rounded-lg text-sm hover:bg-muted/70">→</button>
+          </div>
+          <button onClick={handleDeleteSelectedFurniture} className="px-3 py-1 bg-destructive/10 text-destructive rounded-lg text-xs font-medium hover:bg-destructive/20">
+            Excluir
+          </button>
+          <button onClick={() => setSelectedFurnitureId(null)} className="px-3 py-1 bg-muted rounded-lg text-xs hover:bg-muted/70">
+            Fechar
+          </button>
+        </div>
+      )}
 
       <ActivityLog logs={allLogs} isOpen={showActivityLog} onToggle={toggleActivityLog} />
       <AgentPanel agent={selectedAgent} onClose={() => setSelectedAgent(null)} />
-      <ActionBar onMove={movePlayer} />
+      {!editMode && <ActionBar onMove={movePlayer} />}
 
       <CharacterCustomizer
         isOpen={showCustomizer}
@@ -92,7 +140,7 @@ const Index = () => {
 
       <RoomEditor
         isOpen={showRoomEditor}
-        onClose={() => setShowRoomEditor(false)}
+        onClose={() => { setShowRoomEditor(false); setEditMode(false); setSelectedFurnitureId(null); }}
         rooms={rooms}
         onUpdateRooms={handleUpdateRooms}
         furniture={furnitureItems}
