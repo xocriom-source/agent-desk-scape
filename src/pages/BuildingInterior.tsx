@@ -1,9 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Building2, User, Globe, Link2,
-  Star, MapPin, Clock, Settings2, Eye, BarChart3, TrendingUp
+  Star, MapPin, Clock, Settings2, Eye, BarChart3, TrendingUp, Cpu
 } from "lucide-react";
 import { getBuildingById } from "@/data/buildingRegistry";
 import { DISTRICTS, BUILDING_STYLES } from "@/types/building";
