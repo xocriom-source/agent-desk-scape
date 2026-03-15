@@ -386,7 +386,7 @@ interface CityExploreSceneProps {
   onBuildingClick?: (buildingId: string) => void;
 }
 
-export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, vehicleColor, onVehicleToggle, onReady }: CityExploreSceneProps) {
+export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, vehicleColor, onVehicleToggle, onReady, onBuildingClick }: CityExploreSceneProps) {
   const controlsRef = useRef<any>(null);
   const dn = useDayNight();
 
