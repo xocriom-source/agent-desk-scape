@@ -645,8 +645,8 @@ function FloorLamp() {
 function WallClock() {
   return (
     <group>
-      <mesh position={[0, 0.7, 0]}>
-        <cylinderGeometry args={[0.12, 0.12, 0.03, 24]} rotation={[Math.PI / 2, 0, 0]} />
+      <mesh position={[0, 0.7, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.12, 0.12, 0.03, 24]} />
         <meshStandardMaterial color="white" />
       </mesh>
     </group>
