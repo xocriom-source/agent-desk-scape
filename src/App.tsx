@@ -38,7 +38,7 @@ const App = () => (
           <Route path="/office" element={<Office />} />
           <Route path="/find-building" element={<FindMyBuilding />} />
           <Route path="/building/:id" element={<BuildingInterior />} />
-          <Route path="/live-city" element={<LiveCity />} />
+          
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
