@@ -13,74 +13,53 @@ const STATUS_COLORS: Record<string, string> = {
 
 const S = 0.5; // tile to world scale
 
-// ── Neighboring building (city block filler) ──
+// ── Neighboring building (city block filler - memoized for perf) ──
 function CityBuilding({ position, width, depth, height, color }: { position: [number, number, number]; width: number; depth: number; height: number; color: string }) {
-  const windowRows = Math.floor(height / 0.5);
-  const windowColsW = Math.floor(width / 0.6);
-  const windowColsD = Math.floor(depth / 0.6);
-  const darkColor = new THREE.Color(color).multiplyScalar(0.7).getStyle();
-  
+  const darkColor = useMemo(() => new THREE.Color(color).multiplyScalar(0.7).getStyle(), [color]);
+
+  // Pre-compute window lit states once (not every frame)
+  const windowData = useMemo(() => {
+    const windowRows = Math.floor(height / 0.5);
+    const windowColsW = Math.max(1, Math.floor(width / 0.8));
+    const windowColsD = Math.max(1, Math.floor(depth / 0.8));
+    const front: boolean[][] = [];
+    for (let r = 0; r < windowRows; r++) {
+      front[r] = [];
+      for (let c = 0; c < windowColsW; c++) front[r][c] = Math.random() > 0.35;
+    }
+    const side: boolean[][] = [];
+    for (let r = 0; r < windowRows; r++) {
+      side[r] = [];
+      for (let c = 0; c < windowColsD; c++) side[r][c] = Math.random() > 0.4;
+    }
+    return { windowRows, windowColsW, windowColsD, front, side };
+  }, [height, width, depth]);
+
   return (
     <group position={position}>
-      {/* Main structure */}
-      <mesh position={[0, height / 2, 0]} castShadow>
+      <mesh position={[0, height / 2, 0]}>
         <boxGeometry args={[width, height, depth]} />
         <meshStandardMaterial color={color} roughness={0.9} />
       </mesh>
-      {/* Roof */}
       <mesh position={[0, height + 0.03, 0]}>
         <boxGeometry args={[width + 0.08, 0.06, depth + 0.08]} />
         <meshStandardMaterial color="#2A2A2A" />
       </mesh>
-      {/* Roof details */}
-      {Math.random() > 0.5 && (
-        <mesh position={[width * 0.2, height + 0.2, 0]}>
-          <boxGeometry args={[0.15, 0.35, 0.15]} />
-          <meshStandardMaterial color="#555" />
-        </mesh>
+      {/* Simplified windows - fewer meshes */}
+      {windowData.front.map((row, ri) =>
+        row.map((lit, ci) => (
+          <mesh key={`wf${ri}-${ci}`} position={[
+            -width / 2 + 0.3 + ci * (width / (windowData.windowColsW + 0.5)),
+            0.4 + ri * 0.5,
+            depth / 2 + 0.01
+          ]}>
+            <boxGeometry args={[0.18, 0.24, 0.01]} />
+            <meshStandardMaterial color={lit ? "#FFE4A8" : "#1A1A2A"} emissive={lit ? "#FFD060" : "#000"} emissiveIntensity={lit ? 0.4 : 0} />
+          </mesh>
+        ))
       )}
-      {/* Windows on front face */}
-      {Array.from({ length: windowRows }).map((_, row) =>
-        Array.from({ length: windowColsW }).map((_, col) => {
-          const lit = Math.random() > 0.35;
-          return (
-            <mesh key={`wf${row}-${col}`} position={[
-              -width / 2 + 0.3 + col * (width / (windowColsW + 0.5)),
-              0.4 + row * 0.5,
-              depth / 2 + 0.01
-            ]}>
-              <boxGeometry args={[0.2, 0.28, 0.01]} />
-              <meshStandardMaterial 
-                color={lit ? "#FFE4A8" : "#1A1A2A"} 
-                emissive={lit ? "#FFD060" : "#000"} 
-                emissiveIntensity={lit ? 0.4 : 0} 
-              />
-            </mesh>
-          );
-        })
-      )}
-      {/* Windows on side face */}
-      {Array.from({ length: windowRows }).map((_, row) =>
-        Array.from({ length: windowColsD }).map((_, col) => {
-          const lit = Math.random() > 0.4;
-          return (
-            <mesh key={`ws${row}-${col}`} position={[
-              width / 2 + 0.01,
-              0.4 + row * 0.5,
-              -depth / 2 + 0.3 + col * (depth / (windowColsD + 0.5))
-            ]}>
-              <boxGeometry args={[0.01, 0.28, 0.2]} />
-              <meshStandardMaterial 
-                color={lit ? "#FFE4A8" : "#1A1A2A"} 
-                emissive={lit ? "#FFD060" : "#000"} 
-                emissiveIntensity={lit ? 0.3 : 0} 
-              />
-            </mesh>
-          );
-        })
-      )}
-      {/* Ledges */}
-      {[0.3, 0.6, 0.85].map((frac) => (
+      {/* Ledges - reduced to 2 */}
+      {[0.4, 0.8].map((frac) => (
         <mesh key={`ledge${frac}`} position={[0, height * frac, depth / 2 + 0.03]}>
           <boxGeometry args={[width + 0.06, 0.04, 0.06]} />
           <meshStandardMaterial color={darkColor} />
