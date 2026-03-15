@@ -453,8 +453,7 @@ function CameraTarget({ player, controlsRef }: { player: Player; controlsRef: Re
     targetPos.current.z += (pz - targetPos.current.z) * 0.08;
 
     if (controlsRef.current) {
-      controlsRef.current.target.copy(targetPos.current);
-      controlsRef.current.update();
+      controlsRef.current.target.lerp(targetPos.current, 0.2);
     }
   });
 
