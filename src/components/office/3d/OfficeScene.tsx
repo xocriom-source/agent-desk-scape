@@ -132,6 +132,7 @@ function BuildingExterior({
         rotation={[-Math.PI / 2, 0, 0]}
         receiveShadow
         onPointerDown={handleFloorDown}
+        onPointerUp={handleFloorUp}
       >
         <planeGeometry args={[bw, bh]} />
         <meshStandardMaterial color="#E8E0D4" />
