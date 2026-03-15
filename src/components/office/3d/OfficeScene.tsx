@@ -13,335 +13,27 @@ const STATUS_COLORS: Record<string, string> = {
 
 const S = 0.5; // tile to world scale
 
-// ── Neighboring building (city block filler) ──
-function CityBuilding({ position, width, depth, height, color, label }: { position: [number, number, number]; width: number; depth: number; height: number; color: string; label?: string }) {
-  const darkColor = useMemo(() => new THREE.Color(color).multiplyScalar(0.7).getStyle(), [color]);
-
-  const windowData = useMemo(() => {
-    const windowRows = Math.floor(height / 0.5);
-    const windowColsW = Math.max(1, Math.floor(width / 0.8));
-    const windowColsD = Math.max(1, Math.floor(depth / 0.8));
-    const front: boolean[][] = [];
-    for (let r = 0; r < windowRows; r++) {
-      front[r] = [];
-      for (let c = 0; c < windowColsW; c++) front[r][c] = Math.random() > 0.35;
-    }
-    return { windowRows, windowColsW, windowColsD, front };
-  }, [height, width, depth]);
-
+// ── Distant skyline building (far away, purely decorative) ──
+function SkylineBuilding({ position, width, height, color }: { position: [number, number, number]; width: number; height: number; color: string }) {
   return (
-    <group position={position}>
-      <mesh position={[0, height / 2, 0]}>
-        <boxGeometry args={[width, height, depth]} />
-        <meshStandardMaterial color={color} roughness={0.9} />
-      </mesh>
-      <mesh position={[0, height + 0.03, 0]}>
-        <boxGeometry args={[width + 0.08, 0.06, depth + 0.08]} />
-        <meshStandardMaterial color="#2A2A2A" />
-      </mesh>
-      {windowData.front.map((row, ri) =>
-        row.map((lit, ci) => (
-          <mesh key={`wf${ri}-${ci}`} position={[
-            -width / 2 + 0.3 + ci * (width / (windowData.windowColsW + 0.5)),
-            0.4 + ri * 0.5,
-            depth / 2 + 0.01
-          ]}>
-            <boxGeometry args={[0.18, 0.24, 0.01]} />
-            <meshStandardMaterial color={lit ? "#FFE4A8" : "#1A1A2A"} emissive={lit ? "#FFD060" : "#000"} emissiveIntensity={lit ? 0.4 : 0} />
-          </mesh>
-        ))
-      )}
-      {[0.4, 0.8].map((frac) => (
-        <mesh key={`ledge${frac}`} position={[0, height * frac, depth / 2 + 0.03]}>
-          <boxGeometry args={[width + 0.06, 0.04, 0.06]} />
-          <meshStandardMaterial color={darkColor} />
-        </mesh>
-      ))}
-      {label && (
-        <Html position={[0, height + 0.3, 0]} center>
-          <div className="px-2 py-0.5 text-[8px] font-bold whitespace-nowrap pointer-events-none select-none rounded-sm bg-black/70 text-gray-300 border border-gray-700">
-            {label}
-          </div>
-        </Html>
-      )}
-    </group>
+    <mesh position={[position[0], height / 2, position[2]]}>
+      <boxGeometry args={[width, height, width * 0.6]} />
+      <meshStandardMaterial color={color} roughness={0.95} />
+    </mesh>
   );
 }
 
-// ── Central Plaza (open-air park area) ──
-function CentralPlaza({ position, onFloorClick, clickEnabled }: { position: [number, number, number]; onFloorClick?: (x: number, y: number) => void; clickEnabled?: boolean }) {
-  const size = 8; // world units
-  const downRef = useRef<{ x: number; y: number; t: number; button: number } | null>(null);
-
-  const handleDown = (e: ThreeEvent<PointerEvent>) => {
-    if (!clickEnabled) return;
-    downRef.current = { x: e.nativeEvent.clientX, y: e.nativeEvent.clientY, t: performance.now(), button: e.nativeEvent.button };
-  };
-  const handleUp = (e: ThreeEvent<PointerEvent>) => {
-    if (!clickEnabled) return;
-    const down = downRef.current;
-    downRef.current = null;
-    if (!down || down.button !== 0) return;
-    if (Math.hypot(e.nativeEvent.clientX - down.x, e.nativeEvent.clientY - down.y) > 6) return;
-    if (performance.now() - down.t > 450) return;
-    const tx = Math.floor(e.point.x / S + 0.5);
-    const ty = Math.floor(e.point.z / S + 0.5);
-    onFloorClick?.(tx, ty);
-  };
-
+// ── Exterior Ground ──
+function ExteriorGround({ cx, cz }: { cx: number; cz: number }) {
   return (
-    <group position={position}>
-      {/* Plaza floor - stone tiles */}
-      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow onPointerDown={handleDown} onPointerUp={handleUp}>
-        <planeGeometry args={[size, size]} />
-        <meshStandardMaterial color="#A09880" roughness={0.8} />
-      </mesh>
-      {/* Decorative tile pattern */}
-      <mesh position={[0, 0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[1.5, 2, 32]} />
-        <meshStandardMaterial color="#8A7A60" />
-      </mesh>
-      <mesh position={[0, 0.016, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.5, 0.8, 32]} />
-        <meshStandardMaterial color="#908868" />
-      </mesh>
-
-      {/* ── Fountain (center) ── */}
-      <group position={[0, 0, 0]}>
-        {/* Base */}
-        <mesh position={[0, 0.15, 0]}>
-          <cylinderGeometry args={[0.6, 0.7, 0.3, 16]} />
-          <meshStandardMaterial color="#6B6B78" roughness={0.7} />
-        </mesh>
-        {/* Basin */}
-        <mesh position={[0, 0.32, 0]}>
-          <cylinderGeometry args={[0.45, 0.5, 0.05, 16]} />
-          <meshStandardMaterial color="#7A7A88" roughness={0.6} />
-        </mesh>
-        {/* Water */}
-        <mesh position={[0, 0.3, 0]}>
-          <cylinderGeometry args={[0.43, 0.43, 0.08, 16]} />
-          <meshStandardMaterial color="#4A90C0" transparent opacity={0.6} roughness={0.1} />
-        </mesh>
-        {/* Pillar */}
-        <mesh position={[0, 0.55, 0]}>
-          <cylinderGeometry args={[0.06, 0.08, 0.5, 8]} />
-          <meshStandardMaterial color="#8A8A98" />
-        </mesh>
-        {/* Top basin */}
-        <mesh position={[0, 0.75, 0]}>
-          <cylinderGeometry args={[0.18, 0.2, 0.08, 12]} />
-          <meshStandardMaterial color="#7A7A88" />
-        </mesh>
-        {/* Water glow */}
-        <pointLight position={[0, 0.5, 0]} intensity={0.3} distance={3} color="#4AC0FF" />
-      </group>
-
-      {/* ── Trees (4 corners) ── */}
-      {[[-2.5, -2.5], [2.5, -2.5], [-2.5, 2.5], [2.5, 2.5]].map(([tx, tz], i) => (
-        <group key={`tree-${i}`} position={[tx, 0, tz]}>
-          {/* Trunk */}
-          <mesh position={[0, 0.4, 0]}>
-            <cylinderGeometry args={[0.06, 0.08, 0.8, 6]} />
-            <meshStandardMaterial color="#5A3A20" />
-          </mesh>
-          {/* Canopy layers */}
-          <mesh position={[0, 0.9, 0]}>
-            <sphereGeometry args={[0.4, 8, 8]} />
-            <meshStandardMaterial color={i % 2 === 0 ? "#2D5A1E" : "#3A6B2A"} />
-          </mesh>
-          <mesh position={[0, 1.15, 0]}>
-            <sphereGeometry args={[0.3, 8, 8]} />
-            <meshStandardMaterial color={i % 2 === 0 ? "#3A6B2A" : "#4A7B3A"} />
-          </mesh>
-        </group>
-      ))}
-
-      {/* ── Benches (4 around fountain) ── */}
-      {[[0, -1.8], [0, 1.8], [-1.8, 0], [1.8, 0]].map(([bx, bz], i) => (
-        <group key={`bench-${i}`} position={[bx, 0, bz]} rotation={[0, i < 2 ? 0 : Math.PI / 2, 0]}>
-          {/* Seat */}
-          <mesh position={[0, 0.18, 0]}>
-            <boxGeometry args={[0.6, 0.04, 0.2]} />
-            <meshStandardMaterial color="#6B4226" />
-          </mesh>
-          {/* Legs */}
-          {[[-0.25, -0.07], [0.25, -0.07], [-0.25, 0.07], [0.25, 0.07]].map(([lx, lz], j) => (
-            <mesh key={j} position={[lx, 0.08, lz]}>
-              <boxGeometry args={[0.03, 0.16, 0.03]} />
-              <meshStandardMaterial color="#3A3A3A" />
-            </mesh>
-          ))}
-          {/* Back rest */}
-          <mesh position={[0, 0.32, -0.08]}>
-            <boxGeometry args={[0.6, 0.2, 0.03]} />
-            <meshStandardMaterial color="#6B4226" />
-          </mesh>
-        </group>
-      ))}
-
-      {/* ── Lamp posts (4 around perimeter) ── */}
-      {[[-3.2, -3.2], [3.2, -3.2], [-3.2, 3.2], [3.2, 3.2]].map(([lx, lz], i) => (
-        <group key={`lamp-${i}`} position={[lx, 0, lz]}>
-          <mesh position={[0, 0.7, 0]}>
-            <cylinderGeometry args={[0.02, 0.03, 1.4, 6]} />
-            <meshStandardMaterial color="#333" metalness={0.6} />
-          </mesh>
-          <mesh position={[0, 1.45, 0]}>
-            <sphereGeometry args={[0.05, 6, 6]} />
-            <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={1.5} />
-          </mesh>
-          <pointLight position={[lx, 1.4, lz]} intensity={0.15} distance={3} color="#FFD060" />
-        </group>
-      ))}
-
-      {/* ── Low decorative wall / fence around plaza ── */}
-      {[
-        [0, -size / 2, size, 0.1], // north
-        [0, size / 2, size, 0.1],  // south
-        [-size / 2, 0, 0.1, size], // west
-        [size / 2, 0, 0.1, size],  // east
-      ].map(([fx, fz, fw, fd], i) => (
-        <mesh key={`fence-${i}`} position={[fx, 0.1, fz]}>
-          <boxGeometry args={[fw as number, 0.15, fd as number]} />
-          <meshStandardMaterial color="#5A5A50" transparent opacity={0.4} />
-        </mesh>
-      ))}
-
-      {/* Plaza label */}
-      <Html position={[0, 1.8, 0]} center>
-        <div className="px-3 py-1 text-[10px] font-bold whitespace-nowrap pointer-events-none select-none rounded-lg bg-emerald-900/80 text-emerald-300 border border-emerald-700/50">
-          🏛️ Praça Central
-        </div>
-      </Html>
-    </group>
+    <mesh position={[cx, -0.02, cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      <planeGeometry args={[60, 60]} />
+      <meshStandardMaterial color="#1A1E22" />
+    </mesh>
   );
 }
 
-// ── City NPC wanderers (agents that walk around the city streets) ──
-function CityNPCWanderer({ startX, startZ, color, name }: { startX: number; startZ: number; color: string; name: string }) {
-  const ref = useRef<THREE.Group>(null);
-  const posRef = useRef({ x: startX, z: startZ, targetX: startX + (Math.random() - 0.5) * 6, targetZ: startZ + (Math.random() - 0.5) * 6 });
-  const timerRef = useRef(0);
 
-  useFrame((_, delta) => {
-    if (!ref.current) return;
-    const dt = Math.min(delta, 0.05);
-    const p = posRef.current;
-    const speed = 0.8;
-
-    const dx = p.targetX - p.x;
-    const dz = p.targetZ - p.z;
-    const dist = Math.hypot(dx, dz);
-
-    if (dist < 0.2) {
-      timerRef.current += dt;
-      if (timerRef.current > 2) {
-        timerRef.current = 0;
-        p.targetX = startX + (Math.random() - 0.5) * 8;
-        p.targetZ = startZ + (Math.random() - 0.5) * 8;
-      }
-    } else {
-      p.x += (dx / dist) * speed * dt;
-      p.z += (dz / dist) * speed * dt;
-      timerRef.current = 0;
-    }
-
-    ref.current.position.set(p.x, 0, p.z);
-    ref.current.position.y = Math.sin(Date.now() * 0.003) * 0.005;
-    if (dist > 0.2) {
-      ref.current.rotation.y = Math.atan2(dx, dz);
-    }
-  });
-
-  return (
-    <group ref={ref} position={[startX, 0, startZ]}>
-      {/* Simple NPC body */}
-      <mesh position={[0, 0.18, 0]}>
-        <boxGeometry args={[0.16, 0.22, 0.1]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-      <mesh position={[0, 0.36, 0]}>
-        <boxGeometry args={[0.13, 0.13, 0.12]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-      {/* Eyes */}
-      {[-0.025, 0.025].map((ox, i) => (
-        <mesh key={i} position={[ox, 0.37, 0.065]}>
-          <boxGeometry args={[0.025, 0.025, 0.01]} />
-          <meshStandardMaterial color="#FFF" emissive="#FFF" emissiveIntensity={0.5} />
-        </mesh>
-      ))}
-      {/* Legs */}
-      <mesh position={[-0.04, 0.05, 0]}>
-        <boxGeometry args={[0.05, 0.1, 0.06]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-      <mesh position={[0.04, 0.05, 0]}>
-        <boxGeometry args={[0.05, 0.1, 0.06]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-      {/* Shadow */}
-      <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.1, 12]} />
-        <meshBasicMaterial color="#000" transparent opacity={0.1} />
-      </mesh>
-      <Html position={[0, 0.55, 0]} center>
-        <div className="px-1 py-0.5 text-[7px] font-bold whitespace-nowrap pointer-events-none select-none rounded bg-black/60 text-gray-400">
-          {name}
-        </div>
-      </Html>
-    </group>
-  );
-}
-
-// ── City Streets & Infrastructure ──
-function CityStreets({ cx, cz }: { cx: number; cz: number }) {
-  return (
-    <group>
-      {/* Main ground */}
-      <mesh position={[cx, -0.02, cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[120, 120]} />
-        <meshStandardMaterial color="#1E1E24" />
-      </mesh>
-
-      {/* Sidewalks - grid of lighter paths */}
-      {[-20, -10, 0, 10, 20].map(off => (
-        <group key={`road-h-${off}`}>
-          <mesh position={[cx, -0.015, cz + off]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[100, 1.5]} />
-            <meshStandardMaterial color="#2A2A30" />
-          </mesh>
-          {/* Center line */}
-          {Array.from({ length: 20 }).map((_, i) => (
-            <mesh key={`cl-h-${off}-${i}`} position={[cx - 45 + i * 5, -0.013, cz + off]} rotation={[-Math.PI / 2, 0, 0]}>
-              <planeGeometry args={[2, 0.05]} />
-              <meshBasicMaterial color="#444440" />
-            </mesh>
-          ))}
-        </group>
-      ))}
-      {[-20, -10, 0, 10, 20].map(off => (
-        <group key={`road-v-${off}`}>
-          <mesh position={[cx + off, -0.015, cz]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[1.5, 100]} />
-            <meshStandardMaterial color="#2A2A30" />
-          </mesh>
-        </group>
-      ))}
-
-      {/* Sidewalk blocks */}
-      {[-15, -5, 5, 15].flatMap(ox =>
-        [-15, -5, 5, 15].map(oz => (
-          <mesh key={`sw-${ox}-${oz}`} position={[cx + ox, -0.01, cz + oz]} rotation={[-Math.PI / 2, 0, 0]}>
-            <planeGeometry args={[8, 8]} />
-            <meshStandardMaterial color="#3A3A3A" />
-          </mesh>
-        ))
-      )}
-    </group>
-  );
-}
 
 // ── Building with exterior (user's building - Sims-style cutaway) ──
 function BuildingExterior({
@@ -895,7 +587,7 @@ export function OfficeScene({
 }: OfficeSceneProps) {
   const controlsRef = useRef<any>(null);
 
-  // Compute building center for city layout
+  // Compute building center
   const buildingCenter = useMemo(() => {
     const pad = 1.5;
     const minX = Math.min(...rooms.map(r => r.x)) - pad;
@@ -905,37 +597,31 @@ export function OfficeScene({
     return { x: ((minX + maxX) / 2) * S, z: ((minY + maxY) / 2) * S };
   }, [rooms]);
 
-  // City buildings data (memoized)
-  const cityBuildings = useMemo(() => [
-    // North side buildings
-    { pos: [buildingCenter.x - 8, 0, buildingCenter.z - 16] as [number, number, number], w: 4, d: 3, h: 3.5, color: "#5A4A3A", label: "TechFlow HQ" },
-    { pos: [buildingCenter.x - 2, 0, buildingCenter.z - 16] as [number, number, number], w: 3.5, d: 2.5, h: 2.5, color: "#6B5A4A", label: "Creative Labs" },
-    { pos: [buildingCenter.x + 5, 0, buildingCenter.z - 16] as [number, number, number], w: 4, d: 3, h: 4, color: "#4A5A6A", label: "DataPro Center" },
-    { pos: [buildingCenter.x + 12, 0, buildingCenter.z - 16] as [number, number, number], w: 3, d: 2.5, h: 2.8, color: "#6A5848", label: "Neural Works" },
-    // East side buildings
-    { pos: [buildingCenter.x + 18, 0, buildingCenter.z - 6] as [number, number, number], w: 3, d: 3, h: 3, color: "#5A5040", label: "ByteShift" },
-    { pos: [buildingCenter.x + 18, 0, buildingCenter.z + 2] as [number, number, number], w: 3.5, d: 2.5, h: 2.2, color: "#6B6050", label: "QuantumAI" },
-    { pos: [buildingCenter.x + 18, 0, buildingCenter.z + 10] as [number, number, number], w: 3, d: 3, h: 3.5, color: "#4A4A5A", label: "Pixel Forge" },
-    // South side buildings
-    { pos: [buildingCenter.x - 8, 0, buildingCenter.z + 16] as [number, number, number], w: 4, d: 3, h: 2.8, color: "#5A6A4A", label: "CodeNest" },
-    { pos: [buildingCenter.x - 1, 0, buildingCenter.z + 16] as [number, number, number], w: 3.5, d: 2.5, h: 3.2, color: "#7A6B5A", label: "RoboLab" },
-    { pos: [buildingCenter.x + 6, 0, buildingCenter.z + 16] as [number, number, number], w: 3, d: 3, h: 2.5, color: "#5A5A6A", label: "SynthWave" },
-    { pos: [buildingCenter.x + 12, 0, buildingCenter.z + 16] as [number, number, number], w: 4, d: 2.5, h: 3.8, color: "#6A5A5A", label: "CloudPeak" },
-    // West side buildings  
-    { pos: [buildingCenter.x - 14, 0, buildingCenter.z - 4] as [number, number, number], w: 3, d: 3, h: 2.5, color: "#5A4848", label: "InnoVerse" },
-    { pos: [buildingCenter.x - 14, 0, buildingCenter.z + 4] as [number, number, number], w: 2.5, d: 3, h: 3, color: "#6A6050", label: "CyberDen" },
-    { pos: [buildingCenter.x - 14, 0, buildingCenter.z + 11] as [number, number, number], w: 3, d: 2.5, h: 2, color: "#5A6050", label: "LogicGate" },
-  ], [buildingCenter]);
-
-  // NPC wanderers
-  const npcData = useMemo(() => [
-    { x: buildingCenter.x + 10, z: buildingCenter.z - 8, color: "#7A6B8A", name: "Visitante" },
-    { x: buildingCenter.x - 6, z: buildingCenter.z + 8, color: "#8A7B6A", name: "Turista" },
-    { x: buildingCenter.x + 2, z: buildingCenter.z - 10, color: "#6B8A7A", name: "Corretor" },
-    { x: buildingCenter.x - 8, z: buildingCenter.z - 2, color: "#8A6B7A", name: "Mensageiro" },
-    { x: buildingCenter.x + 14, z: buildingCenter.z + 6, color: "#7A8A6B", name: "Explorador" },
-    { x: buildingCenter.x, z: buildingCenter.z + 12, color: "#6A7B8A", name: "Artista" },
-  ], [buildingCenter]);
+  // Distant skyline buildings (far enough to never overlap the office)
+  const skylineBuildings = useMemo(() => {
+    const cx = buildingCenter.x;
+    const cz = buildingCenter.z;
+    const far = 25; // distance from center - well beyond the office bounds
+    return [
+      // North skyline
+      { pos: [cx - 10, 0, cz - far] as [number, number, number], w: 2, h: 4, color: "#3A3A4A" },
+      { pos: [cx - 5, 0, cz - far] as [number, number, number], w: 1.5, h: 3, color: "#4A4A5A" },
+      { pos: [cx, 0, cz - far] as [number, number, number], w: 2.5, h: 5, color: "#3A4A5A" },
+      { pos: [cx + 6, 0, cz - far] as [number, number, number], w: 2, h: 3.5, color: "#4A5A6A" },
+      { pos: [cx + 12, 0, cz - far] as [number, number, number], w: 1.8, h: 4.5, color: "#3A3A5A" },
+      // East skyline
+      { pos: [cx + far, 0, cz - 8] as [number, number, number], w: 2, h: 3.5, color: "#4A4A5A" },
+      { pos: [cx + far, 0, cz] as [number, number, number], w: 1.5, h: 4, color: "#3A4A4A" },
+      { pos: [cx + far, 0, cz + 8] as [number, number, number], w: 2, h: 3, color: "#5A4A4A" },
+      // South skyline
+      { pos: [cx - 8, 0, cz + far] as [number, number, number], w: 2, h: 3.5, color: "#4A5A4A" },
+      { pos: [cx, 0, cz + far] as [number, number, number], w: 2.5, h: 4, color: "#3A5A5A" },
+      { pos: [cx + 8, 0, cz + far] as [number, number, number], w: 1.5, h: 3, color: "#5A5A4A" },
+      // West skyline
+      { pos: [cx - far, 0, cz - 5] as [number, number, number], w: 2, h: 3, color: "#4A4A4A" },
+      { pos: [cx - far, 0, cz + 5] as [number, number, number], w: 1.8, h: 4.5, color: "#3A5A4A" },
+    ];
+  }, [buildingCenter]);
 
   return (
     <div className="absolute inset-0">
@@ -950,7 +636,7 @@ export function OfficeScene({
         }}
       >
         <color attach="background" args={["#0A0A14"]} />
-        <fog attach="fog" args={["#0A0A14", 40, 80]} />
+        <fog attach="fog" args={["#0A0A14", 25, 55]} />
 
         <ambientLight intensity={0.55} color="#FFE8C8" />
         <directionalLight position={[10, 20, 8]} intensity={0.5} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-far={60} shadow-camera-left={-30} shadow-camera-right={30} shadow-camera-top={30} shadow-camera-bottom={-30} color="#FFE0B0" />
@@ -958,14 +644,13 @@ export function OfficeScene({
         <directionalLight position={[5, 8, 12]} intensity={0.4} color="#FFD090" />
         <hemisphereLight args={["#1A1A30", "#4A3520", 0.25]} />
 
-        {/* Stars in the sky */}
         <Stars />
 
         <OrbitControls
           ref={controlsRef}
           enableDamping dampingFactor={0.08}
           enablePan enableZoom enableRotate
-          minDistance={3} maxDistance={45}
+          minDistance={3} maxDistance={30}
           minPolarAngle={Math.PI / 6} maxPolarAngle={Math.PI / 2.6}
           minAzimuthAngle={-Math.PI} maxAzimuthAngle={Math.PI}
           zoomSpeed={0.9} rotateSpeed={0.7} panSpeed={0.75}
@@ -976,38 +661,16 @@ export function OfficeScene({
         <ControlsUpdater controlsRef={controlsRef} />
         <CameraTarget player={player} controlsRef={controlsRef} />
 
-        {/* ── City Infrastructure ── */}
-        <CityStreets cx={buildingCenter.x} cz={buildingCenter.z} />
-
-        {/* ── Central Plaza (positioned south of the main building) ── */}
-        <CentralPlaza
-          position={[buildingCenter.x, 0, buildingCenter.z + 18]}
-          onFloorClick={(x, y) => onMapClick?.(x, y)}
-          clickEnabled={!editMode}
-        />
+        {/* ── Ground around building ── */}
+        <ExteriorGround cx={buildingCenter.x} cz={buildingCenter.z} />
 
         {/* ── User's Building ── */}
         <BuildingExterior rooms={rooms} clickEnabled={!editMode} onFloorClick={(x, y) => onMapClick?.(x, y)} />
 
-        {/* ── Neighboring City Buildings ── */}
-        {cityBuildings.map((b, i) => (
-          <CityBuilding key={`cb-${i}`} position={b.pos} width={b.w} depth={b.d} height={b.h} color={b.color} label={b.label} />
+        {/* ── Distant Skyline (decorative only) ── */}
+        {skylineBuildings.map((b, i) => (
+          <SkylineBuilding key={`sky-${i}`} position={b.pos} width={b.w} height={b.h} color={b.color} />
         ))}
-
-        {/* ── NPC Wanderers on streets ── */}
-        {npcData.map((npc, i) => (
-          <CityNPCWanderer key={`npc-${i}`} startX={npc.x} startZ={npc.z} color={npc.color} name={npc.name} />
-        ))}
-
-        {/* ── Street lights along roads ── */}
-        {[-15, -5, 5, 15].flatMap(ox =>
-          [-12, 0, 12].map(oz => (
-            <group key={`slt-${ox}-${oz}`} position={[buildingCenter.x + ox, 0, buildingCenter.z + oz]}>
-              <mesh position={[0, 0.8, 0]}><cylinderGeometry args={[0.02, 0.03, 1.6, 6]} /><meshStandardMaterial color="#333" metalness={0.6} /></mesh>
-              <mesh position={[0, 1.65, 0]}><sphereGeometry args={[0.05, 6, 6]} /><meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={1.2} /></mesh>
-            </group>
-          ))
-        )}
 
         {/* ── Interior objects at building height ── */}
         <group position={[0, 0.35, 0]}>
