@@ -29,6 +29,12 @@ export interface CityBuilding {
   createdAt: string;
   claimed: boolean;
   transportType?: TransportType;
+  // Global location fields
+  continent?: string;
+  country?: string;
+  city?: string;
+  cityDistrict?: string;
+  serverId?: string;
 }
 
 // Map building style → default transport
