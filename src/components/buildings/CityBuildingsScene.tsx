@@ -111,9 +111,9 @@ function Lighting() {
     <>
       <ambientLight intensity={dn.ambientIntensity} color={dn.ambientColor} />
       <directionalLight
-        position={[dn.sunPosition.x, dn.sunPosition.y, dn.sunPosition.z]}
-        intensity={dn.directionalIntensity}
-        color={dn.directionalColor}
+        position={dn.sunPosition}
+        intensity={dn.sunIntensity}
+        color={dn.sunColor}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
