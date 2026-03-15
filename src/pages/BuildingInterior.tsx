@@ -233,6 +233,13 @@ export default function BuildingInterior() {
           </motion.div>
         </div>
       </div>
+      {/* Agent Workspace Hub */}
+      <AgentWorkspaceHub
+        isOpen={showWorkspace}
+        onClose={() => setShowWorkspace(false)}
+        buildingId={building.id}
+        buildingName={building.name}
+      />
     </div>
   );
 }
