@@ -80,7 +80,9 @@ export function useOfficeState(playerName: string = "Você") {
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (chatOpen) return;
+      // Don't move when typing in input fields
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (chatOpen || tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (e.target as HTMLElement)?.isContentEditable) return;
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
         e.preventDefault();
         if (!keysDown.current.has(e.key)) {
