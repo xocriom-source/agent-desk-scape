@@ -13,7 +13,84 @@ const STATUS_COLORS: Record<string, string> = {
 
 const S = 0.5; // tile to world scale
 
-// ── Building with exterior (Sims/Habbo style cutaway) ──
+// ── Neighboring building (city block filler) ──
+function CityBuilding({ position, width, depth, height, color }: { position: [number, number, number]; width: number; depth: number; height: number; color: string }) {
+  const windowRows = Math.floor(height / 0.5);
+  const windowColsW = Math.floor(width / 0.6);
+  const windowColsD = Math.floor(depth / 0.6);
+  const darkColor = new THREE.Color(color).multiplyScalar(0.7).getStyle();
+  
+  return (
+    <group position={position}>
+      {/* Main structure */}
+      <mesh position={[0, height / 2, 0]} castShadow>
+        <boxGeometry args={[width, height, depth]} />
+        <meshStandardMaterial color={color} roughness={0.9} />
+      </mesh>
+      {/* Roof */}
+      <mesh position={[0, height + 0.03, 0]}>
+        <boxGeometry args={[width + 0.08, 0.06, depth + 0.08]} />
+        <meshStandardMaterial color="#2A2A2A" />
+      </mesh>
+      {/* Roof details */}
+      {Math.random() > 0.5 && (
+        <mesh position={[width * 0.2, height + 0.2, 0]}>
+          <boxGeometry args={[0.15, 0.35, 0.15]} />
+          <meshStandardMaterial color="#555" />
+        </mesh>
+      )}
+      {/* Windows on front face */}
+      {Array.from({ length: windowRows }).map((_, row) =>
+        Array.from({ length: windowColsW }).map((_, col) => {
+          const lit = Math.random() > 0.35;
+          return (
+            <mesh key={`wf${row}-${col}`} position={[
+              -width / 2 + 0.3 + col * (width / (windowColsW + 0.5)),
+              0.4 + row * 0.5,
+              depth / 2 + 0.01
+            ]}>
+              <boxGeometry args={[0.2, 0.28, 0.01]} />
+              <meshStandardMaterial 
+                color={lit ? "#FFE4A8" : "#1A1A2A"} 
+                emissive={lit ? "#FFD060" : "#000"} 
+                emissiveIntensity={lit ? 0.4 : 0} 
+              />
+            </mesh>
+          );
+        })
+      )}
+      {/* Windows on side face */}
+      {Array.from({ length: windowRows }).map((_, row) =>
+        Array.from({ length: windowColsD }).map((_, col) => {
+          const lit = Math.random() > 0.4;
+          return (
+            <mesh key={`ws${row}-${col}`} position={[
+              width / 2 + 0.01,
+              0.4 + row * 0.5,
+              -depth / 2 + 0.3 + col * (depth / (windowColsD + 0.5))
+            ]}>
+              <boxGeometry args={[0.01, 0.28, 0.2]} />
+              <meshStandardMaterial 
+                color={lit ? "#FFE4A8" : "#1A1A2A"} 
+                emissive={lit ? "#FFD060" : "#000"} 
+                emissiveIntensity={lit ? 0.3 : 0} 
+              />
+            </mesh>
+          );
+        })
+      )}
+      {/* Ledges */}
+      {[0.3, 0.6, 0.85].map((frac) => (
+        <mesh key={`ledge${frac}`} position={[0, height * frac, depth / 2 + 0.03]}>
+          <boxGeometry args={[width + 0.06, 0.04, 0.06]} />
+          <meshStandardMaterial color={darkColor} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+// ── Building with exterior (Sims-style city apartment cutaway) ──
 function BuildingExterior({
   rooms,
   onFloorClick,
@@ -33,21 +110,22 @@ function BuildingExterior({
   const cx = ((minX + maxX) / 2) * S;
   const cz = ((minY + maxY) / 2) * S;
 
-  const foundH = 0.25;   // foundation height (stilts/dock)
-  const wallH = 1.1;     // exterior wall height
-  const wallT = 0.25;    // wall thickness
-  const brickColor = "#4A3525";    // dark weathered wood
-  const brickDark = "#352518";     // darker wood planks
-  const trimColor = "#6B5A45";     // wood trim
-  const foundColor = "#2A2018";    // dark wood stilts/dock
-  const windowColor = "#FF6B9D";   // neon pink window glow
-  const windowFrame = "#2A2018";   // dark wood frame
+  const foundH = 0.35;
+  const wallH = 1.3;
+  const wallT = 0.2;
+  const brickColor = "#8B5E3C";
+  const brickDark = "#6B4226";
+  const brickLight = "#A07050";
+  const trimColor = "#D4C4A8";
+  const roofColor = "#2C2C34";
+  const windowGlassLit = "#FFE4A8";
+  const windowGlassDark = "#1A1A2A";
+  const windowFrame = "#3A3028";
 
   const downRef = useRef<{ x: number; y: number; t: number; button: number } | null>(null);
 
   const handleFloorDown = (e: ThreeEvent<PointerEvent>) => {
     if (!clickEnabled) return;
-    // Don't stopPropagation here — OrbitControls needs the native pointer events.
     downRef.current = {
       x: e.nativeEvent.clientX,
       y: e.nativeEvent.clientY,
@@ -61,12 +139,10 @@ function BuildingExterior({
     const down = downRef.current;
     downRef.current = null;
     if (!down) return;
-    if (down.button !== 0) return; // left click only
+    if (down.button !== 0) return;
 
     const dist = Math.hypot(e.nativeEvent.clientX - down.x, e.nativeEvent.clientY - down.y);
     const dt = performance.now() - down.t;
-
-    // Treat as click only if the pointer didn't move (so drag rotates camera)
     if (dist > 6 || dt > 450) return;
 
     const tx = Math.floor(e.point.x / S + 0.5);
@@ -74,60 +150,84 @@ function BuildingExterior({
     onFloorClick?.(tx, ty);
   };
 
-  // Generate windows along a wall
-  const windowsAlongX = (y: number, z: number, count: number, startX: number, spanW: number) => {
-    const spacing = spanW / (count + 1);
-    return Array.from({ length: count }).map((_, i) => {
-      const wx = startX + spacing * (i + 1);
-      return (
-        <group key={`wx${i}-${z}`} position={[wx, y, z]}>
-          {/* Window frame */}
-          <mesh><boxGeometry args={[0.35, 0.3, 0.05]} /><meshStandardMaterial color={windowFrame} /></mesh>
-          {/* Glass */}
-          <mesh position={[0, 0, 0.01]}><boxGeometry args={[0.28, 0.24, 0.02]} /><meshStandardMaterial color={windowColor} transparent opacity={0.6} emissive={windowColor} emissiveIntensity={0.15} /></mesh>
-          {/* Sill */}
-          <mesh position={[0, -0.17, 0.05]}><boxGeometry args={[0.4, 0.03, 0.08]} /><meshStandardMaterial color={trimColor} /></mesh>
-        </group>
-      );
-    });
-  };
-
-  const windowsAlongZ = (y: number, x: number, count: number, startZ: number, spanH: number) => {
-    const spacing = spanH / (count + 1);
-    return Array.from({ length: count }).map((_, i) => {
-      const wz = startZ + spacing * (i + 1);
-      return (
-        <group key={`wz${i}-${x}`} position={[x, y, wz]}>
-          <mesh><boxGeometry args={[0.05, 0.3, 0.35]} /><meshStandardMaterial color={windowFrame} /></mesh>
-          <mesh position={[0.01, 0, 0]}><boxGeometry args={[0.02, 0.24, 0.28]} /><meshStandardMaterial color={windowColor} transparent opacity={0.6} emissive={windowColor} emissiveIntensity={0.15} /></mesh>
-          <mesh position={[0.05, -0.17, 0]}><boxGeometry args={[0.08, 0.03, 0.4]} /><meshStandardMaterial color={trimColor} /></mesh>
-        </group>
-      );
-    });
-  };
-
   const northZ = cz - bh / 2;
   const southZ = cz + bh / 2;
   const westX = cx - bw / 2;
   const eastX = cx + bw / 2;
-  const winY = foundH + wallH * 0.55;
-  const nWinX = Math.floor(bw / 1.5);
-  const nWinZ = Math.floor(bh / 1.5);
+
+  // Brick pattern helper
+  const brickLines = (count: number) => Array.from({ length: count }, (_, i) => (i + 1) / (count + 1));
+
+  // Window generation
+  const makeWindows = (axis: 'x' | 'z', fixedPos: number, wallStart: number, wallSpan: number, y: number, count: number) => {
+    const spacing = wallSpan / (count + 1);
+    return Array.from({ length: count }).map((_, i) => {
+      const offset = wallStart + spacing * (i + 1);
+      const lit = Math.random() > 0.3;
+      const pos: [number, number, number] = axis === 'x' 
+        ? [offset, y, fixedPos]
+        : [fixedPos, y, offset];
+      const frameSize: [number, number, number] = axis === 'x'
+        ? [0.32, 0.36, 0.04]
+        : [0.04, 0.36, 0.32];
+      const glassSize: [number, number, number] = axis === 'x'
+        ? [0.26, 0.3, 0.02]
+        : [0.02, 0.3, 0.26];
+      const glassOff: [number, number, number] = axis === 'x'
+        ? [0, 0, 0.01]
+        : [0.01, 0, 0];
+      const sillSize: [number, number, number] = axis === 'x'
+        ? [0.38, 0.03, 0.07]
+        : [0.07, 0.03, 0.38];
+      const sillOff: [number, number, number] = axis === 'x'
+        ? [0, -0.2, 0.04]
+        : [0.04, -0.2, 0];
+      return (
+        <group key={`w${axis}${i}-${fixedPos}`} position={pos}>
+          <mesh><boxGeometry args={frameSize} /><meshStandardMaterial color={windowFrame} /></mesh>
+          <mesh position={glassOff}><boxGeometry args={glassSize} /><meshStandardMaterial color={lit ? windowGlassLit : windowGlassDark} emissive={lit ? "#FFD060" : "#000"} emissiveIntensity={lit ? 0.3 : 0} /></mesh>
+          <mesh position={sillOff}><boxGeometry args={sillSize} /><meshStandardMaterial color={trimColor} /></mesh>
+        </group>
+      );
+    });
+  };
+
+  const nWinX = Math.floor(bw / 1.2);
+  const nWinZ = Math.floor(bh / 1.2);
+  const winY = foundH + wallH * 0.5;
 
   return (
     <group>
-      {/* ── Foundation / Platform ── */}
+      {/* ── City ground / street ── */}
+      <mesh position={[cx, -0.02, cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[80, 80]} />
+        <meshStandardMaterial color="#2A2A2A" />
+      </mesh>
+      {/* Sidewalk around building */}
+      <mesh position={[cx, -0.01, cz]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[bw + 4, bh + 4]} />
+        <meshStandardMaterial color="#888880" />
+      </mesh>
+      {/* Street lane markings */}
+      {[-15, -10, -5, 5, 10, 15].map((off, i) => (
+        <mesh key={`lane${i}`} position={[cx + off * 1.5, -0.009, cz]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.08, 80]} />
+          <meshBasicMaterial color="#555550" />
+        </mesh>
+      ))}
+
+      {/* ── Foundation / Base ── */}
       <mesh position={[cx, foundH / 2, cz]}>
         <boxGeometry args={[bw + wallT * 2 + 0.1, foundH, bh + wallT * 2 + 0.1]} />
-        <meshStandardMaterial color={foundColor} />
+        <meshStandardMaterial color="#555048" roughness={0.95} />
       </mesh>
       {/* Foundation trim */}
       <mesh position={[cx, foundH + 0.02, cz]}>
         <boxGeometry args={[bw + wallT * 2 + 0.2, 0.04, bh + wallT * 2 + 0.2]} />
-        <meshStandardMaterial color="#707070" />
+        <meshStandardMaterial color={trimColor} />
       </mesh>
 
-      {/* ── Interior floor (clickable) ── */}
+      {/* ── Interior floor (clickable warm wood) ── */}
       <mesh
         position={[cx, foundH + 0.001, cz]}
         rotation={[-Math.PI / 2, 0, 0]}
@@ -136,137 +236,200 @@ function BuildingExterior({
         onPointerUp={handleFloorUp}
       >
         <planeGeometry args={[bw, bh]} />
-        <meshStandardMaterial color="#9B7B55" />
+        <meshStandardMaterial color="#9B7B55" roughness={0.85} />
       </mesh>
-      {/* Floor tile grid */}
-      {Array.from({ length: Math.ceil(bw) + 1 }).map((_, i) => (
-        <mesh key={`vl${i}`} raycast={() => null} position={[cx - bw / 2 + i, foundH + 0.002, cz]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[0.015, bh]} /><meshBasicMaterial color="#7A6040" />
-        </mesh>
-      ))}
-      {Array.from({ length: Math.ceil(bh) + 1 }).map((_, i) => (
-        <mesh key={`hl${i}`} raycast={() => null} position={[cx, foundH + 0.002, cz - bh / 2 + i]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[bw, 0.015]} /><meshBasicMaterial color="#7A6040" />
+      {/* Wood plank lines */}
+      {Array.from({ length: Math.ceil(bw / 0.5) + 1 }).map((_, i) => (
+        <mesh key={`vl${i}`} raycast={() => null} position={[cx - bw / 2 + i * 0.5, foundH + 0.002, cz]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.012, bh]} /><meshBasicMaterial color="#7A6040" />
         </mesh>
       ))}
 
-      {/* ── Exterior Walls (brick) ── */}
+      {/* ── Exterior Brick Walls ── */}
       {/* North wall (back - full height, visible) */}
       <mesh position={[cx, foundH + wallH / 2, northZ - wallT / 2]}>
         <boxGeometry args={[bw + wallT * 2, wallH, wallT]} />
-        <meshStandardMaterial color={brickColor} />
+        <meshStandardMaterial color={brickColor} roughness={0.95} />
       </mesh>
-      {/* Brick horizontal lines on north wall */}
-      {[0.2, 0.4, 0.6, 0.8].map((frac) => (
+      {/* Brick horizontal lines north */}
+      {brickLines(8).map((frac) => (
         <mesh key={`bn${frac}`} position={[cx, foundH + wallH * frac, northZ - wallT / 2 - 0.001]} raycast={() => null}>
-          <boxGeometry args={[bw + wallT * 2 + 0.01, 0.015, 0.01]} />
+          <boxGeometry args={[bw + wallT * 2 + 0.01, 0.012, 0.01]} />
+          <meshStandardMaterial color={brickDark} />
+        </mesh>
+      ))}
+      {/* Vertical brick joints north */}
+      {Array.from({ length: Math.floor(bw / 0.4) }).map((_, i) => (
+        <mesh key={`bnv${i}`} position={[cx - bw / 2 + i * 0.4 + (i % 2 === 0 ? 0.1 : 0.3), foundH + wallH * 0.5, northZ - wallT / 2 - 0.001]} raycast={() => null}>
+          <boxGeometry args={[0.01, wallH, 0.01]} />
           <meshStandardMaterial color={brickDark} />
         </mesh>
       ))}
 
-      {/* South wall (front - lower, cutaway style) */}
-      <mesh position={[cx, foundH + wallH * 0.35 / 2, southZ + wallT / 2]}>
-        <boxGeometry args={[bw + wallT * 2, wallH * 0.35, wallT]} />
-        <meshStandardMaterial color={brickColor} />
-      </mesh>
-
       {/* West wall (left - full height) */}
       <mesh position={[westX - wallT / 2, foundH + wallH / 2, cz]}>
         <boxGeometry args={[wallT, wallH, bh + wallT * 2]} />
-        <meshStandardMaterial color={brickDark} />
+        <meshStandardMaterial color={brickDark} roughness={0.95} />
+      </mesh>
+      {/* Brick lines west */}
+      {brickLines(8).map((frac) => (
+        <mesh key={`bw${frac}`} position={[westX - wallT / 2 - 0.001, foundH + wallH * frac, cz]} raycast={() => null}>
+          <boxGeometry args={[0.01, 0.012, bh + wallT * 2 + 0.01]} />
+          <meshStandardMaterial color="#4A2E1A" />
+        </mesh>
+      ))}
+
+      {/* South wall (front - cutaway, low wall for visibility) */}
+      <mesh position={[cx, foundH + wallH * 0.2 / 2, southZ + wallT / 2]}>
+        <boxGeometry args={[bw + wallT * 2, wallH * 0.2, wallT]} />
+        <meshStandardMaterial color={brickColor} roughness={0.95} />
       </mesh>
 
       {/* East wall (right - partial cutaway) */}
-      <mesh position={[eastX + wallT / 2, foundH + wallH * 0.5 / 2, cz]}>
-        <boxGeometry args={[wallT, wallH * 0.5, bh + wallT * 2]} />
-        <meshStandardMaterial color={brickDark} />
+      <mesh position={[eastX + wallT / 2, foundH + wallH * 0.3 / 2, cz]}>
+        <boxGeometry args={[wallT, wallH * 0.3, bh + wallT * 2]} />
+        <meshStandardMaterial color={brickDark} roughness={0.95} />
       </mesh>
 
-      {/* ── Top trim / molding ── */}
+      {/* ── Roof (partial cutaway - dark slate style like The Sims) ── */}
+      {/* Back portion of roof (visible, sloped look) */}
+      <mesh position={[cx, foundH + wallH + 0.04, northZ + bh * 0.15]}>
+        <boxGeometry args={[bw + wallT * 2 + 0.3, 0.08, bh * 0.35]} />
+        <meshStandardMaterial color={roofColor} roughness={0.8} />
+      </mesh>
+      {/* Roof edge trim */}
+      <mesh position={[cx, foundH + wallH + 0.09, northZ + bh * 0.15 + bh * 0.175]}>
+        <boxGeometry args={[bw + wallT * 2 + 0.4, 0.04, 0.08]} />
+        <meshStandardMaterial color="#444" />
+      </mesh>
+      {/* Left roof strip */}
+      <mesh position={[westX - wallT * 0.3, foundH + wallH + 0.04, cz]}>
+        <boxGeometry args={[bw * 0.12, 0.08, bh + wallT * 2 + 0.3]} />
+        <meshStandardMaterial color={roofColor} roughness={0.8} />
+      </mesh>
+
+      {/* ── Top trim / cornice (brownstone style) ── */}
       <mesh position={[cx, foundH + wallH, northZ - wallT / 2]}>
-        <boxGeometry args={[bw + wallT * 2 + 0.15, 0.06, wallT + 0.1]} />
+        <boxGeometry args={[bw + wallT * 2 + 0.3, 0.08, wallT + 0.15]} />
         <meshStandardMaterial color={trimColor} />
+      </mesh>
+      <mesh position={[cx, foundH + wallH - 0.08, northZ - wallT / 2]}>
+        <boxGeometry args={[bw + wallT * 2 + 0.25, 0.04, wallT + 0.12]} />
+        <meshStandardMaterial color={brickLight} />
       </mesh>
       <mesh position={[westX - wallT / 2, foundH + wallH, cz]}>
-        <boxGeometry args={[wallT + 0.1, 0.06, bh + wallT * 2 + 0.15]} />
+        <boxGeometry args={[wallT + 0.15, 0.08, bh + wallT * 2 + 0.3]} />
         <meshStandardMaterial color={trimColor} />
       </mesh>
 
-      {/* ── Baseboard (interior) ── */}
-      <mesh position={[cx, foundH + 0.025, northZ + 0.03]}>
-        <boxGeometry args={[bw, 0.05, 0.04]} /><meshStandardMaterial color="#6B6358" />
+      {/* ── Baseboard (interior warm wood) ── */}
+      <mesh position={[cx, foundH + 0.03, northZ + 0.04]}>
+        <boxGeometry args={[bw, 0.06, 0.05]} /><meshStandardMaterial color="#6B5840" />
       </mesh>
-      <mesh position={[westX + 0.03, foundH + 0.025, cz]}>
-        <boxGeometry args={[0.04, 0.05, bh]} /><meshStandardMaterial color="#6B6358" />
+      <mesh position={[westX + 0.04, foundH + 0.03, cz]}>
+        <boxGeometry args={[0.05, 0.06, bh]} /><meshStandardMaterial color="#6B5840" />
       </mesh>
 
       {/* ── Windows on exterior walls ── */}
-      {/* North wall windows */}
-      {windowsAlongX(winY, northZ - wallT - 0.001, nWinX, cx - bw / 2, bw)}
-      {/* West wall windows */}
-      {windowsAlongZ(winY, westX - wallT - 0.001, nWinZ, cz - bh / 2, bh)}
+      {makeWindows('x', northZ - wallT - 0.001, cx - bw / 2, bw, winY, nWinX)}
+      {makeWindows('z', westX - wallT - 0.001, cz - bh / 2, bh, winY, nWinZ)}
 
-      {/* ── Ceiling lights (warm hanging bulbs - BAYC bar style) ── */}
-      {Array.from({ length: 8 }).map((_, i) => {
+      {/* ── Warm hanging lights (BAYC bar / clubhouse) ── */}
+      {Array.from({ length: 12 }).map((_, i) => {
         const col = i % 4;
         const row = Math.floor(i / 4);
-        const bulbColors = ["#FFB347", "#FF6B6B", "#4ECDC4", "#FFE66D"];
+        const bulbColors = ["#FFB347", "#FF6B6B", "#4ECDC4", "#FFE66D", "#FF6BB5", "#6BCB77"];
+        const bc = bulbColors[i % bulbColors.length];
+        const lx = cx - bw * 0.35 + col * (bw * 0.24);
+        const lz = cz - bh * 0.3 + row * (bh * 0.3);
         return (
           <group key={`cl${i}`}>
-            {/* Hanging wire */}
-            <mesh position={[cx - bw * 0.3 + col * (bw * 0.2), foundH + wallH - 0.15, cz - bh * 0.2 + row * (bh * 0.4)]}>
-              <cylinderGeometry args={[0.005, 0.005, 0.2, 4]} />
+            <mesh position={[lx, foundH + wallH - 0.1, lz]}>
+              <cylinderGeometry args={[0.004, 0.004, 0.18, 4]} />
               <meshBasicMaterial color="#333" />
             </mesh>
-            {/* Warm bulb */}
-            <mesh position={[cx - bw * 0.3 + col * (bw * 0.2), foundH + wallH - 0.28, cz - bh * 0.2 + row * (bh * 0.4)]}>
-              <sphereGeometry args={[0.04, 8, 8]} />
-              <meshStandardMaterial color={bulbColors[col]} emissive={bulbColors[col]} emissiveIntensity={0.8} />
+            <mesh position={[lx, foundH + wallH - 0.22, lz]}>
+              <sphereGeometry args={[0.035, 8, 8]} />
+              <meshStandardMaterial color={bc} emissive={bc} emissiveIntensity={1.0} />
             </mesh>
-            <pointLight
-              position={[cx - bw * 0.3 + col * (bw * 0.2), foundH + wallH - 0.3, cz - bh * 0.2 + row * (bh * 0.4)]}
-              intensity={0.15}
-              distance={4}
-              color={bulbColors[col]}
-            />
+            <pointLight position={[lx, foundH + wallH - 0.25, lz]} intensity={0.12} distance={3.5} color={bc} />
           </group>
         );
       })}
 
-      {/* ── String lights along north wall ── */}
-      {Array.from({ length: 20 }).map((_, i) => {
-        const t = i / 19;
+      {/* ── String lights along north wall (party bunting) ── */}
+      {Array.from({ length: 25 }).map((_, i) => {
+        const t = i / 24;
         const lx = cx - bw * 0.45 + t * bw * 0.9;
-        const ly = foundH + wallH - 0.08;
-        const lz = northZ + wallT * 0.5;
-        const sag = Math.sin(t * Math.PI) * 0.15;
+        const ly = foundH + wallH - 0.06;
+        const lz = northZ + wallT * 0.6;
+        const sag = Math.sin(t * Math.PI) * 0.12;
         const colors = ["#FF6B6B", "#4ECDC4", "#FFE66D", "#FF6BB5", "#6BCB77"];
         return (
           <mesh key={`sl${i}`} position={[lx, ly - sag, lz]}>
-            <sphereGeometry args={[0.02, 6, 6]} />
-            <meshStandardMaterial color={colors[i % 5]} emissive={colors[i % 5]} emissiveIntensity={1.2} />
+            <sphereGeometry args={[0.018, 6, 6]} />
+            <meshStandardMaterial color={colors[i % 5]} emissive={colors[i % 5]} emissiveIntensity={1.5} />
+          </mesh>
+        );
+      })}
+      {/* Bunting flags along north wall */}
+      {Array.from({ length: 15 }).map((_, i) => {
+        const t = (i + 0.5) / 15;
+        const lx = cx - bw * 0.42 + t * bw * 0.84;
+        const ly = foundH + wallH - 0.14 - Math.sin(t * Math.PI) * 0.08;
+        const lz = northZ + wallT * 0.7;
+        const flagColors = ["#FF4444", "#FFAA00", "#44BB44", "#4488FF", "#FF44FF"];
+        return (
+          <mesh key={`flag${i}`} position={[lx, ly, lz]} rotation={[0.2, 0, Math.sin(i) * 0.3]}>
+            <boxGeometry args={[0.06, 0.08, 0.005]} />
+            <meshStandardMaterial color={flagColors[i % flagColors.length]} />
           </mesh>
         );
       })}
 
-      {/* ── Neon sign on north wall (BAYC style) ── */}
-      <mesh position={[cx, foundH + wallH * 0.65, northZ + wallT * 0.6]}>
-        <boxGeometry args={[1.2, 0.3, 0.02]} />
-        <meshStandardMaterial color="#00CED1" emissive="#00CED1" emissiveIntensity={1.5} transparent opacity={0.9} />
+      {/* ── Neon sign on north wall ── */}
+      <mesh position={[cx, foundH + wallH * 0.7, northZ + wallT * 0.6]}>
+        <boxGeometry args={[1.4, 0.35, 0.02]} />
+        <meshStandardMaterial color="#1A1A1A" />
       </mesh>
-      <pointLight position={[cx, foundH + wallH * 0.65, northZ + wallT + 0.3]} intensity={0.3} distance={5} color="#00CED1" />
+      <mesh position={[cx, foundH + wallH * 0.7, northZ + wallT * 0.62]}>
+        <boxGeometry args={[1.3, 0.28, 0.01]} />
+        <meshStandardMaterial color="#FF6B00" emissive="#FF6B00" emissiveIntensity={1.8} transparent opacity={0.9} />
+      </mesh>
+      <pointLight position={[cx, foundH + wallH * 0.7, northZ + wallT + 0.4]} intensity={0.35} distance={5} color="#FF6B00" />
 
-      {/* ── Ground plane around building (dark swamp) ── */}
-      <mesh position={[cx, -0.01, cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[60, 60]} />
-        <meshStandardMaterial color="#1A2810" />
-      </mesh>
-      {/* Swamp water patches */}
-      {[[-3, -2], [5, -4], [-4, 5], [7, 6]].map(([ox, oz], i) => (
-        <mesh key={`swamp${i}`} position={[cx + ox * 2, -0.005, cz + oz * 2]} rotation={[-Math.PI / 2, 0, 0]}>
-          <circleGeometry args={[1.5 + i * 0.3, 12]} />
-          <meshStandardMaterial color="#1A3020" transparent opacity={0.7} />
-        </mesh>
+      {/* ── Neighboring city buildings ── */}
+      {/* Behind (north) */}
+      <CityBuilding position={[cx - 6, 0, northZ - 5]} width={4} depth={3} height={4.5} color="#7A6B5A" />
+      <CityBuilding position={[cx + 2, 0, northZ - 6]} width={5} depth={3.5} height={6} color="#6B5A4A" />
+      <CityBuilding position={[cx + 9, 0, northZ - 4.5]} width={3.5} depth={3} height={3.5} color="#8A7A6A" />
+      <CityBuilding position={[cx - 12, 0, northZ - 7]} width={4.5} depth={4} height={5.5} color="#5A4A3A" />
+      {/* Left (west) */}
+      <CityBuilding position={[westX - 5, 0, cz - 4]} width={3} depth={4} height={5} color="#6A5848" />
+      <CityBuilding position={[westX - 4.5, 0, cz + 3]} width={3.5} depth={3.5} height={3.8} color="#7A6858" />
+      {/* Right (east) */}
+      <CityBuilding position={[eastX + 5, 0, cz - 2]} width={4} depth={3.5} height={4.2} color="#5A5040" />
+      <CityBuilding position={[eastX + 4, 0, cz + 5]} width={3} depth={4} height={5.5} color="#6A6050" />
+      {/* Behind far */}
+      <CityBuilding position={[cx - 3, 0, northZ - 12]} width={6} depth={4} height={8} color="#5A4A3A" />
+      <CityBuilding position={[cx + 8, 0, northZ - 11]} width={5} depth={3} height={7} color="#6A5848" />
+      {/* Far sides */}
+      <CityBuilding position={[westX - 10, 0, cz]} width={4} depth={5} height={6.5} color="#4A4038" />
+      <CityBuilding position={[eastX + 10, 0, cz + 2]} width={5} depth={4} height={5} color="#5A5040" />
+
+      {/* ── Street lights ── */}
+      {[[-3, 1], [3, 1], [-3, -1], [3, -1]].map(([ox, oz], i) => (
+        <group key={`streetlight${i}`} position={[cx + ox * (bw / 2 + 1.5), 0, cz + oz * (bh / 2 + 1.5)]}>
+          <mesh position={[0, 0.8, 0]}>
+            <cylinderGeometry args={[0.02, 0.03, 1.6, 6]} />
+            <meshStandardMaterial color="#333" metalness={0.6} />
+          </mesh>
+          <mesh position={[0, 1.65, 0]}>
+            <sphereGeometry args={[0.06, 8, 8]} />
+            <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={1.5} />
+          </mesh>
+          <pointLight position={[0, 1.6, 0]} intensity={0.3} distance={4} color="#FFD060" />
+        </group>
       ))}
     </group>
   );
@@ -872,15 +1035,15 @@ export function OfficeScene({
           gl.toneMappingExposure = 1.0;
         }}
       >
-        {/* Warm BAYC clubhouse atmosphere */}
-        <color attach="background" args={["#1A1408"]} />
-        <fog attach="fog" args={["#1A1408", 25, 50]} />
+        {/* City night atmosphere */}
+        <color attach="background" args={["#0A0A14"]} />
+        <fog attach="fog" args={["#0A0A14", 30, 60]} />
 
-        {/* Warm ambient - well-lit interior */}
-        <ambientLight intensity={0.7} color="#FFE8C8" />
+        {/* Warm interior lighting */}
+        <ambientLight intensity={0.55} color="#FFE8C8" />
         <directionalLight
           position={[10, 20, 8]}
-          intensity={0.6}
+          intensity={0.5}
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
@@ -891,9 +1054,11 @@ export function OfficeScene({
           shadow-camera-bottom={-20}
           color="#FFE0B0"
         />
-        {/* Warm fill from opposite side */}
-        <directionalLight position={[-8, 10, -6]} intensity={0.4} color="#FFD090" />
-        <hemisphereLight args={["#FFE8D0", "#4A3520", 0.35]} />
+        {/* Moonlight from above-right */}
+        <directionalLight position={[-8, 15, -6]} intensity={0.15} color="#8899CC" />
+        {/* Warm interior fill */}
+        <directionalLight position={[5, 8, 12]} intensity={0.4} color="#FFD090" />
+        <hemisphereLight args={["#1A1A30", "#4A3520", 0.25]} />
 
         {/* Camera controls - mouse drag rotate, wheel zoom, right-drag pan; works on trackpad wheel for zoom */}
         <OrbitControls
