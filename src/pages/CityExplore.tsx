@@ -63,6 +63,17 @@ export default function CityExplore() {
   const [showTraining, setShowTraining] = useState(false);
   const [userStatus, setUserStatus] = useState<UserStatus>("available");
 
+  // Workspace states
+  const [showMeeting, setShowMeeting] = useState(false);
+  const [showTeamChat, setShowTeamChat] = useState(false);
+  const [showFocusMode, setShowFocusMode] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showEvents, setShowEvents] = useState(false);
+  const [showScreenShare, setShowScreenShare] = useState(false);
+  const [showIntegrations, setShowIntegrations] = useState(false);
+  const [showEngagement, setShowEngagement] = useState(false);
+  const [focusMode, setFocusMode] = useState<FocusModeType>("normal");
+
   const userName = useMemo(() => {
     const stored = localStorage.getItem("agentoffice_user");
     return stored ? JSON.parse(stored).name || "Chefe" : "Chefe";
