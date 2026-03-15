@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Settings, Wifi, LogOut, Palette, Home, Clock } from "lucide-react";
+import { Settings, Wifi, LogOut, Palette, Home, Clock, MessageSquare, CheckCircle2, Radio, ImageIcon } from "lucide-react";
 import logo from "@/assets/logo.png";
 import type { Agent } from "@/types/agent";
 
@@ -10,6 +10,10 @@ interface TopBarProps {
   onCustomize?: () => void;
   onRoomEditor?: () => void;
   onLogout?: () => void;
+  onOpenFeed?: () => void;
+  onOpenTasks?: () => void;
+  onOpenMessaging?: () => void;
+  onOpenGallery?: () => void;
 }
 
 function LocalClock() {
@@ -35,7 +39,7 @@ function LocalClock() {
   );
 }
 
-export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onRoomEditor, onLogout }: TopBarProps) {
+export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onRoomEditor, onLogout, onOpenFeed, onOpenTasks, onOpenMessaging, onOpenGallery }: TopBarProps) {
   return (
     <div className="absolute top-3 left-3 right-3 z-20 flex items-center justify-between pointer-events-none">
       <div className="flex items-center gap-2 pointer-events-auto">
@@ -47,6 +51,30 @@ export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onRo
           </div>
         </div>
         <LocalClock />
+
+        {/* New feature buttons */}
+        <div className="glass-panel rounded-2xl flex items-center gap-0.5 px-1 py-1 shadow-lg">
+          {onOpenFeed && (
+            <button onClick={onOpenFeed} className="p-2 rounded-xl hover:bg-muted/30 transition-colors" title="Feed Social">
+              <MessageSquare className="w-4 h-4 text-primary" />
+            </button>
+          )}
+          {onOpenTasks && (
+            <button onClick={onOpenTasks} className="p-2 rounded-xl hover:bg-muted/30 transition-colors" title="Task Engine">
+              <CheckCircle2 className="w-4 h-4 text-accent" />
+            </button>
+          )}
+          {onOpenMessaging && (
+            <button onClick={onOpenMessaging} className="p-2 rounded-xl hover:bg-muted/30 transition-colors" title="Mensagens">
+              <Radio className="w-4 h-4 text-[#4ECDC4]" />
+            </button>
+          )}
+          {onOpenGallery && (
+            <button onClick={onOpenGallery} className="p-2 rounded-xl hover:bg-muted/30 transition-colors" title="Galeria">
+              <ImageIcon className="w-4 h-4 text-[#FF6BB5]" />
+            </button>
+          )}
+        </div>
       </div>
 
       {nearbyAgent && (

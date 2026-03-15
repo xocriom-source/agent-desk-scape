@@ -7,6 +7,10 @@ import { ActivityLog } from "@/components/office/ActivityLog";
 import { MiniMap } from "@/components/office/MiniMap";
 import { AgentPanel } from "@/components/office/AgentPanel";
 import { ObserverCard } from "@/components/office/ObserverCard";
+import { SocialFeed } from "@/components/office/SocialFeed";
+import { TaskBoard } from "@/components/office/TaskBoard";
+import { AgentMessaging } from "@/components/office/AgentMessaging";
+import { AgentGallery } from "@/components/office/AgentGallery";
 import { CharacterCustomizer, type PlayerConfig } from "@/components/office/CharacterCustomizer";
 import { RoomEditor } from "@/components/office/RoomEditor";
 import { useOfficeState } from "@/hooks/useOfficeState";
@@ -23,6 +27,10 @@ const Index = () => {
   const [profileAgent, setProfileAgent] = useState<Agent | null>(null);
   const [selectedFurnitureId, setSelectedFurnitureId] = useState<string | null>(null);
   const [hoveredFurnitureId, setHoveredFurnitureId] = useState<string | null>(null);
+  const [showFeed, setShowFeed] = useState(false);
+  const [showTasks, setShowTasks] = useState(false);
+  const [showMessaging, setShowMessaging] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
   const [playerConfig, setPlayerConfig] = useState<PlayerConfig>({
     name: "Chefe",
     color: "#4F46E5",
@@ -110,6 +118,10 @@ const Index = () => {
           localStorage.removeItem("agentoffice_user");
           navigate("/");
         }}
+        onOpenFeed={() => setShowFeed(true)}
+        onOpenTasks={() => setShowTasks(true)}
+        onOpenMessaging={() => setShowMessaging(true)}
+        onOpenGallery={() => setShowGallery(true)}
       />
 
       <OfficeScene
@@ -150,6 +162,13 @@ const Index = () => {
       <ActivityLog logs={allLogs} isOpen={showActivityLog} onToggle={toggleActivityLog} />
       <AgentPanel agent={selectedAgent} onClose={() => setSelectedAgent(null)} onViewProfile={(a) => setProfileAgent(a)} />
       <ObserverCard agent={profileAgent} isOpen={!!profileAgent} onClose={() => setProfileAgent(null)} />
+      
+      {/* New systems */}
+      <SocialFeed agents={agents} isOpen={showFeed} onClose={() => setShowFeed(false)} />
+      <TaskBoard agents={agents} isOpen={showTasks} onClose={() => setShowTasks(false)} />
+      <AgentMessaging agents={agents} isOpen={showMessaging} onClose={() => setShowMessaging(false)} />
+      <AgentGallery agents={agents} isOpen={showGallery} onClose={() => setShowGallery(false)} />
+
       {!editMode && <ActionBar onMove={movePlayer} />}
       {!editMode && <MiniMap player={player} agents={agents} rooms={rooms} />}
 
