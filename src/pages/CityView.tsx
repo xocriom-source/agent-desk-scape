@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Building2, Users2, ArrowLeft, Search, Eye, ArrowRight,
-  MapPin, Crown, Zap, Star, Home, Landmark, Briefcase, Globe
+  MapPin, Crown, Star, Home, Landmark, Briefcase, Globe,
+  TreePine, Droplets, Lamp, Coffee
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
@@ -53,7 +54,7 @@ function generateBuildings(ownName: string): BuildingData[] {
 
   const buildings: BuildingData[] = [];
 
-  // Add own building
+  // Own building near the plaza
   buildings.push({
     id: "own",
     ownerName: ownName,
@@ -61,19 +62,21 @@ function generateBuildings(ownName: string): BuildingData[] {
     floors: 5,
     agents: 6,
     reputation: 75,
-    x: 5,
-    y: 4,
+    x: 3,
+    y: 3,
     color: "hsl(239 84% 67%)",
     isOwn: true,
   });
 
-  // Generate NPC buildings on a grid
-  const gridSize = 8;
+  // Generate NPC buildings on a 10x10 grid (skip center 4x4 for plaza)
+  const gridSize = 10;
   let nameIdx = 0;
   for (let row = 0; row < gridSize; row++) {
     for (let col = 0; col < gridSize; col++) {
-      if (row === 4 && col === 5) continue; // skip own building spot
-      if (Math.random() > 0.55) continue; // sparse city
+      // Reserve center for plaza (3-6, 3-6)
+      if (row >= 3 && row <= 6 && col >= 3 && col <= 6) continue;
+      if (row === 3 && col === 3) continue; // own building spot
+      if (Math.random() > 0.5) continue;
       if (nameIdx >= names.length) break;
 
       buildings.push({
@@ -94,6 +97,19 @@ function generateBuildings(ownName: string): BuildingData[] {
 
   return buildings;
 }
+
+// Plaza elements positioned in the center 4x4 area
+const PLAZA_ELEMENTS = [
+  { type: "fountain", x: 4.5, y: 4.5, icon: Droplets, label: "Fonte da Praça", color: "hsl(200 80% 55%)" },
+  { type: "tree", x: 3.5, y: 3.5, icon: TreePine, label: "Carvalho", color: "hsl(142 60% 40%)" },
+  { type: "tree", x: 5.5, y: 3.5, icon: TreePine, label: "Cerejeira", color: "hsl(330 50% 55%)" },
+  { type: "tree", x: 3.5, y: 5.5, icon: TreePine, label: "Pinheiro", color: "hsl(142 70% 35%)" },
+  { type: "tree", x: 5.5, y: 5.5, icon: TreePine, label: "Bambu", color: "hsl(80 60% 40%)" },
+  { type: "bench", x: 4, y: 3.2, icon: Coffee, label: "Banco Norte", color: "hsl(30 40% 45%)" },
+  { type: "bench", x: 5, y: 5.8, icon: Coffee, label: "Banco Sul", color: "hsl(30 40% 45%)" },
+  { type: "lamp", x: 3.2, y: 4.5, icon: Lamp, label: "Poste Oeste", color: "hsl(45 80% 55%)" },
+  { type: "lamp", x: 5.8, y: 4.5, icon: Lamp, label: "Poste Leste", color: "hsl(45 80% 55%)" },
+];
 
 export default function CityView() {
   const navigate = useNavigate();
@@ -116,11 +132,7 @@ export default function CityView() {
     ? buildings.filter(b => b.ownerName.toLowerCase().includes(search.toLowerCase()))
     : buildings;
 
-  const handleEnterBuilding = (b: BuildingData) => {
-    if (b.isOwn) {
-      navigate("/office");
-    }
-  };
+  const cellSize = 10; // percentage
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -164,6 +176,19 @@ export default function CityView() {
           </div>
 
           <div className="flex-1 overflow-y-auto p-3 space-y-2">
+            {/* Plaza entry */}
+            <div className="rounded-xl p-3 bg-emerald-500/10 border border-emerald-500/30 mb-2">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                  <Droplets className="w-3.5 h-3.5 text-emerald-400" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-white text-xs">🏛️ Praça Central</h4>
+                  <p className="text-[10px] text-emerald-400">Ponto de encontro · Eventos ao vivo</p>
+                </div>
+              </div>
+            </div>
+
             {filtered.map((b) => {
               const Icon = BUILDING_ICONS[b.type];
               return (
@@ -199,7 +224,7 @@ export default function CityView() {
           </div>
         </div>
 
-        {/* Main - City Grid */}
+        {/* Main - City Grid with Plaza */}
         <div className="flex-1 relative overflow-hidden">
           <div className="absolute inset-0 flex items-center justify-center p-8">
             <div className="relative w-full max-w-3xl aspect-square">
@@ -210,17 +235,77 @@ export default function CityView() {
                     linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
                     linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)
                   `,
-                  backgroundSize: "12.5% 12.5%"
+                  backgroundSize: `${cellSize}% ${cellSize}%`
                 }}
               />
 
               {/* Roads */}
               <div className="absolute inset-0">
-                {[2, 5].map(row => (
-                  <div key={`hr-${row}`} className="absolute left-0 right-0 h-[1.5%]" style={{ top: `${row * 12.5 + 6}%`, backgroundColor: "rgba(255,255,255,0.04)" }} />
+                {[2, 7].map(row => (
+                  <div key={`hr-${row}`} className="absolute left-0 right-0 h-[1.5%]" style={{ top: `${row * cellSize + cellSize / 2}%`, backgroundColor: "rgba(255,255,255,0.04)" }} />
                 ))}
-                {[3, 6].map(col => (
-                  <div key={`vr-${col}`} className="absolute top-0 bottom-0 w-[1.5%]" style={{ left: `${col * 12.5 + 6}%`, backgroundColor: "rgba(255,255,255,0.04)" }} />
+                {[2, 7].map(col => (
+                  <div key={`vr-${col}`} className="absolute top-0 bottom-0 w-[1.5%]" style={{ left: `${col * cellSize + cellSize / 2}%`, backgroundColor: "rgba(255,255,255,0.04)" }} />
+                ))}
+              </div>
+
+              {/* ── Central Plaza (4x4 center area) ── */}
+              <div
+                className="absolute rounded-xl border border-emerald-500/30"
+                style={{
+                  left: `${3 * cellSize}%`,
+                  top: `${3 * cellSize}%`,
+                  width: `${4 * cellSize}%`,
+                  height: `${4 * cellSize}%`,
+                  background: `
+                    radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0.03) 70%, transparent 100%),
+                    repeating-conic-gradient(rgba(255,255,255,0.02) 0% 25%, transparent 0% 50%) 0 0 / 20px 20px
+                  `,
+                }}
+              >
+                {/* Plaza label */}
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                  <span className="text-[10px] font-bold text-emerald-400/80 tracking-wider uppercase">🏛️ Praça Central</span>
+                </div>
+
+                {/* Plaza elements */}
+                {PLAZA_ELEMENTS.map((el, i) => {
+                  const relX = ((el.x - 3) / 4) * 100;
+                  const relY = ((el.y - 3) / 4) * 100;
+                  return (
+                    <motion.div
+                      key={i}
+                      className="absolute group cursor-default"
+                      style={{ left: `${relX}%`, top: `${relY}%`, transform: "translate(-50%, -50%)" }}
+                      whileHover={{ scale: 1.3 }}
+                    >
+                      <div className="relative flex flex-col items-center">
+                        <div
+                          className={`w-6 h-6 rounded-full flex items-center justify-center ${el.type === "fountain" ? "animate-pulse" : ""}`}
+                          style={{ backgroundColor: `${el.color}30`, boxShadow: el.type === "fountain" ? `0 0 12px ${el.color}40` : "none" }}
+                        >
+                          <el.icon className="w-3 h-3" style={{ color: el.color }} />
+                        </div>
+                        <div className="absolute -top-6 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
+                          <div className="bg-gray-800 text-white text-[8px] font-medium px-1.5 py-0.5 rounded border border-gray-700">{el.label}</div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+
+                {/* Walking NPCs in the plaza (animated dots) */}
+                {[0, 1, 2, 3].map(i => (
+                  <motion.div
+                    key={`npc-${i}`}
+                    className="absolute w-2 h-2 rounded-full bg-emerald-400/60"
+                    animate={{
+                      x: [0, (i % 2 ? 30 : -30), (i % 2 ? -20 : 20), 0],
+                      y: [(i % 2 ? -20 : 20), 0, (i % 2 ? 25 : -25), (i % 2 ? -20 : 20)],
+                    }}
+                    transition={{ duration: 8 + i * 2, repeat: Infinity, ease: "linear" }}
+                    style={{ left: `${30 + i * 15}%`, top: `${35 + (i % 3) * 10}%` }}
+                  />
                 ))}
               </div>
 
@@ -233,15 +318,14 @@ export default function CityView() {
                     key={b.id}
                     className="absolute cursor-pointer group"
                     style={{
-                      left: `${b.x * 12.5 + 6.25}%`,
-                      top: `${b.y * 12.5 + 6.25}%`,
+                      left: `${b.x * cellSize + cellSize / 2}%`,
+                      top: `${b.y * cellSize + cellSize / 2}%`,
                       transform: "translate(-50%, -50%)",
                     }}
                     whileHover={{ scale: 1.3, zIndex: 50 }}
                     onClick={() => setSelectedBuilding(b)}
                   >
                     <div className="relative flex flex-col items-center">
-                      {/* Building visual */}
                       <div
                         className={`rounded-lg flex items-center justify-center border-2 ${b.isOwn ? "border-primary shadow-lg shadow-primary/30" : "border-gray-700"}`}
                         style={{
@@ -257,7 +341,6 @@ export default function CityView() {
                           <Crown className="w-4 h-4 text-yellow-400 drop-shadow-lg" />
                         </div>
                       )}
-                      {/* Tooltip */}
                       <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
                         <div className="bg-gray-800 text-white text-[9px] font-medium px-2 py-1 rounded-lg border border-gray-700">
                           {b.ownerName} {b.isOwn ? "(Você)" : ""}

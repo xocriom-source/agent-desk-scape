@@ -23,6 +23,8 @@ import { ArtifactExplorer } from "@/components/office/ArtifactExplorer";
 import { CityNPCs } from "@/components/office/CityNPCs";
 import { ObservationLab } from "@/components/office/ObservationLab";
 import { DistrictInfo } from "@/components/office/DistrictInfo";
+import { CityEvents } from "@/components/office/CityEvents";
+import { CityChat } from "@/components/office/CityChat";
 import { useOfficeState } from "@/hooks/useOfficeState";
 import { ROOMS, setRooms, FURNITURE, setFurniture, type RoomDef, type FurnitureItem, DEFAULT_ROOMS, DEFAULT_FURNITURE } from "@/data/officeMap";
 import type { Agent } from "@/types/agent";
@@ -51,7 +53,9 @@ const Index = () => {
   const [showNPCs, setShowNPCs] = useState(false);
   const [showObservation, setShowObservation] = useState(false);
   const [showDistricts, setShowDistricts] = useState(false);
-  const [notifCounts, setNotifCounts] = useState({ feed: 3, tasks: 2, messages: 5, governance: 1 });
+  const [showEvents, setShowEvents] = useState(false);
+  const [showCityChat, setShowCityChat] = useState(false);
+  const [notifCounts, setNotifCounts] = useState({ feed: 3, tasks: 2, messages: 5, governance: 1, events: 2 });
   const [playerConfig, setPlayerConfig] = useState<PlayerConfig>({
     name: "Chefe",
     color: "#4F46E5",
@@ -153,6 +157,8 @@ const Index = () => {
         onOpenNPCs={() => setShowNPCs(true)}
         onOpenObservation={() => setShowObservation(true)}
         onOpenDistricts={() => setShowDistricts(true)}
+        onOpenEvents={() => setShowEvents(true)}
+        onOpenCityChat={() => setShowCityChat(true)}
         notifications={notifCounts}
       />
 
@@ -210,6 +216,8 @@ const Index = () => {
       <CityNPCs isOpen={showNPCs} onClose={() => setShowNPCs(false)} />
       <ObservationLab agents={agents} isOpen={showObservation} onClose={() => setShowObservation(false)} />
       <DistrictInfo isOpen={showDistricts} onClose={() => setShowDistricts(false)} />
+      <CityEvents agents={agents} isOpen={showEvents} onClose={() => setShowEvents(false)} />
+      <CityChat agents={agents} isOpen={showCityChat} onClose={() => setShowCityChat(false)} />
 
       {!editMode && <ActionBar onMove={movePlayer} />}
       {!editMode && <MiniMap player={player} agents={agents} rooms={rooms} />}

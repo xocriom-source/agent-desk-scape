@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Settings, Wifi, LogOut, Palette, Home, Clock, MessageSquare, CheckCircle2, Radio, ImageIcon, BarChart3, Store, Vote, Sparkles, Database, Shield, MapPin, Star, Eye } from "lucide-react";
+import { Settings, Wifi, LogOut, Palette, Home, Clock, MessageSquare, CheckCircle2, Radio, ImageIcon, BarChart3, Store, Vote, Sparkles, Database, Shield, MapPin, Star, Eye, Calendar, Globe } from "lucide-react";
 import logo from "@/assets/logo.png";
 import type { Agent } from "@/types/agent";
 
@@ -24,6 +24,8 @@ interface TopBarProps {
   onOpenNPCs?: () => void;
   onOpenObservation?: () => void;
   onOpenDistricts?: () => void;
+  onOpenEvents?: () => void;
+  onOpenCityChat?: () => void;
   notifications?: Record<string, number>;
 }
 
@@ -60,7 +62,7 @@ function NavBtn({ onClick, title, icon: Icon, color, badge }: { onClick?: () => 
   );
 }
 
-export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onRoomEditor, onLogout, onOpenFeed, onOpenTasks, onOpenMessaging, onOpenGallery, onOpenAnalytics, onOpenMarketplace, onOpenGovernance, onOpenStudios, onOpenMemory, onOpenCommand, onOpenArtifacts, onOpenNPCs, onOpenObservation, onOpenDistricts, notifications = {} }: TopBarProps) {
+export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onRoomEditor, onLogout, onOpenFeed, onOpenTasks, onOpenMessaging, onOpenGallery, onOpenAnalytics, onOpenMarketplace, onOpenGovernance, onOpenStudios, onOpenMemory, onOpenCommand, onOpenArtifacts, onOpenNPCs, onOpenObservation, onOpenDistricts, onOpenEvents, onOpenCityChat, notifications = {} }: TopBarProps) {
   return (
     <div className="absolute top-3 left-3 right-3 z-20 flex items-center justify-between pointer-events-none">
       <div className="flex items-center gap-2 pointer-events-auto">
@@ -89,6 +91,8 @@ export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onRo
           {onOpenNPCs && <NavBtn onClick={onOpenNPCs} title="NPCs" icon={Star} color="#A78BFA" />}
           {onOpenObservation && <NavBtn onClick={onOpenObservation} title="Observation Lab" icon={Eye} color="#06B6D4" />}
           {onOpenDistricts && <NavBtn onClick={onOpenDistricts} title="Distritos" icon={MapPin} color="#10B981" />}
+          {onOpenEvents && <NavBtn onClick={onOpenEvents} title="Eventos" icon={Calendar} color="#EF4444" badge={notifications.events} />}
+          {onOpenCityChat && <NavBtn onClick={onOpenCityChat} title="Chat da Cidade" icon={Globe} color="#3B82F6" />}
         </div>
       </div>
 
