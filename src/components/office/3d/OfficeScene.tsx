@@ -32,18 +32,6 @@ function ExteriorGround({ cx, cz }: { cx: number; cz: number }) {
     </mesh>
   );
 }
-    if (performance.now() - down.t > 450) return;
-    const tx = Math.floor(e.point.x / S + 0.5);
-    const ty = Math.floor(e.point.z / S + 0.5);
-    onFloorClick?.(tx, ty);
-  };
-
-  return (
-    <group position={position}>
-      {/* Plaza floor - stone tiles */}
-      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow onPointerDown={handleDown} onPointerUp={handleUp}>
-        <planeGeometry args={[size, size]} />
-        <meshStandardMaterial color="#A09880" roughness={0.8} />
       </mesh>
       {/* Decorative tile pattern */}
       <mesh position={[0, 0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
