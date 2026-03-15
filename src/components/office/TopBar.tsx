@@ -1,4 +1,4 @@
-import { Settings, User, Wifi, Keyboard } from "lucide-react";
+import { Settings, User, Wifi, LogOut, Palette } from "lucide-react";
 import logo from "@/assets/logo.png";
 import type { Agent } from "@/types/agent";
 
@@ -6,9 +6,11 @@ interface TopBarProps {
   agentCount: number;
   activeCount: number;
   nearbyAgent: Agent | null;
+  onCustomize?: () => void;
+  onLogout?: () => void;
 }
 
-export function TopBar({ agentCount, activeCount, nearbyAgent }: TopBarProps) {
+export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onLogout }: TopBarProps) {
   return (
     <div className="absolute top-3 left-3 right-3 z-20 flex items-center justify-between pointer-events-none">
       {/* Logo */}
@@ -53,9 +55,29 @@ export function TopBar({ agentCount, activeCount, nearbyAgent }: TopBarProps) {
           </div>
         </div>
 
+        {onCustomize && (
+          <button
+            onClick={onCustomize}
+            className="glass-panel rounded-2xl p-2.5 hover:bg-muted/30 transition-colors shadow-lg"
+            title="Personalizar personagem"
+          >
+            <Palette className="w-4 h-4 text-foreground" />
+          </button>
+        )}
+
         <button className="glass-panel rounded-2xl p-2.5 hover:bg-muted/30 transition-colors shadow-lg">
           <Settings className="w-4 h-4 text-foreground" />
         </button>
+
+        {onLogout && (
+          <button
+            onClick={onLogout}
+            className="glass-panel rounded-2xl p-2.5 hover:bg-destructive/20 transition-colors shadow-lg"
+            title="Sair"
+          >
+            <LogOut className="w-4 h-4 text-foreground" />
+          </button>
+        )}
       </div>
     </div>
   );
