@@ -381,13 +381,13 @@ function Room3D({
         );
       })()}
 
-      {/* Room name sign on back wall */}
+      {/* Room name neon sign on back wall */}
       <mesh position={[0, wallH - 0.12, -h / 2 + wallT / 2 + 0.001]}>
         <planeGeometry args={[Math.min(w * 0.6, 1.2), 0.15]} />
-        <meshStandardMaterial color="#F5F0E8" />
+        <meshStandardMaterial color="#1A1A1A" />
       </mesh>
       <Html position={[0, wallH - 0.12, -h / 2 + wallT / 2 + 0.01]} center>
-        <div className="px-2 py-0.5 text-[9px] font-bold text-gray-700 whitespace-nowrap pointer-events-none select-none" style={{ fontFamily: "monospace" }}>
+        <div className="px-2 py-0.5 text-[9px] font-bold whitespace-nowrap pointer-events-none select-none" style={{ fontFamily: "monospace", color: "#00CED1", textShadow: "0 0 8px #00CED1" }}>
           {room.name}
         </div>
       </Html>
