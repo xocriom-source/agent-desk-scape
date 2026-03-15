@@ -1013,8 +1013,8 @@ export function OfficeScene({
           position={[10, 20, 8]}
           intensity={0.5}
           castShadow
-          shadow-mapSize-width={2048}
-          shadow-mapSize-height={2048}
+          shadow-mapSize-width={1024}
+          shadow-mapSize-height={1024}
           shadow-camera-far={50}
           shadow-camera-left={-20}
           shadow-camera-right={20}
