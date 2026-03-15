@@ -653,6 +653,7 @@ export function OfficeScene({
   editMode, selectedFurnitureId, hoveredFurnitureId, onFurnitureClick, onFurnitureHover, onMapClick,
 }: OfficeSceneProps) {
   const controlsRef = useRef<any>(null);
+  const dn = useDayNight();
 
   // Compute building center
   const buildingCenter = useMemo(() => {
