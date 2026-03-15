@@ -5,7 +5,9 @@ import * as THREE from "three";
 import { useDayNight } from "@/hooks/useDayNight";
 import { useCityBuildings } from "@/hooks/useCityBuildings";
 import { Building3D } from "@/components/buildings/Building3D";
+import { Vehicle3D } from "@/components/city/Vehicle3D";
 import type { CityBuilding } from "@/types/building";
+import { STYLE_TRANSPORT_MAP } from "@/types/building";
 
 const S = 0.5;
 
@@ -724,6 +726,25 @@ export function CityExploreScene({ playerName, flyMode }: { playerName: string; 
           />
         ))}
 
+        {/* Vehicles parked near buildings */}
+        {dynamicBuildings.map(b => {
+          const transport = b.transportType || STYLE_TRANSPORT_MAP[b.style] || "car";
+          if (transport === "none") return null;
+          const isAir = transport === "helicopter" || transport === "jet";
+          const vx = b.coordinates.x + (isAir ? 0 : 1.5);
+          const vy = isAir ? b.height * 0.4 + 0.5 : 0;
+          const vz = b.coordinates.z + (isAir ? 0 : 1.5);
+          return (
+            <Vehicle3D
+              key={`v-${b.id}`}
+              type={transport}
+              position={[vx, vy, vz]}
+              color={b.primaryColor}
+              ownerName={b.name}
+              isActive={userBuilding?.id === b.id}
+            />
+          );
+        })}
         {/* NPCs */}
         {NPC_DATA.map((npc, i) => (
           <CityNPC key={i} startX={npc.x} startZ={npc.z} color={npc.color} name={npc.name} activity={npc.activity} />

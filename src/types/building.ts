@@ -1,5 +1,6 @@
 export type BuildingStyle = "corporate" | "creative" | "startup" | "tech" | "agency" | "minimal" | "futuristic" | "industrial";
 export type District = "tech" | "creator" | "startup" | "agency" | "central";
+export type TransportType = "car" | "motorcycle" | "bicycle" | "helicopter" | "jet" | "drone" | "boat" | "yacht" | "futuristic_car" | "none";
 
 export interface BuildingCustomizations {
   neonSign: boolean;
@@ -27,7 +28,33 @@ export interface CityBuilding {
   links: string[];
   createdAt: string;
   claimed: boolean;
+  transportType?: TransportType;
 }
+
+// Map building style → default transport
+export const STYLE_TRANSPORT_MAP: Record<BuildingStyle, TransportType> = {
+  corporate: "helicopter",
+  creative: "bicycle",
+  startup: "futuristic_car",
+  tech: "drone",
+  agency: "car",
+  minimal: "bicycle",
+  futuristic: "jet",
+  industrial: "motorcycle",
+};
+
+export const TRANSPORT_INFO: Record<TransportType, { name: string; emoji: string; movement: "ground" | "air" | "water" }> = {
+  car: { name: "Carro", emoji: "🚗", movement: "ground" },
+  motorcycle: { name: "Moto", emoji: "🏍️", movement: "ground" },
+  bicycle: { name: "Bicicleta", emoji: "🚲", movement: "ground" },
+  helicopter: { name: "Helicóptero", emoji: "🚁", movement: "air" },
+  jet: { name: "Jato", emoji: "✈️", movement: "air" },
+  drone: { name: "Drone", emoji: "🛸", movement: "air" },
+  boat: { name: "Barco", emoji: "🚤", movement: "water" },
+  yacht: { name: "Iate", emoji: "🛥️", movement: "water" },
+  futuristic_car: { name: "Carro Futurista", emoji: "🏎️", movement: "ground" },
+  none: { name: "A pé", emoji: "🚶", movement: "ground" },
+};
 
 export const DISTRICTS: { id: District; name: string; description: string; color: string; emoji: string }[] = [
   { id: "tech", name: "Tech District", description: "Para devs, engenheiros e empresas de tecnologia", color: "hsl(220 70% 50%)", emoji: "💻" },
