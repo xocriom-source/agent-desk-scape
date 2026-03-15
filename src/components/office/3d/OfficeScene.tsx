@@ -128,7 +128,15 @@ function BuildingInterior({
 }
 
 // ── Room 3D ──
-function Room3D({ room }: { room: RoomDef }) {
+function Room3D({
+  room,
+  onFloorClick,
+  clickEnabled,
+}: {
+  room: RoomDef;
+  onFloorClick?: (x: number, y: number) => void;
+  clickEnabled?: boolean;
+}) {
   const w = room.w * S;
   const h = room.h * S;
   const x = room.x * S + w / 2;
@@ -136,15 +144,23 @@ function Room3D({ room }: { room: RoomDef }) {
   const wallH = 0.75;
   const wallT = 0.08;
 
+  const handleDown = (e: ThreeEvent<PointerEvent>) => {
+    if (!clickEnabled) return;
+    e.stopPropagation();
+    const tx = Math.round(e.point.x / S);
+    const ty = Math.round(e.point.z / S);
+    onFloorClick?.(tx, ty);
+  };
+
   return (
     <group position={[x, 0, z]}>
       {/* Room floor */}
-      <mesh position={[0, 0.004, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      <mesh position={[0, 0.004, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow onPointerDown={handleDown}>
         <planeGeometry args={[w, h]} />
         <meshStandardMaterial color={room.floorColor} />
       </mesh>
       {room.carpetColor && (
-        <mesh position={[0, 0.006, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh position={[0, 0.006, 0]} rotation={[-Math.PI / 2, 0, 0]} onPointerDown={handleDown}>
           <planeGeometry args={[w * 0.7, h * 0.7]} />
           <meshStandardMaterial color={room.carpetColor} />
         </mesh>
