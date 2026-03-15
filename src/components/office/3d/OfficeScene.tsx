@@ -709,19 +709,21 @@ function Player3D({ player, config }: { player: Player; config?: { color: string
   );
 }
 
-// ── Camera target tracker ──
+// ── Camera target tracker (single-stage, delta-time based) ──
 function CameraTarget({ player, controlsRef }: { player: Player; controlsRef: React.RefObject<any> }) {
-  const targetPos = useRef(new THREE.Vector3(player.x * S, 0, player.y * S));
+  useFrame((_, delta) => {
+    if (!controlsRef.current) return;
+    const dt = Math.min(delta, 0.05);
+    const factor = 1 - Math.exp(-8 * dt); // Smooth but responsive
 
-  useFrame(() => {
     const px = player.x * S;
     const pz = player.y * S;
-    targetPos.current.x += (px - targetPos.current.x) * 0.08;
-    targetPos.current.z += (pz - targetPos.current.z) * 0.08;
+    const target = controlsRef.current.target;
 
-    if (controlsRef.current) {
-      controlsRef.current.target.lerp(targetPos.current, 0.2);
-    }
+    target.x += (px - target.x) * factor;
+    target.z += (pz - target.z) * factor;
+    // Keep y at ground level
+    target.y += (0 - target.y) * factor;
   });
 
   return null;

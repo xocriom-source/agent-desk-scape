@@ -83,12 +83,19 @@ function stepWithCollision(
   y: number,
   nx: number,
   ny: number,
-  radius = 0.28
+  radius = 0.22
 ): { x: number; y: number; blocked: boolean } {
+  // Try full move first
   if (isWalkableAtFloat(nx, ny, radius)) return { x: nx, y: ny, blocked: false };
-  // Slide along walls: try each axis independently
+  // Slide along X axis
   if (isWalkableAtFloat(nx, y, radius)) return { x: nx, y, blocked: false };
+  // Slide along Y axis
   if (isWalkableAtFloat(x, ny, radius)) return { x, y: ny, blocked: false };
+  // Try with smaller radius as last resort (helps with doorways)
+  const smallR = radius * 0.6;
+  if (isWalkableAtFloat(nx, ny, smallR)) return { x: nx, y: ny, blocked: false };
+  if (isWalkableAtFloat(nx, y, smallR)) return { x: nx, y, blocked: false };
+  if (isWalkableAtFloat(x, ny, smallR)) return { x, y: ny, blocked: false };
   return { x, y, blocked: true };
 }
 
