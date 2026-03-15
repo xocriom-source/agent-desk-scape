@@ -282,12 +282,23 @@ function Room3D({
   return (
     <group position={[x, 0, z]}>
       {/* Room floor */}
-      <mesh position={[0, 0.004, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow onPointerDown={handleDown}>
+      <mesh
+        position={[0, 0.004, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        receiveShadow
+        onPointerDown={handleDown}
+        onPointerUp={handleUp}
+      >
         <planeGeometry args={[w, h]} />
         <meshStandardMaterial color={room.floorColor} />
       </mesh>
       {room.carpetColor && (
-        <mesh position={[0, 0.006, 0]} rotation={[-Math.PI / 2, 0, 0]} onPointerDown={handleDown}>
+        <mesh
+          position={[0, 0.006, 0]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          onPointerDown={handleDown}
+          onPointerUp={handleUp}
+        >
           <planeGeometry args={[w * 0.7, h * 0.7]} />
           <meshStandardMaterial color={room.carpetColor} />
         </mesh>
