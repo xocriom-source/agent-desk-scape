@@ -50,7 +50,7 @@ export default function CityExplore() {
   }, []);
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-background select-none">
+    <div className="relative w-screen h-screen overflow-hidden select-none" style={{ backgroundColor: "#0A0C14" }}>
       {/* 3D City Scene */}
       <CityExploreScene
         playerName={userName}
