@@ -41,6 +41,9 @@ const Index = () => {
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showMarketplace, setShowMarketplace] = useState(false);
   const [showGovernance, setShowGovernance] = useState(false);
+  const [showMemory, setShowMemory] = useState(false);
+  const [showCommand, setShowCommand] = useState(false);
+  const [notifCounts, setNotifCounts] = useState({ feed: 3, tasks: 2, messages: 5, governance: 1 });
   const [playerConfig, setPlayerConfig] = useState<PlayerConfig>({
     name: "Chefe",
     color: "#4F46E5",
