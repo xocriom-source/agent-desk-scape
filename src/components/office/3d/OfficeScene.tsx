@@ -850,7 +850,7 @@ export function OfficeScene({
 }: OfficeSceneProps) {
   const controlsRef = useRef<any>(null);
 
-  // Compute building center for city layout
+  // Compute building center
   const buildingCenter = useMemo(() => {
     const pad = 1.5;
     const minX = Math.min(...rooms.map(r => r.x)) - pad;
@@ -860,37 +860,31 @@ export function OfficeScene({
     return { x: ((minX + maxX) / 2) * S, z: ((minY + maxY) / 2) * S };
   }, [rooms]);
 
-  // City buildings data (memoized)
-  const cityBuildings = useMemo(() => [
-    // North side buildings
-    { pos: [buildingCenter.x - 8, 0, buildingCenter.z - 16] as [number, number, number], w: 4, d: 3, h: 3.5, color: "#5A4A3A", label: "TechFlow HQ" },
-    { pos: [buildingCenter.x - 2, 0, buildingCenter.z - 16] as [number, number, number], w: 3.5, d: 2.5, h: 2.5, color: "#6B5A4A", label: "Creative Labs" },
-    { pos: [buildingCenter.x + 5, 0, buildingCenter.z - 16] as [number, number, number], w: 4, d: 3, h: 4, color: "#4A5A6A", label: "DataPro Center" },
-    { pos: [buildingCenter.x + 12, 0, buildingCenter.z - 16] as [number, number, number], w: 3, d: 2.5, h: 2.8, color: "#6A5848", label: "Neural Works" },
-    // East side buildings
-    { pos: [buildingCenter.x + 18, 0, buildingCenter.z - 6] as [number, number, number], w: 3, d: 3, h: 3, color: "#5A5040", label: "ByteShift" },
-    { pos: [buildingCenter.x + 18, 0, buildingCenter.z + 2] as [number, number, number], w: 3.5, d: 2.5, h: 2.2, color: "#6B6050", label: "QuantumAI" },
-    { pos: [buildingCenter.x + 18, 0, buildingCenter.z + 10] as [number, number, number], w: 3, d: 3, h: 3.5, color: "#4A4A5A", label: "Pixel Forge" },
-    // South side buildings
-    { pos: [buildingCenter.x - 8, 0, buildingCenter.z + 16] as [number, number, number], w: 4, d: 3, h: 2.8, color: "#5A6A4A", label: "CodeNest" },
-    { pos: [buildingCenter.x - 1, 0, buildingCenter.z + 16] as [number, number, number], w: 3.5, d: 2.5, h: 3.2, color: "#7A6B5A", label: "RoboLab" },
-    { pos: [buildingCenter.x + 6, 0, buildingCenter.z + 16] as [number, number, number], w: 3, d: 3, h: 2.5, color: "#5A5A6A", label: "SynthWave" },
-    { pos: [buildingCenter.x + 12, 0, buildingCenter.z + 16] as [number, number, number], w: 4, d: 2.5, h: 3.8, color: "#6A5A5A", label: "CloudPeak" },
-    // West side buildings  
-    { pos: [buildingCenter.x - 14, 0, buildingCenter.z - 4] as [number, number, number], w: 3, d: 3, h: 2.5, color: "#5A4848", label: "InnoVerse" },
-    { pos: [buildingCenter.x - 14, 0, buildingCenter.z + 4] as [number, number, number], w: 2.5, d: 3, h: 3, color: "#6A6050", label: "CyberDen" },
-    { pos: [buildingCenter.x - 14, 0, buildingCenter.z + 11] as [number, number, number], w: 3, d: 2.5, h: 2, color: "#5A6050", label: "LogicGate" },
-  ], [buildingCenter]);
-
-  // NPC wanderers
-  const npcData = useMemo(() => [
-    { x: buildingCenter.x + 10, z: buildingCenter.z - 8, color: "#7A6B8A", name: "Visitante" },
-    { x: buildingCenter.x - 6, z: buildingCenter.z + 8, color: "#8A7B6A", name: "Turista" },
-    { x: buildingCenter.x + 2, z: buildingCenter.z - 10, color: "#6B8A7A", name: "Corretor" },
-    { x: buildingCenter.x - 8, z: buildingCenter.z - 2, color: "#8A6B7A", name: "Mensageiro" },
-    { x: buildingCenter.x + 14, z: buildingCenter.z + 6, color: "#7A8A6B", name: "Explorador" },
-    { x: buildingCenter.x, z: buildingCenter.z + 12, color: "#6A7B8A", name: "Artista" },
-  ], [buildingCenter]);
+  // Distant skyline buildings (far enough to never overlap the office)
+  const skylineBuildings = useMemo(() => {
+    const cx = buildingCenter.x;
+    const cz = buildingCenter.z;
+    const far = 25; // distance from center - well beyond the office bounds
+    return [
+      // North skyline
+      { pos: [cx - 10, 0, cz - far] as [number, number, number], w: 2, h: 4, color: "#3A3A4A" },
+      { pos: [cx - 5, 0, cz - far] as [number, number, number], w: 1.5, h: 3, color: "#4A4A5A" },
+      { pos: [cx, 0, cz - far] as [number, number, number], w: 2.5, h: 5, color: "#3A4A5A" },
+      { pos: [cx + 6, 0, cz - far] as [number, number, number], w: 2, h: 3.5, color: "#4A5A6A" },
+      { pos: [cx + 12, 0, cz - far] as [number, number, number], w: 1.8, h: 4.5, color: "#3A3A5A" },
+      // East skyline
+      { pos: [cx + far, 0, cz - 8] as [number, number, number], w: 2, h: 3.5, color: "#4A4A5A" },
+      { pos: [cx + far, 0, cz] as [number, number, number], w: 1.5, h: 4, color: "#3A4A4A" },
+      { pos: [cx + far, 0, cz + 8] as [number, number, number], w: 2, h: 3, color: "#5A4A4A" },
+      // South skyline
+      { pos: [cx - 8, 0, cz + far] as [number, number, number], w: 2, h: 3.5, color: "#4A5A4A" },
+      { pos: [cx, 0, cz + far] as [number, number, number], w: 2.5, h: 4, color: "#3A5A5A" },
+      { pos: [cx + 8, 0, cz + far] as [number, number, number], w: 1.5, h: 3, color: "#5A5A4A" },
+      // West skyline
+      { pos: [cx - far, 0, cz - 5] as [number, number, number], w: 2, h: 3, color: "#4A4A4A" },
+      { pos: [cx - far, 0, cz + 5] as [number, number, number], w: 1.8, h: 4.5, color: "#3A5A4A" },
+    ];
+  }, [buildingCenter]);
 
   return (
     <div className="absolute inset-0">
@@ -905,7 +899,7 @@ export function OfficeScene({
         }}
       >
         <color attach="background" args={["#0A0A14"]} />
-        <fog attach="fog" args={["#0A0A14", 40, 80]} />
+        <fog attach="fog" args={["#0A0A14", 25, 55]} />
 
         <ambientLight intensity={0.55} color="#FFE8C8" />
         <directionalLight position={[10, 20, 8]} intensity={0.5} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-far={60} shadow-camera-left={-30} shadow-camera-right={30} shadow-camera-top={30} shadow-camera-bottom={-30} color="#FFE0B0" />
@@ -913,14 +907,13 @@ export function OfficeScene({
         <directionalLight position={[5, 8, 12]} intensity={0.4} color="#FFD090" />
         <hemisphereLight args={["#1A1A30", "#4A3520", 0.25]} />
 
-        {/* Stars in the sky */}
         <Stars />
 
         <OrbitControls
           ref={controlsRef}
           enableDamping dampingFactor={0.08}
           enablePan enableZoom enableRotate
-          minDistance={3} maxDistance={45}
+          minDistance={3} maxDistance={30}
           minPolarAngle={Math.PI / 6} maxPolarAngle={Math.PI / 2.6}
           minAzimuthAngle={-Math.PI} maxAzimuthAngle={Math.PI}
           zoomSpeed={0.9} rotateSpeed={0.7} panSpeed={0.75}
@@ -931,38 +924,16 @@ export function OfficeScene({
         <ControlsUpdater controlsRef={controlsRef} />
         <CameraTarget player={player} controlsRef={controlsRef} />
 
-        {/* ── City Infrastructure ── */}
-        <CityStreets cx={buildingCenter.x} cz={buildingCenter.z} />
-
-        {/* ── Central Plaza (positioned south of the main building) ── */}
-        <CentralPlaza
-          position={[buildingCenter.x, 0, buildingCenter.z + 18]}
-          onFloorClick={(x, y) => onMapClick?.(x, y)}
-          clickEnabled={!editMode}
-        />
+        {/* ── Ground around building ── */}
+        <ExteriorGround cx={buildingCenter.x} cz={buildingCenter.z} />
 
         {/* ── User's Building ── */}
         <BuildingExterior rooms={rooms} clickEnabled={!editMode} onFloorClick={(x, y) => onMapClick?.(x, y)} />
 
-        {/* ── Neighboring City Buildings ── */}
-        {cityBuildings.map((b, i) => (
-          <CityBuilding key={`cb-${i}`} position={b.pos} width={b.w} depth={b.d} height={b.h} color={b.color} label={b.label} />
+        {/* ── Distant Skyline (decorative only) ── */}
+        {skylineBuildings.map((b, i) => (
+          <SkylineBuilding key={`sky-${i}`} position={b.pos} width={b.w} height={b.h} color={b.color} />
         ))}
-
-        {/* ── NPC Wanderers on streets ── */}
-        {npcData.map((npc, i) => (
-          <CityNPCWanderer key={`npc-${i}`} startX={npc.x} startZ={npc.z} color={npc.color} name={npc.name} />
-        ))}
-
-        {/* ── Street lights along roads ── */}
-        {[-15, -5, 5, 15].flatMap(ox =>
-          [-12, 0, 12].map(oz => (
-            <group key={`slt-${ox}-${oz}`} position={[buildingCenter.x + ox, 0, buildingCenter.z + oz]}>
-              <mesh position={[0, 0.8, 0]}><cylinderGeometry args={[0.02, 0.03, 1.6, 6]} /><meshStandardMaterial color="#333" metalness={0.6} /></mesh>
-              <mesh position={[0, 1.65, 0]}><sphereGeometry args={[0.05, 6, 6]} /><meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={1.2} /></mesh>
-            </group>
-          ))
-        )}
 
         {/* ── Interior objects at building height ── */}
         <group position={[0, 0.35, 0]}>
