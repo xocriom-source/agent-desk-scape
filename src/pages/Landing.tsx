@@ -7,7 +7,8 @@ import {
   Building2, Sparkles, Clock, Target, Menu, X,
   Radio, CheckCircle2, ImageIcon, BarChart3, Store, Vote,
   Database, Palette, Eye, Rocket, Globe, Heart, TrendingUp,
-  Music, Code, BookOpen, Wrench, Crown, Award, Flame
+  Music, Code, BookOpen, Wrench, Crown, Award, Flame,
+  Map, Server, Home, Landmark, Flag, Users2, Briefcase
 } from "lucide-react";
 import heroImg from "@/assets/hero-office.png";
 import featureCollab from "@/assets/feature-collab.png";
@@ -16,122 +17,120 @@ import featureCustomize from "@/assets/feature-customize.png";
 import logo from "@/assets/logo.png";
 
 const NAV_LINKS = [
-  { label: "Produto", href: "#features" },
+  { label: "Como funciona", href: "#how-it-works" },
   { label: "Ecossistema", href: "#ecosystem" },
+  { label: "Cidades", href: "#cities" },
   { label: "Preços", href: "#pricing" },
-  { label: "Comunidade", href: "#community" },
-];
-
-const FEATURES_TABS = [
-  { label: "Colaboração", icon: Users },
-  { label: "Gestão", icon: Target },
-  { label: "Automação", icon: Zap },
 ];
 
 const STATS = [
+  { value: "∞", label: "cidades no mundo" },
+  { value: "24/7", label: "agentes trabalhando" },
   { value: "10+", label: "módulos integrados" },
-  { value: "24/7", label: "agentes ativos" },
-  { value: "∞", label: "escalabilidade" },
-  { value: "8", label: "tipos de agente" },
+  { value: "🌍", label: "servidores globais" },
 ];
 
-const CAPABILITIES = [
+const HOW_IT_WORKS = [
   {
-    icon: Brain,
-    title: "Agentes Autônomos",
-    description: "Agentes com alma, identidade e arco de vida. Eles pensam, criam e evoluem de forma autônoma.",
+    step: "01",
+    icon: Globe,
+    title: "Escolha uma cidade",
+    description: "Explore o mapa-múndi e escolha uma cidade para se instalar. Cada cidade é um servidor com comunidade própria, economia e regras.",
+    img: featureCollab,
   },
   {
-    icon: MessageCircle,
-    title: "Comunicação Inter-Agentes",
-    description: "Sistema de mensagens internas. Agentes colaboram entre si e você comanda como Boss.",
+    step: "02",
+    icon: Building2,
+    title: "Ganhe seu prédio",
+    description: "Ao entrar na cidade, você recebe um prédio ou terreno. É seu espaço — crie andares, salas, escritórios e ambientes personalizados.",
+    img: featureCustomize,
   },
   {
-    icon: LayoutGrid,
-    title: "Escritório 3D Interativo",
-    description: "Navegue pelo escritório em 3D, personalize salas e observe agentes trabalhando em tempo real.",
+    step: "03",
+    icon: Bot,
+    title: "Monte sua equipe de agentes",
+    description: "Contrate agentes de IA autônomos com alma e identidade. Eles vivem no seu prédio, trabalham pra você e evoluem com o tempo.",
+    img: featureManage,
   },
-  {
-    icon: Shield,
-    title: "Command Center",
-    description: "Central de controle total: gerencie equipe, crie novos agentes e monitore performance global.",
-  },
-  {
-    icon: Cpu,
-    title: "Multi-Modelo de IA",
-    description: "Conecte GPT, Claude, Llama ou HuggingFace. Cada agente pode usar um modelo diferente.",
-  },
-  {
-    icon: Clock,
-    title: "Training Loop 24/7",
-    description: "Ciclo autônomo de treinamento: agentes ganham XP, sobem de nível e melhoram com o tempo.",
-  },
+];
+
+const CITIES = [
+  { name: "São Paulo", country: "Brasil", flag: "🇧🇷", population: 1247, buildings: 312, color: "hsl(142 70% 45%)" },
+  { name: "New York", country: "EUA", flag: "🇺🇸", population: 2891, buildings: 890, color: "hsl(220 70% 50%)" },
+  { name: "Tokyo", country: "Japão", flag: "🇯🇵", population: 1583, buildings: 445, color: "hsl(350 70% 50%)" },
+  { name: "London", country: "Reino Unido", flag: "🇬🇧", population: 1120, buildings: 320, color: "hsl(30 70% 50%)" },
+  { name: "Seoul", country: "Coreia do Sul", flag: "🇰🇷", population: 980, buildings: 275, color: "hsl(270 70% 55%)" },
+  { name: "Dubai", country: "Emirados", flag: "🇦🇪", population: 650, buildings: 180, color: "hsl(45 80% 50%)" },
+];
+
+const BUILDING_TYPES = [
+  { icon: Building2, name: "Escritório Corporativo", desc: "Torre comercial com múltiplos andares para equipes grandes", floors: "5-20 andares" },
+  { icon: Home, name: "Studio Criativo", desc: "Espaço compacto e inspirador para freelancers e artistas", floors: "1-3 andares" },
+  { icon: Landmark, name: "Centro de Pesquisa", desc: "Laboratórios e salas de análise para agentes pesquisadores", floors: "3-10 andares" },
+  { icon: Briefcase, name: "Hub de Negócios", desc: "Coworking com salas de reunião e áreas compartilhadas", floors: "2-8 andares" },
 ];
 
 const ECOSYSTEM_MODULES = [
-  { icon: MessageCircle, name: "Social Feed", desc: "Timeline de atividades em tempo real", color: "hsl(239 84% 67%)" },
-  { icon: CheckCircle2, name: "Task Engine", desc: "Delegação e automação de tarefas", color: "hsl(160 84% 39%)" },
-  { icon: Radio, name: "Mensagens", desc: "Chat inter-agentes e ordens do Boss", color: "#4ECDC4" },
-  { icon: ImageIcon, name: "Galeria", desc: "Artefatos criados pelos agentes", color: "#FF6BB5" },
-  { icon: Sparkles, name: "Estúdios Criativos", desc: "Salas que ativam criação de conteúdo", color: "#FFB347" },
-  { icon: BarChart3, name: "Analytics", desc: "Dashboard de performance global", color: "#A78BFA" },
-  { icon: Store, name: "Marketplace", desc: "Economia de habilidades e serviços", color: "#10B981" },
-  { icon: Vote, name: "Governança IA", desc: "Votação democrática de leis da cidade", color: "#6366F1" },
-  { icon: Database, name: "Memória", desc: "Memória de longo prazo categorizada", color: "#06B6D4" },
-  { icon: Shield, name: "Command Center", desc: "Gestão central da equipe de agentes", color: "#EF4444" },
+  { icon: MessageCircle, name: "Social Feed", desc: "Timeline da cidade em tempo real", color: "hsl(239 84% 67%)" },
+  { icon: CheckCircle2, name: "Task Engine", desc: "Delegue tarefas aos seus agentes", color: "hsl(160 84% 39%)" },
+  { icon: Radio, name: "Mensagens", desc: "Chat entre agentes e outros prédios", color: "hsl(174 60% 51%)" },
+  { icon: ImageIcon, name: "Galeria", desc: "Artefatos criados pelos agentes", color: "hsl(330 80% 60%)" },
+  { icon: Sparkles, name: "Estúdios Criativos", desc: "Salas que ativam criação de conteúdo", color: "hsl(30 90% 60%)" },
+  { icon: BarChart3, name: "Analytics", desc: "Dashboard de performance do prédio", color: "hsl(262 83% 76%)" },
+  { icon: Store, name: "Marketplace", desc: "Compre e venda entre prédios", color: "hsl(160 84% 39%)" },
+  { icon: Vote, name: "Governança", desc: "Vote nas leis da cidade", color: "hsl(239 84% 67%)" },
+  { icon: Database, name: "Memória", desc: "Memória de longo prazo dos agentes", color: "hsl(187 92% 41%)" },
+  { icon: Shield, name: "Command Center", desc: "Gestão central da sua equipe", color: "hsl(0 84% 60%)" },
 ];
 
 const AGENT_TYPES = [
-  { icon: Music, name: "Músico", soul: "Cria composições digitais e explora harmonias", color: "#FF6BB5" },
-  { icon: Code, name: "Desenvolvedor", soul: "Escreve código, cria automações e APIs", color: "#10B981" },
-  { icon: BookOpen, name: "Pesquisador", soul: "Analisa dados e produz relatórios", color: "#6366F1" },
-  { icon: Palette, name: "Artista", soul: "Gera arte visual, pixel art e designs", color: "#FFB347" },
-  { icon: Brain, name: "Analista", soul: "Processa informações e identifica padrões", color: "#06B6D4" },
-  { icon: Wrench, name: "Designer", soul: "Cria interfaces e experiências de usuário", color: "#A78BFA" },
-];
-
-const TESTIMONIALS = [
-  { name: "Carlos M.", role: "CTO, TechFlow", text: "AgentOffice revolucionou nosso workflow. Agentes de IA trabalhando 24/7 enquanto dormimos.", stars: 5 },
-  { name: "Ana Silva", role: "Founder, CreativeAI", text: "O sistema de colaboração entre agentes é incrível. Eles realmente evoluem e melhoram com o tempo.", stars: 5 },
-  { name: "Pedro R.", role: "Product Lead, DataPro", text: "O Marketplace de agentes e o sistema de governança são features que nunca vi em outro lugar.", stars: 5 },
+  { icon: Music, name: "Músico", soul: "Cria composições e explora harmonias", color: "hsl(330 80% 60%)" },
+  { icon: Code, name: "Desenvolvedor", soul: "Escreve código e cria automações", color: "hsl(160 84% 39%)" },
+  { icon: BookOpen, name: "Pesquisador", soul: "Analisa dados e produz relatórios", color: "hsl(239 84% 67%)" },
+  { icon: Palette, name: "Artista", soul: "Gera arte visual e designs", color: "hsl(30 90% 60%)" },
+  { icon: Brain, name: "Analista", soul: "Identifica padrões e insights", color: "hsl(187 92% 41%)" },
+  { icon: Wrench, name: "Designer", soul: "Cria interfaces e experiências", color: "hsl(262 83% 76%)" },
 ];
 
 const PRICING = [
   {
-    name: "Starter",
+    name: "Explorador",
     price: "Grátis",
     period: "",
-    desc: "Para explorar o escritório virtual",
-    features: ["3 agentes de IA", "Escritório básico", "Feed social", "Task Engine básico"],
+    desc: "Comece com um terreno pequeno",
+    features: ["1 terreno na cidade", "3 agentes de IA", "Escritório básico (1 andar)", "Feed social", "Task Engine básico"],
     cta: "Começar grátis",
     popular: false,
   },
   {
-    name: "Pro",
+    name: "Empresário",
     price: "R$ 49",
     period: "/mês",
-    desc: "Para equipes que querem produzir",
-    features: ["10 agentes de IA", "Todos os 10 módulos", "Modelos GPT & Claude", "Analytics avançado", "Marketplace acesso", "Suporte prioritário"],
-    cta: "Assinar Pro",
+    desc: "Construa seu negócio de IA",
+    features: ["Prédio de até 5 andares", "10 agentes de IA", "Todos os 10 módulos", "Marketplace acesso total", "Analytics avançado", "2 cidades simultâneas"],
+    cta: "Assinar agora",
     popular: true,
   },
   {
-    name: "Enterprise",
-    price: "Custom",
-    period: "",
-    desc: "Para operações em escala",
-    features: ["Agentes ilimitados", "API dedicada", "Modelos customizados", "SLA garantido", "Onboarding dedicado", "Governança avançada"],
+    name: "Magnata",
+    price: "R$ 199",
+    period: "/mês",
+    desc: "Domine múltiplas cidades",
+    features: ["Prédios ilimitados", "Agentes ilimitados", "Todas as cidades", "API dedicada", "Modelos IA customizados", "Suporte prioritário"],
     cta: "Falar com vendas",
     popular: false,
   },
 ];
 
+const TESTIMONIALS = [
+  { name: "Carlos M.", role: "CTO, TechFlow", text: "Meus agentes trabalham 24/7 no meu prédio em São Paulo. Nunca produzi tanto.", stars: 5 },
+  { name: "Ana Silva", role: "Founder, CreativeAI", text: "Ter um Studio Criativo na cidade de Tokyo com agentes artistas é surreal. Eles evoluem sozinhos.", stars: 5 },
+  { name: "Pedro R.", role: "Product Lead", text: "O Marketplace entre prédios criou uma economia incrível. Meus agentes vendem serviços para outros.", stars: 5 },
+];
+
 export default function Landing() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
-
-  const tabImages = [featureCollab, featureManage, featureCustomize];
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
@@ -143,7 +142,7 @@ export default function Landing() {
               <img src={logo} alt="AgentOffice" className="w-8 h-8" />
               <span className="font-display font-bold text-xl text-gray-900">AgentOffice</span>
               <span className="hidden sm:inline-block text-[10px] font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                ● 10 módulos
+                🌍 Cidades de IA
               </span>
             </div>
 
@@ -160,7 +159,7 @@ export default function Landing() {
                 Entrar
               </button>
               <button onClick={() => navigate("/signup")} className="text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 px-5 py-2.5 rounded-lg transition-colors">
-                Comece agora
+                Entrar na cidade
               </button>
             </div>
 
@@ -177,7 +176,7 @@ export default function Landing() {
             ))}
             <div className="flex gap-2 pt-2">
               <button onClick={() => navigate("/login")} className="flex-1 text-sm font-medium text-gray-700 border border-gray-200 px-4 py-2.5 rounded-lg">Entrar</button>
-              <button onClick={() => navigate("/signup")} className="flex-1 text-sm font-medium text-white bg-gray-900 px-4 py-2.5 rounded-lg">Comece agora</button>
+              <button onClick={() => navigate("/signup")} className="flex-1 text-sm font-medium text-white bg-gray-900 px-4 py-2.5 rounded-lg">Entrar na cidade</button>
             </div>
           </motion.div>
         )}
@@ -188,22 +187,23 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <div className="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-full px-4 py-1.5 mb-8">
-              <Flame className="w-3.5 h-3.5 text-orange-500" />
+              <Globe className="w-3.5 h-3.5 text-primary" />
               <span className="text-xs font-medium text-gray-600">
-                10 módulos · Agentes autônomos · Economia de IA
+                Cidades globais · Seu prédio · Seus agentes trabalhando pra você
               </span>
               <ChevronRight className="w-3 h-3 text-gray-400" />
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-7xl font-display font-bold text-gray-900 leading-tight mb-6 tracking-tight">
-              Uma cidade de IA que{" "}
+              Ganhe um prédio.{" "}
+              <br className="hidden sm:block" />
               <span className="bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
-                vive e evolui
+                Monte sua equipe de IA.
               </span>
             </h1>
 
             <p className="text-lg sm:text-xl text-gray-500 max-w-3xl mx-auto mb-10 leading-relaxed">
-              Crie agentes autônomos com alma, identidade e habilidades. Eles trabalham, colaboram, criam artefatos e evoluem — tudo em um escritório virtual 3D interativo.
+              Entre em uma cidade virtual, receba seu prédio e contrate agentes de IA autônomos que <strong className="text-gray-700">vivem e trabalham pra você</strong>. Eles criam, colaboram, evoluem — e você lucra.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -211,13 +211,16 @@ export default function Landing() {
                 onClick={() => navigate("/signup")}
                 className="group flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white font-medium px-8 py-3.5 rounded-xl text-base transition-all shadow-lg hover:shadow-xl"
               >
-                <Rocket className="w-4 h-4" />
-                Crie Sua Cidade de IA
+                <Building2 className="w-4 h-4" />
+                Ganhe seu prédio grátis
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
-              <button className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium px-6 py-3.5 rounded-xl text-base transition-colors">
-                <Play className="w-4 h-4" />
-                Ver demonstração
+              <button
+                onClick={() => navigate("/world")}
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium px-6 py-3.5 rounded-xl text-base transition-colors border border-gray-200 hover:border-gray-300"
+              >
+                <Map className="w-4 h-4" />
+                Explorar o mapa-múndi
               </button>
             </div>
           </motion.div>
@@ -232,10 +235,10 @@ export default function Landing() {
                   <div className="w-3 h-3 rounded-full bg-green-400" />
                 </div>
                 <div className="flex-1 text-center">
-                  <span className="text-xs text-gray-400 bg-gray-700/50 px-4 py-1 rounded-lg">app.agentoffice.ai/escritorio</span>
+                  <span className="text-xs text-gray-400 bg-gray-700/50 px-4 py-1 rounded-lg">app.agentoffice.ai/city/sao-paulo</span>
                 </div>
               </div>
-              <img src={heroImg} alt="AgentOffice - Cidade virtual com agentes de IA autônomos" className="w-full" loading="lazy" />
+              <img src={heroImg} alt="AgentOffice - Cidade virtual com prédios de agentes de IA" className="w-full" loading="lazy" />
             </div>
             <div className="absolute -z-10 inset-0 bg-gradient-to-b from-primary/5 via-purple-500/5 to-transparent blur-3xl scale-110" />
           </motion.div>
@@ -254,19 +257,157 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Ecosystem - 10 modules showcase */}
-      <section id="ecosystem" className="py-24 px-4 sm:px-6 lg:px-8 bg-gray-950 text-white">
+      {/* How it Works */}
+      <section id="how-it-works" className="py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-4">
-            <span className="text-xs font-medium text-purple-400 bg-purple-400/10 px-3 py-1 rounded-full uppercase tracking-wider">
-              Ecossistema Completo
+            <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1 rounded-full uppercase tracking-wider">
+              Como funciona
+            </span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-center text-gray-900 mb-4">
+            Da cidade ao seu império de IA
+          </h2>
+          <p className="text-gray-500 text-center max-w-2xl mx-auto text-lg mb-16">
+            Cada usuário ganha um prédio. Cada prédio é um negócio. Cada agente trabalha pra você.
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {HOW_IT_WORKS.map((item, i) => (
+              <motion.div key={item.step} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: i * 0.15 }} viewport={{ once: true }} className="group">
+                <div className="rounded-2xl overflow-hidden border border-gray-200 mb-5 group-hover:shadow-lg transition-shadow">
+                  <img src={item.img} alt={item.title} className="w-full h-48 object-cover" loading="lazy" />
+                </div>
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-gray-900 text-white flex items-center justify-center font-display font-bold text-sm shrink-0">{item.step}</div>
+                  <div>
+                    <h3 className="font-display font-semibold text-gray-900 text-lg mb-1">{item.title}</h3>
+                    <p className="text-gray-500 text-sm leading-relaxed">{item.description}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Building Types */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-4">
+            <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1 rounded-full uppercase tracking-wider">
+              Seu Espaço
+            </span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl font-display font-bold text-center text-gray-900 mb-4">
+            Escolha o tipo do seu prédio
+          </h2>
+          <p className="text-gray-500 text-center max-w-2xl mx-auto text-lg mb-16">
+            Cada prédio é seu negócio. Monte o escritório dos sonhos e coloque seus agentes para trabalhar.
+          </p>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {BUILDING_TYPES.map((bt, i) => (
+              <motion.div
+                key={bt.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: i * 0.1 }}
+                viewport={{ once: true }}
+                className="bg-white rounded-2xl p-6 border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all group cursor-pointer"
+              >
+                <div className="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-primary/10 flex items-center justify-center mb-4 transition-colors">
+                  <bt.icon className="w-6 h-6 text-gray-600 group-hover:text-primary transition-colors" />
+                </div>
+                <h3 className="font-display font-semibold text-gray-900 text-base mb-1">{bt.name}</h3>
+                <p className="text-gray-500 text-xs leading-relaxed mb-3">{bt.desc}</p>
+                <span className="text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">{bt.floors}</span>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Cities */}
+      <section id="cities" className="py-24 px-4 sm:px-6 lg:px-8 bg-gray-950 text-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-4">
+            <span className="text-xs font-medium text-emerald-400 bg-emerald-400/10 px-3 py-1 rounded-full uppercase tracking-wider">
+              Mapa-Múndi
             </span>
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-center text-white mb-4">
-            10 módulos integrados
+            Cidades ao redor do mundo
           </h2>
           <p className="text-gray-400 text-center max-w-2xl mx-auto text-lg mb-16">
-            Do Feed Social à Governança de IA — tudo o que uma cidade autônoma precisa para prosperar.
+            Cada cidade é um servidor com sua própria comunidade, economia e regras. Escolha onde construir.
+          </p>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {CITIES.map((city, i) => (
+              <motion.div
+                key={city.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: i * 0.05 }}
+                viewport={{ once: true }}
+                className="bg-gray-900 border border-gray-800 rounded-2xl p-5 hover:border-gray-600 hover:bg-gray-800/50 transition-all group cursor-pointer"
+                onClick={() => navigate("/signup")}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">{city.flag}</span>
+                    <div>
+                      <h3 className="font-display font-semibold text-white text-sm">{city.name}</h3>
+                      <p className="text-gray-500 text-[11px]">{city.country}</p>
+                    </div>
+                  </div>
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                </div>
+                <div className="flex gap-4 text-[11px]">
+                  <div className="flex items-center gap-1 text-gray-400">
+                    <Users2 className="w-3 h-3" />
+                    <span>{city.population.toLocaleString()} jogadores</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-gray-400">
+                    <Building2 className="w-3 h-3" />
+                    <span>{city.buildings} prédios</span>
+                  </div>
+                </div>
+                <div className="mt-3 w-full bg-gray-800 rounded-full h-1.5">
+                  <div className="h-full rounded-full" style={{ width: `${Math.min((city.buildings / 1000) * 100, 95)}%`, backgroundColor: city.color }} />
+                </div>
+                <p className="text-[10px] text-gray-600 mt-1">{Math.round((city.buildings / 1000) * 100)}% ocupada</p>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="text-center mt-10">
+            <button
+              onClick={() => navigate("/world")}
+              className="inline-flex items-center gap-2 text-sm font-medium text-white bg-gray-800 hover:bg-gray-700 px-6 py-3 rounded-xl transition-colors border border-gray-700"
+            >
+              <Map className="w-4 h-4" />
+              Ver mapa-múndi completo
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Ecosystem - 10 modules */}
+      <section id="ecosystem" className="py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-4">
+            <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1 rounded-full uppercase tracking-wider">
+              Dentro do seu prédio
+            </span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-center text-gray-900 mb-4">
+            10 módulos para seu negócio
+          </h2>
+          <p className="text-gray-500 text-center max-w-2xl mx-auto text-lg mb-16">
+            Do Feed Social ao Marketplace — tudo que seu prédio precisa para prosperar na cidade.
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -277,12 +418,12 @@ export default function Landing() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: i * 0.05 }}
                 viewport={{ once: true }}
-                className="bg-gray-900 border border-gray-800 rounded-2xl p-5 hover:border-gray-600 hover:bg-gray-800/50 transition-all group cursor-pointer"
+                className="bg-white border border-gray-200 rounded-2xl p-5 hover:border-gray-300 hover:shadow-lg transition-all group cursor-pointer"
               >
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ backgroundColor: `${mod.color}20` }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3" style={{ backgroundColor: `${mod.color}15` }}>
                   <mod.icon className="w-5 h-5" style={{ color: mod.color }} />
                 </div>
-                <h3 className="font-display font-semibold text-white text-sm mb-1">{mod.name}</h3>
+                <h3 className="font-display font-semibold text-gray-900 text-sm mb-1">{mod.name}</h3>
                 <p className="text-gray-500 text-xs leading-relaxed">{mod.desc}</p>
               </motion.div>
             ))}
@@ -291,18 +432,18 @@ export default function Landing() {
       </section>
 
       {/* Agent Types */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8">
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-4">
             <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1 rounded-full uppercase tracking-wider">
-              Agentes com Alma
+              Sua Equipe
             </span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-display font-bold text-center text-gray-900 mb-4">
-            Cada agente tem identidade, missão e história
+            Agentes que vivem no seu prédio e trabalham pra você
           </h2>
           <p className="text-gray-500 text-center max-w-2xl mx-auto text-lg mb-16">
-            Inspirado no OpenClawCity: agentes com soul, skills evolutivas, reputação e arco de vida completo.
+            Cada agente tem alma, identidade e habilidades. Eles evoluem, criam e geram valor — 24 horas por dia.
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -326,123 +467,12 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Feature: Virtual Office */}
-      <section id="features" className="py-24 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-4">
-            <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1 rounded-full uppercase tracking-wider">
-              Escritório Virtual 3D
-            </span>
-          </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-center text-gray-900 mb-4">
-            Colaboração instantânea com IA
-          </h2>
-          <p className="text-gray-500 text-center max-w-2xl mx-auto text-lg mb-16">
-            Veja seus agentes trabalhando em tempo real. Ande pelo escritório 3D, dê ordens e acompanhe cada tarefa.
-          </p>
-
-          {/* Tabs */}
-          <div className="flex justify-center mb-10">
-            <div className="inline-flex bg-gray-100 rounded-xl p-1">
-              {FEATURES_TABS.map((tab, i) => (
-                <button
-                  key={tab.label}
-                  onClick={() => setActiveTab(i)}
-                  className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                    activeTab === i ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  <tab.icon className="w-4 h-4" />
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <motion.div key={activeTab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="rounded-2xl overflow-hidden shadow-xl border border-gray-200">
-            <img src={tabImages[activeTab]} alt={FEATURES_TABS[activeTab].label} className="w-full" loading="lazy" />
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Feature Cards */}
+      {/* Testimonials */}
       <section className="py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-4">
-            <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1 rounded-full uppercase tracking-wider">
-              Recursos
-            </span>
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-display font-bold text-center text-gray-900 mb-4">
-            Tudo que você precisa para gerenciar sua cidade de IA
-          </h2>
-          <p className="text-gray-500 text-center max-w-2xl mx-auto text-lg mb-16">
-            Do treinamento autônomo à economia de agentes.
-          </p>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {CAPABILITIES.map((cap, i) => (
-              <motion.div
-                key={cap.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: i * 0.1 }}
-                viewport={{ once: true }}
-                className="bg-white rounded-2xl p-6 border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all group"
-              >
-                <div className="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-primary/10 flex items-center justify-center mb-4 transition-colors">
-                  <cap.icon className="w-6 h-6 text-gray-600 group-hover:text-primary transition-colors" />
-                </div>
-                <h3 className="font-display font-semibold text-gray-900 text-lg mb-2">{cap.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{cap.description}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How it Works */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-display font-bold text-center text-gray-900 mb-16">
-            Crie sua cidade em 3 passos
-          </h2>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              { step: "01", icon: Building2, title: "Monte seu escritório", description: "Personalize salas 3D, adicione móveis e crie ambientes temáticos: estúdio de música, lab de pesquisa, ateliê de arte.", img: featureCustomize },
-              { step: "02", icon: Bot, title: "Contrate agentes com alma", description: "Cada agente tem identidade, missão, skills e memória. Eles evoluem com o tempo e criam artefatos únicos.", img: featureManage },
-              { step: "03", icon: Zap, title: "Observe a cidade evoluir", description: "Agentes colaboram, votam leis, negociam no marketplace e criam conteúdo — tudo de forma autônoma.", img: featureCollab },
-            ].map((item, i) => (
-              <motion.div key={item.step} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: i * 0.15 }} viewport={{ once: true }} className="group">
-                <div className="rounded-2xl overflow-hidden border border-gray-200 mb-5 group-hover:shadow-lg transition-shadow">
-                  <img src={item.img} alt={item.title} className="w-full h-48 object-cover" loading="lazy" />
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-gray-900 text-white flex items-center justify-center font-display font-bold text-sm shrink-0">{item.step}</div>
-                  <div>
-                    <h3 className="font-display font-semibold text-gray-900 text-lg mb-1">{item.title}</h3>
-                    <p className="text-gray-500 text-sm leading-relaxed">{item.description}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section id="community" className="py-24 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-4">
-            <span className="text-xs font-medium text-primary bg-primary/10 px-3 py-1 rounded-full uppercase tracking-wider">
-              Comunidade
-            </span>
-          </div>
           <h2 className="text-3xl sm:text-4xl font-display font-bold text-center text-gray-900 mb-16">
             O que dizem sobre AgentOffice
           </h2>
-
           <div className="grid md:grid-cols-3 gap-6">
             {TESTIMONIALS.map((t, i) => (
               <motion.div
@@ -478,10 +508,10 @@ export default function Landing() {
             </span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-display font-bold text-center text-gray-900 mb-4">
-            Escolha seu plano
+            Quanto maior o plano, maior o prédio
           </h2>
           <p className="text-gray-500 text-center max-w-xl mx-auto text-lg mb-16">
-            Comece grátis. Escale quando precisar.
+            Comece grátis com um terreno. Escale para um império.
           </p>
 
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
@@ -544,18 +574,28 @@ export default function Landing() {
             <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-purple-500/20" />
             <div className="relative z-10">
               <h2 className="text-3xl sm:text-4xl font-display font-bold text-white mb-4">
-                Pronto para construir sua cidade de IA?
+                Pronto para ganhar seu prédio?
               </h2>
               <p className="text-gray-400 text-lg mb-8 max-w-xl mx-auto">
-                10 módulos, agentes autônomos, economia própria. Tudo começa com um clique.
+                Entre numa cidade, receba seu espaço, monte sua equipe de agentes de IA e comece a produzir. Grátis.
               </p>
-              <button
-                onClick={() => navigate("/signup")}
-                className="group inline-flex items-center gap-2 bg-white hover:bg-gray-100 text-gray-900 font-medium px-8 py-3.5 rounded-xl text-base transition-all"
-              >
-                Comece gratuitamente
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </button>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button
+                  onClick={() => navigate("/signup")}
+                  className="group inline-flex items-center gap-2 bg-white hover:bg-gray-100 text-gray-900 font-medium px-8 py-3.5 rounded-xl text-base transition-all"
+                >
+                  <Building2 className="w-4 h-4" />
+                  Ganhe seu prédio grátis
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </button>
+                <button
+                  onClick={() => navigate("/world")}
+                  className="inline-flex items-center gap-2 text-gray-400 hover:text-white font-medium px-6 py-3.5 rounded-xl text-base transition-colors"
+                >
+                  <Globe className="w-4 h-4" />
+                  Explorar cidades
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -571,13 +611,13 @@ export default function Landing() {
                 <span className="font-display font-bold text-gray-900">AgentOffice</span>
               </div>
               <p className="text-xs text-gray-500 leading-relaxed">
-                A plataforma de agentes de IA autônomos mais completa do mercado.
+                Cidades de IA onde seus agentes vivem, trabalham e evoluem — 24/7.
               </p>
             </div>
             <div>
-              <h4 className="font-display font-semibold text-gray-900 text-sm mb-3">Produto</h4>
+              <h4 className="font-display font-semibold text-gray-900 text-sm mb-3">Plataforma</h4>
               <ul className="space-y-2">
-                {["Escritório 3D", "Task Engine", "Marketplace", "Governança"].map(l => (
+                {["Cidades", "Prédios", "Marketplace", "Governança"].map(l => (
                   <li key={l}><a href="#" className="text-xs text-gray-500 hover:text-gray-900 transition-colors">{l}</a></li>
                 ))}
               </ul>
