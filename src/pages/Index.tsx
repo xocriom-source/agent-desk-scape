@@ -6,10 +6,12 @@ import { ActionBar } from "@/components/office/ActionBar";
 import { ActivityLog } from "@/components/office/ActivityLog";
 import { MiniMap } from "@/components/office/MiniMap";
 import { AgentPanel } from "@/components/office/AgentPanel";
+import { ObserverCard } from "@/components/office/ObserverCard";
 import { CharacterCustomizer, type PlayerConfig } from "@/components/office/CharacterCustomizer";
 import { RoomEditor } from "@/components/office/RoomEditor";
 import { useOfficeState } from "@/hooks/useOfficeState";
 import { ROOMS, setRooms, FURNITURE, setFurniture, type RoomDef, type FurnitureItem, DEFAULT_ROOMS, DEFAULT_FURNITURE } from "@/data/officeMap";
+import type { Agent } from "@/types/agent";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -18,6 +20,7 @@ const Index = () => {
   const [rooms, setLocalRooms] = useState<RoomDef[]>(() => [...DEFAULT_ROOMS]);
   const [furnitureItems, setLocalFurniture] = useState<FurnitureItem[]>(() => [...DEFAULT_FURNITURE]);
   const [editMode, setEditMode] = useState(false);
+  const [profileAgent, setProfileAgent] = useState<Agent | null>(null);
   const [selectedFurnitureId, setSelectedFurnitureId] = useState<string | null>(null);
   const [hoveredFurnitureId, setHoveredFurnitureId] = useState<string | null>(null);
   const [playerConfig, setPlayerConfig] = useState<PlayerConfig>({
@@ -145,7 +148,8 @@ const Index = () => {
       )}
 
       <ActivityLog logs={allLogs} isOpen={showActivityLog} onToggle={toggleActivityLog} />
-      <AgentPanel agent={selectedAgent} onClose={() => setSelectedAgent(null)} />
+      <AgentPanel agent={selectedAgent} onClose={() => setSelectedAgent(null)} onViewProfile={(a) => setProfileAgent(a)} />
+      <ObserverCard agent={profileAgent} isOpen={!!profileAgent} onClose={() => setProfileAgent(null)} />
       {!editMode && <ActionBar onMove={movePlayer} />}
       {!editMode && <MiniMap player={player} agents={agents} rooms={rooms} />}
 
