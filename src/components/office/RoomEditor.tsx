@@ -205,7 +205,6 @@ export function RoomEditor({ isOpen, onClose, rooms, onUpdateRooms }: RoomEditor
                           onClick={() => handleUpdateRoom(room.id, {
                             floorColor: c.floor,
                             carpetColor: c.carpet,
-                            color: c.floor,
                           })}
                           className={`w-5 h-5 rounded-md border transition-all ${
                             room.floorColor === c.floor ? "border-primary ring-1 ring-primary/30 scale-110" : "border-border"
