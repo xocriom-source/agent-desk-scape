@@ -646,61 +646,155 @@ function Player3D({ player, config }: { player: Player; config?: { color: string
     if (rightArm.current) rightArm.current.rotation.x += ((moving ? swing * 0.5 : 0) - rightArm.current.rotation.x) * dampFactor;
   });
 
+  const furColor = "#5C3A1E";       // dark brown fur
+  const faceColor = "#C4A882";      // light tan face/muzzle
+  const sweaterColor = "#3B5DC9";   // blue sweater
+  const glassesColor = "#2ECC40";   // green glasses
+  const earringColor = "#FFD700";   // gold earring
+
   return (
     <group ref={ref}>
-      <mesh ref={leftLeg} position={[-0.05, 0.06, 0]}>
-        <boxGeometry args={[0.06, 0.12, 0.08]} />
+      {/* ── Legs ── */}
+      <mesh ref={leftLeg} position={[-0.055, 0.06, 0]}>
+        <boxGeometry args={[0.07, 0.12, 0.08]} />
         <meshStandardMaterial color="#2D3748" />
       </mesh>
-      <mesh ref={rightLeg} position={[0.05, 0.06, 0]}>
-        <boxGeometry args={[0.06, 0.12, 0.08]} />
+      <mesh ref={rightLeg} position={[0.055, 0.06, 0]}>
+        <boxGeometry args={[0.07, 0.12, 0.08]} />
         <meshStandardMaterial color="#2D3748" />
       </mesh>
+
+      {/* ── Body (blue sweater) ── */}
       <mesh position={[0, 0.25, 0]} castShadow>
-        <boxGeometry args={[0.24, 0.24, 0.13]} />
-        <meshStandardMaterial color={color} />
+        <boxGeometry args={[0.26, 0.26, 0.15]} />
+        <meshStandardMaterial color={sweaterColor} />
       </mesh>
-      <mesh ref={leftArm} position={[-0.155, 0.24, 0]}>
-        <boxGeometry args={[0.05, 0.19, 0.07]} />
-        <meshStandardMaterial color={color} />
+      {/* Sweater logo (green circle on chest) */}
+      <mesh position={[0, 0.23, 0.076]}>
+        <circleGeometry args={[0.04, 8]} />
+        <meshStandardMaterial color={glassesColor} />
       </mesh>
-      <mesh ref={rightArm} position={[0.155, 0.24, 0]}>
-        <boxGeometry args={[0.05, 0.19, 0.07]} />
-        <meshStandardMaterial color={color} />
+
+      {/* ── Arms (blue sweater sleeves) ── */}
+      <mesh ref={leftArm} position={[-0.165, 0.24, 0]}>
+        <boxGeometry args={[0.06, 0.2, 0.08]} />
+        <meshStandardMaterial color={sweaterColor} />
       </mesh>
-      <mesh position={[-0.155, 0.13, 0]}>
-        <boxGeometry args={[0.045, 0.045, 0.045]} />
-        <meshStandardMaterial color={skin} />
+      <mesh ref={rightArm} position={[0.165, 0.24, 0]}>
+        <boxGeometry args={[0.06, 0.2, 0.08]} />
+        <meshStandardMaterial color={sweaterColor} />
       </mesh>
-      <mesh position={[0.155, 0.13, 0]}>
-        <boxGeometry args={[0.045, 0.045, 0.045]} />
-        <meshStandardMaterial color={skin} />
+      {/* Hands (fur colored) */}
+      <mesh position={[-0.165, 0.13, 0]}>
+        <boxGeometry args={[0.05, 0.05, 0.05]} />
+        <meshStandardMaterial color={furColor} />
       </mesh>
-      <mesh position={[0, 0.45, 0]} castShadow>
-        <boxGeometry args={[0.19, 0.19, 0.17]} />
-        <meshStandardMaterial color={skin} />
+      <mesh position={[0.165, 0.13, 0]}>
+        <boxGeometry args={[0.05, 0.05, 0.05]} />
+        <meshStandardMaterial color={furColor} />
       </mesh>
-      {[-0.04, 0.04].map((ox, i) => (
-        <group key={i}>
-          <mesh position={[ox, 0.46, 0.086]}>
-            <boxGeometry args={[0.04, 0.04, 0.01]} />
-            <meshStandardMaterial color="white" />
-          </mesh>
-          <mesh position={[ox, 0.46, 0.09]}>
-            <boxGeometry args={[0.02, 0.02, 0.01]} />
-            <meshStandardMaterial color="#1a1a2e" />
-          </mesh>
-        </group>
+
+      {/* ── Head (ape shape - wider, taller) ── */}
+      <mesh position={[0, 0.47, 0]} castShadow>
+        <boxGeometry args={[0.22, 0.22, 0.2]} />
+        <meshStandardMaterial color={furColor} />
+      </mesh>
+      {/* Fur top (slightly wider on top for ape silhouette) */}
+      <mesh position={[0, 0.56, -0.02]}>
+        <boxGeometry args={[0.2, 0.06, 0.14]} />
+        <meshStandardMaterial color={furColor} />
+      </mesh>
+
+      {/* ── Muzzle / Face (protruding lighter area) ── */}
+      <mesh position={[0, 0.43, 0.1]}>
+        <boxGeometry args={[0.16, 0.14, 0.06]} />
+        <meshStandardMaterial color={faceColor} />
+      </mesh>
+      {/* Nostrils */}
+      {[-0.025, 0.025].map((ox, i) => (
+        <mesh key={`nostril-${i}`} position={[ox, 0.42, 0.135]}>
+          <boxGeometry args={[0.02, 0.02, 0.01]} />
+          <meshStandardMaterial color="#3A2510" />
+        </mesh>
       ))}
+      {/* Mouth line */}
+      <mesh position={[0, 0.39, 0.13]}>
+        <boxGeometry args={[0.08, 0.01, 0.01]} />
+        <meshStandardMaterial color="#3A2510" />
+      </mesh>
+
+      {/* ── Green pixel glasses ── */}
+      {/* Frame bar */}
+      <mesh position={[0, 0.49, 0.11]}>
+        <boxGeometry args={[0.22, 0.06, 0.02]} />
+        <meshStandardMaterial color={glassesColor} />
+      </mesh>
+      {/* Left lens (dark) */}
+      <mesh position={[-0.055, 0.49, 0.12]}>
+        <boxGeometry args={[0.07, 0.04, 0.01]} />
+        <meshStandardMaterial color="#1a1a2e" />
+      </mesh>
+      {/* Right lens (dark) */}
+      <mesh position={[0.055, 0.49, 0.12]}>
+        <boxGeometry args={[0.07, 0.04, 0.01]} />
+        <meshStandardMaterial color="#1a1a2e" />
+      </mesh>
+      {/* Lens glare (white pixels) */}
+      <mesh position={[-0.04, 0.495, 0.126]}>
+        <boxGeometry args={[0.02, 0.02, 0.005]} />
+        <meshStandardMaterial color="#FFFFFF" emissive="#FFFFFF" emissiveIntensity={0.3} />
+      </mesh>
+      <mesh position={[0.07, 0.495, 0.126]}>
+        <boxGeometry args={[0.02, 0.02, 0.005]} />
+        <meshStandardMaterial color="#FFFFFF" emissive="#FFFFFF" emissiveIntensity={0.3} />
+      </mesh>
+      {/* Glasses arms (sides) */}
+      <mesh position={[-0.12, 0.49, 0.06]}>
+        <boxGeometry args={[0.02, 0.04, 0.1]} />
+        <meshStandardMaterial color={glassesColor} />
+      </mesh>
+      <mesh position={[0.12, 0.49, 0.06]}>
+        <boxGeometry args={[0.02, 0.04, 0.1]} />
+        <meshStandardMaterial color={glassesColor} />
+      </mesh>
+
+      {/* ── Ears ── */}
+      <mesh position={[-0.14, 0.48, 0]}>
+        <boxGeometry args={[0.06, 0.08, 0.06]} />
+        <meshStandardMaterial color={furColor} />
+      </mesh>
+      <mesh position={[-0.14, 0.48, 0]}>
+        <boxGeometry args={[0.03, 0.05, 0.04]} />
+        <meshStandardMaterial color={faceColor} />
+      </mesh>
+      <mesh position={[0.14, 0.48, 0]}>
+        <boxGeometry args={[0.06, 0.08, 0.06]} />
+        <meshStandardMaterial color={furColor} />
+      </mesh>
+      <mesh position={[0.14, 0.48, 0]}>
+        <boxGeometry args={[0.03, 0.05, 0.04]} />
+        <meshStandardMaterial color={faceColor} />
+      </mesh>
+
+      {/* ── Gold earring (left ear) ── */}
+      <mesh position={[-0.17, 0.44, 0]}>
+        <torusGeometry args={[0.02, 0.005, 6, 8]} />
+        <meshStandardMaterial color={earringColor} metalness={0.8} roughness={0.2} />
+      </mesh>
+
+      {/* ── Shadow ── */}
       <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.14, 16]} />
+        <circleGeometry args={[0.16, 16]} />
         <meshBasicMaterial color="#000" transparent opacity={0.18} />
       </mesh>
+
+      {/* Crown (boss indicator) */}
       <Html position={[0, 0.68, 0]} center>
         <span className="text-sm select-none pointer-events-none">👑</span>
       </Html>
+      {/* Name tag */}
       <Html position={[0, 0.8, 0]} center>
-        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full whitespace-nowrap pointer-events-none select-none" style={{ backgroundColor: color }}>
+        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full whitespace-nowrap pointer-events-none select-none" style={{ backgroundColor: sweaterColor }}>
           <div className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
           <span className="text-[9px] text-white font-bold">{player.name}</span>
         </div>
