@@ -1,6 +1,6 @@
 import { useRef, useState, useMemo, useCallback, useEffect } from "react";
 import { Canvas, useFrame, type ThreeEvent } from "@react-three/fiber";
-import { OrbitControls, Html } from "@react-three/drei";
+import { OrbitControls, Html, Stars } from "@react-three/drei";
 import * as THREE from "three";
 
 const S = 0.5;
