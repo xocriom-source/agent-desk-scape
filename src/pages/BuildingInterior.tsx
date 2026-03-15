@@ -28,6 +28,10 @@ export default function BuildingInterior() {
 
   const isOwner = building?.ownerId === (currentUser?.email || currentUser?.name);
   const [showWorkspace, setShowWorkspace] = useState(false);
+  const [showObjects, setShowObjects] = useState(false);
+  const [showTeamAgents, setShowTeamAgents] = useState(false);
+  const [showMessenger, setShowMessenger] = useState(false);
+  const [showTraining, setShowTraining] = useState(false);
   const district = DISTRICTS.find(d => d.id === building?.district);
   const styleInfo = BUILDING_STYLES.find(s => s.id === building?.style);
 
