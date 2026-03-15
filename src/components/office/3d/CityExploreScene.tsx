@@ -692,6 +692,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
           gl.toneMappingExposure = dn.exposure;
+          onReady?.();
         }}
       >
         <color attach="background" args={[dn.bgColor]} />
