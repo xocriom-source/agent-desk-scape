@@ -431,15 +431,15 @@ function Room3D({
         <meshStandardMaterial color={room.wallColor} />
       </mesh>
 
-      {/* Low back wall (north) - visible, won't block view */}
-      <mesh position={[0, wallH / 2, -h / 2]}>
+      {/* Ultra-low back wall (north) - never blocks agents */}
+      <mesh position={[0, wallH * 0.5, -h / 2]}>
         <boxGeometry args={[w + wallT, wallH, wallT]} />
-        <meshStandardMaterial color={room.wallColor} transparent opacity={0.85} />
+        <meshStandardMaterial color={room.wallColor} transparent opacity={0.6} />
       </mesh>
-      {/* Low left wall (west) */}
-      <mesh position={[-w / 2, wallH / 2, 0]}>
+      {/* Ultra-low left wall (west) */}
+      <mesh position={[-w / 2, wallH * 0.5, 0]}>
         <boxGeometry args={[wallT, wallH, h + wallT]} />
-        <meshStandardMaterial color={room.wallColor} transparent opacity={0.85} />
+        <meshStandardMaterial color={room.wallColor} transparent opacity={0.6} />
       </mesh>
 
       {/* Front (south) - just a floor-level strip, no wall */}
