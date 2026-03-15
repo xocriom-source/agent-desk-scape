@@ -1,164 +1,147 @@
 import type { TileType } from "@/types/agent";
 
-export const TILE_SIZE = 40;
-export const MAP_COLS = 40;
-export const MAP_ROWS = 30;
+export const TILE_W = 64; // isometric tile width
+export const TILE_H = 32; // isometric tile height
+export const TILE_SIZE = 64; // kept for compatibility
+export const MAP_COLS = 36;
+export const MAP_ROWS = 28;
+
+export interface RoomDef {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  color: string;
+  floorColor: string;
+  carpetColor?: string;
+}
 
 // Room definitions
-export const ROOMS = [
-  { name: "🖥️ Área de Trabalho", x: 1, y: 1, w: 14, h: 10, color: "#E8DCC8" },
-  { name: "📋 Sala de Reuniões", x: 18, y: 1, w: 10, h: 8, color: "#D4D8E8" },
-  { name: "☕ Lounge & Café", x: 1, y: 14, w: 10, h: 10, color: "#D8E4D0" },
-  { name: "🖧 Servidor / Infra", x: 18, y: 12, w: 10, h: 8, color: "#E0D8D8" },
-  { name: "🏢 Recepção", x: 13, y: 14, w: 7, h: 10, color: "#E8E0D0" },
-  { name: "📚 Biblioteca", x: 30, y: 1, w: 9, h: 8, color: "#E4DCD0" },
-  { name: "🧘 Sala Zen", x: 30, y: 12, w: 9, h: 8, color: "#D0E0D8" },
-  { name: "🎮 Game Room", x: 1, y: 26, w: 10, h: 3, color: "#E0D4E8" },
+export const DEFAULT_ROOMS: RoomDef[] = [
+  { id: "work", name: "Área de Trabalho", x: 1, y: 1, w: 12, h: 8, color: "#E8DCC8", floorColor: "#E2D6C0", carpetColor: "#C8BCA8" },
+  { id: "meeting", name: "Sala de Reuniões", x: 16, y: 1, w: 8, h: 6, color: "#D4D8E8", floorColor: "#C8CCE0", carpetColor: "#B0B8D8" },
+  { id: "lounge", name: "Lounge & Café", x: 1, y: 12, w: 9, h: 8, color: "#D8E4D0", floorColor: "#CEE0C4", carpetColor: "#B8D4AC" },
+  { id: "server", name: "Servidor / Infra", x: 16, y: 10, w: 8, h: 6, color: "#E0D8D8", floorColor: "#D8D0D0", carpetColor: "#C0B8B8" },
+  { id: "reception", name: "Recepção", x: 11, y: 12, w: 6, h: 8, color: "#E8E0D0", floorColor: "#E4DCC8", carpetColor: "#D0C8B4" },
+  { id: "library", name: "Biblioteca", x: 26, y: 1, w: 8, h: 6, color: "#E4DCD0", floorColor: "#DCD4C8", carpetColor: "#C8C0B0" },
+  { id: "zen", name: "Sala Zen", x: 26, y: 10, w: 8, h: 6, color: "#D0E0D8", floorColor: "#C4D8D0", carpetColor: "#A8C8BC" },
 ];
 
+export let ROOMS = [...DEFAULT_ROOMS];
+
+export function setRooms(rooms: RoomDef[]) {
+  ROOMS = rooms;
+  rebuildMap();
+}
+
 export interface FurnitureItem {
+  id: string;
   type: string;
   x: number;
   y: number;
   emoji: string;
-  w?: number;
-  h?: number;
+  roomId?: string;
 }
 
-export const FURNITURE: FurnitureItem[] = [
-  // === Área de Trabalho ===
-  // Row 1 desks
-  { type: "desk", x: 2, y: 2, emoji: "🖥️" },
-  { type: "desk", x: 4, y: 2, emoji: "🖥️" },
-  { type: "desk", x: 6, y: 2, emoji: "🖥️" },
-  { type: "desk", x: 8, y: 2, emoji: "🖥️" },
-  // Row 2 desks
-  { type: "desk", x: 2, y: 5, emoji: "🖥️" },
-  { type: "desk", x: 4, y: 5, emoji: "🖥️" },
-  { type: "desk", x: 6, y: 5, emoji: "🖥️" },
-  { type: "desk", x: 8, y: 5, emoji: "🖥️" },
-  // Row 3 desks
-  { type: "desk", x: 2, y: 8, emoji: "🖥️" },
-  { type: "desk", x: 4, y: 8, emoji: "🖥️" },
-  { type: "desk", x: 6, y: 8, emoji: "🖥️" },
-  { type: "desk", x: 8, y: 8, emoji: "🖥️" },
-  // Chairs (beside desks)
-  { type: "chair", x: 3, y: 3, emoji: "🪑" },
-  { type: "chair", x: 5, y: 3, emoji: "🪑" },
-  { type: "chair", x: 7, y: 3, emoji: "🪑" },
-  { type: "chair", x: 9, y: 3, emoji: "🪑" },
-  { type: "chair", x: 3, y: 6, emoji: "🪑" },
-  { type: "chair", x: 5, y: 6, emoji: "🪑" },
-  { type: "chair", x: 7, y: 6, emoji: "🪑" },
-  { type: "chair", x: 9, y: 6, emoji: "🪑" },
-  // Work area plants
-  { type: "plant", x: 1, y: 1, emoji: "🌿" },
-  { type: "plant", x: 14, y: 1, emoji: "🪴" },
-  { type: "plant", x: 1, y: 10, emoji: "🌱" },
-  { type: "plant", x: 14, y: 10, emoji: "🌿" },
-  // Whiteboard
-  { type: "whiteboard", x: 11, y: 2, emoji: "📋" },
-  { type: "whiteboard", x: 12, y: 2, emoji: "📊" },
-  // Printer
-  { type: "printer", x: 13, y: 5, emoji: "🖨️" },
-  // Water cooler
-  { type: "water", x: 13, y: 8, emoji: "🚰" },
-
-  // === Sala de Reuniões ===
-  { type: "table", x: 20, y: 3, emoji: "🪑" },
-  { type: "table", x: 21, y: 3, emoji: "🪑" },
-  { type: "table", x: 22, y: 3, emoji: "🪑" },
-  { type: "table", x: 23, y: 3, emoji: "🪑" },
-  { type: "table", x: 20, y: 5, emoji: "🪑" },
-  { type: "table", x: 21, y: 5, emoji: "🪑" },
-  { type: "table", x: 22, y: 5, emoji: "🪑" },
-  { type: "table", x: 23, y: 5, emoji: "🪑" },
-  { type: "screen", x: 26, y: 2, emoji: "📺" },
-  { type: "screen", x: 26, y: 4, emoji: "📺" },
-  { type: "whiteboard", x: 26, y: 6, emoji: "📋" },
-  { type: "plant", x: 18, y: 1, emoji: "🌿" },
-  { type: "plant", x: 27, y: 1, emoji: "🪴" },
-
-  // === Lounge & Café ===
-  { type: "sofa", x: 2, y: 15, emoji: "🛋️" },
-  { type: "sofa", x: 2, y: 17, emoji: "🛋️" },
-  { type: "coffee", x: 4, y: 16, emoji: "☕" },
-  { type: "table", x: 5, y: 16, emoji: "🍩" },
-  { type: "vending", x: 8, y: 14, emoji: "🥤" },
-  { type: "vending", x: 9, y: 14, emoji: "🍫" },
-  { type: "bookshelf", x: 1, y: 22, emoji: "📚" },
-  { type: "bookshelf", x: 2, y: 22, emoji: "📚" },
-  { type: "plant", x: 10, y: 14, emoji: "🌿" },
-  { type: "plant", x: 1, y: 14, emoji: "🪴" },
-  { type: "sofa", x: 6, y: 19, emoji: "🛋️" },
-  { type: "table", x: 7, y: 19, emoji: "🍕" },
-  { type: "tv", x: 4, y: 21, emoji: "📺" },
-
-  // === Servidor / Infra ===
-  { type: "server", x: 19, y: 13, emoji: "🖧" },
-  { type: "server", x: 20, y: 13, emoji: "🖧" },
-  { type: "server", x: 21, y: 13, emoji: "🖧" },
-  { type: "server", x: 22, y: 13, emoji: "🖧" },
-  { type: "server", x: 19, y: 15, emoji: "🖧" },
-  { type: "server", x: 20, y: 15, emoji: "🖧" },
-  { type: "server", x: 21, y: 15, emoji: "🖧" },
-  { type: "server", x: 22, y: 15, emoji: "🖧" },
-  { type: "monitor", x: 25, y: 13, emoji: "📡" },
-  { type: "monitor", x: 26, y: 13, emoji: "🖥️" },
-  { type: "desk", x: 25, y: 17, emoji: "💻" },
-  { type: "chair", x: 26, y: 17, emoji: "🪑" },
-
-  // === Recepção ===
-  { type: "desk", x: 15, y: 16, emoji: "💻" },
-  { type: "plant", x: 13, y: 14, emoji: "🌿" },
-  { type: "plant", x: 19, y: 14, emoji: "🌿" },
-  { type: "sofa", x: 14, y: 21, emoji: "🛋️" },
-  { type: "sofa", x: 15, y: 21, emoji: "🛋️" },
-  { type: "table", x: 16, y: 20, emoji: "📰" },
-  { type: "plant", x: 13, y: 23, emoji: "🌿" },
-  { type: "plant", x: 19, y: 23, emoji: "🪴" },
-
-  // === Biblioteca ===
-  { type: "bookshelf", x: 31, y: 2, emoji: "📚" },
-  { type: "bookshelf", x: 32, y: 2, emoji: "📚" },
-  { type: "bookshelf", x: 33, y: 2, emoji: "📚" },
-  { type: "bookshelf", x: 34, y: 2, emoji: "📚" },
-  { type: "bookshelf", x: 35, y: 2, emoji: "📚" },
-  { type: "bookshelf", x: 36, y: 2, emoji: "📚" },
-  { type: "desk", x: 32, y: 5, emoji: "📖" },
-  { type: "desk", x: 34, y: 5, emoji: "📖" },
-  { type: "desk", x: 36, y: 5, emoji: "📖" },
-  { type: "chair", x: 32, y: 6, emoji: "🪑" },
-  { type: "chair", x: 34, y: 6, emoji: "🪑" },
-  { type: "chair", x: 36, y: 6, emoji: "🪑" },
-  { type: "plant", x: 30, y: 1, emoji: "🌿" },
-  { type: "plant", x: 38, y: 1, emoji: "🪴" },
-
-  // === Sala Zen ===
-  { type: "plant", x: 31, y: 13, emoji: "🌿" },
-  { type: "plant", x: 33, y: 13, emoji: "🌿" },
-  { type: "plant", x: 35, y: 13, emoji: "🌿" },
-  { type: "plant", x: 37, y: 13, emoji: "🌿" },
-  { type: "sofa", x: 32, y: 16, emoji: "🧘" },
-  { type: "sofa", x: 34, y: 16, emoji: "🧘" },
-  { type: "sofa", x: 36, y: 16, emoji: "🧘" },
-  { type: "plant", x: 30, y: 19, emoji: "🪴" },
-  { type: "plant", x: 38, y: 19, emoji: "🪴" },
-  { type: "water", x: 31, y: 18, emoji: "⛲" },
-
-  // === Game Room ===
-  { type: "table", x: 2, y: 27, emoji: "🎮" },
-  { type: "table", x: 4, y: 27, emoji: "🕹️" },
-  { type: "sofa", x: 6, y: 27, emoji: "🛋️" },
-  { type: "tv", x: 8, y: 26, emoji: "📺" },
+export const DEFAULT_FURNITURE: FurnitureItem[] = [
+  // Work area
+  { id: "f1", type: "desk", x: 2, y: 2, emoji: "🖥️", roomId: "work" },
+  { id: "f2", type: "desk", x: 4, y: 2, emoji: "🖥️", roomId: "work" },
+  { id: "f3", type: "desk", x: 6, y: 2, emoji: "🖥️", roomId: "work" },
+  { id: "f4", type: "desk", x: 8, y: 2, emoji: "🖥️", roomId: "work" },
+  { id: "f5", type: "desk", x: 2, y: 5, emoji: "🖥️", roomId: "work" },
+  { id: "f6", type: "desk", x: 4, y: 5, emoji: "🖥️", roomId: "work" },
+  { id: "f7", type: "desk", x: 6, y: 5, emoji: "🖥️", roomId: "work" },
+  { id: "f8", type: "desk", x: 8, y: 5, emoji: "🖥️", roomId: "work" },
+  { id: "f9", type: "chair", x: 3, y: 3, emoji: "🪑", roomId: "work" },
+  { id: "f10", type: "chair", x: 5, y: 3, emoji: "🪑", roomId: "work" },
+  { id: "f11", type: "chair", x: 7, y: 3, emoji: "🪑", roomId: "work" },
+  { id: "f12", type: "chair", x: 9, y: 3, emoji: "🪑", roomId: "work" },
+  { id: "f13", type: "chair", x: 3, y: 6, emoji: "🪑", roomId: "work" },
+  { id: "f14", type: "chair", x: 5, y: 6, emoji: "🪑", roomId: "work" },
+  { id: "f15", type: "plant", x: 1, y: 1, emoji: "🌿", roomId: "work" },
+  { id: "f16", type: "plant", x: 12, y: 1, emoji: "🪴", roomId: "work" },
+  { id: "f17", type: "whiteboard", x: 10, y: 2, emoji: "📋", roomId: "work" },
+  { id: "f18", type: "printer", x: 11, y: 5, emoji: "🖨️", roomId: "work" },
+  // Meeting room
+  { id: "f20", type: "table", x: 18, y: 3, emoji: "🪑", roomId: "meeting" },
+  { id: "f21", type: "table", x: 19, y: 3, emoji: "🪑", roomId: "meeting" },
+  { id: "f22", type: "table", x: 20, y: 3, emoji: "🪑", roomId: "meeting" },
+  { id: "f23", type: "table", x: 18, y: 5, emoji: "🪑", roomId: "meeting" },
+  { id: "f24", type: "table", x: 19, y: 5, emoji: "🪑", roomId: "meeting" },
+  { id: "f25", type: "screen", x: 22, y: 2, emoji: "📺", roomId: "meeting" },
+  { id: "f26", type: "plant", x: 16, y: 1, emoji: "🌿", roomId: "meeting" },
+  // Lounge
+  { id: "f30", type: "sofa", x: 2, y: 13, emoji: "🛋️", roomId: "lounge" },
+  { id: "f31", type: "sofa", x: 2, y: 15, emoji: "🛋️", roomId: "lounge" },
+  { id: "f32", type: "coffee", x: 4, y: 14, emoji: "☕", roomId: "lounge" },
+  { id: "f33", type: "vending", x: 7, y: 12, emoji: "🥤", roomId: "lounge" },
+  { id: "f34", type: "bookshelf", x: 8, y: 12, emoji: "📚", roomId: "lounge" },
+  { id: "f35", type: "tv", x: 5, y: 17, emoji: "📺", roomId: "lounge" },
+  { id: "f36", type: "plant", x: 1, y: 12, emoji: "🪴", roomId: "lounge" },
+  // Server room
+  { id: "f40", type: "server", x: 17, y: 11, emoji: "🖧", roomId: "server" },
+  { id: "f41", type: "server", x: 18, y: 11, emoji: "🖧", roomId: "server" },
+  { id: "f42", type: "server", x: 19, y: 11, emoji: "🖧", roomId: "server" },
+  { id: "f43", type: "server", x: 20, y: 11, emoji: "🖧", roomId: "server" },
+  { id: "f44", type: "server", x: 17, y: 13, emoji: "🖧", roomId: "server" },
+  { id: "f45", type: "server", x: 18, y: 13, emoji: "🖧", roomId: "server" },
+  { id: "f46", type: "monitor", x: 22, y: 11, emoji: "📡", roomId: "server" },
+  { id: "f47", type: "desk", x: 22, y: 14, emoji: "💻", roomId: "server" },
+  // Reception
+  { id: "f50", type: "desk", x: 13, y: 14, emoji: "💻", roomId: "reception" },
+  { id: "f51", type: "plant", x: 11, y: 12, emoji: "🌿", roomId: "reception" },
+  { id: "f52", type: "plant", x: 16, y: 12, emoji: "🌿", roomId: "reception" },
+  { id: "f53", type: "sofa", x: 12, y: 17, emoji: "🛋️", roomId: "reception" },
+  { id: "f54", type: "sofa", x: 13, y: 17, emoji: "🛋️", roomId: "reception" },
+  // Library
+  { id: "f60", type: "bookshelf", x: 27, y: 2, emoji: "📚", roomId: "library" },
+  { id: "f61", type: "bookshelf", x: 28, y: 2, emoji: "📚", roomId: "library" },
+  { id: "f62", type: "bookshelf", x: 29, y: 2, emoji: "📚", roomId: "library" },
+  { id: "f63", type: "bookshelf", x: 30, y: 2, emoji: "📚", roomId: "library" },
+  { id: "f64", type: "desk", x: 28, y: 5, emoji: "📖", roomId: "library" },
+  { id: "f65", type: "desk", x: 30, y: 5, emoji: "📖", roomId: "library" },
+  { id: "f66", type: "plant", x: 26, y: 1, emoji: "🌿", roomId: "library" },
+  // Zen
+  { id: "f70", type: "plant", x: 27, y: 11, emoji: "🌿", roomId: "zen" },
+  { id: "f71", type: "plant", x: 29, y: 11, emoji: "🌿", roomId: "zen" },
+  { id: "f72", type: "plant", x: 31, y: 11, emoji: "🌿", roomId: "zen" },
+  { id: "f73", type: "sofa", x: 28, y: 13, emoji: "🧘", roomId: "zen" },
+  { id: "f74", type: "sofa", x: 30, y: 13, emoji: "🧘", roomId: "zen" },
+  { id: "f75", type: "water", x: 32, y: 14, emoji: "⛲", roomId: "zen" },
 ];
+
+export let FURNITURE = [...DEFAULT_FURNITURE];
+
+export function setFurniture(items: FurnitureItem[]) {
+  FURNITURE = items;
+  rebuildMap();
+}
+
+// Isometric conversion
+export function toIso(x: number, y: number): { sx: number; sy: number } {
+  return {
+    sx: (x - y) * (TILE_W / 2),
+    sy: (x + y) * (TILE_H / 2),
+  };
+}
+
+export function fromIso(sx: number, sy: number): { x: number; y: number } {
+  return {
+    x: Math.floor((sx / (TILE_W / 2) + sy / (TILE_H / 2)) / 2),
+    y: Math.floor((sy / (TILE_H / 2) - sx / (TILE_W / 2)) / 2),
+  };
+}
+
+let TILE_MAP: TileType[][] = [];
 
 function buildMap(): TileType[][] {
   const map: TileType[][] = Array.from({ length: MAP_ROWS }, () =>
     Array(MAP_COLS).fill(4 as TileType)
   );
 
-  // Fill rooms with floors
   for (const room of ROOMS) {
     for (let y = room.y; y < room.y + room.h; y++) {
       for (let x = room.x; x < room.x + room.w; x++) {
@@ -170,57 +153,34 @@ function buildMap(): TileType[][] {
   }
 
   // Hallways
-  // Main horizontal hallway
-  for (let x = 1; x < 39; x++) {
-    for (let y = 11; y <= 12; y++) {
+  for (let x = 1; x < 34; x++) {
+    for (let y = 9; y <= 10; y++) {
       if (y < MAP_ROWS && x < MAP_COLS && map[y][x] === 4) map[y][x] = 0;
     }
   }
-  // Main vertical hallway
-  for (let y = 1; y < 29; y++) {
-    for (let x = 16; x <= 17; x++) {
-      if (y < MAP_ROWS && x < MAP_COLS && map[y][x] === 4) map[y][x] = 0;
-    }
-  }
-  // Secondary vertical (right side)
   for (let y = 1; y < 20; y++) {
-    for (let x = 29; x <= 29; x++) {
+    for (let x = 14; x <= 15; x++) {
       if (y < MAP_ROWS && x < MAP_COLS && map[y][x] === 4) map[y][x] = 0;
     }
   }
-  // Connection to game room
-  for (let y = 24; y <= 26; y++) {
-    for (let x = 1; x <= 10; x++) {
+  for (let y = 1; y < 16; y++) {
+    for (let x = 24; x <= 25; x++) {
       if (y < MAP_ROWS && x < MAP_COLS && map[y][x] === 4) map[y][x] = 0;
     }
   }
 
-  // Carpets in meeting room
-  for (let y = 2; y <= 7; y++) {
-    for (let x = 19; x <= 26; x++) {
-      if (map[y]?.[x] === 0) map[y][x] = 2;
-    }
-  }
-  // Carpet in lounge
-  for (let y = 15; y <= 21; y++) {
-    for (let x = 2; x <= 9; x++) {
-      if (map[y]?.[x] === 0) map[y][x] = 2;
-    }
-  }
-  // Carpet in zen room
-  for (let y = 13; y <= 18; y++) {
-    for (let x = 31; x <= 37; x++) {
-      if (map[y]?.[x] === 0) map[y][x] = 2;
-    }
-  }
-  // Carpet in library
-  for (let y = 3; y <= 7; y++) {
-    for (let x = 31; x <= 37; x++) {
-      if (map[y]?.[x] === 0) map[y][x] = 2;
+  // Carpet in certain rooms
+  for (const room of ROOMS) {
+    if (room.carpetColor) {
+      for (let y = room.y + 1; y < room.y + room.h - 1; y++) {
+        for (let x = room.x + 1; x < room.x + room.w - 1; x++) {
+          if (map[y]?.[x] === 0) map[y][x] = 2;
+        }
+      }
     }
   }
 
-  // Walls around rooms
+  // Walls
   for (const room of ROOMS) {
     for (let x = room.x - 1; x <= room.x + room.w; x++) {
       if (x >= 0 && x < MAP_COLS) {
@@ -236,7 +196,7 @@ function buildMap(): TileType[][] {
     }
   }
 
-  // Furniture as blocking
+  // Furniture blocking
   for (const f of FURNITURE) {
     if (f.y >= 0 && f.y < MAP_ROWS && f.x >= 0 && f.x < MAP_COLS) {
       if (map[f.y][f.x] === 0 || map[f.y][f.x] === 2) {
@@ -248,10 +208,20 @@ function buildMap(): TileType[][] {
   return map;
 }
 
-export const TILE_MAP = buildMap();
+function rebuildMap() {
+  TILE_MAP = buildMap();
+}
+
+TILE_MAP = buildMap();
+
+export { TILE_MAP };
 
 export function isWalkable(x: number, y: number): boolean {
   if (x < 0 || x >= MAP_COLS || y < 0 || y >= MAP_ROWS) return false;
   const tile = TILE_MAP[y][x];
   return tile === 0 || tile === 2;
+}
+
+export function getRoomAt(x: number, y: number): RoomDef | undefined {
+  return ROOMS.find(r => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h);
 }

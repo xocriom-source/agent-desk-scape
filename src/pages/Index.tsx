@@ -6,11 +6,15 @@ import { ActionBar } from "@/components/office/ActionBar";
 import { ActivityLog } from "@/components/office/ActivityLog";
 import { AgentPanel } from "@/components/office/AgentPanel";
 import { CharacterCustomizer, type PlayerConfig } from "@/components/office/CharacterCustomizer";
+import { RoomEditor } from "@/components/office/RoomEditor";
 import { useOfficeState } from "@/hooks/useOfficeState";
+import { ROOMS, setRooms, type RoomDef, DEFAULT_ROOMS } from "@/data/officeMap";
 
 const Index = () => {
   const navigate = useNavigate();
   const [showCustomizer, setShowCustomizer] = useState(false);
+  const [showRoomEditor, setShowRoomEditor] = useState(false);
+  const [rooms, setLocalRooms] = useState<RoomDef[]>(() => [...DEFAULT_ROOMS]);
   const [playerConfig, setPlayerConfig] = useState<PlayerConfig>({
     name: "Chefe",
     color: "#4F46E5",
@@ -22,24 +26,14 @@ const Index = () => {
 
   useEffect(() => {
     const user = localStorage.getItem("agentoffice_user");
-    if (!user) {
-      navigate("/");
-      return;
-    }
+    if (!user) { navigate("/"); return; }
     const parsed = JSON.parse(user);
     setPlayerConfig((prev) => ({ ...prev, name: parsed.name || "Chefe" }));
   }, [navigate]);
 
   const {
-    agents,
-    player,
-    selectedAgent,
-    setSelectedAgent,
-    showActivityLog,
-    toggleActivityLog,
-    allLogs,
-    nearbyAgent,
-    movePlayer,
+    agents, player, selectedAgent, setSelectedAgent,
+    showActivityLog, toggleActivityLog, allLogs, nearbyAgent, movePlayer,
   } = useOfficeState(playerConfig.name);
 
   const handleSaveCharacter = (config: PlayerConfig) => {
@@ -52,6 +46,11 @@ const Index = () => {
     }
   };
 
+  const handleUpdateRooms = (newRooms: RoomDef[]) => {
+    setLocalRooms(newRooms);
+    setRooms(newRooms);
+  };
+
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-canvas select-none">
       <TopBar
@@ -59,6 +58,7 @@ const Index = () => {
         activeCount={agents.filter((a) => a.status === "active").length}
         nearbyAgent={nearbyAgent}
         onCustomize={() => setShowCustomizer(true)}
+        onRoomEditor={() => setShowRoomEditor(true)}
         onLogout={() => {
           localStorage.removeItem("agentoffice_user");
           navigate("/");
@@ -73,17 +73,8 @@ const Index = () => {
         onAgentClick={setSelectedAgent}
       />
 
-      <ActivityLog
-        logs={allLogs}
-        isOpen={showActivityLog}
-        onToggle={toggleActivityLog}
-      />
-
-      <AgentPanel
-        agent={selectedAgent}
-        onClose={() => setSelectedAgent(null)}
-      />
-
+      <ActivityLog logs={allLogs} isOpen={showActivityLog} onToggle={toggleActivityLog} />
+      <AgentPanel agent={selectedAgent} onClose={() => setSelectedAgent(null)} />
       <ActionBar onMove={movePlayer} />
 
       <CharacterCustomizer
@@ -91,6 +82,13 @@ const Index = () => {
         onClose={() => setShowCustomizer(false)}
         onSave={handleSaveCharacter}
         initial={playerConfig}
+      />
+
+      <RoomEditor
+        isOpen={showRoomEditor}
+        onClose={() => setShowRoomEditor(false)}
+        rooms={rooms}
+        onUpdateRooms={handleUpdateRooms}
       />
     </div>
   );

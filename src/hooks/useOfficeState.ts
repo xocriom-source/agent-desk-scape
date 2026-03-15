@@ -1,6 +1,6 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { Agent, AgentLog, Player } from "@/types/agent";
-import { isWalkable, ROOMS } from "@/data/officeMap";
+import { isWalkable, ROOMS, getRoomAt } from "@/data/officeMap";
 
 const AGENT_CONFIGS = [
   { name: "Atlas", role: "Pesquisador IA", color: "#3B82F6", emoji: "🔬" },
@@ -25,19 +25,20 @@ const TASKS = [
 ];
 
 const AGENT_STARTS = [
-  { x: 3, y: 3, room: "Área de Trabalho" },
-  { x: 5, y: 4, room: "Área de Trabalho" },
-  { x: 7, y: 4, room: "Área de Trabalho" },
-  { x: 9, y: 7, room: "Área de Trabalho" },
-  { x: 21, y: 4, room: "Sala de Reuniões" },
-  { x: 3, y: 16, room: "Lounge & Café" },
-  { x: 23, y: 14, room: "Servidor / Infra" },
-  { x: 15, y: 17, room: "Recepção" },
+  { x: 3, y: 3 },
+  { x: 5, y: 4 },
+  { x: 7, y: 4 },
+  { x: 9, y: 7 },
+  { x: 19, y: 4 },
+  { x: 3, y: 15 },
+  { x: 19, y: 12 },
+  { x: 13, y: 15 },
 ];
 
 function createAgents(): Agent[] {
   return AGENT_CONFIGS.map((cfg, i) => {
     const start = AGENT_STARTS[i];
+    const room = getRoomAt(start.x, start.y);
     return {
       id: `agent-${i}`,
       name: cfg.name,
@@ -51,20 +52,10 @@ function createAgents(): Agent[] {
       targetY: start.y,
       tasks: [TASKS[i], TASKS[(i + 2) % 8]],
       currentTask: TASKS[i],
-      room: start.room,
+      room: room?.name || "Corredor",
       logs: [
-        {
-          id: `log-${i}-0`,
-          timestamp: new Date(Date.now() - 60000),
-          message: `Conectado ao escritório virtual`,
-          type: "success" as const,
-        },
-        {
-          id: `log-${i}-1`,
-          timestamp: new Date(),
-          message: `Iniciou: ${TASKS[i].slice(0, 40)}...`,
-          type: "info" as const,
-        },
+        { id: `log-${i}-0`, timestamp: new Date(Date.now() - 60000), message: "Conectado ao escritório virtual", type: "success" as const },
+        { id: `log-${i}-1`, timestamp: new Date(), message: `Iniciou: ${TASKS[i].slice(0, 40)}...`, type: "info" as const },
       ],
     };
   });
@@ -72,83 +63,44 @@ function createAgents(): Agent[] {
 
 export function useOfficeState(playerName: string = "Você") {
   const [agents, setAgents] = useState<Agent[]>(createAgents);
-  const [player, setPlayer] = useState<Player>({ x: 16, y: 22, name: playerName });
+  const [player, setPlayer] = useState<Player>({ x: 14, y: 18, name: playerName });
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [showActivityLog, setShowActivityLog] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
   const [nearbyAgent, setNearbyAgent] = useState<Agent | null>(null);
 
-  // Agent autonomous movement
   useEffect(() => {
     const interval = setInterval(() => {
       setAgents((prev) =>
         prev.map((agent) => {
           if (Math.random() > 0.25) return agent;
-
-          const dirs = [
-            { dx: 0, dy: -1 },
-            { dx: 0, dy: 1 },
-            { dx: -1, dy: 0 },
-            { dx: 1, dy: 0 },
-          ];
+          const dirs = [{ dx: 0, dy: -1 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 }, { dx: 1, dy: 0 }];
           const shuffled = dirs.sort(() => Math.random() - 0.5);
-
           for (const d of shuffled) {
             const nx = agent.x + d.dx;
             const ny = agent.y + d.dy;
             if (isWalkable(nx, ny)) {
-              const room = ROOMS.find(
-                (r) => nx >= r.x && nx < r.x + r.w && ny >= r.y && ny < r.y + r.h
-              );
-
-              const newStatus: Agent["status"] =
-                Math.random() > 0.7
-                  ? "thinking"
-                  : Math.random() > 0.4
-                  ? "active"
-                  : Math.random() > 0.5
-                  ? "busy"
-                  : "idle";
-
-              const logMessages = [
-                `Moveu-se para ${room?.name || "corredor"}`,
-                `Processando dados...`,
-                `Aguardando resposta da API...`,
-                `Tarefa concluída com sucesso!`,
-                `Analisando resultados...`,
-                `Compilando código...`,
-                `Sincronizando com servidor...`,
-              ];
-
+              const room = getRoomAt(nx, ny);
+              const newStatus: Agent["status"] = Math.random() > 0.7 ? "thinking" : Math.random() > 0.4 ? "active" : Math.random() > 0.5 ? "busy" : "idle";
+              const msgs = ["Processando dados...", "Aguardando API...", "Tarefa concluída!", "Analisando...", "Compilando...", "Sincronizando..."];
               const newLog: AgentLog = {
                 id: `log-${agent.id}-${Date.now()}`,
                 timestamp: new Date(),
-                message: logMessages[Math.floor(Math.random() * logMessages.length)],
+                message: msgs[Math.floor(Math.random() * msgs.length)],
                 type: (["info", "success", "warning"] as const)[Math.floor(Math.random() * 3)],
               };
-
-              return {
-                ...agent,
-                x: nx,
-                y: ny,
-                status: newStatus,
-                room: room?.name || agent.room,
-                logs: [newLog, ...agent.logs].slice(0, 15),
-              };
+              return { ...agent, x: nx, y: ny, status: newStatus, room: room?.name || "Corredor", logs: [newLog, ...agent.logs].slice(0, 15) };
             }
           }
           return agent;
         })
       );
     }, 1500);
-
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
-    const nearby = agents.find(
-      (a) => Math.abs(a.x - player.x) <= 1 && Math.abs(a.y - player.y) <= 1
-    );
+    const nearby = agents.find((a) => Math.abs(a.x - player.x) <= 1 && Math.abs(a.y - player.y) <= 1);
     setNearbyAgent(nearby || null);
   }, [player, agents]);
 
@@ -159,42 +111,28 @@ export function useOfficeState(playerName: string = "Você") {
     }
   }, [agents, selectedAgent]);
 
-  const movePlayer = useCallback(
-    (dx: number, dy: number) => {
-      setPlayer((p) => {
-        const nx = p.x + dx;
-        const ny = p.y + dy;
-        if (isWalkable(nx, ny)) {
-          return { ...p, x: nx, y: ny };
-        }
-        return p;
-      });
-    },
-    []
-  );
+  const movePlayer = useCallback((dx: number, dy: number) => {
+    setPlayer((p) => {
+      const nx = p.x + dx;
+      const ny = p.y + dy;
+      return isWalkable(nx, ny) ? { ...p, x: nx, y: ny } : p;
+    });
+  }, []);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (chatOpen) return;
       switch (e.key) {
-        case "ArrowUp": case "w": case "W":
-          e.preventDefault(); movePlayer(0, -1); break;
-        case "ArrowDown": case "s": case "S":
-          e.preventDefault(); movePlayer(0, 1); break;
-        case "ArrowLeft": case "a": case "A":
-          e.preventDefault(); movePlayer(-1, 0); break;
-        case "ArrowRight": case "d": case "D":
-          e.preventDefault(); movePlayer(1, 0); break;
+        case "ArrowUp": case "w": case "W": e.preventDefault(); movePlayer(0, -1); break;
+        case "ArrowDown": case "s": case "S": e.preventDefault(); movePlayer(0, 1); break;
+        case "ArrowLeft": case "a": case "A": e.preventDefault(); movePlayer(-1, 0); break;
+        case "ArrowRight": case "d": case "D": e.preventDefault(); movePlayer(1, 0); break;
         case " ":
           e.preventDefault();
-          if (nearbyAgent) {
-            setSelectedAgent(nearbyAgent);
-            setChatOpen(true);
-          }
+          if (nearbyAgent) { setSelectedAgent(nearbyAgent); setChatOpen(true); }
           break;
       }
     };
-
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [movePlayer, chatOpen, nearbyAgent]);
@@ -205,16 +143,8 @@ export function useOfficeState(playerName: string = "Você") {
     .slice(0, 40);
 
   return {
-    agents,
-    player,
-    selectedAgent,
-    setSelectedAgent,
-    showActivityLog,
-    toggleActivityLog: () => setShowActivityLog((p) => !p),
-    allLogs,
-    chatOpen,
-    setChatOpen,
-    nearbyAgent,
-    movePlayer,
+    agents, player, selectedAgent, setSelectedAgent,
+    showActivityLog, toggleActivityLog: () => setShowActivityLog((p) => !p),
+    allLogs, chatOpen, setChatOpen, nearbyAgent, movePlayer,
   };
 }
