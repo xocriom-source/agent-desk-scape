@@ -146,7 +146,7 @@ function BuildingExterior({
       ))}
       {Array.from({ length: Math.ceil(bh) + 1 }).map((_, i) => (
         <mesh key={`hl${i}`} raycast={() => null} position={[cx, foundH + 0.002, cz - bh / 2 + i]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[bw, 0.015]} /><meshBasicMaterial color="#D0C8B8" />
+          <planeGeometry args={[bw, 0.015]} /><meshBasicMaterial color="#4A3828" />
         </mesh>
       ))}
 
