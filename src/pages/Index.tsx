@@ -99,7 +99,36 @@ const Index = () => {
     setPlayerDestination,
   } = useOfficeState(playerConfig.name);
 
-  const handleSaveCharacter = (config: PlayerConfig) => {
+  // Agent activity notifications
+  const lastArtifactCount = useRef(agents.reduce((sum, a) => sum + a.totalCreations, 0));
+  const lastCollabCount = useRef(agents.reduce((sum, a) => sum + a.totalCollaborations, 0));
+
+  useEffect(() => {
+    const newArtifacts = agents.reduce((sum, a) => sum + a.totalCreations, 0);
+    const newCollabs = agents.reduce((sum, a) => sum + a.totalCollaborations, 0);
+
+    if (newArtifacts > lastArtifactCount.current) {
+      const creator = agents.find(a => a.artifacts[0]?.createdAt && Date.now() - a.artifacts[0].createdAt.getTime() < 3000);
+      if (creator) {
+        toast(`🎨 ${creator.name} criou: ${creator.artifacts[0]?.title}`, {
+          description: `Na sala ${creator.room}`,
+          duration: 4000,
+        });
+      }
+    }
+    if (newCollabs > lastCollabCount.current) {
+      const collaber = agents.find(a => a.totalCollaborations > 0);
+      if (collaber) {
+        toast(`🤝 ${collaber.name} iniciou uma colaboração`, {
+          description: `No ${collaber.room}`,
+          duration: 3000,
+        });
+      }
+    }
+    lastArtifactCount.current = newArtifacts;
+    lastCollabCount.current = newCollabs;
+  }, [agents]);
+
     setPlayerConfig(config);
     localStorage.setItem("playerConfig", JSON.stringify(config));
     localStorage.setItem("playerName", config.name);
