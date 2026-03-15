@@ -78,6 +78,26 @@ export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onRo
               <ImageIcon className="w-4 h-4 text-[#FF6BB5]" />
             </button>
           )}
+          {onOpenStudios && (
+            <button onClick={onOpenStudios} className="p-2 rounded-xl hover:bg-muted/30 transition-colors" title="Estúdios Criativos">
+              <Sparkles className="w-4 h-4 text-[#FFB347]" />
+            </button>
+          )}
+          {onOpenAnalytics && (
+            <button onClick={onOpenAnalytics} className="p-2 rounded-xl hover:bg-muted/30 transition-colors" title="Analytics">
+              <BarChart3 className="w-4 h-4 text-[#A78BFA]" />
+            </button>
+          )}
+          {onOpenMarketplace && (
+            <button onClick={onOpenMarketplace} className="p-2 rounded-xl hover:bg-muted/30 transition-colors" title="Marketplace">
+              <Store className="w-4 h-4 text-accent" />
+            </button>
+          )}
+          {onOpenGovernance && (
+            <button onClick={onOpenGovernance} className="p-2 rounded-xl hover:bg-muted/30 transition-colors" title="Governança IA">
+              <Vote className="w-4 h-4 text-primary" />
+            </button>
+          )}
         </div>
       </div>
 
