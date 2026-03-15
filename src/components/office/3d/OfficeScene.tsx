@@ -551,9 +551,9 @@ function Player3D({ player, config }: { player: Player; config?: { color: string
     const speed = Math.hypot(player.x - prevPos.current.x, player.y - prevPos.current.y);
     const moving = speed > 0.001;
     prevPos.current = { x: player.x, y: player.y };
-    ref.current.position.set(smoothPos.current.x, 0, smoothPos.current.z);
-    if (moving) ref.current.position.y = Math.abs(Math.sin(Date.now() * 0.015)) * 0.025;
-    else ref.current.position.y = Math.sin(Date.now() * 0.003) * 0.008;
+    ref.current.position.set(smoothPos.current.x, 0.01, smoothPos.current.z);
+    if (moving) ref.current.position.y = 0.01 + Math.abs(Math.sin(Date.now() * 0.015)) * 0.025;
+    else ref.current.position.y = 0.01 + Math.abs(Math.sin(Date.now() * 0.003)) * 0.008;
     let diff = player.angle - smoothAngle.current;
     while (diff > Math.PI) diff -= Math.PI * 2;
     while (diff < -Math.PI) diff += Math.PI * 2;
