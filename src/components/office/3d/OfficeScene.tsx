@@ -230,17 +230,10 @@ function BuildingExterior({
         <boxGeometry args={[bw + wallT * 2, wallH, wallT]} />
         <meshStandardMaterial color={brickColor} roughness={0.95} />
       </mesh>
-      {/* Brick horizontal lines north */}
-      {brickLines(8).map((frac) => (
+      {/* Brick lines north (reduced to 3) */}
+      {[0.25, 0.5, 0.75].map((frac) => (
         <mesh key={`bn${frac}`} position={[cx, foundH + wallH * frac, northZ - wallT / 2 - 0.001]} raycast={() => null}>
           <boxGeometry args={[bw + wallT * 2 + 0.01, 0.012, 0.01]} />
-          <meshStandardMaterial color={brickDark} />
-        </mesh>
-      ))}
-      {/* Vertical brick joints north */}
-      {Array.from({ length: Math.floor(bw / 0.4) }).map((_, i) => (
-        <mesh key={`bnv${i}`} position={[cx - bw / 2 + i * 0.4 + (i % 2 === 0 ? 0.1 : 0.3), foundH + wallH * 0.5, northZ - wallT / 2 - 0.001]} raycast={() => null}>
-          <boxGeometry args={[0.01, wallH, 0.01]} />
           <meshStandardMaterial color={brickDark} />
         </mesh>
       ))}
@@ -250,8 +243,8 @@ function BuildingExterior({
         <boxGeometry args={[wallT, wallH, bh + wallT * 2]} />
         <meshStandardMaterial color={brickDark} roughness={0.95} />
       </mesh>
-      {/* Brick lines west */}
-      {brickLines(8).map((frac) => (
+      {/* Brick lines west (reduced to 3) */}
+      {[0.25, 0.5, 0.75].map((frac) => (
         <mesh key={`bw${frac}`} position={[westX - wallT / 2 - 0.001, foundH + wallH * frac, cz]} raycast={() => null}>
           <boxGeometry args={[0.01, 0.012, bh + wallT * 2 + 0.01]} />
           <meshStandardMaterial color="#4A2E1A" />
