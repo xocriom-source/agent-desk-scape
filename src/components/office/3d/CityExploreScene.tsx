@@ -5,7 +5,9 @@ import * as THREE from "three";
 import { useDayNight } from "@/hooks/useDayNight";
 import { useCityBuildings } from "@/hooks/useCityBuildings";
 import { Building3D } from "@/components/buildings/Building3D";
+import { Vehicle3D } from "@/components/city/Vehicle3D";
 import type { CityBuilding } from "@/types/building";
+import { STYLE_TRANSPORT_MAP } from "@/types/building";
 
 const S = 0.5;
 
