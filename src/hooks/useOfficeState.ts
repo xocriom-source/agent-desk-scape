@@ -78,19 +78,6 @@ function createAgents(): Agent[] {
   });
 }
 
-function keyToMoveDelta(keys: Set<string>) {
-  const has = (k: string) => keys.has(k) || keys.has(k.toLowerCase()) || keys.has(k.toUpperCase());
-  let dx = 0;
-  let dy = 0;
-
-  if (has("ArrowUp") || has("w")) dy -= 1;
-  if (has("ArrowDown") || has("s")) dy += 1;
-  if (has("ArrowLeft") || has("a")) dx -= 1;
-  if (has("ArrowRight") || has("d")) dx += 1;
-
-  return { dx, dy };
-}
-
 function stepWithCollision(
   x: number,
   y: number,
@@ -99,6 +86,7 @@ function stepWithCollision(
   radius = 0.28
 ): { x: number; y: number; blocked: boolean } {
   if (isWalkableAtFloat(nx, ny, radius)) return { x: nx, y: ny, blocked: false };
+  // Slide along walls: try each axis independently
   if (isWalkableAtFloat(nx, y, radius)) return { x: nx, y, blocked: false };
   if (isWalkableAtFloat(x, ny, radius)) return { x, y: ny, blocked: false };
   return { x, y, blocked: true };
@@ -106,13 +94,13 @@ function stepWithCollision(
 
 export function useOfficeState(playerName: string = "Você") {
   const [agents, setAgents] = useState<Agent[]>(createAgents);
-  const [player, setPlayer] = useState<Player>({ x: 14, y: 25, name: playerName });
+  const [player, setPlayer] = useState<Player>({ x: 14, y: 25, angle: 0, name: playerName });
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [showActivityLog, setShowActivityLog] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
   const [nearbyAgent, setNearbyAgent] = useState<Agent | null>(null);
 
-  // Click-to-move path (waypoints in tile coords)
+  // Click-to-move path
   const pathRef = useRef<Tile[]>([]);
   const goalRef = useRef<Tile | null>(null);
   const stuckRef = useRef(0);
@@ -123,18 +111,21 @@ export function useOfficeState(playerName: string = "Você") {
     stuckRef.current = 0;
   }, []);
 
-  // Mobile D-pad uses this (small nudge, still slides on collision)
+  // Mobile D-pad: direct nudge (still slides on collision)
   const movePlayer = useCallback(
     (dx: number, dy: number) => {
       clearPath();
       const len = Math.hypot(dx, dy) || 1;
-      const step = 0.38; // tiles
+      const step = 0.38;
       const vx = (dx / len) * step;
       const vy = (dy / len) * step;
 
       setPlayer((p) => {
         const r = stepWithCollision(p.x, p.y, p.x + vx, p.y + vy);
-        return r.blocked ? p : { ...p, x: r.x, y: r.y };
+        if (r.blocked) return p;
+        // Update angle to face movement direction
+        const newAngle = Math.atan2(vx, vy);
+        return { ...p, x: r.x, y: r.y, angle: newAngle };
       });
     },
     [clearPath]
@@ -175,20 +166,7 @@ export function useOfficeState(playerName: string = "Você") {
         return;
       }
 
-      const moveKeys = [
-        "ArrowUp",
-        "ArrowDown",
-        "ArrowLeft",
-        "ArrowRight",
-        "w",
-        "a",
-        "s",
-        "d",
-        "W",
-        "A",
-        "S",
-        "D",
-      ];
+      const moveKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
 
       if (moveKeys.includes(e.key)) {
         e.preventDefault();
@@ -221,14 +199,25 @@ export function useOfficeState(playerName: string = "Você") {
     };
   }, [chatOpen, nearbyAgent]);
 
-  // Smooth MMO-like movement loop (60fps, diagonal normalized, collision sliding)
+  // ── Smooth rotation-based movement loop (Minecraft-style) ──
+  // ↑ = move forward in facing direction
+  // ↓ = move backward
+  // ← = rotate left
+  // → = rotate right
+  // Includes acceleration/deceleration for smooth feel
   useEffect(() => {
     let raf = 0;
     let last = 0;
 
-    const speedKeys = 6.8; // tiles/s
-    const speedPath = 6.2; // tiles/s
-    const arrive = 0.14;
+    // Physics parameters
+    const maxSpeed = 5.5;       // tiles/s top speed
+    const accel = 14.0;         // tiles/s² acceleration
+    const decel = 10.0;         // tiles/s² deceleration (friction)
+    const rotateSpeed = 3.2;    // radians/s rotation speed
+    const pathSpeed = 5.0;      // tiles/s for click-to-move
+
+    // Velocity state (persists across frames)
+    let currentSpeed = 0;
 
     const tick = (t: number) => {
       raf = requestAnimationFrame(tick);
@@ -241,34 +230,76 @@ export function useOfficeState(playerName: string = "Você") {
       last = t;
       if (dt <= 0) return;
 
-      const { dx, dy } = keyToMoveDelta(keysDown.current);
-      const usingKeys = dx !== 0 || dy !== 0;
+      const keys = keysDown.current;
+      const up = keys.has("ArrowUp");
+      const down = keys.has("ArrowDown");
+      const left = keys.has("ArrowLeft");
+      const right = keys.has("ArrowRight");
+      const usingKeys = up || down || left || right;
 
       setPlayer((p) => {
-        let x = p.x;
-        let y = p.y;
+        let { x, y, angle } = p;
 
-        // If user starts moving manually, cancel click-to-move
+        // Cancel click-to-move path when pressing keys
         if (usingKeys) {
           pathRef.current = [];
           goalRef.current = null;
           stuckRef.current = 0;
         }
 
-        let vx = 0;
-        let vy = 0;
-        let followingPath = false;
-
+        // ── Keyboard rotation-based movement ──
         if (usingKeys) {
-          const len = Math.hypot(dx, dy) || 1;
-          vx = (dx / len) * speedKeys;
-          vy = (dy / len) * speedKeys;
-        } else if (pathRef.current.length) {
-          followingPath = true;
+          // Rotate
+          if (left) angle -= rotateSpeed * dt;
+          if (right) angle += rotateSpeed * dt;
+          // Normalize angle
+          angle = ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+
+          // Accelerate / decelerate
+          let inputDir = 0;
+          if (up) inputDir += 1;
+          if (down) inputDir -= 1;
+
+          if (inputDir !== 0) {
+            currentSpeed += inputDir * accel * dt;
+            currentSpeed = Math.max(-maxSpeed * 0.6, Math.min(maxSpeed, currentSpeed));
+          } else {
+            // Decelerate toward zero
+            if (currentSpeed > 0) {
+              currentSpeed = Math.max(0, currentSpeed - decel * dt);
+            } else if (currentSpeed < 0) {
+              currentSpeed = Math.min(0, currentSpeed + decel * dt);
+            }
+          }
+
+          // Compute velocity in facing direction
+          // angle=0 means facing +Z in tile space (down on map), we use sin/cos
+          const vx = Math.sin(angle) * currentSpeed;
+          const vy = Math.cos(angle) * currentSpeed;
+
+          const nx = x + vx * dt;
+          const ny = y + vy * dt;
+          const r = stepWithCollision(x, y, nx, ny);
+
+          if (r.blocked) {
+            // Reduce speed on collision but don't zero it (allows sliding)
+            currentSpeed *= 0.5;
+          }
+
+          x = r.x;
+          y = r.y;
+
+          if (x === p.x && y === p.y && angle === p.angle) return p;
+          return { ...p, x, y, angle };
+        }
+
+        // ── Click-to-move pathfinding ──
+        if (pathRef.current.length) {
           const next = pathRef.current[0];
           const dirX = next.x - x;
           const dirY = next.y - y;
           const dist = Math.hypot(dirX, dirY);
+          const arrive = 0.14;
 
           if (dist < arrive) {
             x = next.x;
@@ -276,33 +307,56 @@ export function useOfficeState(playerName: string = "Você") {
             pathRef.current.shift();
             stuckRef.current = 0;
           } else {
-            vx = (dirX / dist) * speedPath;
-            vy = (dirY / dist) * speedPath;
-          }
-        } else {
-          return p;
-        }
+            const vx = (dirX / dist) * pathSpeed;
+            const vy = (dirY / dist) * pathSpeed;
+            const nx = x + vx * dt;
+            const ny = y + vy * dt;
+            const r = stepWithCollision(x, y, nx, ny);
 
-        const nx = x + vx * dt;
-        const ny = y + vy * dt;
-        const r = stepWithCollision(x, y, nx, ny);
-
-        if (r.blocked) {
-          // If pathing and blocked for a bit, re-path to goal (helps when near doors/furniture)
-          if (followingPath && goalRef.current) {
-            stuckRef.current += dt;
-            if (stuckRef.current > 0.35) {
-              const start = tileFromFloat(x, y);
-              const newPath = bfsPath8(start, goalRef.current);
-              pathRef.current = newPath;
-              if (!newPath.length) goalRef.current = null;
-              stuckRef.current = 0;
+            if (r.blocked) {
+              if (goalRef.current) {
+                stuckRef.current += dt;
+                if (stuckRef.current > 0.35) {
+                  const start = tileFromFloat(x, y);
+                  const newPath = bfsPath8(start, goalRef.current);
+                  pathRef.current = newPath;
+                  if (!newPath.length) goalRef.current = null;
+                  stuckRef.current = 0;
+                }
+              }
+              return p;
             }
+
+            x = r.x;
+            y = r.y;
+            // Face movement direction during pathfinding
+            angle = Math.atan2(dirX, dirY);
           }
-          return p;
+
+          if (x === p.x && y === p.y && angle === p.angle) return p;
+          return { ...p, x, y, angle };
         }
 
-        return { ...p, x: r.x, y: r.y };
+        // No input: decelerate any remaining speed
+        if (Math.abs(currentSpeed) > 0.01) {
+          if (currentSpeed > 0) {
+            currentSpeed = Math.max(0, currentSpeed - decel * dt);
+          } else {
+            currentSpeed = Math.min(0, currentSpeed + decel * dt);
+          }
+
+          const vx = Math.sin(angle) * currentSpeed;
+          const vy = Math.cos(angle) * currentSpeed;
+          const nx = x + vx * dt;
+          const ny = y + vy * dt;
+          const r = stepWithCollision(x, y, nx, ny);
+          if (!r.blocked && (r.x !== x || r.y !== y)) {
+            return { ...p, x: r.x, y: r.y };
+          }
+          currentSpeed = 0;
+        }
+
+        return p;
       });
     };
 

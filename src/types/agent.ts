@@ -27,6 +27,7 @@ export interface AgentLog {
 export interface Player {
   x: number;
   y: number;
+  angle: number; // facing direction in radians
   name: string;
 }
 
