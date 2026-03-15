@@ -7,6 +7,8 @@ import Landing from "./pages/Landing.tsx";
 import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";
 import Office from "./pages/Index.tsx";
+import WorldMap from "./pages/WorldMap.tsx";
+import CityView from "./pages/CityView.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -21,6 +23,8 @@ const App = () => (
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/world" element={<WorldMap />} />
+          <Route path="/city" element={<CityView />} />
           <Route path="/office" element={<Office />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
