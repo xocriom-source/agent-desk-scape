@@ -8,6 +8,7 @@ import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";
 import Onboarding from "./pages/Onboarding.tsx";
 import Lobby from "./pages/Lobby.tsx";
+import Spaces from "./pages/Spaces.tsx";
 import Office from "./pages/Index.tsx";
 import WorldMap from "./pages/WorldMap.tsx";
 import CityView from "./pages/CityView.tsx";
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/signup" element={<Signup />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/lobby" element={<Lobby />} />
+          <Route path="/spaces" element={<Spaces />} />
           <Route path="/world" element={<WorldMap />} />
           <Route path="/city" element={<CityView />} />
           <Route path="/city-explore" element={<CityExplore />} />
