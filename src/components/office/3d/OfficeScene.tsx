@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Html } from "@react-three/drei";
+import { OrbitControls, Html } from "@react-three/drei";
 import * as THREE from "three";
 import type { Agent, Player } from "@/types/agent";
 import type { RoomDef, FurnitureItem } from "@/data/officeMap";
@@ -10,168 +10,161 @@ const STATUS_COLORS: Record<string, string> = {
   active: "#10B981", idle: "#F59E0B", thinking: "#6366F1", busy: "#EF4444",
 };
 
-// ── Building exterior ──
-function BuildingExterior({ rooms }: { rooms: RoomDef[] }) {
-  // Calculate building bounds from rooms
-  const minX = Math.min(...rooms.map(r => r.x)) - 2;
-  const minY = Math.min(...rooms.map(r => r.y)) - 2;
-  const maxX = Math.max(...rooms.map(r => r.x + r.w)) + 2;
-  const maxY = Math.max(...rooms.map(r => r.y + r.h)) + 2;
-  const bw = (maxX - minX) * 0.5;
-  const bh = (maxY - minY) * 0.5;
-  const cx = (minX + maxX) / 2 * 0.5;
-  const cz = (minY + maxY) / 2 * 0.5;
+const S = 0.5; // tile to world scale
+
+// ── Interior building shell ──
+function BuildingInterior({ rooms }: { rooms: RoomDef[] }) {
+  const minX = Math.min(...rooms.map(r => r.x)) - 1;
+  const minY = Math.min(...rooms.map(r => r.y)) - 1;
+  const maxX = Math.max(...rooms.map(r => r.x + r.w)) + 1;
+  const maxY = Math.max(...rooms.map(r => r.y + r.h)) + 1;
+  const bw = (maxX - minX) * S;
+  const bh = (maxY - minY) * S;
+  const cx = ((minX + maxX) / 2) * S;
+  const cz = ((minY + maxY) / 2) * S;
+  const wallH = 0.9;
 
   return (
     <group>
-      {/* Main building floor - concrete/tile */}
-      <mesh position={[cx, 0.002, cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[bw + 1, bh + 1]} />
-        <meshStandardMaterial color="#C8C0B0" />
+      {/* ── Main building floor (tile look) ── */}
+      <mesh position={[cx, 0.001, cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[bw, bh]} />
+        <meshStandardMaterial color="#D5CFC5" />
       </mesh>
-
-      {/* Building border/baseboard */}
-      {/* Front wall */}
-      <mesh position={[cx, 0.15, cz + bh / 2 + 0.5]} castShadow>
-        <boxGeometry args={[bw + 1, 0.3, 0.15]} />
-        <meshStandardMaterial color="#6B7280" />
-      </mesh>
-      {/* Back wall */}
-      <mesh position={[cx, 0.4, cz - bh / 2 - 0.5]} castShadow>
-        <boxGeometry args={[bw + 1, 0.8, 0.15]} />
-        <meshStandardMaterial color="#4B5563" />
-      </mesh>
-      {/* Left wall */}
-      <mesh position={[cx - bw / 2 - 0.5, 0.4, cz]} castShadow>
-        <boxGeometry args={[0.15, 0.8, bh + 1]} />
-        <meshStandardMaterial color="#4B5563" />
-      </mesh>
-      {/* Right wall */}
-      <mesh position={[cx + bw / 2 + 0.5, 0.4, cz]} castShadow>
-        <boxGeometry args={[0.15, 0.8, bh + 1]} />
-        <meshStandardMaterial color="#4B5563" />
-      </mesh>
-
-      {/* Parking lot / sidewalk around building */}
-      <mesh position={[cx, 0.001, cz + bh / 2 + 2]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[bw + 6, 3]} />
-        <meshStandardMaterial color="#9CA3AF" />
-      </mesh>
-      {/* Sidewalk lines */}
-      {[-2, 0, 2].map((offset, i) => (
-        <mesh key={i} position={[cx + offset * 2, 0.003, cz + bh / 2 + 2.5]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[0.08, 2]} />
-          <meshStandardMaterial color="#D1D5DB" />
+      {/* Tile grid lines on floor */}
+      {Array.from({ length: Math.ceil(bw) + 1 }).map((_, i) => (
+        <mesh key={`vl${i}`} position={[cx - bw / 2 + i, 0.002, cz]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.01, bh]} />
+          <meshBasicMaterial color="#C0B8A8" />
+        </mesh>
+      ))}
+      {Array.from({ length: Math.ceil(bh) + 1 }).map((_, i) => (
+        <mesh key={`hl${i}`} position={[cx, 0.002, cz - bh / 2 + i]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[bw, 0.01]} />
+          <meshBasicMaterial color="#C0B8A8" />
         </mesh>
       ))}
 
-      {/* Trees around the building */}
-      {[
-        [cx - bw / 2 - 2, cz - bh / 2 - 2],
-        [cx + bw / 2 + 2, cz - bh / 2 - 2],
-        [cx - bw / 2 - 2, cz + bh / 2 + 1],
-        [cx + bw / 2 + 2, cz + bh / 2 + 1],
-        [cx - bw / 2 - 3, cz],
-        [cx + bw / 2 + 3, cz],
-      ].map(([tx, tz], i) => (
-        <group key={i} position={[tx, 0, tz]}>
-          {/* Trunk */}
-          <mesh position={[0, 0.3, 0]}>
-            <cylinderGeometry args={[0.06, 0.08, 0.6, 8]} />
-            <meshStandardMaterial color="#8B6914" />
+      {/* ── Exterior walls (thick, tall) ── */}
+      {/* North */}
+      <mesh position={[cx, wallH / 2, cz - bh / 2 - 0.1]}>
+        <boxGeometry args={[bw + 0.4, wallH, 0.2]} />
+        <meshStandardMaterial color="#8B8D94" />
+      </mesh>
+      {/* South */}
+      <mesh position={[cx, wallH / 2, cz + bh / 2 + 0.1]}>
+        <boxGeometry args={[bw + 0.4, wallH, 0.2]} />
+        <meshStandardMaterial color="#8B8D94" />
+      </mesh>
+      {/* West */}
+      <mesh position={[cx - bw / 2 - 0.1, wallH / 2, cz]}>
+        <boxGeometry args={[0.2, wallH, bh + 0.4]} />
+        <meshStandardMaterial color="#7D7F86" />
+      </mesh>
+      {/* East */}
+      <mesh position={[cx + bw / 2 + 0.1, wallH / 2, cz]}>
+        <boxGeometry args={[0.2, wallH, bh + 0.4]} />
+        <meshStandardMaterial color="#7D7F86" />
+      </mesh>
+
+      {/* ── Baseboard trim ── */}
+      <mesh position={[cx, 0.03, cz - bh / 2 + 0.01]}>
+        <boxGeometry args={[bw, 0.06, 0.04]} />
+        <meshStandardMaterial color="#5C5E64" />
+      </mesh>
+      <mesh position={[cx, 0.03, cz + bh / 2 - 0.01]}>
+        <boxGeometry args={[bw, 0.06, 0.04]} />
+        <meshStandardMaterial color="#5C5E64" />
+      </mesh>
+
+      {/* ── Ceiling lights (fluorescent strips) ── */}
+      {Array.from({ length: 6 }).map((_, i) => (
+        <group key={`light-${i}`}>
+          <mesh position={[cx - bw / 3 + (i % 3) * (bw / 3), wallH - 0.02, cz - bh / 4 + Math.floor(i / 3) * (bh / 2)]}>
+            <boxGeometry args={[0.8, 0.03, 0.15]} />
+            <meshStandardMaterial color="#FFF8E1" emissive="#FFF8E1" emissiveIntensity={0.3} />
           </mesh>
-          {/* Canopy */}
-          <mesh position={[0, 0.7, 0]}>
-            <sphereGeometry args={[0.35, 12, 12]} />
-            <meshStandardMaterial color="#2D6A2E" />
-          </mesh>
-          <mesh position={[0.1, 0.85, 0.1]}>
-            <sphereGeometry args={[0.2, 10, 10]} />
-            <meshStandardMaterial color="#3A8B3B" />
-          </mesh>
+          <pointLight
+            position={[cx - bw / 3 + (i % 3) * (bw / 3), wallH - 0.1, cz - bh / 4 + Math.floor(i / 3) * (bh / 2)]}
+            intensity={0.15}
+            distance={5}
+            color="#FFF5DC"
+          />
         </group>
       ))}
     </group>
   );
 }
 
-// ── Hallway floor rendering ──
-function HallwayFloors() {
-  // Main horizontal hallway
-  return (
-    <group>
-      <mesh position={[10, 0.003, 6.25]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[20, 0.5]} />
-        <meshStandardMaterial color="#D4CFC5" />
-      </mesh>
-      {/* Vertical hallway left */}
-      <mesh position={[6.25, 0.003, 8.5]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[0.5, 16]} />
-        <meshStandardMaterial color="#D4CFC5" />
-      </mesh>
-      {/* Vertical hallway center */}
-      <mesh position={[13.75, 0.003, 8.5]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[0.5, 16]} />
-        <meshStandardMaterial color="#D4CFC5" />
-      </mesh>
-    </group>
-  );
-}
-
-// ── Room 3D component ──
+// ── Room 3D ──
 function Room3D({ room }: { room: RoomDef }) {
-  const w = room.w * 0.5;
-  const h = room.h * 0.5;
-  const x = room.x * 0.5 + w / 2;
-  const z = room.y * 0.5 + h / 2;
+  const w = room.w * S;
+  const h = room.h * S;
+  const x = room.x * S + w / 2;
+  const z = room.y * S + h / 2;
+  const wallH = 0.75;
+  const wallT = 0.08;
 
   return (
     <group position={[x, 0, z]}>
-      {/* Floor */}
-      <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      {/* Room floor */}
+      <mesh position={[0, 0.004, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[w, h]} />
         <meshStandardMaterial color={room.floorColor} />
       </mesh>
-      {/* Carpet */}
       {room.carpetColor && (
-        <mesh position={[0, 0.008, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[w - 0.4, h - 0.4]} />
+        <mesh position={[0, 0.006, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[w * 0.7, h * 0.7]} />
           <meshStandardMaterial color={room.carpetColor} />
         </mesh>
       )}
-      {/* Walls - thicker, taller, more solid */}
-      {/* Back wall */}
-      <mesh position={[0, 0.35, -h / 2]} castShadow>
-        <boxGeometry args={[w + 0.12, 0.7, 0.12]} />
+
+      {/* Room walls */}
+      {/* Back */}
+      <mesh position={[0, wallH / 2, -h / 2]}>
+        <boxGeometry args={[w + wallT, wallH, wallT]} />
         <meshStandardMaterial color={room.wallColor} />
       </mesh>
-      {/* Left wall */}
-      <mesh position={[-w / 2, 0.35, 0]} castShadow>
-        <boxGeometry args={[0.12, 0.7, h + 0.12]} />
+      {/* Left */}
+      <mesh position={[-w / 2, wallH / 2, 0]}>
+        <boxGeometry args={[wallT, wallH, h + wallT]} />
         <meshStandardMaterial color={room.wallColor} />
       </mesh>
-      {/* Right wall */}
-      <mesh position={[w / 2, 0.35, 0]} castShadow>
-        <boxGeometry args={[0.12, 0.7, h + 0.12]} />
+      {/* Right */}
+      <mesh position={[w / 2, wallH / 2, 0]}>
+        <boxGeometry args={[wallT, wallH, h + wallT]} />
         <meshStandardMaterial color={room.wallColor} />
       </mesh>
-      {/* Front wall (partial - door opening) */}
-      <mesh position={[-w / 4 - 0.15, 0.35, h / 2]} castShadow>
-        <boxGeometry args={[w / 2 - 0.2, 0.7, 0.12]} />
-        <meshStandardMaterial color={room.wallColor} />
+      {/* Front - door opening in center */}
+      {(() => {
+        const doorW = 0.5;
+        const sideW = (w - doorW) / 2;
+        return (
+          <>
+            <mesh position={[-(doorW / 2 + sideW / 2), wallH / 2, h / 2]}>
+              <boxGeometry args={[sideW, wallH, wallT]} />
+              <meshStandardMaterial color={room.wallColor} />
+            </mesh>
+            <mesh position={[(doorW / 2 + sideW / 2), wallH / 2, h / 2]}>
+              <boxGeometry args={[sideW, wallH, wallT]} />
+              <meshStandardMaterial color={room.wallColor} />
+            </mesh>
+            {/* Door frame top */}
+            <mesh position={[0, wallH - 0.05, h / 2]}>
+              <boxGeometry args={[doorW + 0.06, 0.05, wallT + 0.02]} />
+              <meshStandardMaterial color="#5C4033" />
+            </mesh>
+          </>
+        );
+      })()}
+
+      {/* Room name sign on back wall */}
+      <mesh position={[0, wallH - 0.12, -h / 2 + wallT / 2 + 0.001]}>
+        <planeGeometry args={[Math.min(w * 0.6, 1.2), 0.15]} />
+        <meshStandardMaterial color="#F5F0E8" />
       </mesh>
-      <mesh position={[w / 4 + 0.15, 0.35, h / 2]} castShadow>
-        <boxGeometry args={[w / 2 - 0.2, 0.7, 0.12]} />
-        <meshStandardMaterial color={room.wallColor} />
-      </mesh>
-      {/* Wall top trim */}
-      <mesh position={[0, 0.7, -h / 2]}>
-        <boxGeometry args={[w + 0.2, 0.04, 0.16]} />
-        <meshStandardMaterial color="#555" />
-      </mesh>
-      {/* Room label */}
-      <Html position={[0, 0.9, 0]} center>
-        <div className="px-2 py-0.5 bg-card/90 backdrop-blur-sm rounded-md border border-border text-[10px] font-display font-bold text-foreground whitespace-nowrap pointer-events-none select-none">
+      <Html position={[0, wallH - 0.12, -h / 2 + wallT / 2 + 0.01]} center>
+        <div className="px-2 py-0.5 text-[9px] font-bold text-gray-700 whitespace-nowrap pointer-events-none select-none" style={{ fontFamily: "monospace" }}>
           {room.name}
         </div>
       </Html>
@@ -179,60 +172,74 @@ function Room3D({ room }: { room: RoomDef }) {
   );
 }
 
-// ── Agent 3D with walking animation ──
+// ── Character base (shared between agents and player) ──
+function useWalkAnimation(
+  ref: React.RefObject<THREE.Group | null>,
+  leftLeg: React.RefObject<THREE.Mesh | null>,
+  rightLeg: React.RefObject<THREE.Mesh | null>,
+  leftArm: React.RefObject<THREE.Mesh | null>,
+  rightArm: React.RefObject<THREE.Mesh | null>,
+  targetX: number,
+  targetZ: number,
+  smoothPos: React.MutableRefObject<THREE.Vector3>,
+  prevPos: React.MutableRefObject<{ x: number; z: number }>,
+  lerpSpeed = 0.15
+) {
+  useFrame(() => {
+    if (!ref.current) return;
+
+    smoothPos.current.x += (targetX - smoothPos.current.x) * lerpSpeed;
+    smoothPos.current.z += (targetZ - smoothPos.current.z) * lerpSpeed;
+
+    const dx = Math.abs(targetX - smoothPos.current.x);
+    const dz = Math.abs(targetZ - smoothPos.current.z);
+    const moving = dx > 0.005 || dz > 0.005;
+
+    ref.current.position.set(smoothPos.current.x, 0, smoothPos.current.z);
+
+    // Walking bounce or idle bob
+    if (moving) {
+      ref.current.position.y = Math.abs(Math.sin(Date.now() * 0.015)) * 0.025;
+    } else {
+      ref.current.position.y = Math.sin(Date.now() * 0.003) * 0.008;
+    }
+
+    // Leg & arm swing
+    const swing = moving ? Math.sin(Date.now() * 0.016) * 0.5 : 0;
+    if (leftLeg.current) leftLeg.current.rotation.x = moving ? swing : leftLeg.current.rotation.x * 0.85;
+    if (rightLeg.current) rightLeg.current.rotation.x = moving ? -swing : rightLeg.current.rotation.x * 0.85;
+    if (leftArm.current) leftArm.current.rotation.x = moving ? -swing * 0.5 : leftArm.current.rotation.x * 0.85;
+    if (rightArm.current) rightArm.current.rotation.x = moving ? swing * 0.5 : rightArm.current.rotation.x * 0.85;
+
+    // Face direction
+    if (targetX !== prevPos.current.x || targetZ !== prevPos.current.z) {
+      const dirX = targetX - prevPos.current.x;
+      const dirZ = targetZ - prevPos.current.z;
+      if (Math.abs(dirX) > 0.001 || Math.abs(dirZ) > 0.001) {
+        const angle = Math.atan2(dirX, dirZ);
+        // Smooth rotation
+        let diff = angle - ref.current.rotation.y;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        ref.current.rotation.y += diff * 0.12;
+      }
+      prevPos.current = { x: targetX, z: targetZ };
+    }
+  });
+}
+
+// ── Agent 3D ──
 function Agent3D({ agent, selected, onClick }: { agent: Agent; selected?: boolean; onClick: () => void }) {
   const ref = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
-  const smoothPos = useRef(new THREE.Vector3(agent.x * 0.5, 0, agent.y * 0.5));
-  const prevPos = useRef({ x: agent.x, y: agent.y });
-  const isMoving = useRef(false);
-  const leftLegRef = useRef<THREE.Mesh>(null);
-  const rightLegRef = useRef<THREE.Mesh>(null);
+  const smoothPos = useRef(new THREE.Vector3(agent.x * S, 0, agent.y * S));
+  const prevPos = useRef({ x: agent.x * S, z: agent.y * S });
+  const leftLeg = useRef<THREE.Mesh>(null);
+  const rightLeg = useRef<THREE.Mesh>(null);
+  const leftArm = useRef<THREE.Mesh>(null);
+  const rightArm = useRef<THREE.Mesh>(null);
 
-  useFrame(() => {
-    if (!ref.current) return;
-    
-    const targetX = agent.x * 0.5;
-    const targetZ = agent.y * 0.5;
-    
-    // Smooth interpolation
-    smoothPos.current.x += (targetX - smoothPos.current.x) * 0.1;
-    smoothPos.current.z += (targetZ - smoothPos.current.z) * 0.1;
-    
-    const dx = Math.abs(targetX - smoothPos.current.x);
-    const dz = Math.abs(targetZ - smoothPos.current.z);
-    isMoving.current = dx > 0.01 || dz > 0.01;
-    
-    ref.current.position.set(smoothPos.current.x, 0, smoothPos.current.z);
-    
-    // Idle bob
-    if (!isMoving.current) {
-      ref.current.position.y = Math.sin(Date.now() * 0.003) * 0.015;
-    }
-    
-    // Walking leg animation
-    if (leftLegRef.current && rightLegRef.current) {
-      if (isMoving.current) {
-        const swing = Math.sin(Date.now() * 0.012) * 0.3;
-        leftLegRef.current.rotation.x = swing;
-        rightLegRef.current.rotation.x = -swing;
-      } else {
-        leftLegRef.current.rotation.x *= 0.9;
-        rightLegRef.current.rotation.x *= 0.9;
-      }
-    }
-    
-    // Face movement direction
-    if (agent.x !== prevPos.current.x || agent.y !== prevPos.current.y) {
-      const dirX = agent.x - prevPos.current.x;
-      const dirY = agent.y - prevPos.current.y;
-      if (dirX !== 0 || dirY !== 0) {
-        const angle = Math.atan2(dirX, dirY);
-        ref.current.rotation.y += (angle - ref.current.rotation.y) * 0.15;
-      }
-      prevPos.current = { x: agent.x, y: agent.y };
-    }
-  });
+  useWalkAnimation(ref, leftLeg, rightLeg, leftArm, rightArm, agent.x * S, agent.y * S, smoothPos, prevPos, 0.1);
 
   return (
     <group
@@ -243,66 +250,71 @@ function Agent3D({ agent, selected, onClick }: { agent: Agent; selected?: boolea
     >
       {/* Body */}
       <mesh position={[0, 0.25, 0]} castShadow>
-        <boxGeometry args={[0.25, 0.3, 0.15]} />
+        <boxGeometry args={[0.22, 0.28, 0.14]} />
         <meshStandardMaterial color={agent.color} />
       </mesh>
       {/* Head */}
-      <mesh position={[0, 0.48, 0]} castShadow>
-        <boxGeometry args={[0.2, 0.2, 0.18]} />
+      <mesh position={[0, 0.47, 0]} castShadow>
+        <boxGeometry args={[0.18, 0.18, 0.16]} />
         <meshStandardMaterial color={agent.color} />
       </mesh>
       {/* Visor */}
-      <mesh position={[0, 0.48, 0.091]}>
-        <boxGeometry args={[0.16, 0.1, 0.01]} />
+      <mesh position={[0, 0.47, 0.081]}>
+        <boxGeometry args={[0.14, 0.08, 0.01]} />
         <meshStandardMaterial color="#1a1a2e" />
       </mesh>
       {/* Eyes */}
-      <mesh position={[-0.04, 0.49, 0.1]}>
-        <boxGeometry args={[0.04, 0.04, 0.01]} />
-        <meshStandardMaterial color={agent.status === "thinking" ? "#6366F1" : "#00FF88"} emissive={agent.status === "thinking" ? "#6366F1" : "#00FF88"} emissiveIntensity={1} />
-      </mesh>
-      <mesh position={[0.04, 0.49, 0.1]}>
-        <boxGeometry args={[0.04, 0.04, 0.01]} />
-        <meshStandardMaterial color={agent.status === "thinking" ? "#6366F1" : "#00FF88"} emissive={agent.status === "thinking" ? "#6366F1" : "#00FF88"} emissiveIntensity={1} />
-      </mesh>
-      {/* Antenna */}
-      <mesh position={[0, 0.63, 0]}>
-        <cylinderGeometry args={[0.01, 0.01, 0.1, 6]} />
+      {[-0.035, 0.035].map((ox, i) => (
+        <mesh key={i} position={[ox, 0.48, 0.09]}>
+          <boxGeometry args={[0.035, 0.035, 0.01]} />
+          <meshStandardMaterial
+            color={agent.status === "thinking" ? "#6366F1" : "#00FF88"}
+            emissive={agent.status === "thinking" ? "#6366F1" : "#00FF88"}
+            emissiveIntensity={1.2}
+          />
+        </mesh>
+      ))}
+      {/* Arms */}
+      <mesh ref={leftArm} position={[-0.14, 0.24, 0]}>
+        <boxGeometry args={[0.05, 0.18, 0.07]} />
         <meshStandardMaterial color={agent.color} />
       </mesh>
-      {/* Status LED */}
-      <mesh position={[0, 0.69, 0]}>
-        <sphereGeometry args={[0.03, 8, 8]} />
-        <meshStandardMaterial
-          color={STATUS_COLORS[agent.status]}
-          emissive={STATUS_COLORS[agent.status]}
-          emissiveIntensity={1.5}
-        />
-      </mesh>
-      {/* Left Leg (animated) */}
-      <mesh ref={leftLegRef} position={[-0.06, 0.06, 0]}>
-        <boxGeometry args={[0.08, 0.12, 0.1]} />
+      <mesh ref={rightArm} position={[0.14, 0.24, 0]}>
+        <boxGeometry args={[0.05, 0.18, 0.07]} />
         <meshStandardMaterial color={agent.color} />
       </mesh>
-      {/* Right Leg (animated) */}
-      <mesh ref={rightLegRef} position={[0.06, 0.06, 0]}>
-        <boxGeometry args={[0.08, 0.12, 0.1]} />
+      {/* Antenna + LED */}
+      <mesh position={[0, 0.61, 0]}>
+        <cylinderGeometry args={[0.008, 0.008, 0.1, 6]} />
         <meshStandardMaterial color={agent.color} />
+      </mesh>
+      <mesh position={[0, 0.67, 0]}>
+        <sphereGeometry args={[0.025, 8, 8]} />
+        <meshStandardMaterial color={STATUS_COLORS[agent.status]} emissive={STATUS_COLORS[agent.status]} emissiveIntensity={1.8} />
+      </mesh>
+      {/* Legs */}
+      <mesh ref={leftLeg} position={[-0.055, 0.06, 0]}>
+        <boxGeometry args={[0.07, 0.12, 0.09]} />
+        <meshStandardMaterial color={agent.color} />
+      </mesh>
+      <mesh ref={rightLeg} position={[0.055, 0.06, 0]}>
+        <boxGeometry args={[0.07, 0.12, 0.09]} />
+        <meshStandardMaterial color={agent.color} />
+      </mesh>
+      {/* Shadow */}
+      <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.14, 16]} />
+        <meshBasicMaterial color="#000" transparent opacity={0.12} />
       </mesh>
       {/* Selection ring */}
       {(selected || hovered) && (
-        <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.22, 0.28, 32]} />
+        <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.2, 0.26, 32]} />
           <meshBasicMaterial color={selected ? "#6366F1" : "#90CAF9"} transparent opacity={0.7} />
         </mesh>
       )}
-      {/* Shadow blob */}
-      <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.15, 16]} />
-        <meshBasicMaterial color="#000" transparent opacity={0.15} />
-      </mesh>
       {/* Name tag */}
-      <Html position={[0, 0.85, 0]} center>
+      <Html position={[0, 0.82, 0]} center>
         <div className="flex items-center gap-1 px-2 py-0.5 bg-[rgba(20,20,30,0.9)] rounded-full whitespace-nowrap pointer-events-none select-none">
           <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[agent.status] }} />
           <span className="text-[9px] text-white font-bold">{agent.name}</span>
@@ -312,132 +324,84 @@ function Agent3D({ agent, selected, onClick }: { agent: Agent; selected?: boolea
   );
 }
 
-// ── Player 3D with smooth walking ──
-function Player3D({ player, config }: { player: Player; config?: { color: string; skinTone?: string; hairStyle?: string; outfitStyle?: string } }) {
+// ── Player 3D ──
+function Player3D({ player, config }: { player: Player; config?: { color: string; skinTone?: string } }) {
   const ref = useRef<THREE.Group>(null);
-  const smoothPos = useRef(new THREE.Vector3(player.x * 0.5, 0, player.y * 0.5));
-  const prevPos = useRef({ x: player.x, y: player.y });
-  const leftLegRef = useRef<THREE.Mesh>(null);
-  const rightLegRef = useRef<THREE.Mesh>(null);
-  const leftArmRef = useRef<THREE.Mesh>(null);
-  const rightArmRef = useRef<THREE.Mesh>(null);
-  const isMoving = useRef(false);
-  
+  const smoothPos = useRef(new THREE.Vector3(player.x * S, 0, player.y * S));
+  const prevPos = useRef({ x: player.x * S, z: player.y * S });
+  const leftLeg = useRef<THREE.Mesh>(null);
+  const rightLeg = useRef<THREE.Mesh>(null);
+  const leftArm = useRef<THREE.Mesh>(null);
+  const rightArm = useRef<THREE.Mesh>(null);
+
   const color = config?.color || "#4F46E5";
   const skin = config?.skinTone === "light" ? "#FDDCB5" : config?.skinTone === "dark" ? "#8D5B3E" : config?.skinTone === "tan" ? "#C8956C" : "#E8B88A";
 
-  useFrame(() => {
-    if (!ref.current) return;
-    
-    const targetX = player.x * 0.5;
-    const targetZ = player.y * 0.5;
-    
-    // Smooth interpolation - responsive but not instant
-    smoothPos.current.x += (targetX - smoothPos.current.x) * 0.18;
-    smoothPos.current.z += (targetZ - smoothPos.current.z) * 0.18;
-    
-    const dx = Math.abs(targetX - smoothPos.current.x);
-    const dz = Math.abs(targetZ - smoothPos.current.z);
-    isMoving.current = dx > 0.005 || dz > 0.005;
-    
-    ref.current.position.set(smoothPos.current.x, 0, smoothPos.current.z);
-    
-    // Subtle idle bob
-    if (!isMoving.current) {
-      ref.current.position.y = Math.sin(Date.now() * 0.004) * 0.008;
-    } else {
-      // Walking bounce
-      ref.current.position.y = Math.abs(Math.sin(Date.now() * 0.012)) * 0.02;
-    }
-    
-    // Walking animation - legs and arms
-    const swing = isMoving.current ? Math.sin(Date.now() * 0.014) * 0.4 : 0;
-    if (leftLegRef.current) leftLegRef.current.rotation.x = isMoving.current ? swing : leftLegRef.current.rotation.x * 0.9;
-    if (rightLegRef.current) rightLegRef.current.rotation.x = isMoving.current ? -swing : rightLegRef.current.rotation.x * 0.9;
-    if (leftArmRef.current) leftArmRef.current.rotation.x = isMoving.current ? -swing * 0.6 : leftArmRef.current.rotation.x * 0.9;
-    if (rightArmRef.current) rightArmRef.current.rotation.x = isMoving.current ? swing * 0.6 : rightArmRef.current.rotation.x * 0.9;
-    
-    // Face direction of movement
-    if (player.x !== prevPos.current.x || player.y !== prevPos.current.y) {
-      const dirX = player.x - prevPos.current.x;
-      const dirY = player.y - prevPos.current.y;
-      if (dirX !== 0 || dirY !== 0) {
-        const angle = Math.atan2(dirX, dirY);
-        ref.current.rotation.y += (angle - ref.current.rotation.y) * 0.2;
-      }
-      prevPos.current = { x: player.x, y: player.y };
-    }
-  });
+  useWalkAnimation(ref, leftLeg, rightLeg, leftArm, rightArm, player.x * S, player.y * S, smoothPos, prevPos, 0.18);
 
   return (
     <group ref={ref}>
-      {/* Left Leg */}
-      <mesh ref={leftLegRef} position={[-0.05, 0.06, 0]}>
+      {/* Legs */}
+      <mesh ref={leftLeg} position={[-0.05, 0.06, 0]}>
         <boxGeometry args={[0.06, 0.12, 0.08]} />
         <meshStandardMaterial color="#2D3748" />
       </mesh>
-      {/* Right Leg */}
-      <mesh ref={rightLegRef} position={[0.05, 0.06, 0]}>
+      <mesh ref={rightLeg} position={[0.05, 0.06, 0]}>
         <boxGeometry args={[0.06, 0.12, 0.08]} />
         <meshStandardMaterial color="#2D3748" />
       </mesh>
       {/* Body */}
       <mesh position={[0, 0.25, 0]} castShadow>
-        <boxGeometry args={[0.25, 0.25, 0.14]} />
+        <boxGeometry args={[0.24, 0.24, 0.13]} />
         <meshStandardMaterial color={color} />
       </mesh>
-      {/* Left Arm */}
-      <mesh ref={leftArmRef} position={[-0.16, 0.24, 0]}>
-        <boxGeometry args={[0.06, 0.2, 0.08]} />
+      {/* Arms */}
+      <mesh ref={leftArm} position={[-0.155, 0.24, 0]}>
+        <boxGeometry args={[0.05, 0.19, 0.07]} />
         <meshStandardMaterial color={color} />
       </mesh>
-      {/* Right Arm */}
-      <mesh ref={rightArmRef} position={[0.16, 0.24, 0]}>
-        <boxGeometry args={[0.06, 0.2, 0.08]} />
+      <mesh ref={rightArm} position={[0.155, 0.24, 0]}>
+        <boxGeometry args={[0.05, 0.19, 0.07]} />
         <meshStandardMaterial color={color} />
       </mesh>
       {/* Hands */}
-      <mesh position={[-0.16, 0.13, 0]}>
-        <boxGeometry args={[0.05, 0.05, 0.05]} />
+      <mesh position={[-0.155, 0.13, 0]}>
+        <boxGeometry args={[0.045, 0.045, 0.045]} />
         <meshStandardMaterial color={skin} />
       </mesh>
-      <mesh position={[0.16, 0.13, 0]}>
-        <boxGeometry args={[0.05, 0.05, 0.05]} />
+      <mesh position={[0.155, 0.13, 0]}>
+        <boxGeometry args={[0.045, 0.045, 0.045]} />
         <meshStandardMaterial color={skin} />
       </mesh>
       {/* Head */}
       <mesh position={[0, 0.45, 0]} castShadow>
-        <boxGeometry args={[0.2, 0.2, 0.18]} />
+        <boxGeometry args={[0.19, 0.19, 0.17]} />
         <meshStandardMaterial color={skin} />
       </mesh>
       {/* Eyes */}
-      <mesh position={[-0.04, 0.46, 0.091]}>
-        <boxGeometry args={[0.04, 0.04, 0.01]} />
-        <meshStandardMaterial color="white" />
-      </mesh>
-      <mesh position={[0.04, 0.46, 0.091]}>
-        <boxGeometry args={[0.04, 0.04, 0.01]} />
-        <meshStandardMaterial color="white" />
-      </mesh>
-      <mesh position={[-0.04, 0.46, 0.095]}>
-        <boxGeometry args={[0.02, 0.02, 0.01]} />
-        <meshStandardMaterial color="#1a1a2e" />
-      </mesh>
-      <mesh position={[0.04, 0.46, 0.095]}>
-        <boxGeometry args={[0.02, 0.02, 0.01]} />
-        <meshStandardMaterial color="#1a1a2e" />
-      </mesh>
-      {/* Shadow blob */}
-      <mesh position={[0, 0.004, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.15, 16]} />
-        <meshBasicMaterial color="#000" transparent opacity={0.2} />
+      {[-0.04, 0.04].map((ox, i) => (
+        <group key={i}>
+          <mesh position={[ox, 0.46, 0.086]}>
+            <boxGeometry args={[0.04, 0.04, 0.01]} />
+            <meshStandardMaterial color="white" />
+          </mesh>
+          <mesh position={[ox, 0.46, 0.09]}>
+            <boxGeometry args={[0.02, 0.02, 0.01]} />
+            <meshStandardMaterial color="#1a1a2e" />
+          </mesh>
+        </group>
+      ))}
+      {/* Shadow */}
+      <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.14, 16]} />
+        <meshBasicMaterial color="#000" transparent opacity={0.18} />
       </mesh>
       {/* Crown */}
-      <Html position={[0, 0.7, 0]} center>
-        <span className="text-base select-none pointer-events-none">👑</span>
+      <Html position={[0, 0.68, 0]} center>
+        <span className="text-sm select-none pointer-events-none">👑</span>
       </Html>
       {/* Name tag */}
-      <Html position={[0, 0.82, 0]} center>
+      <Html position={[0, 0.8, 0]} center>
         <div className="flex items-center gap-1 px-2 py-0.5 rounded-full whitespace-nowrap pointer-events-none select-none" style={{ backgroundColor: color }}>
           <div className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
           <span className="text-[9px] text-white font-bold">{player.name}</span>
@@ -447,100 +411,23 @@ function Player3D({ player, config }: { player: Player; config?: { color: string
   );
 }
 
-// ── Camera controller (isometric follow with zoom) ──
-function CameraController({ player, editMode }: { player: Player; editMode?: boolean }) {
-  const { camera, gl } = useThree();
-  const target = useRef(new THREE.Vector3(player.x * 0.5, 0, player.y * 0.5));
-  const zoom = useRef(1);
-  const isDragging = useRef(false);
-  const lastMouse = useRef({ x: 0, y: 0 });
-  const cameraOffset = useRef(new THREE.Vector3(6, 8, 6));
-
-  useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      zoom.current = Math.max(0.5, Math.min(2.5, zoom.current - e.deltaY * 0.001));
-    };
-
-    const handleMouseDown = (e: MouseEvent) => {
-      if (e.button === 1 || e.button === 2) { // Middle or right click
-        isDragging.current = true;
-        lastMouse.current = { x: e.clientX, y: e.clientY };
-      }
-    };
-    const handleMouseMove = (e: MouseEvent) => {
-      if (isDragging.current && editMode) {
-        const dx = (e.clientX - lastMouse.current.x) * 0.02;
-        const dy = (e.clientY - lastMouse.current.y) * 0.02;
-        cameraOffset.current.x -= dx;
-        cameraOffset.current.z -= dy;
-        lastMouse.current = { x: e.clientX, y: e.clientY };
-      }
-    };
-    const handleMouseUp = () => { isDragging.current = false; };
-    const handleContextMenu = (e: Event) => { if (editMode) e.preventDefault(); };
-
-    const domElement = gl.domElement;
-    domElement.addEventListener("wheel", handleWheel, { passive: false });
-    domElement.addEventListener("mousedown", handleMouseDown);
-    domElement.addEventListener("mousemove", handleMouseMove);
-    domElement.addEventListener("mouseup", handleMouseUp);
-    domElement.addEventListener("contextmenu", handleContextMenu);
-
-    return () => {
-      domElement.removeEventListener("wheel", handleWheel);
-      domElement.removeEventListener("mousedown", handleMouseDown);
-      domElement.removeEventListener("mousemove", handleMouseMove);
-      domElement.removeEventListener("mouseup", handleMouseUp);
-      domElement.removeEventListener("contextmenu", handleContextMenu);
-    };
-  }, [gl, editMode]);
+// ── Camera target tracker ──
+function CameraTarget({ player, controlsRef }: { player: Player; controlsRef: React.RefObject<any> }) {
+  const targetPos = useRef(new THREE.Vector3(player.x * S, 0, player.y * S));
 
   useFrame(() => {
-    const px = player.x * 0.5;
-    const pz = player.y * 0.5;
-    
-    // Smooth follow
-    target.current.x += (px - target.current.x) * 0.08;
-    target.current.z += (pz - target.current.z) * 0.08;
-    
-    const z = zoom.current;
-    const off = cameraOffset.current;
-    
-    camera.position.set(
-      target.current.x + off.x / z,
-      off.y / z,
-      target.current.z + off.z / z
-    );
-    camera.lookAt(target.current.x, 0, target.current.z);
+    const px = player.x * S;
+    const pz = player.y * S;
+    targetPos.current.x += (px - targetPos.current.x) * 0.08;
+    targetPos.current.z += (pz - targetPos.current.z) * 0.08;
+
+    if (controlsRef.current) {
+      controlsRef.current.target.copy(targetPos.current);
+      controlsRef.current.update();
+    }
   });
 
   return null;
-}
-
-// ── Ground with texture pattern ──
-function Ground() {
-  return (
-    <group>
-      {/* Grass base */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
-        <planeGeometry args={[80, 80]} />
-        <meshStandardMaterial color="#5A8F4A" />
-      </mesh>
-      {/* Lighter grass patches */}
-      {[[-8, -5], [15, -8], [-12, 20], [25, 18]].map(([x, z], i) => (
-        <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[x, -0.015, z]}>
-          <circleGeometry args={[3, 16]} />
-          <meshStandardMaterial color="#6BA85A" />
-        </mesh>
-      ))}
-      {/* Path to building entrance */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[10, -0.01, 17]} receiveShadow>
-        <planeGeometry args={[2, 6]} />
-        <meshStandardMaterial color="#B0A898" />
-      </mesh>
-    </group>
-  );
 }
 
 // ── Main Scene ──
@@ -563,41 +450,60 @@ export function OfficeScene({
   agents, player, rooms, furniture, playerConfig, selectedAgentId, onAgentClick,
   editMode, selectedFurnitureId, hoveredFurnitureId, onFurnitureClick, onFurnitureHover,
 }: OfficeSceneProps) {
+  const controlsRef = useRef<any>(null);
+
   return (
     <div className="absolute inset-0">
       <Canvas
         shadows
-        camera={{ position: [12, 10, 12], fov: 40 }}
+        camera={{ position: [14, 12, 14], fov: 35, near: 0.1, far: 100 }}
         gl={{ antialias: true }}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = 1.1;
+          gl.toneMappingExposure = 1.0;
         }}
       >
-        <color attach="background" args={["#78B4D0"]} />
-        <fog attach="fog" args={["#78B4D0", 25, 50]} />
+        {/* Indoor background color - muted ceiling tone */}
+        <color attach="background" args={["#C8C4BC"]} />
 
-        {/* Lighting */}
-        <ambientLight intensity={0.55} />
+        {/* Indoor lighting - warm office lights */}
+        <ambientLight intensity={0.6} color="#FFF5E6" />
         <directionalLight
-          position={[12, 18, 10]}
-          intensity={1.1}
+          position={[10, 20, 8]}
+          intensity={0.8}
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
-          shadow-camera-far={60}
-          shadow-camera-left={-25}
-          shadow-camera-right={25}
-          shadow-camera-top={25}
-          shadow-camera-bottom={-25}
+          shadow-camera-far={50}
+          shadow-camera-left={-20}
+          shadow-camera-right={20}
+          shadow-camera-top={20}
+          shadow-camera-bottom={-20}
         />
-        <hemisphereLight args={["#87CEEB", "#5A8F4A", 0.35]} />
+        {/* Fill light from opposite side */}
+        <directionalLight position={[-8, 10, -6]} intensity={0.3} color="#E8E4DC" />
+        <hemisphereLight args={["#FFF8F0", "#D5CFC5", 0.25]} />
 
-        <CameraController player={player} editMode={editMode} />
+        {/* Camera controls - orbit around player */}
+        <OrbitControls
+          ref={controlsRef}
+          enablePan={editMode || false}
+          enableZoom={true}
+          enableRotate={true}
+          minDistance={3}
+          maxDistance={18}
+          minPolarAngle={Math.PI / 6}
+          maxPolarAngle={Math.PI / 2.8}
+          minAzimuthAngle={-Math.PI / 3}
+          maxAzimuthAngle={Math.PI / 3}
+          zoomSpeed={0.8}
+          rotateSpeed={0.5}
+          target={[player.x * S, 0, player.y * S]}
+        />
+        <CameraTarget player={player} controlsRef={controlsRef} />
 
-        <Ground />
-        <BuildingExterior rooms={rooms} />
-        <HallwayFloors />
+        {/* Building interior */}
+        <BuildingInterior rooms={rooms} />
 
         {/* Rooms */}
         {rooms.map(room => (
@@ -609,7 +515,7 @@ export function OfficeScene({
           <FurnitureModel
             key={f.id}
             type={f.type}
-            position={[f.x * 0.5, 0, f.y * 0.5]}
+            position={[f.x * S, 0, f.y * S]}
             editMode={editMode}
             selected={selectedFurnitureId === f.id}
             hovered={hoveredFurnitureId === f.id}
