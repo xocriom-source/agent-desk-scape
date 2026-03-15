@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/contexts/AuthContext";
 import Landing from "./pages/Landing.tsx";
 import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";
@@ -26,24 +27,26 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/lobby" element={<Lobby />} />
-          <Route path="/spaces" element={<Spaces />} />
-          <Route path="/world" element={<WorldMap />} />
-          <Route path="/city" element={<CityView />} />
-          <Route path="/city-explore" element={<CityExplore />} />
-          <Route path="/office" element={<Office />} />
-          <Route path="/find-building" element={<FindMyBuilding />} />
-          <Route path="/building/:id" element={<BuildingInterior />} />
-          <Route path="/ecosystem" element={<EcosystemHub />} />
-          
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/lobby" element={<Lobby />} />
+            <Route path="/spaces" element={<Spaces />} />
+            <Route path="/world" element={<WorldMap />} />
+            <Route path="/city" element={<CityView />} />
+            <Route path="/city-explore" element={<CityExplore />} />
+            <Route path="/office" element={<Office />} />
+            <Route path="/find-building" element={<FindMyBuilding />} />
+            <Route path="/building/:id" element={<BuildingInterior />} />
+            <Route path="/ecosystem" element={<EcosystemHub />} />
+            
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
