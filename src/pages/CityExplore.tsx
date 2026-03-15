@@ -1,12 +1,17 @@
-import { useMemo } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Building2, Map, Users2 } from "lucide-react";
+import { ArrowLeft, Building2, Map, Users2, Trophy, Megaphone, Plane, Search } from "lucide-react";
 import { motion } from "framer-motion";
 import { CityExploreScene } from "@/components/office/3d/CityExploreScene";
+import { CityLeaderboard } from "@/components/city/CityLeaderboard";
+import { CityAdPlacement } from "@/components/city/CityAdPlacement";
 import logo from "@/assets/logo.png";
 
 export default function CityExplore() {
   const navigate = useNavigate();
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showAds, setShowAds] = useState(false);
+  const [flyMode, setFlyMode] = useState(false);
 
   const userName = useMemo(() => {
     const stored = localStorage.getItem("agentoffice_user");
@@ -21,7 +26,7 @@ export default function CityExplore() {
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-background select-none">
       {/* 3D City Scene */}
-      <CityExploreScene playerName={userName} />
+      <CityExploreScene playerName={userName} flyMode={flyMode} />
 
       {/* Top HUD */}
       <motion.div
@@ -29,7 +34,7 @@ export default function CityExplore() {
         animate={{ opacity: 1, y: 0 }}
         className="absolute top-0 left-0 right-0 z-40"
       >
-        <div className="mx-auto max-w-5xl px-4 py-3 flex items-center justify-between">
+        <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/city")}
@@ -45,13 +50,45 @@ export default function CityExplore() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Flight mode toggle */}
             <button
-              onClick={() => navigate("/city")}
+              onClick={() => setFlyMode(!flyMode)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl backdrop-blur-md border text-xs font-medium transition-all ${
+                flyMode
+                  ? "bg-[#C8D880]/20 border-[#C8D880]/50 text-[#C8D880]"
+                  : "bg-black/60 border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80"
+              }`}
+            >
+              <Plane className="w-3.5 h-3.5" />
+              + FLY
+              {!flyMode && <span className="text-[8px] bg-red-500 text-white px-1 rounded-sm ml-1">NEW</span>}
+            </button>
+
+            <button
+              onClick={() => setShowLeaderboard(true)}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium"
             >
-              <Map className="w-3.5 h-3.5" />
-              Mapa
+              <Trophy className="w-3.5 h-3.5" />
+              🏆 LEADERBOARD
             </button>
+
+            <button
+              onClick={() => setShowAds(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium"
+            >
+              <Megaphone className="w-3.5 h-3.5" />
+              PLACE YOUR AD
+              <span className="text-[8px] bg-red-500 text-white px-1 rounded-sm">NEW</span>
+            </button>
+
+            <button
+              onClick={() => navigate("/find-building")}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium"
+            >
+              <Search className="w-3.5 h-3.5" />
+              Buscar
+            </button>
+
             <button
               onClick={() => navigate("/office")}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary/80 backdrop-blur-md border border-primary/50 text-white hover:bg-primary transition-all text-xs font-medium"
@@ -62,6 +99,41 @@ export default function CityExplore() {
           </div>
         </div>
       </motion.div>
+
+      {/* Flight mode controls popup */}
+      {flyMode && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50"
+        >
+          <div className="bg-[#1A1A20]/95 backdrop-blur-xl border border-gray-700/50 rounded-2xl px-8 py-6 text-center shadow-2xl">
+            <h3 className="text-sm font-bold text-gray-300 tracking-widest mb-4" style={{ fontFamily: "monospace" }}>
+              FLIGHT CONTROLS
+            </h3>
+            <div className="space-y-2 text-xs" style={{ fontFamily: "monospace" }}>
+              {[
+                ["MOUSE", "STEER"],
+                ["SCROLL", "SPEED"],
+                ["SHIFT / ALT", "BOOST / SLOW"],
+                ["ESC", "PAUSE & EXIT"],
+              ].map(([key, action]) => (
+                <div key={key} className="flex justify-between gap-8">
+                  <span className="text-white font-bold">{key}</span>
+                  <span className="text-gray-500">{action}</span>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => setFlyMode(false)}
+              className="mt-4 px-6 py-2.5 bg-[#4A6AE5] text-white text-xs font-bold tracking-wider rounded-lg hover:bg-[#5A7AF5] transition-colors"
+              style={{ fontFamily: "monospace" }}
+            >
+              GOT IT, LET'S FLY!
+            </button>
+          </div>
+        </motion.div>
+      )}
 
       {/* Bottom controls hint */}
       <motion.div
@@ -89,7 +161,7 @@ export default function CityExplore() {
         </div>
       </motion.div>
 
-      {/* Mini location indicator */}
+      {/* Building count */}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -103,6 +175,22 @@ export default function CityExplore() {
           </span>
         </div>
       </motion.div>
+
+      {/* Lo-fi music hint */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1 }}
+        className="absolute bottom-4 right-4 z-40"
+      >
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 cursor-pointer hover:bg-black/80 transition-all">
+          <span className="text-[10px] text-gray-400">▶ LO-FI ...</span>
+        </div>
+      </motion.div>
+
+      {/* Panels */}
+      <CityLeaderboard isOpen={showLeaderboard} onClose={() => setShowLeaderboard(false)} />
+      <CityAdPlacement isOpen={showAds} onClose={() => setShowAds(false)} />
     </div>
   );
 }
