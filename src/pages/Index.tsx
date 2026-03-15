@@ -206,6 +206,10 @@ const Index = () => {
       <AIGovernance agents={agents} isOpen={showGovernance} onClose={() => setShowGovernance(false)} />
       <AgentMemory agents={agents} isOpen={showMemory} onClose={() => setShowMemory(false)} />
       <CommandCenter agents={agents} isOpen={showCommand} onClose={() => setShowCommand(false)} />
+      <ArtifactExplorer agents={agents} isOpen={showArtifacts} onClose={() => setShowArtifacts(false)} />
+      <CityNPCs isOpen={showNPCs} onClose={() => setShowNPCs(false)} />
+      <ObservationLab agents={agents} isOpen={showObservation} onClose={() => setShowObservation(false)} />
+      <DistrictInfo isOpen={showDistricts} onClose={() => setShowDistricts(false)} />
 
       {!editMode && <ActionBar onMove={movePlayer} />}
       {!editMode && <MiniMap player={player} agents={agents} rooms={rooms} />}
