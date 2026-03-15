@@ -17,17 +17,37 @@ export interface RoomDef {
 }
 
 export const DEFAULT_ROOMS: RoomDef[] = [
-  // Warm wood floors, dark wood walls - BAYC clubhouse style
+  // ── CENTRAL PLAZA (open spawn area with fountain) ──
+  { id: "plaza", name: "🏛️ Central Plaza", x: 20, y: 18, w: 14, h: 12, floorColor: "#A09880", wallColor: "#6B6050", carpetColor: "#908868" },
+  
+  // ── WORK DISTRICT ──
   { id: "work1", name: "Product Team", x: 1, y: 1, w: 14, h: 10, floorColor: "#9B7B55", wallColor: "#5C3A22", carpetColor: "#7A6040" },
   { id: "meeting1", name: "Meeting Room A", x: 18, y: 1, w: 8, h: 5, floorColor: "#8B6B48", wallColor: "#4A2E1A", carpetColor: "#6B5035" },
   { id: "meeting2", name: "Meeting Room B", x: 18, y: 8, w: 8, h: 5, floorColor: "#8E6E4A", wallColor: "#4D3020", carpetColor: "#6E5238" },
-  { id: "library", name: "Library", x: 29, y: 1, w: 10, h: 7, floorColor: "#A08058", wallColor: "#5A3820", carpetColor: "#806540" },
-  { id: "design", name: "Design Lab", x: 1, y: 14, w: 10, h: 8, floorColor: "#8A7050", wallColor: "#4A3018", carpetColor: "#6A5538" },
-  { id: "lounge", name: "Lounge", x: 14, y: 16, w: 10, h: 8, floorColor: "#A58860", wallColor: "#6B4528", carpetColor: "#856D48" },
-  { id: "server", name: "Server Room", x: 29, y: 11, w: 10, h: 7, floorColor: "#706058", wallColor: "#3A2E28", carpetColor: "#5A4E48" },
-  { id: "reception", name: "Reception", x: 14, y: 27, w: 12, h: 7, floorColor: "#B09068", wallColor: "#6B4528", carpetColor: "#907550" },
-  { id: "game", name: "Game Room", x: 1, y: 25, w: 10, h: 8, floorColor: "#8A7050", wallColor: "#4A3520", carpetColor: "#705840" },
-  { id: "zen", name: "Zen Garden", x: 29, y: 21, w: 10, h: 8, floorColor: "#7A7048", wallColor: "#3A3520", carpetColor: "#5A5530" },
+  { id: "library", name: "📚 Library", x: 29, y: 1, w: 10, h: 7, floorColor: "#A08058", wallColor: "#5A3820", carpetColor: "#806540" },
+  
+  // ── CREATIVE DISTRICT ──
+  { id: "music_studio", name: "🎵 Music Studio", x: 1, y: 14, w: 8, h: 7, floorColor: "#6A5078", wallColor: "#3A2848", carpetColor: "#5A4068" },
+  { id: "art_studio", name: "🎨 Pixel Art Studio", x: 1, y: 24, w: 8, h: 7, floorColor: "#78605A", wallColor: "#4A3830", carpetColor: "#685048" },
+  { id: "writing_studio", name: "✍️ Writing Studio", x: 1, y: 34, w: 8, h: 7, floorColor: "#7A7058", wallColor: "#4A4030", carpetColor: "#6A6048" },
+  
+  // ── INNOVATION DISTRICT ──
+  { id: "coding_lab", name: "💻 Coding Lab", x: 38, y: 1, w: 10, h: 8, floorColor: "#506068", wallColor: "#303840", carpetColor: "#405058" },
+  { id: "ai_lab", name: "🧪 AI Experiment Lab", x: 38, y: 12, w: 10, h: 8, floorColor: "#485868", wallColor: "#283040", carpetColor: "#384858" },
+  
+  // ── COMMERCE DISTRICT ──
+  { id: "marketplace", name: "🏪 Marketplace", x: 38, y: 24, w: 10, h: 8, floorColor: "#907050", wallColor: "#604028", carpetColor: "#806040" },
+  { id: "hiring_board", name: "📋 Agent Hiring", x: 38, y: 35, w: 10, h: 7, floorColor: "#887858", wallColor: "#585038", carpetColor: "#786848" },
+  
+  // ── SOCIAL DISTRICT ──
+  { id: "cafe", name: "☕ Café Filosófico", x: 12, y: 34, w: 8, h: 7, floorColor: "#A58860", wallColor: "#6B4528", carpetColor: "#856D48" },
+  { id: "lounge", name: "🛋️ Lounge", x: 12, y: 14, w: 7, h: 7, floorColor: "#A58860", wallColor: "#6B4528", carpetColor: "#856D48" },
+  
+  // ── EXISTING (kept) ──
+  { id: "design", name: "🎨 Design Lab", x: 22, y: 34, w: 10, h: 8, floorColor: "#8A7050", wallColor: "#4A3018", carpetColor: "#6A5538" },
+  { id: "server", name: "🖥️ Server Room", x: 50, y: 1, w: 8, h: 7, floorColor: "#706058", wallColor: "#3A2E28", carpetColor: "#5A4E48" },
+  { id: "game", name: "🎮 Game Room", x: 50, y: 12, w: 8, h: 7, floorColor: "#8A7050", wallColor: "#4A3520", carpetColor: "#705840" },
+  { id: "zen", name: "🧘 Zen Garden", x: 50, y: 22, w: 8, h: 7, floorColor: "#7A7048", wallColor: "#3A3520", carpetColor: "#5A5530" },
 ];
 
 export let ROOMS = [...DEFAULT_ROOMS];
