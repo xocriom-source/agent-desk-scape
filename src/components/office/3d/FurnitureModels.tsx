@@ -762,16 +762,16 @@ function PingPong() {
 function Dartboard() {
   return (
     <group>
-      <mesh position={[0, 0.6, 0]}>
-        <cylinderGeometry args={[0.18, 0.18, 0.04, 24]} rotation={[Math.PI / 2, 0, 0]} />
+      <mesh position={[0, 0.6, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.18, 0.18, 0.04, 24]} />
         <meshStandardMaterial color="#C62828" />
       </mesh>
-      <mesh position={[0, 0.6, 0.02]}>
-        <cylinderGeometry args={[0.1, 0.1, 0.01, 24]} rotation={[Math.PI / 2, 0, 0]} />
+      <mesh position={[0, 0.6, 0.02]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.1, 0.1, 0.01, 24]} />
         <meshStandardMaterial color="white" />
       </mesh>
-      <mesh position={[0, 0.6, 0.025]}>
-        <cylinderGeometry args={[0.04, 0.04, 0.01, 24]} rotation={[Math.PI / 2, 0, 0]} />
+      <mesh position={[0, 0.6, 0.025]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.04, 0.04, 0.01, 24]} />
         <meshStandardMaterial color="#C62828" />
       </mesh>
     </group>
