@@ -9,7 +9,8 @@ export function tileFromFloat(x: number, y: number): Tile {
   };
 }
 
-export function isWalkableAtFloat(x: number, y: number, radius = 0.28): boolean {
+export function isWalkableAtFloat(x: number, y: number, radius = 0.22): boolean {
+  // Check corners of the collision box
   const pts = [
     [x - radius, y - radius],
     [x + radius, y - radius],
