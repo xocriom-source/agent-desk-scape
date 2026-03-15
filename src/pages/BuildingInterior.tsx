@@ -3,12 +3,17 @@ import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Building2, User, Globe, Link2,
-  Star, MapPin, Clock, Settings2, Eye, BarChart3, TrendingUp, Cpu
+  Star, MapPin, Clock, Settings2, Eye, BarChart3, TrendingUp, Cpu,
+  Users, Bot, MessageCircle, Brain, Monitor
 } from "lucide-react";
 import { getBuildingById } from "@/data/buildingRegistry";
 import { DISTRICTS, BUILDING_STYLES } from "@/types/building";
 import { AIReceptionistChat } from "@/components/building/AIReceptionistChat";
 import { AgentWorkspaceHub } from "@/components/workspace/AgentWorkspaceHub";
+import { InteractiveObjects } from "@/components/collaboration/InteractiveObjects";
+import { TeamAgents } from "@/components/collaboration/TeamAgents";
+import { MessengerHub } from "@/components/collaboration/MessengerHub";
+import { AgentTraining } from "@/components/collaboration/AgentTraining";
 import logo from "@/assets/logo.png";
 
 export default function BuildingInterior() {
