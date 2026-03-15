@@ -1,10 +1,8 @@
 import type { TileType } from "@/types/agent";
 
-export const TILE_W = 64; // isometric tile width
-export const TILE_H = 32; // isometric tile height
-export const TILE_SIZE = 64; // kept for compatibility
-export const MAP_COLS = 36;
-export const MAP_ROWS = 28;
+export const TILE_SIZE = 32;
+export const MAP_COLS = 48;
+export const MAP_ROWS = 36;
 
 export interface RoomDef {
   id: string;
@@ -13,20 +11,31 @@ export interface RoomDef {
   y: number;
   w: number;
   h: number;
-  color: string;
   floorColor: string;
+  wallColor: string;
   carpetColor?: string;
 }
 
-// Room definitions
 export const DEFAULT_ROOMS: RoomDef[] = [
-  { id: "work", name: "Área de Trabalho", x: 1, y: 1, w: 12, h: 8, color: "#E8DCC8", floorColor: "#E2D6C0", carpetColor: "#C8BCA8" },
-  { id: "meeting", name: "Sala de Reuniões", x: 16, y: 1, w: 8, h: 6, color: "#D4D8E8", floorColor: "#C8CCE0", carpetColor: "#B0B8D8" },
-  { id: "lounge", name: "Lounge & Café", x: 1, y: 12, w: 9, h: 8, color: "#D8E4D0", floorColor: "#CEE0C4", carpetColor: "#B8D4AC" },
-  { id: "server", name: "Servidor / Infra", x: 16, y: 10, w: 8, h: 6, color: "#E0D8D8", floorColor: "#D8D0D0", carpetColor: "#C0B8B8" },
-  { id: "reception", name: "Recepção", x: 11, y: 12, w: 6, h: 8, color: "#E8E0D0", floorColor: "#E4DCC8", carpetColor: "#D0C8B4" },
-  { id: "library", name: "Biblioteca", x: 26, y: 1, w: 8, h: 6, color: "#E4DCD0", floorColor: "#DCD4C8", carpetColor: "#C8C0B0" },
-  { id: "zen", name: "Sala Zen", x: 26, y: 10, w: 8, h: 6, color: "#D0E0D8", floorColor: "#C4D8D0", carpetColor: "#A8C8BC" },
+  // Top-left: Main work area (large)
+  { id: "work1", name: "Product Team", x: 1, y: 1, w: 14, h: 10, floorColor: "#E8DFD0", wallColor: "#8B95A8", carpetColor: "#C8C0B0" },
+  // Top-center: Meeting rooms
+  { id: "meeting1", name: "Meeting Room A", x: 18, y: 1, w: 8, h: 5, floorColor: "#C8CCE0", wallColor: "#7B85A0", carpetColor: "#B0B4D0" },
+  { id: "meeting2", name: "Meeting Room B", x: 18, y: 8, w: 8, h: 5, floorColor: "#D0C8E0", wallColor: "#8B80A0", carpetColor: "#B8B0D0" },
+  // Top-right: Library / Quiet zone
+  { id: "library", name: "Library", x: 29, y: 1, w: 10, h: 7, floorColor: "#E0D8C8", wallColor: "#8B8575", carpetColor: "#C8C0A8" },
+  // Mid-left: Design / Creative area
+  { id: "design", name: "Design Lab", x: 1, y: 14, w: 10, h: 8, floorColor: "#D8E4D8", wallColor: "#6B9080", carpetColor: "#B8D0B8" },
+  // Mid-center: Lounge / Kitchen
+  { id: "lounge", name: "Lounge", x: 14, y: 16, w: 10, h: 8, floorColor: "#E8E0D0", wallColor: "#9B8B70", carpetColor: "#D0C8B0" },
+  // Mid-right: Server / Infra
+  { id: "server", name: "Server Room", x: 29, y: 11, w: 10, h: 7, floorColor: "#D0D0D8", wallColor: "#606878", carpetColor: "#B0B0C0" },
+  // Bottom: Reception / Entrance
+  { id: "reception", name: "Reception", x: 14, y: 27, w: 12, h: 7, floorColor: "#E4E0D8", wallColor: "#8B8578", carpetColor: "#D8D4C8" },
+  // Bottom-left: Game room
+  { id: "game", name: "Game Room", x: 1, y: 25, w: 10, h: 8, floorColor: "#D8D0E4", wallColor: "#7B70A0", carpetColor: "#C0B8D0" },
+  // Bottom-right: Zen room
+  { id: "zen", name: "Zen Garden", x: 29, y: 21, w: 10, h: 8, floorColor: "#D0E0D8", wallColor: "#608870", carpetColor: "#A8D0B8" },
 ];
 
 export let ROOMS = [...DEFAULT_ROOMS];
@@ -46,71 +55,165 @@ export interface FurnitureItem {
 }
 
 export const DEFAULT_FURNITURE: FurnitureItem[] = [
-  // Work area
-  { id: "f1", type: "desk", x: 2, y: 2, emoji: "🖥️", roomId: "work" },
-  { id: "f2", type: "desk", x: 4, y: 2, emoji: "🖥️", roomId: "work" },
-  { id: "f3", type: "desk", x: 6, y: 2, emoji: "🖥️", roomId: "work" },
-  { id: "f4", type: "desk", x: 8, y: 2, emoji: "🖥️", roomId: "work" },
-  { id: "f5", type: "desk", x: 2, y: 5, emoji: "🖥️", roomId: "work" },
-  { id: "f6", type: "desk", x: 4, y: 5, emoji: "🖥️", roomId: "work" },
-  { id: "f7", type: "desk", x: 6, y: 5, emoji: "🖥️", roomId: "work" },
-  { id: "f8", type: "desk", x: 8, y: 5, emoji: "🖥️", roomId: "work" },
-  { id: "f9", type: "chair", x: 3, y: 3, emoji: "🪑", roomId: "work" },
-  { id: "f10", type: "chair", x: 5, y: 3, emoji: "🪑", roomId: "work" },
-  { id: "f11", type: "chair", x: 7, y: 3, emoji: "🪑", roomId: "work" },
-  { id: "f12", type: "chair", x: 9, y: 3, emoji: "🪑", roomId: "work" },
-  { id: "f13", type: "chair", x: 3, y: 6, emoji: "🪑", roomId: "work" },
-  { id: "f14", type: "chair", x: 5, y: 6, emoji: "🪑", roomId: "work" },
-  { id: "f15", type: "plant", x: 1, y: 1, emoji: "🌿", roomId: "work" },
-  { id: "f16", type: "plant", x: 12, y: 1, emoji: "🪴", roomId: "work" },
-  { id: "f17", type: "whiteboard", x: 10, y: 2, emoji: "📋", roomId: "work" },
-  { id: "f18", type: "printer", x: 11, y: 5, emoji: "🖨️", roomId: "work" },
-  // Meeting room
-  { id: "f20", type: "table", x: 18, y: 3, emoji: "🪑", roomId: "meeting" },
-  { id: "f21", type: "table", x: 19, y: 3, emoji: "🪑", roomId: "meeting" },
-  { id: "f22", type: "table", x: 20, y: 3, emoji: "🪑", roomId: "meeting" },
-  { id: "f23", type: "table", x: 18, y: 5, emoji: "🪑", roomId: "meeting" },
-  { id: "f24", type: "table", x: 19, y: 5, emoji: "🪑", roomId: "meeting" },
-  { id: "f25", type: "screen", x: 22, y: 2, emoji: "📺", roomId: "meeting" },
-  { id: "f26", type: "plant", x: 16, y: 1, emoji: "🌿", roomId: "meeting" },
-  // Lounge
-  { id: "f30", type: "sofa", x: 2, y: 13, emoji: "🛋️", roomId: "lounge" },
-  { id: "f31", type: "sofa", x: 2, y: 15, emoji: "🛋️", roomId: "lounge" },
-  { id: "f32", type: "coffee", x: 4, y: 14, emoji: "☕", roomId: "lounge" },
-  { id: "f33", type: "vending", x: 7, y: 12, emoji: "🥤", roomId: "lounge" },
-  { id: "f34", type: "bookshelf", x: 8, y: 12, emoji: "📚", roomId: "lounge" },
-  { id: "f35", type: "tv", x: 5, y: 17, emoji: "📺", roomId: "lounge" },
-  { id: "f36", type: "plant", x: 1, y: 12, emoji: "🪴", roomId: "lounge" },
-  // Server room
-  { id: "f40", type: "server", x: 17, y: 11, emoji: "🖧", roomId: "server" },
-  { id: "f41", type: "server", x: 18, y: 11, emoji: "🖧", roomId: "server" },
-  { id: "f42", type: "server", x: 19, y: 11, emoji: "🖧", roomId: "server" },
-  { id: "f43", type: "server", x: 20, y: 11, emoji: "🖧", roomId: "server" },
-  { id: "f44", type: "server", x: 17, y: 13, emoji: "🖧", roomId: "server" },
-  { id: "f45", type: "server", x: 18, y: 13, emoji: "🖧", roomId: "server" },
-  { id: "f46", type: "monitor", x: 22, y: 11, emoji: "📡", roomId: "server" },
-  { id: "f47", type: "desk", x: 22, y: 14, emoji: "💻", roomId: "server" },
-  // Reception
-  { id: "f50", type: "desk", x: 13, y: 14, emoji: "💻", roomId: "reception" },
-  { id: "f51", type: "plant", x: 11, y: 12, emoji: "🌿", roomId: "reception" },
-  { id: "f52", type: "plant", x: 16, y: 12, emoji: "🌿", roomId: "reception" },
-  { id: "f53", type: "sofa", x: 12, y: 17, emoji: "🛋️", roomId: "reception" },
-  { id: "f54", type: "sofa", x: 13, y: 17, emoji: "🛋️", roomId: "reception" },
+  // Product Team - desks in pairs with chairs
+  { id: "f1", type: "desk", x: 2, y: 2, emoji: "🖥️", roomId: "work1" },
+  { id: "f2", type: "desk", x: 3, y: 2, emoji: "🖥️", roomId: "work1" },
+  { id: "f3", type: "desk", x: 5, y: 2, emoji: "🖥️", roomId: "work1" },
+  { id: "f4", type: "desk", x: 6, y: 2, emoji: "🖥️", roomId: "work1" },
+  { id: "f5", type: "desk", x: 8, y: 2, emoji: "🖥️", roomId: "work1" },
+  { id: "f6", type: "desk", x: 9, y: 2, emoji: "🖥️", roomId: "work1" },
+  { id: "f7", type: "chair", x: 2, y: 3, emoji: "🪑", roomId: "work1" },
+  { id: "f8", type: "chair", x: 3, y: 3, emoji: "🪑", roomId: "work1" },
+  { id: "f9", type: "chair", x: 5, y: 3, emoji: "🪑", roomId: "work1" },
+  { id: "f10", type: "chair", x: 6, y: 3, emoji: "🪑", roomId: "work1" },
+  { id: "f11", type: "chair", x: 8, y: 3, emoji: "🪑", roomId: "work1" },
+  { id: "f12", type: "chair", x: 9, y: 3, emoji: "🪑", roomId: "work1" },
+  { id: "f13", type: "desk", x: 2, y: 5, emoji: "🖥️", roomId: "work1" },
+  { id: "f14", type: "desk", x: 3, y: 5, emoji: "🖥️", roomId: "work1" },
+  { id: "f15", type: "desk", x: 5, y: 5, emoji: "🖥️", roomId: "work1" },
+  { id: "f16", type: "desk", x: 6, y: 5, emoji: "🖥️", roomId: "work1" },
+  { id: "f17", type: "chair", x: 2, y: 6, emoji: "🪑", roomId: "work1" },
+  { id: "f18", type: "chair", x: 3, y: 6, emoji: "🪑", roomId: "work1" },
+  { id: "f19", type: "chair", x: 5, y: 6, emoji: "🪑", roomId: "work1" },
+  { id: "f20", type: "chair", x: 6, y: 6, emoji: "🪑", roomId: "work1" },
+  { id: "f21", type: "desk", x: 2, y: 8, emoji: "🖥️", roomId: "work1" },
+  { id: "f22", type: "desk", x: 3, y: 8, emoji: "🖥️", roomId: "work1" },
+  { id: "f23", type: "desk", x: 5, y: 8, emoji: "🖥️", roomId: "work1" },
+  { id: "f24", type: "desk", x: 6, y: 8, emoji: "🖥️", roomId: "work1" },
+  { id: "f25", type: "chair", x: 2, y: 9, emoji: "🪑", roomId: "work1" },
+  { id: "f26", type: "chair", x: 3, y: 9, emoji: "🪑", roomId: "work1" },
+  { id: "f27", type: "plant", x: 1, y: 1, emoji: "🌿", roomId: "work1" },
+  { id: "f28", type: "plant", x: 14, y: 1, emoji: "🪴", roomId: "work1" },
+  { id: "f29", type: "plant", x: 1, y: 10, emoji: "🌱", roomId: "work1" },
+  { id: "f30", type: "whiteboard", x: 11, y: 2, emoji: "📋", roomId: "work1" },
+  { id: "f31", type: "whiteboard", x: 12, y: 2, emoji: "📊", roomId: "work1" },
+  { id: "f32", type: "printer", x: 13, y: 5, emoji: "🖨️", roomId: "work1" },
+  { id: "f33", type: "water", x: 13, y: 8, emoji: "🚰", roomId: "work1" },
+  { id: "f34", type: "trash", x: 10, y: 9, emoji: "🗑️", roomId: "work1" },
+
+  // Meeting Room A
+  { id: "f40", type: "table", x: 20, y: 2, emoji: "📋", roomId: "meeting1" },
+  { id: "f41", type: "table", x: 21, y: 2, emoji: "📋", roomId: "meeting1" },
+  { id: "f42", type: "table", x: 22, y: 2, emoji: "📋", roomId: "meeting1" },
+  { id: "f43", type: "chair", x: 19, y: 3, emoji: "🪑", roomId: "meeting1" },
+  { id: "f44", type: "chair", x: 20, y: 3, emoji: "🪑", roomId: "meeting1" },
+  { id: "f45", type: "chair", x: 21, y: 3, emoji: "🪑", roomId: "meeting1" },
+  { id: "f46", type: "chair", x: 22, y: 3, emoji: "🪑", roomId: "meeting1" },
+  { id: "f47", type: "chair", x: 23, y: 3, emoji: "🪑", roomId: "meeting1" },
+  { id: "f48", type: "screen", x: 24, y: 1, emoji: "📺", roomId: "meeting1" },
+  { id: "f49", type: "plant", x: 18, y: 1, emoji: "🌿", roomId: "meeting1" },
+
+  // Meeting Room B
+  { id: "f50", type: "table", x: 20, y: 9, emoji: "📋", roomId: "meeting2" },
+  { id: "f51", type: "table", x: 21, y: 9, emoji: "📋", roomId: "meeting2" },
+  { id: "f52", type: "chair", x: 19, y: 10, emoji: "🪑", roomId: "meeting2" },
+  { id: "f53", type: "chair", x: 20, y: 10, emoji: "🪑", roomId: "meeting2" },
+  { id: "f54", type: "chair", x: 21, y: 10, emoji: "🪑", roomId: "meeting2" },
+  { id: "f55", type: "chair", x: 22, y: 10, emoji: "🪑", roomId: "meeting2" },
+  { id: "f56", type: "screen", x: 24, y: 8, emoji: "📺", roomId: "meeting2" },
+
   // Library
-  { id: "f60", type: "bookshelf", x: 27, y: 2, emoji: "📚", roomId: "library" },
-  { id: "f61", type: "bookshelf", x: 28, y: 2, emoji: "📚", roomId: "library" },
-  { id: "f62", type: "bookshelf", x: 29, y: 2, emoji: "📚", roomId: "library" },
-  { id: "f63", type: "bookshelf", x: 30, y: 2, emoji: "📚", roomId: "library" },
-  { id: "f64", type: "desk", x: 28, y: 5, emoji: "📖", roomId: "library" },
-  { id: "f65", type: "desk", x: 30, y: 5, emoji: "📖", roomId: "library" },
-  { id: "f66", type: "plant", x: 26, y: 1, emoji: "🌿", roomId: "library" },
-  // Zen
-  { id: "f70", type: "plant", x: 27, y: 11, emoji: "🌿", roomId: "zen" },
-  { id: "f71", type: "plant", x: 29, y: 11, emoji: "🌿", roomId: "zen" },
-  { id: "f72", type: "plant", x: 31, y: 11, emoji: "🌿", roomId: "zen" },
-  { id: "f73", type: "sofa", x: 28, y: 13, emoji: "🧘", roomId: "zen" },
-  { id: "f74", type: "sofa", x: 30, y: 13, emoji: "🧘", roomId: "zen" },
-  { id: "f75", type: "water", x: 32, y: 14, emoji: "⛲", roomId: "zen" },
+  { id: "f60", type: "bookshelf", x: 30, y: 1, emoji: "📚", roomId: "library" },
+  { id: "f61", type: "bookshelf", x: 31, y: 1, emoji: "📚", roomId: "library" },
+  { id: "f62", type: "bookshelf", x: 32, y: 1, emoji: "📚", roomId: "library" },
+  { id: "f63", type: "bookshelf", x: 33, y: 1, emoji: "📚", roomId: "library" },
+  { id: "f64", type: "bookshelf", x: 34, y: 1, emoji: "📚", roomId: "library" },
+  { id: "f65", type: "bookshelf", x: 35, y: 1, emoji: "📚", roomId: "library" },
+  { id: "f66", type: "bookshelf", x: 36, y: 1, emoji: "📚", roomId: "library" },
+  { id: "f67", type: "desk", x: 31, y: 4, emoji: "📖", roomId: "library" },
+  { id: "f68", type: "desk", x: 33, y: 4, emoji: "📖", roomId: "library" },
+  { id: "f69", type: "desk", x: 35, y: 4, emoji: "📖", roomId: "library" },
+  { id: "f70", type: "chair", x: 31, y: 5, emoji: "🪑", roomId: "library" },
+  { id: "f71", type: "chair", x: 33, y: 5, emoji: "🪑", roomId: "library" },
+  { id: "f72", type: "chair", x: 35, y: 5, emoji: "🪑", roomId: "library" },
+  { id: "f73", type: "plant", x: 29, y: 1, emoji: "🌿", roomId: "library" },
+  { id: "f74", type: "plant", x: 38, y: 1, emoji: "🪴", roomId: "library" },
+
+  // Design Lab
+  { id: "f80", type: "desk", x: 2, y: 15, emoji: "🖥️", roomId: "design" },
+  { id: "f81", type: "desk", x: 3, y: 15, emoji: "🖥️", roomId: "design" },
+  { id: "f82", type: "desk", x: 5, y: 15, emoji: "🎨", roomId: "design" },
+  { id: "f83", type: "desk", x: 6, y: 15, emoji: "🎨", roomId: "design" },
+  { id: "f84", type: "chair", x: 2, y: 16, emoji: "🪑", roomId: "design" },
+  { id: "f85", type: "chair", x: 3, y: 16, emoji: "🪑", roomId: "design" },
+  { id: "f86", type: "chair", x: 5, y: 16, emoji: "🪑", roomId: "design" },
+  { id: "f87", type: "chair", x: 6, y: 16, emoji: "🪑", roomId: "design" },
+  { id: "f88", type: "whiteboard", x: 8, y: 14, emoji: "📋", roomId: "design" },
+  { id: "f89", type: "whiteboard", x: 9, y: 14, emoji: "🎨", roomId: "design" },
+  { id: "f90", type: "desk", x: 2, y: 19, emoji: "🖥️", roomId: "design" },
+  { id: "f91", type: "desk", x: 3, y: 19, emoji: "🖥️", roomId: "design" },
+  { id: "f92", type: "chair", x: 2, y: 20, emoji: "🪑", roomId: "design" },
+  { id: "f93", type: "chair", x: 3, y: 20, emoji: "🪑", roomId: "design" },
+  { id: "f94", type: "plant", x: 1, y: 14, emoji: "🌿", roomId: "design" },
+  { id: "f95", type: "plant", x: 10, y: 14, emoji: "🪴", roomId: "design" },
+
+  // Lounge
+  { id: "f100", type: "sofa", x: 15, y: 17, emoji: "🛋️", roomId: "lounge" },
+  { id: "f101", type: "sofa", x: 16, y: 17, emoji: "🛋️", roomId: "lounge" },
+  { id: "f102", type: "sofa", x: 15, y: 19, emoji: "🛋️", roomId: "lounge" },
+  { id: "f103", type: "sofa", x: 16, y: 19, emoji: "🛋️", roomId: "lounge" },
+  { id: "f104", type: "table", x: 15, y: 18, emoji: "☕", roomId: "lounge" },
+  { id: "f105", type: "table", x: 16, y: 18, emoji: "🍩", roomId: "lounge" },
+  { id: "f106", type: "coffee", x: 20, y: 16, emoji: "☕", roomId: "lounge" },
+  { id: "f107", type: "vending", x: 21, y: 16, emoji: "🥤", roomId: "lounge" },
+  { id: "f108", type: "vending", x: 22, y: 16, emoji: "🍫", roomId: "lounge" },
+  { id: "f109", type: "tv", x: 19, y: 21, emoji: "📺", roomId: "lounge" },
+  { id: "f110", type: "sofa", x: 18, y: 21, emoji: "🛋️", roomId: "lounge" },
+  { id: "f111", type: "plant", x: 14, y: 16, emoji: "🌿", roomId: "lounge" },
+  { id: "f112", type: "plant", x: 23, y: 16, emoji: "🪴", roomId: "lounge" },
+
+  // Server Room
+  { id: "f120", type: "server", x: 30, y: 12, emoji: "🖧", roomId: "server" },
+  { id: "f121", type: "server", x: 31, y: 12, emoji: "🖧", roomId: "server" },
+  { id: "f122", type: "server", x: 32, y: 12, emoji: "🖧", roomId: "server" },
+  { id: "f123", type: "server", x: 33, y: 12, emoji: "🖧", roomId: "server" },
+  { id: "f124", type: "server", x: 34, y: 12, emoji: "🖧", roomId: "server" },
+  { id: "f125", type: "server", x: 30, y: 14, emoji: "🖧", roomId: "server" },
+  { id: "f126", type: "server", x: 31, y: 14, emoji: "🖧", roomId: "server" },
+  { id: "f127", type: "server", x: 32, y: 14, emoji: "🖧", roomId: "server" },
+  { id: "f128", type: "server", x: 33, y: 14, emoji: "🖧", roomId: "server" },
+  { id: "f129", type: "server", x: 34, y: 14, emoji: "🖧", roomId: "server" },
+  { id: "f130", type: "monitor", x: 36, y: 12, emoji: "📡", roomId: "server" },
+  { id: "f131", type: "monitor", x: 37, y: 12, emoji: "🖥️", roomId: "server" },
+  { id: "f132", type: "desk", x: 36, y: 15, emoji: "💻", roomId: "server" },
+  { id: "f133", type: "chair", x: 37, y: 15, emoji: "🪑", roomId: "server" },
+
+  // Reception
+  { id: "f140", type: "desk", x: 18, y: 28, emoji: "💻", roomId: "reception" },
+  { id: "f141", type: "desk", x: 19, y: 28, emoji: "💻", roomId: "reception" },
+  { id: "f142", type: "sofa", x: 15, y: 30, emoji: "🛋️", roomId: "reception" },
+  { id: "f143", type: "sofa", x: 16, y: 30, emoji: "🛋️", roomId: "reception" },
+  { id: "f144", type: "sofa", x: 22, y: 30, emoji: "🛋️", roomId: "reception" },
+  { id: "f145", type: "sofa", x: 23, y: 30, emoji: "🛋️", roomId: "reception" },
+  { id: "f146", type: "table", x: 17, y: 30, emoji: "📰", roomId: "reception" },
+  { id: "f147", type: "table", x: 21, y: 30, emoji: "📰", roomId: "reception" },
+  { id: "f148", type: "plant", x: 14, y: 27, emoji: "🌿", roomId: "reception" },
+  { id: "f149", type: "plant", x: 25, y: 27, emoji: "🌿", roomId: "reception" },
+  { id: "f150", type: "plant", x: 14, y: 33, emoji: "🪴", roomId: "reception" },
+  { id: "f151", type: "plant", x: 25, y: 33, emoji: "🪴", roomId: "reception" },
+
+  // Game Room
+  { id: "f160", type: "table", x: 2, y: 26, emoji: "🎮", roomId: "game" },
+  { id: "f161", type: "table", x: 4, y: 26, emoji: "🕹️", roomId: "game" },
+  { id: "f162", type: "sofa", x: 6, y: 26, emoji: "🛋️", roomId: "game" },
+  { id: "f163", type: "sofa", x: 7, y: 26, emoji: "🛋️", roomId: "game" },
+  { id: "f164", type: "tv", x: 9, y: 25, emoji: "📺", roomId: "game" },
+  { id: "f165", type: "table", x: 2, y: 29, emoji: "🎯", roomId: "game" },
+  { id: "f166", type: "table", x: 4, y: 29, emoji: "🎱", roomId: "game" },
+  { id: "f167", type: "vending", x: 9, y: 30, emoji: "🥤", roomId: "game" },
+  { id: "f168", type: "plant", x: 1, y: 25, emoji: "🌿", roomId: "game" },
+
+  // Zen Garden
+  { id: "f170", type: "plant", x: 30, y: 22, emoji: "🌿", roomId: "zen" },
+  { id: "f171", type: "plant", x: 32, y: 22, emoji: "🌿", roomId: "zen" },
+  { id: "f172", type: "plant", x: 34, y: 22, emoji: "🌿", roomId: "zen" },
+  { id: "f173", type: "plant", x: 36, y: 22, emoji: "🌿", roomId: "zen" },
+  { id: "f174", type: "plant", x: 30, y: 26, emoji: "🪴", roomId: "zen" },
+  { id: "f175", type: "plant", x: 38, y: 26, emoji: "🪴", roomId: "zen" },
+  { id: "f176", type: "sofa", x: 32, y: 25, emoji: "🧘", roomId: "zen" },
+  { id: "f177", type: "sofa", x: 34, y: 25, emoji: "🧘", roomId: "zen" },
+  { id: "f178", type: "sofa", x: 36, y: 25, emoji: "🧘", roomId: "zen" },
+  { id: "f179", type: "water", x: 34, y: 23, emoji: "⛲", roomId: "zen" },
 ];
 
 export let FURNITURE = [...DEFAULT_FURNITURE];
@@ -120,21 +223,6 @@ export function setFurniture(items: FurnitureItem[]) {
   rebuildMap();
 }
 
-// Isometric conversion
-export function toIso(x: number, y: number): { sx: number; sy: number } {
-  return {
-    sx: (x - y) * (TILE_W / 2),
-    sy: (x + y) * (TILE_H / 2),
-  };
-}
-
-export function fromIso(sx: number, sy: number): { x: number; y: number } {
-  return {
-    x: Math.floor((sx / (TILE_W / 2) + sy / (TILE_H / 2)) / 2),
-    y: Math.floor((sy / (TILE_H / 2) - sx / (TILE_W / 2)) / 2),
-  };
-}
-
 let TILE_MAP: TileType[][] = [];
 
 function buildMap(): TileType[][] {
@@ -142,6 +230,7 @@ function buildMap(): TileType[][] {
     Array(MAP_COLS).fill(4 as TileType)
   );
 
+  // Fill rooms
   for (const room of ROOMS) {
     for (let y = room.y; y < room.y + room.h; y++) {
       for (let x = room.x; x < room.x + room.w; x++) {
@@ -152,24 +241,39 @@ function buildMap(): TileType[][] {
     }
   }
 
-  // Hallways
-  for (let x = 1; x < 34; x++) {
-    for (let y = 9; y <= 10; y++) {
+  // Hallways connecting rooms
+  // Main horizontal hallway (middle)
+  for (let x = 1; x < 40; x++) {
+    for (let y = 12; y <= 13; y++) {
       if (y < MAP_ROWS && x < MAP_COLS && map[y][x] === 4) map[y][x] = 0;
     }
   }
-  for (let y = 1; y < 20; y++) {
-    for (let x = 14; x <= 15; x++) {
+  // Vertical hallway left
+  for (let y = 1; y < 34; y++) {
+    for (let x = 12; x <= 13; x++) {
       if (y < MAP_ROWS && x < MAP_COLS && map[y][x] === 4) map[y][x] = 0;
     }
   }
-  for (let y = 1; y < 16; y++) {
-    for (let x = 24; x <= 25; x++) {
+  // Vertical hallway center
+  for (let y = 1; y < 34; y++) {
+    for (let x = 27; x <= 28; x++) {
+      if (y < MAP_ROWS && x < MAP_COLS && map[y][x] === 4) map[y][x] = 0;
+    }
+  }
+  // Secondary horizontal (bottom area)
+  for (let x = 1; x < 40; x++) {
+    for (let y = 24; y <= 24; y++) {
+      if (y < MAP_ROWS && x < MAP_COLS && map[y][x] === 4) map[y][x] = 0;
+    }
+  }
+  // Connect reception to hallways
+  for (let y = 24; y <= 27; y++) {
+    for (let x = 14; x <= 25; x++) {
       if (y < MAP_ROWS && x < MAP_COLS && map[y][x] === 4) map[y][x] = 0;
     }
   }
 
-  // Carpet in certain rooms
+  // Carpet inside rooms
   for (const room of ROOMS) {
     if (room.carpetColor) {
       for (let y = room.y + 1; y < room.y + room.h - 1; y++) {
@@ -180,7 +284,7 @@ function buildMap(): TileType[][] {
     }
   }
 
-  // Walls
+  // Walls around rooms
   for (const room of ROOMS) {
     for (let x = room.x - 1; x <= room.x + room.w; x++) {
       if (x >= 0 && x < MAP_COLS) {
@@ -213,7 +317,6 @@ function rebuildMap() {
 }
 
 TILE_MAP = buildMap();
-
 export { TILE_MAP };
 
 export function isWalkable(x: number, y: number): boolean {

@@ -70,8 +70,8 @@ export function RoomEditor({ isOpen, onClose, rooms, onUpdateRooms }: RoomEditor
       y: py,
       w: preset.w,
       h: preset.h,
-      color: color.floor,
       floorColor: color.floor,
+      wallColor: "#7C8CA0",
       carpetColor: color.carpet,
     };
     onUpdateRooms([...rooms, newRoom]);
@@ -205,7 +205,6 @@ export function RoomEditor({ isOpen, onClose, rooms, onUpdateRooms }: RoomEditor
                           onClick={() => handleUpdateRoom(room.id, {
                             floorColor: c.floor,
                             carpetColor: c.carpet,
-                            color: c.floor,
                           })}
                           className={`w-5 h-5 rounded-md border transition-all ${
                             room.floorColor === c.floor ? "border-primary ring-1 ring-primary/30 scale-110" : "border-border"
