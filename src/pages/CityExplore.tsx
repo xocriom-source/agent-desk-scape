@@ -300,6 +300,17 @@ export default function CityExplore() {
           <VehicleShop isOpen={showVehicleShop} onClose={() => setShowVehicleShop(false)} currentVehicle={currentVehicle} onSelect={handleVehicleSelect} />
           <DailyMissions isOpen={showMissions} onClose={() => setShowMissions(false)} />
           <CityMarketplace isOpen={showMarketplace} onClose={() => setShowMarketplace(false)} />
+
+          {/* Collaboration Panels */}
+          <ProximityChat isOpen={showProximity} onClose={() => setShowProximity(false)} playerPos={playerPos} />
+          <InteractiveObjects isOpen={showObjects} onClose={() => setShowObjects(false)} />
+          <UserStatusSystem isOpen={showStatus} onClose={() => setShowStatus(false)} currentStatus={userStatus} onStatusChange={setUserStatus} userName={userName} />
+          <TeleportSystem isOpen={showTeleport} onClose={() => setShowTeleport(false)} onTeleport={setPlayerPos} />
+          <PersonalAgent isOpen={showPersonalAgent} onClose={() => setShowPersonalAgent(false)} />
+          <TeamAgents isOpen={showTeamAgents} onClose={() => setShowTeamAgents(false)} />
+          <PublicWorkspaces isOpen={showPublicSpaces} onClose={() => setShowPublicSpaces(false)} />
+          <MessengerHub isOpen={showMessenger} onClose={() => setShowMessenger(false)} />
+          <AgentTraining isOpen={showTraining} onClose={() => setShowTraining(false)} />
         </>
       )}
     </div>
