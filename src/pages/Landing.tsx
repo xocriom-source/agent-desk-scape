@@ -218,11 +218,18 @@ export default function Landing() {
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
               <button
+                onClick={() => navigate("/city-explore")}
+                className="flex items-center gap-2 text-white bg-emerald-600 hover:bg-emerald-500 font-medium px-6 py-3.5 rounded-xl text-base transition-colors shadow-md"
+              >
+                <Globe className="w-4 h-4" />
+                Explorar a cidade em 3D
+              </button>
+              <button
                 onClick={() => navigate("/world")}
                 className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium px-6 py-3.5 rounded-xl text-base transition-colors border border-gray-200 hover:border-gray-300"
               >
                 <Map className="w-4 h-4" />
-                Explorar o mapa-múndi
+                Mapa-múndi
               </button>
             </div>
           </motion.div>
