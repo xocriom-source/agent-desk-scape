@@ -1,8 +1,8 @@
 import type { TileType } from "@/types/agent";
 
 export const TILE_SIZE = 32;
-export const MAP_COLS = 48;
-export const MAP_ROWS = 36;
+export const MAP_COLS = 64;
+export const MAP_ROWS = 52;
 
 export interface RoomDef {
   id: string;
