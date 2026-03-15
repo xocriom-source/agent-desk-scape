@@ -477,9 +477,27 @@ interface OfficeSceneProps {
   onMapClick?: (x: number, y: number) => void;
 }
 
+function ControlsUpdater({ controlsRef }: { controlsRef: React.RefObject<any> }) {
+  useFrame(() => {
+    controlsRef.current?.update();
+  });
+  return null;
+}
+
 export function OfficeScene({
-  agents, player, rooms, furniture, playerConfig, selectedAgentId, onAgentClick,
-  editMode, selectedFurnitureId, hoveredFurnitureId, onFurnitureClick, onFurnitureHover,
+  agents,
+  player,
+  rooms,
+  furniture,
+  playerConfig,
+  selectedAgentId,
+  onAgentClick,
+  editMode,
+  selectedFurnitureId,
+  hoveredFurnitureId,
+  onFurnitureClick,
+  onFurnitureHover,
+  onMapClick,
 }: OfficeSceneProps) {
   const controlsRef = useRef<any>(null);
 
@@ -515,26 +533,43 @@ export function OfficeScene({
         <directionalLight position={[-8, 10, -6]} intensity={0.3} color="#E8E4DC" />
         <hemisphereLight args={["#FFF8F0", "#D5CFC5", 0.25]} />
 
-        {/* Camera controls - orbit around player */}
+        {/* Camera controls - mouse drag rotate, wheel zoom, right-drag pan; works on trackpad wheel for zoom */}
         <OrbitControls
           ref={controlsRef}
-          enablePan={editMode || false}
-          enableZoom={true}
-          enableRotate={true}
+          enableDamping
+          dampingFactor={0.08}
+          enablePan
+          enableZoom
+          enableRotate
           minDistance={3}
-          maxDistance={18}
+          maxDistance={22}
           minPolarAngle={Math.PI / 6}
-          maxPolarAngle={Math.PI / 2.8}
-          minAzimuthAngle={-Math.PI / 3}
-          maxAzimuthAngle={Math.PI / 3}
+          maxPolarAngle={Math.PI / 2.6}
+          minAzimuthAngle={-Math.PI}
+          maxAzimuthAngle={Math.PI}
           zoomSpeed={0.8}
-          rotateSpeed={0.5}
+          rotateSpeed={0.55}
+          panSpeed={0.6}
+          mouseButtons={{
+            LEFT: THREE.MOUSE.ROTATE,
+            MIDDLE: THREE.MOUSE.DOLLY,
+            RIGHT: THREE.MOUSE.PAN,
+          }}
+          touches={{
+            ONE: THREE.TOUCH.ROTATE,
+            TWO: THREE.TOUCH.DOLLY_PAN,
+          }}
           target={[player.x * S, 0, player.y * S]}
         />
+        <ControlsUpdater controlsRef={controlsRef} />
         <CameraTarget player={player} controlsRef={controlsRef} />
 
-        {/* Building interior */}
-        <BuildingInterior rooms={rooms} />
+        {/* Building interior (click-to-move) */}
+        <BuildingInterior
+          rooms={rooms}
+          clickEnabled={!editMode}
+          onFloorClick={(x, y) => onMapClick?.(x, y)}
+        />
 
         {/* Rooms */}
         {rooms.map(room => (
