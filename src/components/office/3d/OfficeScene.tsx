@@ -4,7 +4,6 @@ import { OrbitControls, Html, Grid } from "@react-three/drei";
 import * as THREE from "three";
 import type { Agent, Player } from "@/types/agent";
 import type { RoomDef, FurnitureItem } from "@/data/officeMap";
-import { ROOMS, FURNITURE } from "@/data/officeMap";
 import { FurnitureModel } from "./FurnitureModels";
 
 const STATUS_COLORS: Record<string, string> = {
@@ -273,6 +272,8 @@ function Ground() {
 interface OfficeSceneProps {
   agents: Agent[];
   player: Player;
+  rooms: RoomDef[];
+  furniture: FurnitureItem[];
   playerConfig?: { color: string; hairStyle?: string; outfitStyle?: string; skinTone?: string; accessory?: string };
   selectedAgentId?: string;
   onAgentClick: (agent: Agent) => void;
@@ -285,7 +286,7 @@ interface OfficeSceneProps {
 }
 
 export function OfficeScene({
-  agents, player, playerConfig, selectedAgentId, onAgentClick,
+  agents, player, rooms, furniture, playerConfig, selectedAgentId, onAgentClick,
   editMode, selectedFurnitureId, hoveredFurnitureId, onFurnitureClick, onFurnitureHover, onGroundClick,
 }: OfficeSceneProps) {
   return (
@@ -323,12 +324,12 @@ export function OfficeScene({
         <Ground />
 
         {/* Rooms */}
-        {ROOMS.map(room => (
+        {rooms.map(room => (
           <Room3D key={room.id} room={room} />
         ))}
 
         {/* Furniture */}
-        {FURNITURE.map(f => (
+        {furniture.map(f => (
           <FurnitureModel
             key={f.id}
             type={f.type}
