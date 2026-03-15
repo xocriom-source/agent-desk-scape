@@ -361,6 +361,42 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          building_id: string | null
+          city: string | null
+          company_name: string | null
+          created_at: string
+          display_name: string
+          id: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          building_id?: string | null
+          city?: string | null
+          company_name?: string | null
+          created_at?: string
+          display_name?: string
+          id: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          building_id?: string | null
+          city?: string | null
+          company_name?: string | null
+          created_at?: string
+          display_name?: string
+          id?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       workspace_agents: {
         Row: {
           agent_type: string
