@@ -1,8 +1,9 @@
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import * as THREE from "three";
 import type { TransportType } from "@/types/building";
+import { TRANSPORT_INFO } from "@/types/building";
 
 interface VehicleProps {
   type: TransportType;
