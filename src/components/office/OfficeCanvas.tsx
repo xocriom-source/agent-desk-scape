@@ -5,6 +5,7 @@ import { TILE_MAP, TILE_SIZE, MAP_COLS, MAP_ROWS, FURNITURE, ROOMS } from "@/dat
 interface OfficeCanvasProps {
   agents: Agent[];
   player: Player;
+  playerConfig?: { color: string; hairStyle: string; outfitStyle: string };
   selectedAgentId?: string;
   onAgentClick: (agent: Agent) => void;
 }
