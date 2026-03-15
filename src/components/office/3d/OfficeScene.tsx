@@ -23,21 +23,15 @@ function SkylineBuilding({ position, width, height, color }: { position: [number
   );
 }
 
-// ── Central Plaza (open-air park area) ──
-function CentralPlaza({ position, onFloorClick, clickEnabled }: { position: [number, number, number]; onFloorClick?: (x: number, y: number) => void; clickEnabled?: boolean }) {
-  const size = 8; // world units
-  const downRef = useRef<{ x: number; y: number; t: number; button: number } | null>(null);
-
-  const handleDown = (e: ThreeEvent<PointerEvent>) => {
-    if (!clickEnabled) return;
-    downRef.current = { x: e.nativeEvent.clientX, y: e.nativeEvent.clientY, t: performance.now(), button: e.nativeEvent.button };
-  };
-  const handleUp = (e: ThreeEvent<PointerEvent>) => {
-    if (!clickEnabled) return;
-    const down = downRef.current;
-    downRef.current = null;
-    if (!down || down.button !== 0) return;
-    if (Math.hypot(e.nativeEvent.clientX - down.x, e.nativeEvent.clientY - down.y) > 6) return;
+// ── Exterior Ground ──
+function ExteriorGround({ cx, cz }: { cx: number; cz: number }) {
+  return (
+    <mesh position={[cx, -0.02, cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      <planeGeometry args={[60, 60]} />
+      <meshStandardMaterial color="#1A1E22" />
+    </mesh>
+  );
+}
     if (performance.now() - down.t > 450) return;
     const tx = Math.floor(e.point.x / S + 0.5);
     const ty = Math.floor(e.point.z / S + 0.5);
