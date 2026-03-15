@@ -477,13 +477,13 @@ function DistrictLabels() {
   );
 }
 
-// ── Street Lights Grid ──
+// ── Street Lights Grid (optimized - no pointLights, only emissive bulbs) ──
 function StreetLights() {
   const positions = useMemo(() => {
     const pts: [number, number][] = [];
-    for (let x = -24; x <= 24; x += 8) {
-      for (let z = -24; z <= 24; z += 8) {
-        if (Math.abs(x) < 6 && Math.abs(z) < 6) continue; // skip plaza area
+    for (let x = -24; x <= 24; x += 12) {
+      for (let z = -24; z <= 24; z += 12) {
+        if (Math.abs(x) < 6 && Math.abs(z) < 6) continue;
         pts.push([x, z]);
       }
     }
@@ -495,14 +495,13 @@ function StreetLights() {
       {positions.map(([x, z], i) => (
         <group key={i} position={[x, 0, z]}>
           <mesh position={[0, 1, 0]}>
-            <cylinderGeometry args={[0.025, 0.04, 2, 6]} />
+            <cylinderGeometry args={[0.025, 0.04, 2, 4]} />
             <meshStandardMaterial color="#333" metalness={0.6} />
           </mesh>
           <mesh position={[0, 2.05, 0]}>
-            <sphereGeometry args={[0.05, 6, 6]} />
-            <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={1.5} />
+            <sphereGeometry args={[0.05, 4, 4]} />
+            <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={2} />
           </mesh>
-          <pointLight position={[0, 2, 0]} intensity={0.12} distance={5} color="#FFD060" />
         </group>
       ))}
     </group>
