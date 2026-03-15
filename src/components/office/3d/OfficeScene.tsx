@@ -1074,7 +1074,7 @@ export function OfficeScene({
         />
 
         {/* All interior objects raised by foundation height */}
-        <group position={[0, 0.25, 0]}>
+        <group position={[0, 0.35, 0]}>
           {/* Rooms */}
           {rooms.map((room) => (
             <Room3D

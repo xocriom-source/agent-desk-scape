@@ -1,4 +1,5 @@
-import { Settings, Wifi, LogOut, Palette, Home } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Settings, Wifi, LogOut, Palette, Home, Clock } from "lucide-react";
 import logo from "@/assets/logo.png";
 import type { Agent } from "@/types/agent";
 
@@ -11,15 +12,41 @@ interface TopBarProps {
   onLogout?: () => void;
 }
 
+function LocalClock() {
+  const [now, setNow] = useState(new Date());
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const timeStr = now.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  const dateStr = now.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+  const tzName = Intl.DateTimeFormat().resolvedOptions().timeZone.split("/").pop()?.replace(/_/g, " ") || "";
+
+  return (
+    <div className="glass-panel rounded-2xl px-3 py-2 flex items-center gap-2 shadow-lg">
+      <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+      <div className="flex flex-col leading-tight">
+        <span className="text-xs font-bold text-foreground">{timeStr}</span>
+        <span className="text-[9px] text-muted-foreground">{dateStr} · {tzName}</span>
+      </div>
+    </div>
+  );
+}
+
 export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onRoomEditor, onLogout }: TopBarProps) {
   return (
     <div className="absolute top-3 left-3 right-3 z-20 flex items-center justify-between pointer-events-none">
-      <div className="glass-panel rounded-2xl px-4 py-2.5 flex items-center gap-3 pointer-events-auto shadow-lg">
-        <img src={logo} alt="AgentOffice" className="w-8 h-8" />
-        <div>
-          <span className="font-display font-bold text-foreground text-sm block leading-tight">AgentOffice</span>
-          <span className="text-[10px] text-muted-foreground">Empresa Virtual de IA</span>
+      <div className="flex items-center gap-2 pointer-events-auto">
+        <div className="glass-panel rounded-2xl px-4 py-2.5 flex items-center gap-3 shadow-lg">
+          <img src={logo} alt="AgentOffice" className="w-8 h-8" />
+          <div>
+            <span className="font-display font-bold text-foreground text-sm block leading-tight">AgentOffice</span>
+            <span className="text-[10px] text-muted-foreground">Empresa Virtual de IA</span>
+          </div>
         </div>
+        <LocalClock />
       </div>
 
       {nearbyAgent && (
