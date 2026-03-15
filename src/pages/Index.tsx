@@ -11,6 +11,10 @@ import { SocialFeed } from "@/components/office/SocialFeed";
 import { TaskBoard } from "@/components/office/TaskBoard";
 import { AgentMessaging } from "@/components/office/AgentMessaging";
 import { AgentGallery } from "@/components/office/AgentGallery";
+import { CreativeStudios } from "@/components/office/CreativeStudios";
+import { AnalyticsDashboard } from "@/components/office/AnalyticsDashboard";
+import { AgentMarketplace } from "@/components/office/AgentMarketplace";
+import { AIGovernance } from "@/components/office/AIGovernance";
 import { CharacterCustomizer, type PlayerConfig } from "@/components/office/CharacterCustomizer";
 import { RoomEditor } from "@/components/office/RoomEditor";
 import { useOfficeState } from "@/hooks/useOfficeState";
@@ -31,6 +35,10 @@ const Index = () => {
   const [showTasks, setShowTasks] = useState(false);
   const [showMessaging, setShowMessaging] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
+  const [showStudios, setShowStudios] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showMarketplace, setShowMarketplace] = useState(false);
+  const [showGovernance, setShowGovernance] = useState(false);
   const [playerConfig, setPlayerConfig] = useState<PlayerConfig>({
     name: "Chefe",
     color: "#4F46E5",
@@ -122,6 +130,10 @@ const Index = () => {
         onOpenTasks={() => setShowTasks(true)}
         onOpenMessaging={() => setShowMessaging(true)}
         onOpenGallery={() => setShowGallery(true)}
+        onOpenStudios={() => setShowStudios(true)}
+        onOpenAnalytics={() => setShowAnalytics(true)}
+        onOpenMarketplace={() => setShowMarketplace(true)}
+        onOpenGovernance={() => setShowGovernance(true)}
       />
 
       <OfficeScene
@@ -168,6 +180,10 @@ const Index = () => {
       <TaskBoard agents={agents} isOpen={showTasks} onClose={() => setShowTasks(false)} />
       <AgentMessaging agents={agents} isOpen={showMessaging} onClose={() => setShowMessaging(false)} />
       <AgentGallery agents={agents} isOpen={showGallery} onClose={() => setShowGallery(false)} />
+      <CreativeStudios agents={agents} isOpen={showStudios} onClose={() => setShowStudios(false)} />
+      <AnalyticsDashboard agents={agents} isOpen={showAnalytics} onClose={() => setShowAnalytics(false)} />
+      <AgentMarketplace agents={agents} isOpen={showMarketplace} onClose={() => setShowMarketplace(false)} />
+      <AIGovernance agents={agents} isOpen={showGovernance} onClose={() => setShowGovernance(false)} />
 
       {!editMode && <ActionBar onMove={movePlayer} />}
       {!editMode && <MiniMap player={player} agents={agents} rooms={rooms} />}

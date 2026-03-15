@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Settings, Wifi, LogOut, Palette, Home, Clock, MessageSquare, CheckCircle2, Radio, ImageIcon } from "lucide-react";
+import { Settings, Wifi, LogOut, Palette, Home, Clock, MessageSquare, CheckCircle2, Radio, ImageIcon, BarChart3, Store, Vote, Sparkles } from "lucide-react";
 import logo from "@/assets/logo.png";
 import type { Agent } from "@/types/agent";
 
@@ -14,6 +14,10 @@ interface TopBarProps {
   onOpenTasks?: () => void;
   onOpenMessaging?: () => void;
   onOpenGallery?: () => void;
+  onOpenAnalytics?: () => void;
+  onOpenMarketplace?: () => void;
+  onOpenGovernance?: () => void;
+  onOpenStudios?: () => void;
 }
 
 function LocalClock() {
@@ -39,7 +43,7 @@ function LocalClock() {
   );
 }
 
-export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onRoomEditor, onLogout, onOpenFeed, onOpenTasks, onOpenMessaging, onOpenGallery }: TopBarProps) {
+export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onRoomEditor, onLogout, onOpenFeed, onOpenTasks, onOpenMessaging, onOpenGallery, onOpenAnalytics, onOpenMarketplace, onOpenGovernance, onOpenStudios }: TopBarProps) {
   return (
     <div className="absolute top-3 left-3 right-3 z-20 flex items-center justify-between pointer-events-none">
       <div className="flex items-center gap-2 pointer-events-auto">
@@ -72,6 +76,26 @@ export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onRo
           {onOpenGallery && (
             <button onClick={onOpenGallery} className="p-2 rounded-xl hover:bg-muted/30 transition-colors" title="Galeria">
               <ImageIcon className="w-4 h-4 text-[#FF6BB5]" />
+            </button>
+          )}
+          {onOpenStudios && (
+            <button onClick={onOpenStudios} className="p-2 rounded-xl hover:bg-muted/30 transition-colors" title="Estúdios Criativos">
+              <Sparkles className="w-4 h-4 text-[#FFB347]" />
+            </button>
+          )}
+          {onOpenAnalytics && (
+            <button onClick={onOpenAnalytics} className="p-2 rounded-xl hover:bg-muted/30 transition-colors" title="Analytics">
+              <BarChart3 className="w-4 h-4 text-[#A78BFA]" />
+            </button>
+          )}
+          {onOpenMarketplace && (
+            <button onClick={onOpenMarketplace} className="p-2 rounded-xl hover:bg-muted/30 transition-colors" title="Marketplace">
+              <Store className="w-4 h-4 text-accent" />
+            </button>
+          )}
+          {onOpenGovernance && (
+            <button onClick={onOpenGovernance} className="p-2 rounded-xl hover:bg-muted/30 transition-colors" title="Governança IA">
+              <Vote className="w-4 h-4 text-primary" />
             </button>
           )}
         </div>
