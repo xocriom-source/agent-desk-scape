@@ -12,8 +12,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 const S = 0.5; // tile to world scale
 
-// ── Interior building shell ──
-function BuildingInterior({
+// ── Building with exterior (Sims/Habbo style cutaway) ──
+function BuildingExterior({
   rooms,
   onFloorClick,
   clickEnabled,
@@ -22,15 +22,25 @@ function BuildingInterior({
   onFloorClick?: (x: number, y: number) => void;
   clickEnabled?: boolean;
 }) {
-  const minX = Math.min(...rooms.map((r) => r.x)) - 1;
-  const minY = Math.min(...rooms.map((r) => r.y)) - 1;
-  const maxX = Math.max(...rooms.map((r) => r.x + r.w)) + 1;
-  const maxY = Math.max(...rooms.map((r) => r.y + r.h)) + 1;
+  const pad = 1.5;
+  const minX = Math.min(...rooms.map((r) => r.x)) - pad;
+  const minY = Math.min(...rooms.map((r) => r.y)) - pad;
+  const maxX = Math.max(...rooms.map((r) => r.x + r.w)) + pad;
+  const maxY = Math.max(...rooms.map((r) => r.y + r.h)) + pad;
   const bw = (maxX - minX) * S;
   const bh = (maxY - minY) * S;
   const cx = ((minX + maxX) / 2) * S;
   const cz = ((minY + maxY) / 2) * S;
-  const wallH = 0.9;
+
+  const foundH = 0.25;   // foundation height
+  const wallH = 1.1;     // exterior wall height
+  const wallT = 0.25;    // wall thickness
+  const brickColor = "#8B6B52";    // warm brown brick
+  const brickDark = "#6B4F3A";     // darker accent
+  const trimColor = "#D4C8B8";     // light trim/molding
+  const foundColor = "#5A5A5A";    // concrete foundation
+  const windowColor = "#6BA3D6";   // window glass
+  const windowFrame = "#3A3A3A";   // window frame
 
   const handleFloorDown = (e: ThreeEvent<PointerEvent>) => {
     if (!clickEnabled) return;
@@ -40,89 +50,162 @@ function BuildingInterior({
     onFloorClick?.(tx, ty);
   };
 
+  // Generate windows along a wall
+  const windowsAlongX = (y: number, z: number, count: number, startX: number, spanW: number) => {
+    const spacing = spanW / (count + 1);
+    return Array.from({ length: count }).map((_, i) => {
+      const wx = startX + spacing * (i + 1);
+      return (
+        <group key={`wx${i}-${z}`} position={[wx, y, z]}>
+          {/* Window frame */}
+          <mesh><boxGeometry args={[0.35, 0.3, 0.05]} /><meshStandardMaterial color={windowFrame} /></mesh>
+          {/* Glass */}
+          <mesh position={[0, 0, 0.01]}><boxGeometry args={[0.28, 0.24, 0.02]} /><meshStandardMaterial color={windowColor} transparent opacity={0.6} emissive={windowColor} emissiveIntensity={0.15} /></mesh>
+          {/* Sill */}
+          <mesh position={[0, -0.17, 0.05]}><boxGeometry args={[0.4, 0.03, 0.08]} /><meshStandardMaterial color={trimColor} /></mesh>
+        </group>
+      );
+    });
+  };
+
+  const windowsAlongZ = (y: number, x: number, count: number, startZ: number, spanH: number) => {
+    const spacing = spanH / (count + 1);
+    return Array.from({ length: count }).map((_, i) => {
+      const wz = startZ + spacing * (i + 1);
+      return (
+        <group key={`wz${i}-${x}`} position={[x, y, wz]}>
+          <mesh><boxGeometry args={[0.05, 0.3, 0.35]} /><meshStandardMaterial color={windowFrame} /></mesh>
+          <mesh position={[0.01, 0, 0]}><boxGeometry args={[0.02, 0.24, 0.28]} /><meshStandardMaterial color={windowColor} transparent opacity={0.6} emissive={windowColor} emissiveIntensity={0.15} /></mesh>
+          <mesh position={[0.05, -0.17, 0]}><boxGeometry args={[0.08, 0.03, 0.4]} /><meshStandardMaterial color={trimColor} /></mesh>
+        </group>
+      );
+    });
+  };
+
+  const northZ = cz - bh / 2;
+  const southZ = cz + bh / 2;
+  const westX = cx - bw / 2;
+  const eastX = cx + bw / 2;
+  const winY = foundH + wallH * 0.55;
+  const nWinX = Math.floor(bw / 1.5);
+  const nWinZ = Math.floor(bh / 1.5);
+
   return (
     <group>
-      {/* ── Main building floor (tile look) ── */}
+      {/* ── Foundation / Platform ── */}
+      <mesh position={[cx, foundH / 2, cz]}>
+        <boxGeometry args={[bw + wallT * 2 + 0.1, foundH, bh + wallT * 2 + 0.1]} />
+        <meshStandardMaterial color={foundColor} />
+      </mesh>
+      {/* Foundation trim */}
+      <mesh position={[cx, foundH + 0.02, cz]}>
+        <boxGeometry args={[bw + wallT * 2 + 0.2, 0.04, bh + wallT * 2 + 0.2]} />
+        <meshStandardMaterial color="#707070" />
+      </mesh>
+
+      {/* ── Interior floor (clickable) ── */}
       <mesh
-        position={[cx, 0.001, cz]}
+        position={[cx, foundH + 0.001, cz]}
         rotation={[-Math.PI / 2, 0, 0]}
         receiveShadow
         onPointerDown={handleFloorDown}
       >
         <planeGeometry args={[bw, bh]} />
-        <meshStandardMaterial color="#D5CFC5" />
+        <meshStandardMaterial color="#E8E0D4" />
       </mesh>
-      {/* Tile grid lines on floor (non-interactive so clicks go through) */}
+      {/* Floor tile grid */}
       {Array.from({ length: Math.ceil(bw) + 1 }).map((_, i) => (
-        <mesh
-          key={`vl${i}`}
-          raycast={() => null}
-          position={[cx - bw / 2 + i, 0.002, cz]}
-          rotation={[-Math.PI / 2, 0, 0]}
-        >
-          <planeGeometry args={[0.01, bh]} />
-          <meshBasicMaterial color="#C0B8A8" />
+        <mesh key={`vl${i}`} raycast={() => null} position={[cx - bw / 2 + i, foundH + 0.002, cz]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.015, bh]} /><meshBasicMaterial color="#D0C8B8" />
         </mesh>
       ))}
       {Array.from({ length: Math.ceil(bh) + 1 }).map((_, i) => (
-        <mesh
-          key={`hl${i}`}
-          raycast={() => null}
-          position={[cx, 0.002, cz - bh / 2 + i]}
-          rotation={[-Math.PI / 2, 0, 0]}
-        >
-          <planeGeometry args={[bw, 0.01]} />
-          <meshBasicMaterial color="#C0B8A8" />
+        <mesh key={`hl${i}`} raycast={() => null} position={[cx, foundH + 0.002, cz - bh / 2 + i]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[bw, 0.015]} /><meshBasicMaterial color="#D0C8B8" />
         </mesh>
       ))}
 
-      {/* ── Exterior walls (thick, tall) ── */}
-      {/* North */}
-      <mesh position={[cx, wallH / 2, cz - bh / 2 - 0.1]}>
-        <boxGeometry args={[bw + 0.4, wallH, 0.2]} />
-        <meshStandardMaterial color="#8B8D94" />
+      {/* ── Exterior Walls (brick) ── */}
+      {/* North wall (back - full height, visible) */}
+      <mesh position={[cx, foundH + wallH / 2, northZ - wallT / 2]}>
+        <boxGeometry args={[bw + wallT * 2, wallH, wallT]} />
+        <meshStandardMaterial color={brickColor} />
       </mesh>
-      {/* South */}
-      <mesh position={[cx, wallH / 2, cz + bh / 2 + 0.1]}>
-        <boxGeometry args={[bw + 0.4, wallH, 0.2]} />
-        <meshStandardMaterial color="#8B8D94" />
-      </mesh>
-      {/* West */}
-      <mesh position={[cx - bw / 2 - 0.1, wallH / 2, cz]}>
-        <boxGeometry args={[0.2, wallH, bh + 0.4]} />
-        <meshStandardMaterial color="#7D7F86" />
-      </mesh>
-      {/* East */}
-      <mesh position={[cx + bw / 2 + 0.1, wallH / 2, cz]}>
-        <boxGeometry args={[0.2, wallH, bh + 0.4]} />
-        <meshStandardMaterial color="#7D7F86" />
-      </mesh>
-
-      {/* ── Baseboard trim ── */}
-      <mesh position={[cx, 0.03, cz - bh / 2 + 0.01]}>
-        <boxGeometry args={[bw, 0.06, 0.04]} />
-        <meshStandardMaterial color="#5C5E64" />
-      </mesh>
-      <mesh position={[cx, 0.03, cz + bh / 2 - 0.01]}>
-        <boxGeometry args={[bw, 0.06, 0.04]} />
-        <meshStandardMaterial color="#5C5E64" />
-      </mesh>
-
-      {/* ── Ceiling lights (fluorescent strips) ── */}
-      {Array.from({ length: 6 }).map((_, i) => (
-        <group key={`light-${i}`}>
-          <mesh position={[cx - bw / 3 + (i % 3) * (bw / 3), wallH - 0.02, cz - bh / 4 + Math.floor(i / 3) * (bh / 2)]}>
-            <boxGeometry args={[0.8, 0.03, 0.15]} />
-            <meshStandardMaterial color="#FFF8E1" emissive="#FFF8E1" emissiveIntensity={0.3} />
-          </mesh>
-          <pointLight
-            position={[cx - bw / 3 + (i % 3) * (bw / 3), wallH - 0.1, cz - bh / 4 + Math.floor(i / 3) * (bh / 2)]}
-            intensity={0.15}
-            distance={5}
-            color="#FFF5DC"
-          />
-        </group>
+      {/* Brick horizontal lines on north wall */}
+      {[0.2, 0.4, 0.6, 0.8].map((frac) => (
+        <mesh key={`bn${frac}`} position={[cx, foundH + wallH * frac, northZ - wallT / 2 - 0.001]} raycast={() => null}>
+          <boxGeometry args={[bw + wallT * 2 + 0.01, 0.015, 0.01]} />
+          <meshStandardMaterial color={brickDark} />
+        </mesh>
       ))}
+
+      {/* South wall (front - lower, cutaway style) */}
+      <mesh position={[cx, foundH + wallH * 0.35 / 2, southZ + wallT / 2]}>
+        <boxGeometry args={[bw + wallT * 2, wallH * 0.35, wallT]} />
+        <meshStandardMaterial color={brickColor} />
+      </mesh>
+
+      {/* West wall (left - full height) */}
+      <mesh position={[westX - wallT / 2, foundH + wallH / 2, cz]}>
+        <boxGeometry args={[wallT, wallH, bh + wallT * 2]} />
+        <meshStandardMaterial color={brickDark} />
+      </mesh>
+
+      {/* East wall (right - partial cutaway) */}
+      <mesh position={[eastX + wallT / 2, foundH + wallH * 0.5 / 2, cz]}>
+        <boxGeometry args={[wallT, wallH * 0.5, bh + wallT * 2]} />
+        <meshStandardMaterial color={brickDark} />
+      </mesh>
+
+      {/* ── Top trim / molding ── */}
+      <mesh position={[cx, foundH + wallH, northZ - wallT / 2]}>
+        <boxGeometry args={[bw + wallT * 2 + 0.15, 0.06, wallT + 0.1]} />
+        <meshStandardMaterial color={trimColor} />
+      </mesh>
+      <mesh position={[westX - wallT / 2, foundH + wallH, cz]}>
+        <boxGeometry args={[wallT + 0.1, 0.06, bh + wallT * 2 + 0.15]} />
+        <meshStandardMaterial color={trimColor} />
+      </mesh>
+
+      {/* ── Baseboard (interior) ── */}
+      <mesh position={[cx, foundH + 0.025, northZ + 0.03]}>
+        <boxGeometry args={[bw, 0.05, 0.04]} /><meshStandardMaterial color="#6B6358" />
+      </mesh>
+      <mesh position={[westX + 0.03, foundH + 0.025, cz]}>
+        <boxGeometry args={[0.04, 0.05, bh]} /><meshStandardMaterial color="#6B6358" />
+      </mesh>
+
+      {/* ── Windows on exterior walls ── */}
+      {/* North wall windows */}
+      {windowsAlongX(winY, northZ - wallT - 0.001, nWinX, cx - bw / 2, bw)}
+      {/* West wall windows */}
+      {windowsAlongZ(winY, westX - wallT - 0.001, nWinZ, cz - bh / 2, bh)}
+
+      {/* ── Ceiling lights (fluorescent) ── */}
+      {Array.from({ length: 8 }).map((_, i) => {
+        const col = i % 4;
+        const row = Math.floor(i / 4);
+        return (
+          <group key={`cl${i}`}>
+            <mesh position={[cx - bw * 0.3 + col * (bw * 0.2), foundH + wallH - 0.04, cz - bh * 0.2 + row * (bh * 0.4)]}>
+              <boxGeometry args={[0.6, 0.025, 0.12]} />
+              <meshStandardMaterial color="#FFF8E8" emissive="#FFF8E8" emissiveIntensity={0.4} />
+            </mesh>
+            <pointLight
+              position={[cx - bw * 0.3 + col * (bw * 0.2), foundH + wallH - 0.1, cz - bh * 0.2 + row * (bh * 0.4)]}
+              intensity={0.12}
+              distance={4}
+              color="#FFF5DC"
+            />
+          </group>
+        );
+      })}
+
+      {/* ── Ground plane around building ── */}
+      <mesh position={[cx, -0.01, cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[60, 60]} />
+        <meshStandardMaterial color="#3A3A3A" />
+      </mesh>
     </group>
   );
 }
@@ -529,8 +612,9 @@ export function OfficeScene({
           gl.toneMappingExposure = 1.0;
         }}
       >
-        {/* Indoor background color - muted ceiling tone */}
-        <color attach="background" args={["#C8C4BC"]} />
+        {/* Dark background like Habbo/Sims */}
+        <color attach="background" args={["#1A1A2E"]} />
+        <fog attach="fog" args={["#1A1A2E", 25, 55]} />
 
         {/* Indoor lighting - warm office lights */}
         <ambientLight intensity={0.6} color="#FFF5E6" />
@@ -581,50 +665,53 @@ export function OfficeScene({
         <ControlsUpdater controlsRef={controlsRef} />
         <CameraTarget player={player} controlsRef={controlsRef} />
 
-        {/* Building interior (click-to-move) */}
-        <BuildingInterior
+        {/* Building (click-to-move) */}
+        <BuildingExterior
           rooms={rooms}
           clickEnabled={!editMode}
           onFloorClick={(x, y) => onMapClick?.(x, y)}
         />
 
-        {/* Rooms */}
-        {rooms.map((room) => (
-          <Room3D
-            key={room.id}
-            room={room}
-            clickEnabled={!editMode}
-            onFloorClick={(x, y) => onMapClick?.(x, y)}
-          />
-        ))}
+        {/* All interior objects raised by foundation height */}
+        <group position={[0, 0.25, 0]}>
+          {/* Rooms */}
+          {rooms.map((room) => (
+            <Room3D
+              key={room.id}
+              room={room}
+              clickEnabled={!editMode}
+              onFloorClick={(x, y) => onMapClick?.(x, y)}
+            />
+          ))}
 
-        {/* Furniture */}
-        {furniture.map(f => (
-          <FurnitureModel
-            key={f.id}
-            type={f.type}
-            position={[f.x * S, 0, f.y * S]}
-            editMode={editMode}
-            selected={selectedFurnitureId === f.id}
-            hovered={hoveredFurnitureId === f.id}
-            onClick={() => onFurnitureClick?.(f.id)}
-            onPointerOver={() => onFurnitureHover?.(f.id)}
-            onPointerOut={() => onFurnitureHover?.(null)}
-          />
-        ))}
+          {/* Furniture */}
+          {furniture.map(f => (
+            <FurnitureModel
+              key={f.id}
+              type={f.type}
+              position={[f.x * S, 0, f.y * S]}
+              editMode={editMode}
+              selected={selectedFurnitureId === f.id}
+              hovered={hoveredFurnitureId === f.id}
+              onClick={() => onFurnitureClick?.(f.id)}
+              onPointerOver={() => onFurnitureHover?.(f.id)}
+              onPointerOut={() => onFurnitureHover?.(null)}
+            />
+          ))}
 
-        {/* Agents */}
-        {agents.map(agent => (
-          <Agent3D
-            key={agent.id}
-            agent={agent}
-            selected={agent.id === selectedAgentId}
-            onClick={() => onAgentClick(agent)}
-          />
-        ))}
+          {/* Agents */}
+          {agents.map(agent => (
+            <Agent3D
+              key={agent.id}
+              agent={agent}
+              selected={agent.id === selectedAgentId}
+              onClick={() => onAgentClick(agent)}
+            />
+          ))}
 
-        {/* Player */}
-        <Player3D player={player} config={playerConfig} />
+          {/* Player */}
+          <Player3D player={player} config={playerConfig} />
+        </group>
       </Canvas>
     </div>
   );
