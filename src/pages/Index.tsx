@@ -35,6 +35,10 @@ const Index = () => {
   const [showTasks, setShowTasks] = useState(false);
   const [showMessaging, setShowMessaging] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
+  const [showStudios, setShowStudios] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showMarketplace, setShowMarketplace] = useState(false);
+  const [showGovernance, setShowGovernance] = useState(false);
   const [playerConfig, setPlayerConfig] = useState<PlayerConfig>({
     name: "Chefe",
     color: "#4F46E5",
