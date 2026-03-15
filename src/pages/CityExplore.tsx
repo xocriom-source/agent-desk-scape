@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Building2, Users2, Trophy, Megaphone, Plane, Search, ShoppingBag, MessageCircle, Target, Car } from "lucide-react";
 import { motion } from "framer-motion";
@@ -50,16 +50,30 @@ export default function CityExplore() {
   }, []);
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-background select-none">
+    <div className="relative w-screen h-screen overflow-hidden select-none" style={{ backgroundColor: "#0A0C14" }}>
+      {/* Loading overlay */}
+      <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none" id="city-loader">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-xs text-gray-500 font-mono tracking-wider">LOADING CITY...</p>
+        </div>
+      </div>
+
       {/* 3D City Scene */}
-      <CityExploreScene
-        playerName={userName}
-        flyMode={flyMode}
-        inVehicle={inVehicle}
-        vehicleType={currentVehicle}
-        vehicleColor={vehicleColor}
-        onVehicleToggle={setInVehicle}
-      />
+      <Suspense fallback={null}>
+        <CityExploreScene
+          playerName={userName}
+          flyMode={flyMode}
+          inVehicle={inVehicle}
+          vehicleType={currentVehicle}
+          vehicleColor={vehicleColor}
+          onVehicleToggle={setInVehicle}
+          onReady={() => {
+            const el = document.getElementById("city-loader");
+            if (el) el.style.display = "none";
+          }}
+        />
+      </Suspense>
 
       {/* Top HUD */}
       <motion.div

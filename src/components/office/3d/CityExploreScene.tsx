@@ -584,9 +584,10 @@ interface CityExploreSceneProps {
   vehicleType?: string;
   vehicleColor?: string;
   onVehicleToggle?: (val: boolean) => void;
+  onReady?: () => void;
 }
 
-export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, vehicleColor, onVehicleToggle }: CityExploreSceneProps) {
+export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, vehicleColor, onVehicleToggle, onReady }: CityExploreSceneProps) {
   const controlsRef = useRef<any>(null);
   const dn = useDayNight();
 
@@ -691,6 +692,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
           gl.toneMappingExposure = dn.exposure;
+          onReady?.();
         }}
       >
         <color attach="background" args={[dn.bgColor]} />
