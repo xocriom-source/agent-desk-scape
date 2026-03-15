@@ -13,23 +13,89 @@ const STATUS_COLORS: Record<string, string> = {
 
 const S = 0.5; // tile to world scale
 
-// ── Distant skyline building (far away, purely decorative) ──
+// ── Distant skyline building with glowing windows ──
 function SkylineBuilding({ position, width, height, color }: { position: [number, number, number]; width: number; height: number; color: string }) {
+  const windows = useMemo(() => {
+    const rows = Math.floor(height / 0.5);
+    const cols = Math.max(2, Math.floor(width / 0.5));
+    const data: { r: number; c: number; lit: boolean }[] = [];
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        data.push({ r, c, lit: Math.random() > 0.4 });
+      }
+    }
+    return { rows, cols, data };
+  }, [height, width]);
+
   return (
-    <mesh position={[position[0], height / 2, position[2]]}>
-      <boxGeometry args={[width, height, width * 0.6]} />
-      <meshStandardMaterial color={color} roughness={0.95} />
-    </mesh>
+    <group>
+      <mesh position={[position[0], height / 2, position[2]]}>
+        <boxGeometry args={[width, height, width * 0.6]} />
+        <meshStandardMaterial color={color} roughness={0.95} />
+      </mesh>
+      {/* Rooftop accent */}
+      <mesh position={[position[0], height + 0.03, position[2]]}>
+        <boxGeometry args={[width + 0.06, 0.06, width * 0.6 + 0.06]} />
+        <meshStandardMaterial color="#222" />
+      </mesh>
+      {/* Windows on front face */}
+      {windows.data.map((w, i) => (
+        <mesh key={i} position={[
+          position[0] - width / 2 + 0.25 + w.c * (width / (windows.cols + 0.5)),
+          0.3 + w.r * 0.5,
+          position[2] + width * 0.3 + 0.01,
+        ]}>
+          <boxGeometry args={[0.15, 0.2, 0.01]} />
+          <meshStandardMaterial
+            color={w.lit ? "#FFE4A8" : "#0A0A14"}
+            emissive={w.lit ? "#FFD060" : "#000"}
+            emissiveIntensity={w.lit ? 0.6 : 0}
+          />
+        </mesh>
+      ))}
+    </group>
   );
 }
 
-// ── Exterior Ground ──
+// ── Exterior Ground with subtle grid pattern ──
 function ExteriorGround({ cx, cz }: { cx: number; cz: number }) {
   return (
-    <mesh position={[cx, -0.02, cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-      <planeGeometry args={[60, 60]} />
-      <meshStandardMaterial color="#1A1E22" />
-    </mesh>
+    <group>
+      <mesh position={[cx, -0.02, cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[80, 80]} />
+        <meshStandardMaterial color="#141820" />
+      </mesh>
+      {/* Roads/paths */}
+      {[-20, -10, 0, 10, 20].map(off => (
+        <mesh key={`rh-${off}`} position={[cx, -0.015, cz + off]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[70, 0.8]} />
+          <meshStandardMaterial color="#1E222A" />
+        </mesh>
+      ))}
+      {[-20, -10, 0, 10, 20].map(off => (
+        <mesh key={`rv-${off}`} position={[cx + off, -0.015, cz]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.8, 70]} />
+          <meshStandardMaterial color="#1E222A" />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+// ── Street lamp ──
+function StreetLamp({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      <mesh position={[0, 0.8, 0]}>
+        <cylinderGeometry args={[0.02, 0.03, 1.6, 6]} />
+        <meshStandardMaterial color="#333" metalness={0.6} />
+      </mesh>
+      <mesh position={[0, 1.65, 0]}>
+        <sphereGeometry args={[0.06, 8, 8]} />
+        <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={1.5} />
+      </mesh>
+      <pointLight position={[0, 1.6, 0]} intensity={0.3} distance={4} color="#FFD060" />
+    </group>
   );
 }
 
@@ -597,30 +663,46 @@ export function OfficeScene({
     return { x: ((minX + maxX) / 2) * S, z: ((minY + maxY) / 2) * S };
   }, [rooms]);
 
-  // Distant skyline buildings (far enough to never overlap the office)
+  // Distant skyline buildings with more variety
   const skylineBuildings = useMemo(() => {
     const cx = buildingCenter.x;
     const cz = buildingCenter.z;
-    const far = 25; // distance from center - well beyond the office bounds
+    const far = 28;
     return [
-      // North skyline
-      { pos: [cx - 10, 0, cz - far] as [number, number, number], w: 2, h: 4, color: "#3A3A4A" },
-      { pos: [cx - 5, 0, cz - far] as [number, number, number], w: 1.5, h: 3, color: "#4A4A5A" },
-      { pos: [cx, 0, cz - far] as [number, number, number], w: 2.5, h: 5, color: "#3A4A5A" },
-      { pos: [cx + 6, 0, cz - far] as [number, number, number], w: 2, h: 3.5, color: "#4A5A6A" },
-      { pos: [cx + 12, 0, cz - far] as [number, number, number], w: 1.8, h: 4.5, color: "#3A3A5A" },
-      // East skyline
-      { pos: [cx + far, 0, cz - 8] as [number, number, number], w: 2, h: 3.5, color: "#4A4A5A" },
-      { pos: [cx + far, 0, cz] as [number, number, number], w: 1.5, h: 4, color: "#3A4A4A" },
-      { pos: [cx + far, 0, cz + 8] as [number, number, number], w: 2, h: 3, color: "#5A4A4A" },
-      // South skyline
-      { pos: [cx - 8, 0, cz + far] as [number, number, number], w: 2, h: 3.5, color: "#4A5A4A" },
-      { pos: [cx, 0, cz + far] as [number, number, number], w: 2.5, h: 4, color: "#3A5A5A" },
-      { pos: [cx + 8, 0, cz + far] as [number, number, number], w: 1.5, h: 3, color: "#5A5A4A" },
-      // West skyline
-      { pos: [cx - far, 0, cz - 5] as [number, number, number], w: 2, h: 3, color: "#4A4A4A" },
-      { pos: [cx - far, 0, cz + 5] as [number, number, number], w: 1.8, h: 4.5, color: "#3A5A4A" },
+      // North
+      { pos: [cx - 12, 0, cz - far] as [number, number, number], w: 2.5, h: 5, color: "#3A3A4A" },
+      { pos: [cx - 7, 0, cz - far - 2] as [number, number, number], w: 1.8, h: 3.5, color: "#4A4A5A" },
+      { pos: [cx - 2, 0, cz - far] as [number, number, number], w: 3, h: 6, color: "#3A4A5A" },
+      { pos: [cx + 4, 0, cz - far - 1] as [number, number, number], w: 2, h: 4, color: "#4A5A6A" },
+      { pos: [cx + 10, 0, cz - far] as [number, number, number], w: 2.2, h: 5.5, color: "#3A3A5A" },
+      { pos: [cx + 15, 0, cz - far - 2] as [number, number, number], w: 1.5, h: 3, color: "#5A4A5A" },
+      // East
+      { pos: [cx + far, 0, cz - 10] as [number, number, number], w: 2, h: 4, color: "#4A4A5A" },
+      { pos: [cx + far + 2, 0, cz - 3] as [number, number, number], w: 2.5, h: 5.5, color: "#3A4A4A" },
+      { pos: [cx + far, 0, cz + 4] as [number, number, number], w: 1.8, h: 3.5, color: "#5A4A4A" },
+      { pos: [cx + far + 1, 0, cz + 10] as [number, number, number], w: 2, h: 4.5, color: "#4A5A5A" },
+      // South
+      { pos: [cx - 10, 0, cz + far] as [number, number, number], w: 2.2, h: 4, color: "#4A5A4A" },
+      { pos: [cx - 3, 0, cz + far + 2] as [number, number, number], w: 3, h: 5, color: "#3A5A5A" },
+      { pos: [cx + 5, 0, cz + far] as [number, number, number], w: 1.8, h: 3.5, color: "#5A5A4A" },
+      { pos: [cx + 12, 0, cz + far + 1] as [number, number, number], w: 2.5, h: 6, color: "#4A4A5A" },
+      // West
+      { pos: [cx - far, 0, cz - 8] as [number, number, number], w: 2, h: 3.5, color: "#4A4A4A" },
+      { pos: [cx - far - 2, 0, cz] as [number, number, number], w: 2.5, h: 5, color: "#3A5A4A" },
+      { pos: [cx - far, 0, cz + 8] as [number, number, number], w: 1.8, h: 4, color: "#5A5A5A" },
     ];
+  }, [buildingCenter]);
+
+  // Street lamp positions around the building
+  const streetLamps = useMemo(() => {
+    const cx = buildingCenter.x;
+    const cz = buildingCenter.z;
+    return [
+      [cx - 8, 0, cz - 8], [cx + 8, 0, cz - 8],
+      [cx - 8, 0, cz + 8], [cx + 8, 0, cz + 8],
+      [cx - 14, 0, cz], [cx + 14, 0, cz],
+      [cx, 0, cz - 14], [cx, 0, cz + 14],
+    ] as [number, number, number][];
   }, [buildingCenter]);
 
   return (
@@ -667,9 +749,14 @@ export function OfficeScene({
         {/* ── User's Building ── */}
         <BuildingExterior rooms={rooms} clickEnabled={!editMode} onFloorClick={(x, y) => onMapClick?.(x, y)} />
 
-        {/* ── Distant Skyline (decorative only) ── */}
+        {/* ── Distant Skyline ── */}
         {skylineBuildings.map((b, i) => (
           <SkylineBuilding key={`sky-${i}`} position={b.pos} width={b.w} height={b.h} color={b.color} />
+        ))}
+
+        {/* ── Street Lamps ── */}
+        {streetLamps.map((pos, i) => (
+          <StreetLamp key={`lamp-${i}`} position={pos} />
         ))}
 
         {/* ── Interior objects at building height ── */}
