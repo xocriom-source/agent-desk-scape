@@ -538,7 +538,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
 
         {/* Dynamic buildings (lightweight) */}
         {dynamicBuildings.map(b => (
-          <LightBuilding3D key={b.id} building={b} highlighted={userBuilding?.id === b.id} />
+          <LightBuilding3D key={b.id} building={b} highlighted={userBuilding?.id === b.id} onClick={() => onBuildingClick?.(b.id)} />
         ))}
 
         {/* Only show vehicle for user building */}
