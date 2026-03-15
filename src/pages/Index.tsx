@@ -157,6 +157,8 @@ const Index = () => {
         onOpenNPCs={() => setShowNPCs(true)}
         onOpenObservation={() => setShowObservation(true)}
         onOpenDistricts={() => setShowDistricts(true)}
+        onOpenEvents={() => setShowEvents(true)}
+        onOpenCityChat={() => setShowCityChat(true)}
         notifications={notifCounts}
       />
 
