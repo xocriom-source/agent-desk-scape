@@ -33,15 +33,15 @@ function BuildingExterior({
   const cx = ((minX + maxX) / 2) * S;
   const cz = ((minY + maxY) / 2) * S;
 
-  const foundH = 0.25;   // foundation height
+  const foundH = 0.25;   // foundation height (stilts/dock)
   const wallH = 1.1;     // exterior wall height
   const wallT = 0.25;    // wall thickness
-  const brickColor = "#8B6B52";    // warm brown brick
-  const brickDark = "#6B4F3A";     // darker accent
-  const trimColor = "#D4C8B8";     // light trim/molding
-  const foundColor = "#5A5A5A";    // concrete foundation
-  const windowColor = "#6BA3D6";   // window glass
-  const windowFrame = "#3A3A3A";   // window frame
+  const brickColor = "#4A3525";    // dark weathered wood
+  const brickDark = "#352518";     // darker wood planks
+  const trimColor = "#6B5A45";     // wood trim
+  const foundColor = "#2A2018";    // dark wood stilts/dock
+  const windowColor = "#FF6B9D";   // neon pink window glow
+  const windowFrame = "#2A2018";   // dark wood frame
 
   const downRef = useRef<{ x: number; y: number; t: number; button: number } | null>(null);
 
