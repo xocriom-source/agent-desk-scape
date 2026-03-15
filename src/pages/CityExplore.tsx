@@ -23,6 +23,14 @@ import { TeamAgents } from "@/components/collaboration/TeamAgents";
 import { PublicWorkspaces } from "@/components/collaboration/PublicWorkspaces";
 import { MessengerHub } from "@/components/collaboration/MessengerHub";
 import { AgentTraining } from "@/components/collaboration/AgentTraining";
+import { MeetingSystem } from "@/components/workspace/MeetingSystem";
+import { TeamChatSystem } from "@/components/workspace/TeamChatSystem";
+import { FocusMode, type FocusModeType } from "@/components/workspace/FocusMode";
+import { TeamAnalytics } from "@/components/workspace/TeamAnalytics";
+import { VirtualEvents } from "@/components/workspace/VirtualEvents";
+import { ScreenSharing } from "@/components/workspace/ScreenSharing";
+import { ToolIntegrations } from "@/components/workspace/ToolIntegrations";
+import { TeamEngagement } from "@/components/workspace/TeamEngagement";
 import type { TransportType } from "@/types/building";
 import logo from "@/assets/logo.png";
 
