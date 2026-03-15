@@ -12,6 +12,7 @@ import { CityChat } from "@/components/city/CityChat";
 import { DailyMissions } from "@/components/city/DailyMissions";
 import { CityMiniMap } from "@/components/city/CityMiniMap";
 import { CinematicIntro } from "@/components/city/CinematicIntro";
+import { CityMarketplace } from "@/components/city/CityMarketplace";
 import { useCityBuildings } from "@/hooks/useCityBuildings";
 import type { TransportType } from "@/types/building";
 import logo from "@/assets/logo.png";
