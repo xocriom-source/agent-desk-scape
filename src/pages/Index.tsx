@@ -57,7 +57,7 @@ const Index = () => {
     const user = localStorage.getItem("agentoffice_user");
     if (!user) { 
       console.log("[AgentOffice] No user found, redirecting to landing");
-      navigate("/"); 
+      navigate("/", { replace: true }); 
       return; 
     }
     const parsed = JSON.parse(user);
