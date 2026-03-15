@@ -8,13 +8,14 @@ import { AgentPanel } from "@/components/office/AgentPanel";
 import { CharacterCustomizer, type PlayerConfig } from "@/components/office/CharacterCustomizer";
 import { RoomEditor } from "@/components/office/RoomEditor";
 import { useOfficeState } from "@/hooks/useOfficeState";
-import { ROOMS, setRooms, type RoomDef, DEFAULT_ROOMS } from "@/data/officeMap";
+import { ROOMS, setRooms, FURNITURE, setFurniture, type RoomDef, type FurnitureItem, DEFAULT_ROOMS, DEFAULT_FURNITURE } from "@/data/officeMap";
 
 const Index = () => {
   const navigate = useNavigate();
   const [showCustomizer, setShowCustomizer] = useState(false);
   const [showRoomEditor, setShowRoomEditor] = useState(false);
   const [rooms, setLocalRooms] = useState<RoomDef[]>(() => [...DEFAULT_ROOMS]);
+  const [furnitureItems, setLocalFurniture] = useState<FurnitureItem[]>(() => [...DEFAULT_FURNITURE]);
   const [playerConfig, setPlayerConfig] = useState<PlayerConfig>({
     name: "Chefe",
     color: "#4F46E5",
@@ -49,6 +50,11 @@ const Index = () => {
   const handleUpdateRooms = (newRooms: RoomDef[]) => {
     setLocalRooms(newRooms);
     setRooms(newRooms);
+  };
+
+  const handleUpdateFurniture = (items: FurnitureItem[]) => {
+    setLocalFurniture(items);
+    setFurniture(items);
   };
 
   return (
@@ -89,6 +95,8 @@ const Index = () => {
         onClose={() => setShowRoomEditor(false)}
         rooms={rooms}
         onUpdateRooms={handleUpdateRooms}
+        furniture={furnitureItems}
+        onUpdateFurniture={handleUpdateFurniture}
       />
     </div>
   );

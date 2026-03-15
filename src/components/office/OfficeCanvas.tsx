@@ -128,188 +128,452 @@ function drawFurniture(ctx: CanvasRenderingContext2D, type: string, px: number, 
   const cx = px + T / 2;
   const cy = py + T / 2;
 
-  if (type === "desk") {
-    // Desk top
-    ctx.fillStyle = "#A08060";
-    ctx.fillRect(px + 3, py + 4, T - 6, T - 10);
-    ctx.fillStyle = "#B89870";
-    ctx.fillRect(px + 3, py + 4, T - 6, 3);
-    // Monitor
-    ctx.fillStyle = "#263238";
-    ctx.fillRect(cx - 5, py + 1, 10, 7);
-    ctx.fillStyle = "#4FC3F7";
-    ctx.fillRect(cx - 4, py + 2, 8, 5);
-    // Stand
-    ctx.fillStyle = "#455A64";
-    ctx.fillRect(cx - 1, py + 8, 2, 2);
-    // Keyboard
-    ctx.fillStyle = "#37474F";
-    ctx.fillRect(cx - 4, py + 12, 8, 3);
-    // Legs
-    ctx.fillStyle = "#705838";
-    ctx.fillRect(px + 4, py + T - 6, 2, 4);
-    ctx.fillRect(px + T - 6, py + T - 6, 2, 4);
-  } else if (type === "chair") {
-    ctx.fillStyle = "#37474F";
-    ctx.beginPath();
-    ctx.arc(cx, cy + 2, 6, 0, Math.PI * 2);
-    ctx.fill();
-    // Backrest
-    ctx.fillStyle = "#455A64";
-    ctx.fillRect(cx - 5, cy - 6, 10, 8);
-    ctx.beginPath();
-    ctx.arc(cx, cy - 6, 5, Math.PI, 0);
-    ctx.fill();
-    // Wheels
-    ctx.fillStyle = "#263238";
-    ctx.fillRect(cx - 6, cy + 6, 2, 2);
-    ctx.fillRect(cx + 4, cy + 6, 2, 2);
-    ctx.fillRect(cx - 1, cy + 7, 2, 2);
-  } else if (type === "server") {
-    ctx.fillStyle = "#37474F";
-    ctx.fillRect(px + 4, py + 1, T - 8, T - 2);
-    ctx.fillStyle = "#263238";
-    ctx.fillRect(px + 6, py + 3, T - 12, T - 6);
-    // LEDs
-    for (let i = 0; i < 4; i++) {
-      ctx.fillStyle = Math.random() > 0.4 ? "#4CAF50" : "#F44336";
-      ctx.beginPath();
-      ctx.arc(px + 10, py + 6 + i * 5, 1.5, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    // Vents
-    for (let i = 0; i < 3; i++) {
+  switch (type) {
+    case "desk":
+    case "desk_large": {
+      // Wooden desk top
+      ctx.fillStyle = "#A08060";
+      ctx.fillRect(px + 2, py + 4, T - 4, T - 8);
+      ctx.fillStyle = "#B89870";
+      ctx.fillRect(px + 2, py + 4, T - 4, 3);
+      // Monitor
       ctx.fillStyle = "#1a1a2e";
-      ctx.fillRect(px + 16, py + 5 + i * 6, 6, 1);
+      ctx.fillRect(cx - 6, py + 1, 12, 8);
+      ctx.fillStyle = "#4FC3F7";
+      ctx.fillRect(cx - 5, py + 2, 10, 5);
+      // Screen content
+      ctx.fillStyle = "rgba(255,255,255,0.15)";
+      for (let i = 0; i < 3; i++) ctx.fillRect(cx - 4, py + 3 + i * 2, 8, 1);
+      // Stand
+      ctx.fillStyle = "#455A64";
+      ctx.fillRect(cx - 1, py + 9, 2, 2);
+      // Keyboard
+      ctx.fillStyle = "#37474F";
+      ctx.fillRect(cx - 5, py + 13, 10, 3);
+      ctx.fillStyle = "#455A64";
+      for (let k = 0; k < 4; k++) ctx.fillRect(cx - 4 + k * 2.5, py + 13.5, 1.5, 1);
+      // Mouse
+      ctx.fillStyle = "#546E7A";
+      ctx.fillRect(cx + 6, py + 14, 3, 2);
+      // Legs
+      ctx.fillStyle = "#705838";
+      ctx.fillRect(px + 3, py + T - 5, 2, 4);
+      ctx.fillRect(px + T - 5, py + T - 5, 2, 4);
+      break;
     }
-  } else if (type === "sofa") {
-    ctx.fillStyle = "#7B68AE";
-    ctx.fillRect(px + 2, py + 6, T - 4, T - 8);
-    ctx.fillStyle = "#9182C4";
-    ctx.fillRect(px + 2, py + 4, T - 4, 4);
-    // Cushions
-    ctx.fillStyle = "#8878B8";
-    ctx.fillRect(px + 4, py + 8, T / 2 - 4, T - 12);
-    ctx.fillRect(cx + 1, py + 8, T / 2 - 4, T - 12);
-    // Armrests
-    ctx.fillStyle = "#6A5A9E";
-    ctx.fillRect(px + 2, py + 6, 3, T - 8);
-    ctx.fillRect(px + T - 5, py + 6, 3, T - 8);
-  } else if (type === "plant") {
-    // Pot
-    ctx.fillStyle = "#8D6E63";
-    ctx.fillRect(cx - 4, cy + 2, 8, 8);
-    ctx.fillStyle = "#A1887F";
-    ctx.fillRect(cx - 5, cy + 2, 10, 3);
-    // Soil
-    ctx.fillStyle = "#5D4037";
-    ctx.fillRect(cx - 3, cy + 2, 6, 2);
-    // Leaves
-    ctx.fillStyle = "#4CAF50";
-    ctx.beginPath(); ctx.arc(cx, cy - 4, 7, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#66BB6A";
-    ctx.beginPath(); ctx.arc(cx - 4, cy - 7, 5, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(cx + 4, cy - 7, 5, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#81C784";
-    ctx.beginPath(); ctx.arc(cx, cy - 10, 4, 0, Math.PI * 2); ctx.fill();
-  } else if (type === "bookshelf") {
-    ctx.fillStyle = "#5D4037";
-    ctx.fillRect(px + 3, py + 1, T - 6, T - 2);
-    const colors = ["#E53935", "#1E88E5", "#43A047", "#FB8C00", "#8E24AA", "#00897B"];
-    for (let row = 0; row < 3; row++) {
-      ctx.fillStyle = "#4E342E";
-      ctx.fillRect(px + 3, py + 2 + row * 9, T - 6, 1);
-      for (let b = 0; b < 4; b++) {
-        ctx.fillStyle = colors[(row * 4 + b) % colors.length];
-        ctx.fillRect(px + 5 + b * 5, py + 3 + row * 9, 4, 7);
+    case "chair": {
+      // Base wheel pattern
+      ctx.fillStyle = "#263238";
+      ctx.beginPath(); ctx.arc(cx, cy + 6, 5, 0, Math.PI * 2); ctx.fill();
+      // Wheels
+      ctx.fillStyle = "#1a1a2e";
+      for (let a = 0; a < 5; a++) {
+        const angle = (a / 5) * Math.PI * 2 - Math.PI / 2;
+        ctx.fillRect(cx + Math.cos(angle) * 5 - 1, cy + 6 + Math.sin(angle) * 5 - 1, 2, 2);
       }
+      // Seat
+      ctx.fillStyle = "#37474F";
+      ctx.beginPath(); ctx.ellipse(cx, cy + 2, 7, 5, 0, 0, Math.PI * 2); ctx.fill();
+      // Backrest
+      ctx.fillStyle = "#455A64";
+      ctx.fillRect(cx - 5, cy - 7, 10, 9);
+      ctx.beginPath(); ctx.arc(cx, cy - 7, 5, Math.PI, 0); ctx.fill();
+      // Armrests
+      ctx.fillStyle = "#37474F";
+      ctx.fillRect(cx - 8, cy - 2, 3, 4);
+      ctx.fillRect(cx + 5, cy - 2, 3, 4);
+      break;
     }
-  } else if (type === "whiteboard") {
-    ctx.fillStyle = "#ECEFF1";
-    ctx.fillRect(px + 3, py + 1, T - 6, T - 6);
-    ctx.strokeStyle = "#B0BEC5";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(px + 3, py + 1, T - 6, T - 6);
-    // Content lines
-    for (let i = 0; i < 3; i++) {
-      ctx.fillStyle = "rgba(0,0,0,0.08)";
-      ctx.fillRect(px + 6, py + 5 + i * 6, T - 12, 1);
+    case "server": {
+      // Rack
+      ctx.fillStyle = "#263238";
+      ctx.fillRect(px + 3, py + 0, T - 6, T);
+      ctx.fillStyle = "#37474F";
+      ctx.fillRect(px + 4, py + 1, T - 8, T - 2);
+      // Rack slots
+      for (let row = 0; row < 4; row++) {
+        ctx.fillStyle = "#1a1a2e";
+        ctx.fillRect(px + 5, py + 2 + row * 7, T - 10, 5);
+        // LEDs
+        for (let i = 0; i < 3; i++) {
+          ctx.fillStyle = Math.random() > 0.3 ? "#4CAF50" : (Math.random() > 0.5 ? "#F44336" : "#FF9800");
+          ctx.beginPath(); ctx.arc(px + 7 + i * 3, py + 4 + row * 7, 1, 0, Math.PI * 2); ctx.fill();
+        }
+        // Vent lines
+        ctx.fillStyle = "#0D1117";
+        for (let v = 0; v < 3; v++) ctx.fillRect(px + 17, py + 2 + row * 7 + v * 2, 5, 0.5);
+      }
+      break;
     }
-    // Markers at bottom
-    ctx.fillStyle = "#F44336"; ctx.fillRect(px + 6, py + T - 5, 3, 3);
-    ctx.fillStyle = "#2196F3"; ctx.fillRect(px + 10, py + T - 5, 3, 3);
-    ctx.fillStyle = "#4CAF50"; ctx.fillRect(px + 14, py + T - 5, 3, 3);
-  } else if (type === "screen" || type === "tv") {
-    ctx.fillStyle = "#1a1a2e";
-    ctx.fillRect(px + 3, py + 2, T - 6, T - 8);
-    ctx.fillStyle = type === "screen" ? "#1565C0" : "#3F51B5";
-    ctx.fillRect(px + 4, py + 3, T - 8, T - 10);
-    // Stand
-    ctx.fillStyle = "#37474F";
-    ctx.fillRect(cx - 1, py + T - 6, 2, 4);
-    ctx.fillRect(cx - 4, py + T - 3, 8, 2);
-  } else if (type === "coffee") {
-    ctx.fillStyle = "#5D4037";
-    ctx.fillRect(px + 6, py + 8, T - 12, T - 12);
-    ctx.fillStyle = "#FFF";
-    ctx.beginPath(); ctx.arc(cx, cy - 2, 3, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = "#6D4C41";
-    ctx.beginPath(); ctx.arc(cx, cy - 2, 2, 0, Math.PI * 2); ctx.fill();
-    // Steam
-    ctx.strokeStyle = "rgba(200,200,200,0.5)";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy - 5);
-    ctx.quadraticCurveTo(cx - 2, cy - 9, cx, cy - 12);
-    ctx.stroke();
-  } else if (type === "vending") {
-    ctx.fillStyle = "#455A64";
-    ctx.fillRect(px + 4, py + 1, T - 8, T - 2);
-    ctx.fillStyle = "#263238";
-    ctx.fillRect(px + 6, py + 3, T - 12, T * 0.4);
-    for (let i = 0; i < 3; i++) {
-      ctx.fillStyle = ["#F44336", "#4CAF50", "#FF9800"][i];
-      ctx.fillRect(px + 7 + i * 5, py + 5, 4, 5);
+    case "sofa": {
+      ctx.fillStyle = "#6B5DAE";
+      ctx.fillRect(px + 1, py + 5, T - 2, T - 6);
+      ctx.fillStyle = "#7B6DC8";
+      ctx.fillRect(px + 1, py + 3, T - 2, 4);
+      // Cushions
+      ctx.fillStyle = "#8878B8";
+      ctx.fillRect(px + 3, py + 7, T / 2 - 3, T - 10);
+      ctx.fillRect(cx, py + 7, T / 2 - 3, T - 10);
+      // Armrests
+      ctx.fillStyle = "#5A4DA0";
+      ctx.fillRect(px + 1, py + 5, 3, T - 6);
+      ctx.fillRect(px + T - 4, py + 5, 3, T - 6);
+      // Pillows
+      ctx.fillStyle = "#A898D8";
+      ctx.beginPath(); ctx.arc(px + 5, py + 8, 3, 0, Math.PI * 2); ctx.fill();
+      break;
     }
-    // Slot
-    ctx.fillStyle = "#1a1a2e";
-    ctx.fillRect(px + T / 2 - 2, py + T - 8, 4, 3);
-  } else if (type === "table") {
-    ctx.fillStyle = "#8D6E63";
-    ctx.fillRect(px + 4, py + 6, T - 8, T - 10);
-    ctx.fillStyle = "#A1887F";
-    ctx.fillRect(px + 4, py + 6, T - 8, 3);
-    ctx.fillStyle = "#6D4C41";
-    ctx.fillRect(px + 6, py + T - 4, 2, 3);
-    ctx.fillRect(px + T - 8, py + T - 4, 2, 3);
-  } else if (type === "monitor") {
-    ctx.fillStyle = "#263238";
-    ctx.fillRect(px + 4, py + 3, T - 8, T - 10);
-    ctx.fillStyle = "#4FC3F7";
-    ctx.fillRect(px + 5, py + 4, T - 10, T - 12);
-    ctx.fillStyle = "#37474F";
-    ctx.fillRect(cx - 1, py + T - 7, 2, 4);
-    ctx.fillRect(cx - 3, py + T - 3, 6, 2);
-  } else if (type === "printer") {
-    ctx.fillStyle = "#ECEFF1";
-    ctx.fillRect(px + 5, py + 8, T - 10, T - 12);
-    ctx.fillStyle = "#B0BEC5";
-    ctx.fillRect(px + 5, py + 6, T - 10, 4);
-    ctx.fillStyle = "#FFF";
-    ctx.fillRect(px + 8, py + 12, T - 16, 2);
-  } else if (type === "water" || type === "trash") {
-    if (type === "water") {
+    case "plant":
+    case "plant_large": {
+      const big = type === "plant_large";
+      // Pot
+      ctx.fillStyle = "#8D6E63";
+      ctx.fillRect(cx - (big ? 6 : 4), cy + (big ? 0 : 2), big ? 12 : 8, big ? 10 : 8);
+      ctx.fillStyle = "#A1887F";
+      ctx.fillRect(cx - (big ? 7 : 5), cy + (big ? 0 : 2), big ? 14 : 10, 3);
+      ctx.fillStyle = "#5D4037";
+      ctx.fillRect(cx - (big ? 5 : 3), cy + (big ? 0 : 2), big ? 10 : 6, 2);
+      // Leaves
+      ctx.fillStyle = "#388E3C";
+      ctx.beginPath(); ctx.arc(cx, cy - (big ? 8 : 4), big ? 10 : 7, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#43A047";
+      ctx.beginPath(); ctx.arc(cx - 4, cy - (big ? 12 : 7), big ? 7 : 5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx + 4, cy - (big ? 12 : 7), big ? 7 : 5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#66BB6A";
+      ctx.beginPath(); ctx.arc(cx, cy - (big ? 16 : 10), big ? 5 : 4, 0, Math.PI * 2); ctx.fill();
+      break;
+    }
+    case "bookshelf": {
+      ctx.fillStyle = "#4E342E";
+      ctx.fillRect(px + 2, py + 0, T - 4, T);
+      ctx.fillStyle = "#5D4037";
+      ctx.fillRect(px + 3, py + 1, T - 6, T - 2);
+      const cols = ["#C62828", "#1565C0", "#2E7D32", "#EF6C00", "#6A1B9A", "#00838F", "#D84315", "#1B5E20"];
+      for (let row = 0; row < 3; row++) {
+        ctx.fillStyle = "#3E2723";
+        ctx.fillRect(px + 3, py + 1 + row * 10, T - 6, 1);
+        for (let b = 0; b < 5; b++) {
+          ctx.fillStyle = cols[(row * 5 + b) % cols.length];
+          const bw = 3 + Math.random() * 1.5;
+          ctx.fillRect(px + 4 + b * 5, py + 2 + row * 10, bw, 8);
+        }
+      }
+      break;
+    }
+    case "whiteboard": {
+      ctx.fillStyle = "#E8EAF0";
+      ctx.fillRect(px + 2, py + 0, T - 4, T - 4);
+      ctx.strokeStyle = "#B0BEC5";
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(px + 2, py + 0, T - 4, T - 4);
+      // Scribbles
+      ctx.strokeStyle = "#1565C0";
+      ctx.lineWidth = 0.8;
+      ctx.beginPath(); ctx.moveTo(px + 6, py + 6); ctx.lineTo(px + 20, py + 8); ctx.stroke();
+      ctx.strokeStyle = "#C62828";
+      ctx.beginPath(); ctx.moveTo(px + 6, py + 12); ctx.lineTo(px + 18, py + 14); ctx.stroke();
+      ctx.strokeStyle = "#2E7D32";
+      ctx.beginPath(); ctx.moveTo(px + 6, py + 18); ctx.lineTo(px + 22, py + 19); ctx.stroke();
+      // Markers
+      ctx.fillStyle = "#F44336"; ctx.fillRect(px + 6, py + T - 4, 3, 3);
+      ctx.fillStyle = "#2196F3"; ctx.fillRect(px + 11, py + T - 4, 3, 3);
+      ctx.fillStyle = "#4CAF50"; ctx.fillRect(px + 16, py + T - 4, 3, 3);
+      break;
+    }
+    case "screen":
+    case "tv": {
+      ctx.fillStyle = "#0D1117";
+      ctx.fillRect(px + 2, py + 1, T - 4, T - 8);
+      const grad = ctx.createLinearGradient(px + 3, py + 2, px + T - 3, py + T - 9);
+      grad.addColorStop(0, type === "tv" ? "#1A237E" : "#0D47A1");
+      grad.addColorStop(1, type === "tv" ? "#311B92" : "#1565C0");
+      ctx.fillStyle = grad;
+      ctx.fillRect(px + 3, py + 2, T - 6, T - 10);
+      // Stand
+      ctx.fillStyle = "#37474F";
+      ctx.fillRect(cx - 1, py + T - 7, 2, 4);
+      ctx.fillRect(cx - 5, py + T - 4, 10, 2);
+      break;
+    }
+    case "coffee": {
+      // Machine body
+      ctx.fillStyle = "#5D4037";
+      ctx.fillRect(px + 5, py + 3, T - 10, T - 5);
+      ctx.fillStyle = "#4E342E";
+      ctx.fillRect(px + 5, py + 3, T - 10, 3);
+      // Cup
+      ctx.fillStyle = "#FFF";
+      ctx.fillRect(cx - 2, py + T - 6, 4, 4);
+      ctx.fillStyle = "#795548";
+      ctx.fillRect(cx - 1, py + T - 5, 2, 2);
+      // Steam
+      ctx.strokeStyle = "rgba(200,200,200,0.5)";
+      ctx.lineWidth = 1;
+      const t = Date.now() * 0.002;
+      ctx.beginPath();
+      ctx.moveTo(cx, py + T - 7);
+      ctx.quadraticCurveTo(cx - 2 + Math.sin(t) * 2, py + T - 12, cx + Math.sin(t + 1) * 2, py + T - 16);
+      ctx.stroke();
+      break;
+    }
+    case "vending": {
+      ctx.fillStyle = "#37474F";
+      ctx.fillRect(px + 3, py + 0, T - 6, T);
+      ctx.fillStyle = "#263238";
+      ctx.fillRect(px + 5, py + 2, T - 10, T * 0.45);
+      // Items
+      const colors = ["#F44336", "#4CAF50", "#FF9800", "#2196F3"];
+      for (let row = 0; row < 2; row++) {
+        for (let col = 0; col < 3; col++) {
+          ctx.fillStyle = colors[(row * 3 + col) % colors.length];
+          ctx.fillRect(px + 6 + col * 6, py + 3 + row * 6, 4, 5);
+        }
+      }
+      // Slot
+      ctx.fillStyle = "#0D1117";
+      ctx.fillRect(cx - 3, py + T - 7, 6, 4);
+      ctx.fillStyle = "#FFC107";
+      ctx.beginPath(); ctx.arc(px + T - 8, py + T - 10, 2, 0, Math.PI * 2); ctx.fill();
+      break;
+    }
+    case "table": {
+      ctx.fillStyle = "#8D6E63";
+      ctx.fillRect(px + 3, py + 5, T - 6, T - 8);
+      ctx.fillStyle = "#A1887F";
+      ctx.fillRect(px + 3, py + 5, T - 6, 3);
+      ctx.fillStyle = "#6D4C41";
+      ctx.fillRect(px + 5, py + T - 4, 2, 3);
+      ctx.fillRect(px + T - 7, py + T - 4, 2, 3);
+      break;
+    }
+    case "monitor": {
+      ctx.fillStyle = "#1a1a2e";
+      ctx.fillRect(px + 3, py + 2, T - 6, T - 9);
+      ctx.fillStyle = "#4FC3F7";
+      ctx.fillRect(px + 4, py + 3, T - 8, T - 11);
+      ctx.fillStyle = "#37474F";
+      ctx.fillRect(cx - 1, py + T - 7, 2, 4);
+      ctx.fillRect(cx - 4, py + T - 4, 8, 2);
+      break;
+    }
+    case "printer": {
+      ctx.fillStyle = "#ECEFF1";
+      ctx.fillRect(px + 4, py + 6, T - 8, T - 9);
+      ctx.fillStyle = "#B0BEC5";
+      ctx.fillRect(px + 4, py + 4, T - 8, 4);
+      ctx.fillStyle = "#FFF";
+      ctx.fillRect(px + 7, py + T - 5, T - 14, 2);
+      break;
+    }
+    case "water": {
       ctx.fillStyle = "#B3E5FC";
       ctx.fillRect(cx - 4, cy - 4, 8, 12);
       ctx.fillStyle = "#81D4FA";
       ctx.fillRect(cx - 5, cy - 6, 10, 4);
       ctx.fillStyle = "#4FC3F7";
       ctx.fillRect(cx - 3, cy - 2, 6, 4);
-    } else {
+      break;
+    }
+    case "trash": {
       ctx.fillStyle = "#78909C";
       ctx.fillRect(cx - 4, cy - 2, 8, 10);
       ctx.fillStyle = "#90A4AE";
       ctx.fillRect(cx - 5, cy - 3, 10, 3);
+      break;
+    }
+    case "door": {
+      ctx.fillStyle = "#6D4C41";
+      ctx.fillRect(px + 8, py + 0, T - 16, T);
+      ctx.fillStyle = "#8D6E63";
+      ctx.fillRect(px + 9, py + 1, T - 18, T - 2);
+      // Handle
+      ctx.fillStyle = "#FFC107";
+      ctx.beginPath(); ctx.arc(px + T - 10, cy + 2, 2, 0, Math.PI * 2); ctx.fill();
+      break;
+    }
+    case "stairs_up":
+    case "stairs_down": {
+      ctx.fillStyle = "#90A4AE";
+      for (let s = 0; s < 4; s++) {
+        ctx.fillStyle = s % 2 === 0 ? "#78909C" : "#90A4AE";
+        ctx.fillRect(px + 2, py + s * (T / 4), T - 4, T / 4);
+      }
+      ctx.fillStyle = "#546E7A";
+      ctx.fillRect(px + 2, py, 2, T);
+      ctx.fillRect(px + T - 4, py, 2, T);
+      // Arrow
+      ctx.fillStyle = "#FFF";
+      ctx.font = "14px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(type === "stairs_up" ? "↑" : "↓", cx, cy + 5);
+      break;
+    }
+    case "divider": {
+      ctx.fillStyle = "#78909C";
+      ctx.fillRect(px + 12, py, 8, T);
+      ctx.fillStyle = "#90A4AE";
+      ctx.fillRect(px + 13, py + 1, 6, T - 2);
+      break;
+    }
+    case "window": {
+      ctx.fillStyle = "#B3E5FC";
+      ctx.fillRect(px + 4, py + 2, T - 8, T - 4);
+      ctx.strokeStyle = "#90A4AE";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(px + 4, py + 2, T - 8, T - 4);
+      ctx.beginPath();
+      ctx.moveTo(cx, py + 2);
+      ctx.lineTo(cx, py + T - 2);
+      ctx.moveTo(px + 4, cy);
+      ctx.lineTo(px + T - 4, cy);
+      ctx.stroke();
+      break;
+    }
+    case "laptop": {
+      ctx.fillStyle = "#455A64";
+      ctx.fillRect(px + 5, py + 4, T - 10, T - 10);
+      ctx.fillStyle = "#4FC3F7";
+      ctx.fillRect(px + 6, py + 5, T - 12, T - 13);
+      ctx.fillStyle = "#37474F";
+      ctx.fillRect(px + 3, py + T - 6, T - 6, 4);
+      break;
+    }
+    case "phone": {
+      ctx.fillStyle = "#263238";
+      ctx.fillRect(cx - 4, cy - 2, 8, 8);
+      ctx.fillStyle = "#455A64";
+      ctx.fillRect(cx - 3, cy - 1, 6, 6);
+      ctx.fillStyle = "#4FC3F7";
+      ctx.fillRect(cx - 2, cy, 4, 2);
+      break;
+    }
+    case "beanbag": {
+      ctx.fillStyle = "#E91E63";
+      ctx.beginPath(); ctx.ellipse(cx, cy + 2, 10, 8, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#F06292";
+      ctx.beginPath(); ctx.ellipse(cx, cy - 2, 8, 6, 0, 0, Math.PI * 2); ctx.fill();
+      break;
+    }
+    case "rug": {
+      ctx.fillStyle = "rgba(156, 39, 176, 0.3)";
+      ctx.fillRect(px + 2, py + 2, T - 4, T - 4);
+      ctx.strokeStyle = "rgba(156, 39, 176, 0.5)";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(px + 4, py + 4, T - 8, T - 8);
+      break;
+    }
+    case "painting": {
+      ctx.fillStyle = "#5D4037";
+      ctx.fillRect(px + 4, py + 2, T - 8, T - 6);
+      ctx.fillStyle = "#81D4FA";
+      ctx.fillRect(px + 5, py + 3, T - 10, T - 8);
+      ctx.fillStyle = "#4CAF50";
+      ctx.fillRect(px + 5, py + T - 8, T - 10, 3);
+      ctx.fillStyle = "#FFC107";
+      ctx.beginPath(); ctx.arc(px + T - 10, py + 6, 3, 0, Math.PI * 2); ctx.fill();
+      break;
+    }
+    case "lamp": {
+      ctx.fillStyle = "#455A64";
+      ctx.fillRect(cx - 1, cy, 2, T / 2);
+      ctx.fillStyle = "#FFC107";
+      ctx.beginPath(); ctx.arc(cx, cy - 2, 6, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = "rgba(255,193,7,0.15)";
+      ctx.beginPath(); ctx.arc(cx, cy, 12, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#37474F";
+      ctx.fillRect(cx - 4, py + T - 3, 8, 2);
+      break;
+    }
+    case "clock": {
+      ctx.fillStyle = "#FFF";
+      ctx.beginPath(); ctx.arc(cx, cy, 8, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "#333";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy - 5); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + 4, cy); ctx.stroke();
+      break;
+    }
+    case "trophy": {
+      ctx.fillStyle = "#FFC107";
+      ctx.fillRect(cx - 3, cy - 4, 6, 8);
+      ctx.beginPath(); ctx.arc(cx, cy - 4, 5, Math.PI, 0); ctx.fill();
+      ctx.fillStyle = "#F57F17";
+      ctx.fillRect(cx - 1, cy + 4, 2, 3);
+      ctx.fillStyle = "#795548";
+      ctx.fillRect(cx - 4, cy + 7, 8, 2);
+      break;
+    }
+    case "microwave": {
+      ctx.fillStyle = "#546E7A";
+      ctx.fillRect(px + 4, py + 6, T - 8, T - 10);
+      ctx.fillStyle = "#263238";
+      ctx.fillRect(px + 5, py + 7, T - 14, T - 12);
+      ctx.fillStyle = "#37474F";
+      ctx.fillRect(px + T - 9, py + 8, 3, T - 14);
+      break;
+    }
+    case "fridge": {
+      ctx.fillStyle = "#CFD8DC";
+      ctx.fillRect(px + 4, py + 0, T - 8, T);
+      ctx.fillStyle = "#B0BEC5";
+      ctx.fillRect(px + 5, py + 1, T - 10, T / 3);
+      ctx.fillStyle = "#B0BEC5";
+      ctx.fillRect(px + 5, py + T / 3 + 2, T - 10, T - T / 3 - 3);
+      ctx.fillStyle = "#90A4AE";
+      ctx.fillRect(px + T - 8, py + 4, 1, 4);
+      ctx.fillRect(px + T - 8, py + T / 3 + 5, 1, 6);
+      break;
+    }
+    case "arcade": {
+      ctx.fillStyle = "#1A237E";
+      ctx.fillRect(px + 4, py + 0, T - 8, T);
+      ctx.fillStyle = "#0D47A1";
+      ctx.fillRect(px + 6, py + 2, T - 12, T / 3);
+      ctx.fillStyle = "#E91E63";
+      ctx.fillRect(px + 7, py + 3, T - 14, T / 3 - 2);
+      ctx.fillStyle = "#FFC107";
+      ctx.beginPath(); ctx.arc(cx - 3, cy + 4, 2, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#4CAF50";
+      ctx.beginPath(); ctx.arc(cx + 3, cy + 4, 2, 0, Math.PI * 2); ctx.fill();
+      break;
+    }
+    case "foosball": {
+      ctx.fillStyle = "#5D4037";
+      ctx.fillRect(px + 2, py + 4, T - 4, T - 6);
+      ctx.fillStyle = "#4CAF50";
+      ctx.fillRect(px + 3, py + 5, T - 6, T - 8);
+      ctx.fillStyle = "#8D6E63";
+      ctx.fillRect(px + 2, py + cy - py, T - 4, 1);
+      break;
+    }
+    case "pingpong": {
+      ctx.fillStyle = "#1B5E20";
+      ctx.fillRect(px + 1, py + 3, T - 2, T - 5);
+      ctx.strokeStyle = "#FFF";
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(cx, py + 3); ctx.lineTo(cx, py + T - 2); ctx.stroke();
+      // Net
+      ctx.fillStyle = "#455A64";
+      ctx.fillRect(cx - 1, py + 3, 2, T - 5);
+      break;
+    }
+    case "dartboard": {
+      ctx.fillStyle = "#5D4037";
+      ctx.fillRect(px + 6, py + 2, T - 12, T - 4);
+      ctx.fillStyle = "#C62828";
+      ctx.beginPath(); ctx.arc(cx, cy, 8, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#FFF";
+      ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#C62828";
+      ctx.beginPath(); ctx.arc(cx, cy, 2, 0, Math.PI * 2); ctx.fill();
+      break;
+    }
+    default: {
+      // Generic furniture fallback
+      ctx.fillStyle = "#78909C";
+      ctx.fillRect(px + 4, py + 4, T - 8, T - 8);
+      break;
     }
   }
 }
