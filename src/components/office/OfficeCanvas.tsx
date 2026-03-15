@@ -324,7 +324,7 @@ export const OfficeCanvas = memo(function OfficeCanvas({
     ctx.restore();
 
     animFrameRef.current = requestAnimationFrame(draw);
-  }, [agents, player, selectedAgentId]);
+  }, [agents, player, playerConfig, selectedAgentId]);
 
   useEffect(() => {
     animFrameRef.current = requestAnimationFrame(draw);
