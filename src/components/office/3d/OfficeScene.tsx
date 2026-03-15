@@ -1,9 +1,10 @@
-import { useRef, useState } from "react";
-import { Canvas, useFrame, type ThreeEvent } from "@react-three/fiber";
+import { useRef, useState, useMemo } from "react";
+import { Canvas, useFrame, useLoader, type ThreeEvent } from "@react-three/fiber";
 import { OrbitControls, Html } from "@react-three/drei";
 import * as THREE from "three";
 import type { Agent, Player } from "@/types/agent";
 import type { RoomDef, FurnitureItem } from "@/data/officeMap";
+import playerApeImg from "@/assets/player-ape.webp";
 import { FurnitureModel } from "./FurnitureModels";
 
 const STATUS_COLORS: Record<string, string> = {
