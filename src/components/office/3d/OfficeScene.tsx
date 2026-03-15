@@ -1035,15 +1035,15 @@ export function OfficeScene({
           gl.toneMappingExposure = 1.0;
         }}
       >
-        {/* Warm BAYC clubhouse atmosphere */}
-        <color attach="background" args={["#1A1408"]} />
-        <fog attach="fog" args={["#1A1408", 25, 50]} />
+        {/* City night atmosphere */}
+        <color attach="background" args={["#0A0A14"]} />
+        <fog attach="fog" args={["#0A0A14", 30, 60]} />
 
-        {/* Warm ambient - well-lit interior */}
-        <ambientLight intensity={0.7} color="#FFE8C8" />
+        {/* Warm interior lighting */}
+        <ambientLight intensity={0.55} color="#FFE8C8" />
         <directionalLight
           position={[10, 20, 8]}
-          intensity={0.6}
+          intensity={0.5}
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
@@ -1054,9 +1054,11 @@ export function OfficeScene({
           shadow-camera-bottom={-20}
           color="#FFE0B0"
         />
-        {/* Warm fill from opposite side */}
-        <directionalLight position={[-8, 10, -6]} intensity={0.4} color="#FFD090" />
-        <hemisphereLight args={["#FFE8D0", "#4A3520", 0.35]} />
+        {/* Moonlight from above-right */}
+        <directionalLight position={[-8, 15, -6]} intensity={0.15} color="#8899CC" />
+        {/* Warm interior fill */}
+        <directionalLight position={[5, 8, 12]} intensity={0.4} color="#FFD090" />
+        <hemisphereLight args={["#1A1A30", "#4A3520", 0.25]} />
 
         {/* Camera controls - mouse drag rotate, wheel zoom, right-drag pan; works on trackpad wheel for zoom */}
         <OrbitControls
