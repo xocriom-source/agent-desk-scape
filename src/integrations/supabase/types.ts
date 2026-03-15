@@ -14,7 +14,134 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      marketplace_profiles: {
+        Row: {
+          availability: string | null
+          bio: string | null
+          created_at: string
+          display_name: string
+          hourly_rate: string | null
+          id: string
+          portfolio_url: string | null
+          rating: number | null
+          skills: string[] | null
+          total_jobs: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          availability?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name: string
+          hourly_rate?: string | null
+          id?: string
+          portfolio_url?: string | null
+          rating?: number | null
+          skills?: string[] | null
+          total_jobs?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          availability?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string
+          hourly_rate?: string | null
+          id?: string
+          portfolio_url?: string | null
+          rating?: number | null
+          skills?: string[] | null
+          total_jobs?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      marketplace_proposals: {
+        Row: {
+          created_at: string
+          from_user_id: string
+          id: string
+          message: string
+          service_id: string | null
+          status: string
+          to_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          from_user_id: string
+          id?: string
+          message: string
+          service_id?: string | null
+          status?: string
+          to_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          message?: string
+          service_id?: string | null
+          status?: string
+          to_user_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_proposals_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketplace_services: {
+        Row: {
+          building_id: string
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          price_range: string | null
+          status: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          building_id: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          price_range?: string | null
+          status?: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          building_id?: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          price_range?: string | null
+          status?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
