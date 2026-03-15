@@ -767,8 +767,17 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
           <CityNPC key={i} startX={npc.x} startZ={npc.z} color={npc.color} name={npc.name} activity={npc.activity} />
         ))}
 
-        {/* Player */}
-        <CityPlayer position={playerPos} name={playerName} />
+        {/* Player + active vehicle */}
+        {inVehicle && vehicleType && vehicleType !== "none" && (
+          <Vehicle3D
+            type={vehicleType as any}
+            position={playerPos}
+            color={vehicleColor}
+            ownerName={playerName}
+            isActive
+          />
+        )}
+        {!inVehicle && <CityPlayer position={playerPos} name={playerName} />}
       </Canvas>
     </div>
   );
