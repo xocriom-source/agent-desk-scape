@@ -324,12 +324,12 @@ export function OfficeScene({
         <Ground />
 
         {/* Rooms */}
-        {ROOMS.map(room => (
+        {rooms.map(room => (
           <Room3D key={room.id} room={room} />
         ))}
 
         {/* Furniture */}
-        {FURNITURE.map(f => (
+        {furniture.map(f => (
           <FurnitureModel
             key={f.id}
             type={f.type}
