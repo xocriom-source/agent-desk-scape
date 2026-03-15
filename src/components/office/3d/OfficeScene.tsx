@@ -34,18 +34,6 @@ function ExteriorGround({ cx, cz }: { cx: number; cz: number }) {
 }
 
 
-      <mesh position={[0, 0.016, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.5, 0.8, 32]} />
-        <meshStandardMaterial color="#908868" />
-      </mesh>
-
-      {/* ── Fountain (center) ── */}
-      <group position={[0, 0, 0]}>
-        {/* Base */}
-        <mesh position={[0, 0.15, 0]}>
-          <cylinderGeometry args={[0.6, 0.7, 0.3, 16]} />
-          <meshStandardMaterial color="#6B6B78" roughness={0.7} />
-        </mesh>
         {/* Basin */}
         <mesh position={[0, 0.32, 0]}>
           <cylinderGeometry args={[0.45, 0.5, 0.05, 16]} />
