@@ -4,7 +4,6 @@ import { OrbitControls, Html, Grid } from "@react-three/drei";
 import * as THREE from "three";
 import type { Agent, Player } from "@/types/agent";
 import type { RoomDef, FurnitureItem } from "@/data/officeMap";
-import { ROOMS, FURNITURE } from "@/data/officeMap";
 import { FurnitureModel } from "./FurnitureModels";
 
 const STATUS_COLORS: Record<string, string> = {
