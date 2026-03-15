@@ -147,6 +147,7 @@ const Index = () => {
       <ActivityLog logs={allLogs} isOpen={showActivityLog} onToggle={toggleActivityLog} />
       <AgentPanel agent={selectedAgent} onClose={() => setSelectedAgent(null)} />
       {!editMode && <ActionBar onMove={movePlayer} />}
+      {!editMode && <MiniMap player={player} agents={agents} rooms={rooms} />}
 
       <CharacterCustomizer
         isOpen={showCustomizer}
