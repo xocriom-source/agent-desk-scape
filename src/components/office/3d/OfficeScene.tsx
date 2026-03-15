@@ -663,30 +663,46 @@ export function OfficeScene({
     return { x: ((minX + maxX) / 2) * S, z: ((minY + maxY) / 2) * S };
   }, [rooms]);
 
-  // Distant skyline buildings (far enough to never overlap the office)
+  // Distant skyline buildings with more variety
   const skylineBuildings = useMemo(() => {
     const cx = buildingCenter.x;
     const cz = buildingCenter.z;
-    const far = 25; // distance from center - well beyond the office bounds
+    const far = 28;
     return [
-      // North skyline
-      { pos: [cx - 10, 0, cz - far] as [number, number, number], w: 2, h: 4, color: "#3A3A4A" },
-      { pos: [cx - 5, 0, cz - far] as [number, number, number], w: 1.5, h: 3, color: "#4A4A5A" },
-      { pos: [cx, 0, cz - far] as [number, number, number], w: 2.5, h: 5, color: "#3A4A5A" },
-      { pos: [cx + 6, 0, cz - far] as [number, number, number], w: 2, h: 3.5, color: "#4A5A6A" },
-      { pos: [cx + 12, 0, cz - far] as [number, number, number], w: 1.8, h: 4.5, color: "#3A3A5A" },
-      // East skyline
-      { pos: [cx + far, 0, cz - 8] as [number, number, number], w: 2, h: 3.5, color: "#4A4A5A" },
-      { pos: [cx + far, 0, cz] as [number, number, number], w: 1.5, h: 4, color: "#3A4A4A" },
-      { pos: [cx + far, 0, cz + 8] as [number, number, number], w: 2, h: 3, color: "#5A4A4A" },
-      // South skyline
-      { pos: [cx - 8, 0, cz + far] as [number, number, number], w: 2, h: 3.5, color: "#4A5A4A" },
-      { pos: [cx, 0, cz + far] as [number, number, number], w: 2.5, h: 4, color: "#3A5A5A" },
-      { pos: [cx + 8, 0, cz + far] as [number, number, number], w: 1.5, h: 3, color: "#5A5A4A" },
-      // West skyline
-      { pos: [cx - far, 0, cz - 5] as [number, number, number], w: 2, h: 3, color: "#4A4A4A" },
-      { pos: [cx - far, 0, cz + 5] as [number, number, number], w: 1.8, h: 4.5, color: "#3A5A4A" },
+      // North
+      { pos: [cx - 12, 0, cz - far] as [number, number, number], w: 2.5, h: 5, color: "#3A3A4A" },
+      { pos: [cx - 7, 0, cz - far - 2] as [number, number, number], w: 1.8, h: 3.5, color: "#4A4A5A" },
+      { pos: [cx - 2, 0, cz - far] as [number, number, number], w: 3, h: 6, color: "#3A4A5A" },
+      { pos: [cx + 4, 0, cz - far - 1] as [number, number, number], w: 2, h: 4, color: "#4A5A6A" },
+      { pos: [cx + 10, 0, cz - far] as [number, number, number], w: 2.2, h: 5.5, color: "#3A3A5A" },
+      { pos: [cx + 15, 0, cz - far - 2] as [number, number, number], w: 1.5, h: 3, color: "#5A4A5A" },
+      // East
+      { pos: [cx + far, 0, cz - 10] as [number, number, number], w: 2, h: 4, color: "#4A4A5A" },
+      { pos: [cx + far + 2, 0, cz - 3] as [number, number, number], w: 2.5, h: 5.5, color: "#3A4A4A" },
+      { pos: [cx + far, 0, cz + 4] as [number, number, number], w: 1.8, h: 3.5, color: "#5A4A4A" },
+      { pos: [cx + far + 1, 0, cz + 10] as [number, number, number], w: 2, h: 4.5, color: "#4A5A5A" },
+      // South
+      { pos: [cx - 10, 0, cz + far] as [number, number, number], w: 2.2, h: 4, color: "#4A5A4A" },
+      { pos: [cx - 3, 0, cz + far + 2] as [number, number, number], w: 3, h: 5, color: "#3A5A5A" },
+      { pos: [cx + 5, 0, cz + far] as [number, number, number], w: 1.8, h: 3.5, color: "#5A5A4A" },
+      { pos: [cx + 12, 0, cz + far + 1] as [number, number, number], w: 2.5, h: 6, color: "#4A4A5A" },
+      // West
+      { pos: [cx - far, 0, cz - 8] as [number, number, number], w: 2, h: 3.5, color: "#4A4A4A" },
+      { pos: [cx - far - 2, 0, cz] as [number, number, number], w: 2.5, h: 5, color: "#3A5A4A" },
+      { pos: [cx - far, 0, cz + 8] as [number, number, number], w: 1.8, h: 4, color: "#5A5A5A" },
     ];
+  }, [buildingCenter]);
+
+  // Street lamp positions around the building
+  const streetLamps = useMemo(() => {
+    const cx = buildingCenter.x;
+    const cz = buildingCenter.z;
+    return [
+      [cx - 8, 0, cz - 8], [cx + 8, 0, cz - 8],
+      [cx - 8, 0, cz + 8], [cx + 8, 0, cz + 8],
+      [cx - 14, 0, cz], [cx + 14, 0, cz],
+      [cx, 0, cz - 14], [cx, 0, cz + 14],
+    ] as [number, number, number][];
   }, [buildingCenter]);
 
   return (
