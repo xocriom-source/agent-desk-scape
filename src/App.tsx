@@ -13,6 +13,8 @@ import Office from "./pages/Index.tsx";
 import WorldMap from "./pages/WorldMap.tsx";
 import CityView from "./pages/CityView.tsx";
 import CityExplore from "./pages/CityExplore.tsx";
+import FindMyBuilding from "./pages/FindMyBuilding.tsx";
+import BuildingInterior from "./pages/BuildingInterior.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
