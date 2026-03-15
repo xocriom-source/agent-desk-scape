@@ -286,7 +286,7 @@ interface OfficeSceneProps {
 }
 
 export function OfficeScene({
-  agents, player, playerConfig, selectedAgentId, onAgentClick,
+  agents, player, rooms, furniture, playerConfig, selectedAgentId, onAgentClick,
   editMode, selectedFurnitureId, hoveredFurnitureId, onFurnitureClick, onFurnitureHover, onGroundClick,
 }: OfficeSceneProps) {
   return (
