@@ -410,7 +410,7 @@ function BuildingExterior({
   );
 }
 
-// ── Room 3D ──
+// ── Room 3D (Gather.town style - low back+left walls, open front+right for visibility) ──
 function Room3D({
   room,
   onFloorClick,
@@ -424,8 +424,9 @@ function Room3D({
   const h = room.h * S;
   const x = room.x * S + w / 2;
   const z = room.y * S + h / 2;
-  const wallH = 0.75;
-  const wallT = 0.08;
+  const wallH = 0.18; // Very low walls - like Gather.town dividers
+  const wallT = 0.04;
+  const baseH = 0.03; // Thin floor border
 
   const downRef = useRef<{ x: number; y: number; t: number; button: number } | null>(null);
 
@@ -480,52 +481,43 @@ function Room3D({
         </mesh>
       )}
 
-      {/* Room walls */}
-      {/* Back */}
+      {/* Floor border strip (subtle room boundary) */}
+      {/* Back edge */}
+      <mesh position={[0, baseH / 2, -h / 2 + wallT / 2]}>
+        <boxGeometry args={[w, baseH, wallT]} />
+        <meshStandardMaterial color={room.wallColor} />
+      </mesh>
+      {/* Left edge */}
+      <mesh position={[-w / 2 + wallT / 2, baseH / 2, 0]}>
+        <boxGeometry args={[wallT, baseH, h]} />
+        <meshStandardMaterial color={room.wallColor} />
+      </mesh>
+
+      {/* Low back wall (north) - visible, won't block view */}
       <mesh position={[0, wallH / 2, -h / 2]}>
         <boxGeometry args={[w + wallT, wallH, wallT]} />
-        <meshStandardMaterial color={room.wallColor} />
+        <meshStandardMaterial color={room.wallColor} transparent opacity={0.85} />
       </mesh>
-      {/* Left */}
+      {/* Low left wall (west) */}
       <mesh position={[-w / 2, wallH / 2, 0]}>
         <boxGeometry args={[wallT, wallH, h + wallT]} />
-        <meshStandardMaterial color={room.wallColor} />
+        <meshStandardMaterial color={room.wallColor} transparent opacity={0.85} />
       </mesh>
-      {/* Right */}
-      <mesh position={[w / 2, wallH / 2, 0]}>
-        <boxGeometry args={[wallT, wallH, h + wallT]} />
-        <meshStandardMaterial color={room.wallColor} />
-      </mesh>
-      {/* Front - door opening in center */}
-      {(() => {
-        const doorW = 0.5;
-        const sideW = (w - doorW) / 2;
-        return (
-          <>
-            <mesh position={[-(doorW / 2 + sideW / 2), wallH / 2, h / 2]}>
-              <boxGeometry args={[sideW, wallH, wallT]} />
-              <meshStandardMaterial color={room.wallColor} />
-            </mesh>
-            <mesh position={[(doorW / 2 + sideW / 2), wallH / 2, h / 2]}>
-              <boxGeometry args={[sideW, wallH, wallT]} />
-              <meshStandardMaterial color={room.wallColor} />
-            </mesh>
-            {/* Door frame top */}
-            <mesh position={[0, wallH - 0.05, h / 2]}>
-              <boxGeometry args={[doorW + 0.06, 0.05, wallT + 0.02]} />
-              <meshStandardMaterial color="#5C4033" />
-            </mesh>
-          </>
-        );
-      })()}
 
-      {/* Room name neon sign on back wall */}
-      <mesh position={[0, wallH - 0.12, -h / 2 + wallT / 2 + 0.001]}>
-        <planeGeometry args={[Math.min(w * 0.6, 1.2), 0.15]} />
-        <meshStandardMaterial color="#1A1A1A" />
+      {/* Front (south) - just a floor-level strip, no wall */}
+      <mesh position={[0, baseH / 2, h / 2 - wallT / 2]}>
+        <boxGeometry args={[w, baseH, wallT]} />
+        <meshStandardMaterial color={room.wallColor} opacity={0.5} transparent />
       </mesh>
-      <Html position={[0, wallH - 0.12, -h / 2 + wallT / 2 + 0.01]} center>
-        <div className="px-2 py-0.5 text-[9px] font-bold whitespace-nowrap pointer-events-none select-none" style={{ fontFamily: "monospace", color: "#00CED1", textShadow: "0 0 8px #00CED1" }}>
+      {/* Right (east) - just a floor-level strip, no wall */}
+      <mesh position={[w / 2 - wallT / 2, baseH / 2, 0]}>
+        <boxGeometry args={[wallT, baseH, h]} />
+        <meshStandardMaterial color={room.wallColor} opacity={0.5} transparent />
+      </mesh>
+
+      {/* Room name label on back wall */}
+      <Html position={[0, wallH + 0.08, -h / 2 + 0.02]} center>
+        <div className="px-2 py-0.5 text-[9px] font-bold whitespace-nowrap pointer-events-none select-none rounded-sm" style={{ fontFamily: "monospace", color: "#FFE8C8", backgroundColor: "rgba(20,20,30,0.75)", textShadow: "0 0 6px #00CED1" }}>
           {room.name}
         </div>
       </Html>
