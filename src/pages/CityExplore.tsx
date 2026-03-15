@@ -1,12 +1,16 @@
 import { useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Building2, Map, Users2, Trophy, Megaphone, Plane, Search, Car, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Building2, Users2, Trophy, Megaphone, Plane, Search, ShoppingBag, MessageCircle, Target, Car } from "lucide-react";
 import { motion } from "framer-motion";
 import { CityExploreScene } from "@/components/office/3d/CityExploreScene";
 import { CityLeaderboard } from "@/components/city/CityLeaderboard";
 import { CityAdPlacement } from "@/components/city/CityAdPlacement";
 import { CityActivityTicker } from "@/components/city/CityActivityTicker";
 import { VehicleShop } from "@/components/city/VehicleShop";
+import { CityChat } from "@/components/city/CityChat";
+import { DailyMissions } from "@/components/city/DailyMissions";
+import { CityMiniMap } from "@/components/city/CityMiniMap";
+import { useCityBuildings } from "@/hooks/useCityBuildings";
 import type { TransportType } from "@/types/building";
 import logo from "@/assets/logo.png";
 
@@ -15,10 +19,13 @@ export default function CityExplore() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showAds, setShowAds] = useState(false);
   const [showVehicleShop, setShowVehicleShop] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [showMissions, setShowMissions] = useState(false);
   const [flyMode, setFlyMode] = useState(false);
   const [inVehicle, setInVehicle] = useState(false);
   const [currentVehicle, setCurrentVehicle] = useState<TransportType>("car");
   const [vehicleColor, setVehicleColor] = useState("#4A90D9");
+  const [playerPos, setPlayerPos] = useState<[number, number, number]>([0, 0, 5]);
 
   const userName = useMemo(() => {
     const stored = localStorage.getItem("agentoffice_user");
@@ -29,6 +36,13 @@ export default function CityExplore() {
     const stored = localStorage.getItem("agentoffice_city");
     return stored ? JSON.parse(stored) : { name: "São Paulo", flag: "🇧🇷" };
   }, []);
+
+  const userId = useMemo(() => {
+    const stored = localStorage.getItem("agentoffice_user");
+    return stored ? JSON.parse(stored).email || "" : "";
+  }, []);
+
+  const { visibleBuildings, userBuilding } = useCityBuildings(userId);
 
   const handleVehicleSelect = useCallback((type: TransportType, color: string) => {
     setCurrentVehicle(type);
@@ -55,198 +69,140 @@ export default function CityExplore() {
       >
         <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate("/city")}
-              className="p-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all"
-            >
+            <button onClick={() => navigate("/city")} className="p-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all">
               <ArrowLeft className="w-4 h-4" />
             </button>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50">
               <img src={logo} alt="" className="w-5 h-5" />
               <span className="text-sm font-bold text-white">{cityData.flag} {cityData.name}</span>
-              <span className="text-[10px] text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded-full">Explorar</span>
+              <span className="text-[10px] text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded-full">Live</span>
+            </div>
+            {/* Coins */}
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-amber-700/30">
+              <span className="text-xs">🪙</span>
+              <span className="text-xs font-bold text-amber-400" style={{ fontFamily: "monospace" }}>1,250</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Vehicle indicator */}
+          <div className="flex items-center gap-1.5">
             {inVehicle && (
-              <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#C8D880]/20 backdrop-blur-md border border-[#C8D880]/50 text-[#C8D880] text-xs font-medium"
-                style={{ fontFamily: "monospace" }}
-              >
+              <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#C8D880]/20 backdrop-blur-md border border-[#C8D880]/50 text-[#C8D880] text-xs font-medium" style={{ fontFamily: "monospace" }}>
                 <Car className="w-3.5 h-3.5" />
-                EM VEÍCULO
-                <span className="text-[8px] bg-black/40 px-1.5 py-0.5 rounded">[E] SAIR</span>
+                <span className="text-[8px] bg-black/40 px-1 py-0.5 rounded">[E]</span>
               </div>
             )}
 
-            {/* Flight mode toggle */}
-            <button
-              onClick={() => setFlyMode(!flyMode)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl backdrop-blur-md border text-xs font-medium transition-all ${
-                flyMode
-                  ? "bg-[#C8D880]/20 border-[#C8D880]/50 text-[#C8D880]"
-                  : "bg-black/60 border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80"
-              }`}
-            >
+            <button onClick={() => setFlyMode(!flyMode)} className={`flex items-center gap-1 px-2.5 py-2 rounded-xl backdrop-blur-md border text-xs font-medium transition-all ${flyMode ? "bg-[#C8D880]/20 border-[#C8D880]/50 text-[#C8D880]" : "bg-black/60 border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80"}`}>
               <Plane className="w-3.5 h-3.5" />
-              FLY
             </button>
 
-            <button
-              onClick={() => setShowVehicleShop(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium"
-            >
+            <button onClick={() => setShowMissions(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
+              <Target className="w-3.5 h-3.5" />
+              <span className="text-[8px] bg-red-500 text-white px-1 rounded-sm font-bold">3</span>
+            </button>
+
+            <button onClick={() => setShowChat(!showChat)} className={`flex items-center gap-1 px-2.5 py-2 rounded-xl backdrop-blur-md border text-xs font-medium transition-all ${showChat ? "bg-[#C8D880]/20 border-[#C8D880]/50 text-[#C8D880]" : "bg-black/60 border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80"}`}>
+              <MessageCircle className="w-3.5 h-3.5" />
+            </button>
+
+            <button onClick={() => setShowVehicleShop(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
               <ShoppingBag className="w-3.5 h-3.5" />
-              GARAGE
-              <span className="text-[8px] bg-amber-500 text-black px-1 rounded-sm font-bold">NEW</span>
             </button>
 
-            <button
-              onClick={() => setShowLeaderboard(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium"
-            >
+            <button onClick={() => setShowLeaderboard(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
               <Trophy className="w-3.5 h-3.5" />
-              RANK
             </button>
 
-            <button
-              onClick={() => setShowAds(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium"
-            >
+            <button onClick={() => setShowAds(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
               <Megaphone className="w-3.5 h-3.5" />
-              ADS
             </button>
 
-            <button
-              onClick={() => navigate("/find-building")}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium"
-            >
+            <button onClick={() => navigate("/find-building")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
               <Search className="w-3.5 h-3.5" />
             </button>
 
-            <button
-              onClick={() => navigate("/office")}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary/80 backdrop-blur-md border border-primary/50 text-white hover:bg-primary transition-all text-xs font-medium"
-            >
+            <button onClick={() => navigate("/office")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary/80 backdrop-blur-md border border-primary/50 text-white hover:bg-primary transition-all text-xs font-medium">
               <Building2 className="w-3.5 h-3.5" />
-              Meu Prédio
+              Prédio
             </button>
           </div>
         </div>
       </motion.div>
 
-      {/* Flight mode controls popup */}
+      {/* Flight mode popup */}
       {flyMode && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50"
-        >
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50">
           <div className="bg-[#1A1A20]/95 backdrop-blur-xl border border-gray-700/50 rounded-2xl px-8 py-6 text-center shadow-2xl">
-            <h3 className="text-sm font-bold text-gray-300 tracking-widest mb-4" style={{ fontFamily: "monospace" }}>
-              FLIGHT CONTROLS
-            </h3>
+            <h3 className="text-sm font-bold text-gray-300 tracking-widest mb-4" style={{ fontFamily: "monospace" }}>FLIGHT CONTROLS</h3>
             <div className="space-y-2 text-xs" style={{ fontFamily: "monospace" }}>
-              {[
-                ["MOUSE", "STEER"],
-                ["SCROLL", "SPEED"],
-                ["SHIFT / ALT", "BOOST / SLOW"],
-                ["ESC", "PAUSE & EXIT"],
-              ].map(([key, action]) => (
-                <div key={key} className="flex justify-between gap-8">
-                  <span className="text-white font-bold">{key}</span>
-                  <span className="text-gray-500">{action}</span>
+              {[["MOUSE", "STEER"], ["SCROLL", "SPEED"], ["SHIFT / ALT", "BOOST / SLOW"], ["ESC", "EXIT"]].map(([k, a]) => (
+                <div key={k} className="flex justify-between gap-8">
+                  <span className="text-white font-bold">{k}</span>
+                  <span className="text-gray-500">{a}</span>
                 </div>
               ))}
             </div>
-            <button
-              onClick={() => setFlyMode(false)}
-              className="mt-4 px-6 py-2.5 bg-[#4A6AE5] text-white text-xs font-bold tracking-wider rounded-lg hover:bg-[#5A7AF5] transition-colors"
-              style={{ fontFamily: "monospace" }}
-            >
-              GOT IT, LET'S FLY!
+            <button onClick={() => setFlyMode(false)} className="mt-4 px-6 py-2.5 bg-[#4A6AE5] text-white text-xs font-bold tracking-wider rounded-lg hover:bg-[#5A7AF5] transition-colors" style={{ fontFamily: "monospace" }}>
+              LET'S FLY!
             </button>
           </div>
         </motion.div>
       )}
 
-      {/* Activity Ticker */}
+      {/* Chat panel */}
+      <CityChat isOpen={showChat} onClose={() => setShowChat(false)} />
+
+      {/* Mini Map */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8 }}
-        className="absolute bottom-14 left-1/2 -translate-x-1/2 z-40"
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.6 }}
+        className="absolute top-20 left-4 z-40"
       >
+        <CityMiniMap
+          playerPos={playerPos}
+          buildings={visibleBuildings}
+          userBuildingId={userBuilding?.id}
+        />
+      </motion.div>
+
+      {/* Activity Ticker */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} className="absolute bottom-14 left-1/2 -translate-x-1/2 z-40">
         <CityActivityTicker />
       </motion.div>
 
-      {/* Bottom controls hint */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40"
-      >
-        <div className="flex items-center gap-4 px-4 py-2 rounded-2xl bg-black/60 backdrop-blur-md border border-gray-700/50">
-          <span className="text-[10px] text-gray-400">
-            <span className="text-white font-bold">WASD</span> andar
-          </span>
-          <span className="text-gray-600">•</span>
-          <span className="text-[10px] text-gray-400">
-            <span className="text-white font-bold">CLICK</span> teleportar
-          </span>
-          <span className="text-gray-600">•</span>
-          <span className="text-[10px] text-gray-400">
-            <span className="text-white font-bold">SCROLL</span> zoom
-          </span>
-          <span className="text-gray-600">•</span>
-          <span className="text-[10px] text-gray-400">
-            <span className="text-white font-bold">E</span> veículo
-          </span>
-          <span className="text-gray-600">•</span>
-          <span className="text-[10px] text-gray-400">
-            <span className="text-white font-bold">DRAG</span> câmera
-          </span>
+      {/* Bottom controls */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40">
+        <div className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-black/60 backdrop-blur-md border border-gray-700/50">
+          {[["WASD", "andar"], ["CLICK", "ir"], ["SCROLL", "zoom"], ["E", "veículo"], ["DRAG", "câmera"]].map(([k, a], i) => (
+            <span key={k} className="text-[10px] text-gray-400 flex items-center gap-1">
+              {i > 0 && <span className="text-gray-600 mr-1">•</span>}
+              <span className="text-white font-bold">{k}</span> {a}
+            </span>
+          ))}
         </div>
       </motion.div>
 
       {/* Building count */}
-      <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 0.3 }}
-        className="absolute bottom-4 left-4 z-40"
-      >
+      <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="absolute bottom-4 left-4 z-40">
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50">
           <Users2 className="w-3.5 h-3.5 text-emerald-400" />
-          <span className="text-[10px] text-gray-300">
-            Cidade com prédios dinâmicos
-          </span>
+          <span className="text-[10px] text-gray-300">{visibleBuildings.length} prédios</span>
         </div>
       </motion.div>
 
-      {/* Lo-fi music hint */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
-        className="absolute bottom-4 right-4 z-40"
-      >
+      {/* Lo-fi */}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }} className="absolute bottom-4 right-4 z-40">
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 cursor-pointer hover:bg-black/80 transition-all">
-          <span className="text-[10px] text-gray-400">▶ LO-FI ...</span>
+          <span className="text-[10px] text-gray-400">▶ LO-FI</span>
         </div>
       </motion.div>
 
-      {/* Panels */}
+      {/* Overlay Panels */}
       <CityLeaderboard isOpen={showLeaderboard} onClose={() => setShowLeaderboard(false)} />
       <CityAdPlacement isOpen={showAds} onClose={() => setShowAds(false)} />
-      <VehicleShop
-        isOpen={showVehicleShop}
-        onClose={() => setShowVehicleShop(false)}
-        currentVehicle={currentVehicle}
-        onSelect={handleVehicleSelect}
-      />
+      <VehicleShop isOpen={showVehicleShop} onClose={() => setShowVehicleShop(false)} currentVehicle={currentVehicle} onSelect={handleVehicleSelect} />
+      <DailyMissions isOpen={showMissions} onClose={() => setShowMissions(false)} />
     </div>
   );
 }
