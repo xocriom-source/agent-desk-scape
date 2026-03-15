@@ -136,7 +136,7 @@ function BuildingExterior({
         onPointerUp={handleFloorUp}
       >
         <planeGeometry args={[bw, bh]} />
-        <meshStandardMaterial color="#5C4A38" />
+        <meshStandardMaterial color="#9B7B55" />
       </mesh>
       {/* Floor tile grid */}
       {Array.from({ length: Math.ceil(bw) + 1 }).map((_, i) => (
