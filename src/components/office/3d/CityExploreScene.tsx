@@ -623,19 +623,18 @@ export function CityExploreScene({ playerName }: { playerName: string }) {
         gl={{ antialias: true }}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = 1.0;
+          gl.toneMappingExposure = dn.exposure;
         }}
       >
-        <color attach="background" args={["#060610"]} />
-        <fog attach="fog" args={["#060610", 30, 65]} />
+        <color attach="background" args={[dn.bgColor]} />
+        <fog attach="fog" args={[dn.fogColor, dn.fogNear, dn.fogFar + 15]} />
 
-        <ambientLight intensity={0.4} color="#FFE8C8" />
-        <directionalLight position={[15, 25, 10]} intensity={0.5} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-far={80} shadow-camera-left={-40} shadow-camera-right={40} shadow-camera-top={40} shadow-camera-bottom={-40} color="#FFE0B0" />
+        <ambientLight intensity={dn.ambientIntensity} color={dn.ambientColor} />
+        <directionalLight position={dn.sunPosition} intensity={dn.sunIntensity} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-far={80} shadow-camera-left={-40} shadow-camera-right={40} shadow-camera-top={40} shadow-camera-bottom={-40} color={dn.sunColor} />
         <directionalLight position={[-10, 18, -8]} intensity={0.15} color="#8899CC" />
-        <hemisphereLight args={["#1A1A30", "#4A3520", 0.2]} />
+        <hemisphereLight args={[dn.skyColor, dn.groundColor, dn.hemiIntensity]} />
         
-        {/* Starry sky */}
-        <Stars radius={80} depth={50} count={3000} factor={4} saturation={0.2} fade speed={0.5} />
+        {dn.showStars && <Stars radius={80} depth={50} count={3000} factor={4} saturation={0.2} fade speed={0.5} />}
 
         <OrbitControls
           ref={controlsRef}
