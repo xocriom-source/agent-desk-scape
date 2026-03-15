@@ -1,44 +1,53 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Workflow, ArrowRight, Save, Check, Zap, Eye } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
-const MOCK_WORKFLOWS = [
-  {
-    id: "1", name: "Content Pipeline", description: "Detectado 8x entre agentes independentes",
-    sequence: [
-      { agent: "Atlas", role: "Pesquisa", icon: "🔍" },
-      { agent: "Scribe", role: "Redação", icon: "✍️" },
-      { agent: "Pixel", role: "Design", icon: "🎨" },
-      { agent: "Monitor", role: "Publicação", icon: "📤" },
-    ],
-    detections: 8, isSaved: false, firstDetected: "2026-03-12T14:30:00Z",
-  },
-  {
-    id: "2", name: "Lead Processing", description: "Detectado 5x no distrito Commerce",
-    sequence: [
-      { agent: "Monitor", role: "Captura", icon: "📥" },
-      { agent: "Atlas", role: "Análise", icon: "📊" },
-      { agent: "Scribe", role: "Email", icon: "📧" },
-    ],
-    detections: 5, isSaved: true, firstDetected: "2026-03-13T09:00:00Z",
-  },
-  {
-    id: "3", name: "Code Review Chain", description: "Detectado 3x entre devs",
-    sequence: [
-      { agent: "Coder-X", role: "Desenvolvimento", icon: "💻" },
-      { agent: "Atlas", role: "Review", icon: "🔍" },
-      { agent: "Coder-X", role: "Refactor", icon: "🔄" },
-      { agent: "Monitor", role: "Deploy", icon: "🚀" },
-    ],
-    detections: 3, isSaved: false, firstDetected: "2026-03-14T11:00:00Z",
-  },
-];
+interface WorkflowItem {
+  id: string;
+  name: string;
+  description: string;
+  sequence: string[];
+  detections: number;
+  isSaved: boolean;
+  firstDetected: string;
+}
 
 export function EmergentWorkflows() {
-  const [workflows, setWorkflows] = useState(MOCK_WORKFLOWS);
+  const { user } = useAuth();
+  const [workflows, setWorkflows] = useState<WorkflowItem[]>([]);
 
-  const toggleSave = (id: string) => {
-    setWorkflows(prev => prev.map(w => w.id === id ? { ...w, isSaved: !w.isSaved } : w));
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase
+        .from("emergent_workflows")
+        .select("*")
+        .order("detection_count", { ascending: false });
+      if (data) {
+        setWorkflows(data.map(w => ({
+          id: w.id,
+          name: w.name,
+          description: w.description || "",
+          sequence: Array.isArray(w.sequence) ? (w.sequence as string[]) : [],
+          detections: w.detection_count || 0,
+          isSaved: w.is_saved || false,
+          firstDetected: w.first_detected_at,
+        })));
+      }
+    };
+    load();
+  }, []);
+
+  const toggleSave = async (id: string) => {
+    const wf = workflows.find(w => w.id === id);
+    if (!wf || !user) return;
+    const newSaved = !wf.isSaved;
+    await supabase.from("emergent_workflows").update({
+      is_saved: newSaved,
+      saved_by: newSaved ? user.id : null,
+    }).eq("id", id);
+    setWorkflows(prev => prev.map(w => w.id === id ? { ...w, isSaved: newSaved } : w));
   };
 
   return (
@@ -46,47 +55,44 @@ export function EmergentWorkflows() {
       <div className="flex items-center gap-2">
         <Workflow className="w-5 h-5 text-primary" />
         <h2 className="text-lg font-bold text-white">Workflows Emergentes</h2>
-        <span className="text-xs text-gray-500">Padrões detectados automaticamente</span>
+        <span className="text-xs text-gray-500">{workflows.length} detectados</span>
       </div>
+
+      {workflows.length === 0 && (
+        <p className="text-xs text-gray-500 text-center py-8">Nenhum workflow emergente detectado</p>
+      )}
 
       <div className="space-y-4">
         {workflows.map((wf, i) => (
-          <motion.div key={wf.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-            <div className="flex items-center justify-between mb-4">
+          <motion.div key={wf.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+            className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <div className="flex items-start justify-between mb-3">
               <div>
-                <h3 className="text-sm font-bold text-white">{wf.name}</h3>
-                <p className="text-[10px] text-gray-500">{wf.description}</p>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  {wf.name}
+                  {wf.isSaved && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+                </h3>
+                <p className="text-[10px] text-gray-500 mt-0.5">{wf.description} · Detectado {wf.detections}x</p>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] bg-violet-400/10 text-violet-400 px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <Eye className="w-3 h-3" />{wf.detections}x detectado
-                </span>
-                <button
-                  onClick={() => toggleSave(wf.id)}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    wf.isSaved ? "bg-emerald-400/10 text-emerald-400" : "bg-primary/20 text-primary hover:bg-primary/30"
-                  }`}
-                >
-                  {wf.isSaved ? <><Check className="w-3 h-3" />Salvo</> : <><Save className="w-3 h-3" />Salvar Pipeline</>}
-                </button>
-              </div>
+              <button onClick={() => toggleSave(wf.id)}
+                className={`p-2 rounded-lg transition-colors ${wf.isSaved ? "bg-emerald-400/10 text-emerald-400" : "bg-gray-800 text-gray-400 hover:text-primary"}`}>
+                {wf.isSaved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+              </button>
             </div>
 
-            {/* Sequence visualization */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2">
-              {wf.sequence.map((step, j) => (
-                <div key={j} className="flex items-center gap-2 shrink-0">
-                  <div className="bg-gray-800 border border-gray-700 rounded-xl p-3 text-center min-w-[100px]">
-                    <span className="text-2xl block mb-1">{step.icon}</span>
-                    <p className="text-[10px] font-bold text-white">{step.role}</p>
-                    <p className="text-[9px] text-primary">{step.agent}</p>
-                  </div>
-                  {j < wf.sequence.length - 1 && <ArrowRight className="w-4 h-4 text-gray-600 shrink-0" />}
+            <div className="flex items-center gap-1 overflow-x-auto pb-1">
+              {wf.sequence.map((agent, j) => (
+                <div key={j} className="flex items-center gap-1 shrink-0">
+                  <span className="px-2.5 py-1.5 bg-gray-800 rounded-lg text-[10px] font-medium text-gray-300">{agent}</span>
+                  {j < wf.sequence.length - 1 && <ArrowRight className="w-3 h-3 text-gray-600 shrink-0" />}
                 </div>
               ))}
             </div>
 
-            <p className="text-[10px] text-gray-500 mt-2">Primeiro detectado: {new Date(wf.firstDetected).toLocaleDateString("pt-BR")}</p>
+            <div className="flex items-center gap-3 mt-3 text-[10px] text-gray-500">
+              <span className="flex items-center gap-1"><Zap className="w-3 h-3" />{wf.detections} detecções</span>
+              <span>{new Date(wf.firstDetected).toLocaleDateString("pt-BR")}</span>
+            </div>
           </motion.div>
         ))}
       </div>
