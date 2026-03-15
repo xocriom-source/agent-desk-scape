@@ -136,17 +136,17 @@ function BuildingExterior({
         onPointerUp={handleFloorUp}
       >
         <planeGeometry args={[bw, bh]} />
-        <meshStandardMaterial color="#5C4A38" />
+        <meshStandardMaterial color="#9B7B55" />
       </mesh>
       {/* Floor tile grid */}
       {Array.from({ length: Math.ceil(bw) + 1 }).map((_, i) => (
         <mesh key={`vl${i}`} raycast={() => null} position={[cx - bw / 2 + i, foundH + 0.002, cz]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[0.015, bh]} /><meshBasicMaterial color="#4A3828" />
+          <planeGeometry args={[0.015, bh]} /><meshBasicMaterial color="#7A6040" />
         </mesh>
       ))}
       {Array.from({ length: Math.ceil(bh) + 1 }).map((_, i) => (
         <mesh key={`hl${i}`} raycast={() => null} position={[cx, foundH + 0.002, cz - bh / 2 + i]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[bw, 0.015]} /><meshBasicMaterial color="#4A3828" />
+          <planeGeometry args={[bw, 0.015]} /><meshBasicMaterial color="#7A6040" />
         </mesh>
       ))}
 
@@ -621,36 +621,33 @@ function WalkingDust({ player }: { player: Player }) {
   );
 }
 
-// ── Player 3D (Billboard sprite - identical pixel art from image) ──
+// ── Player 3D (Voxel Bored Ape - 3D model) ──
 function Player3D({ player, config }: { player: Player; config?: { color: string; skinTone?: string } }) {
   const ref = useRef<THREE.Group>(null);
-  const spriteRef = useRef<THREE.Mesh>(null);
   const smoothPos = useRef(new THREE.Vector3(player.x * S, 0, player.y * S));
   const smoothAngle = useRef(player.angle);
+  const leftLeg = useRef<THREE.Mesh>(null);
+  const rightLeg = useRef<THREE.Mesh>(null);
+  const leftArm = useRef<THREE.Mesh>(null);
+  const rightArm = useRef<THREE.Mesh>(null);
   const prevPos = useRef({ x: player.x, y: player.y });
 
-  // Load the ape texture with pixelated (nearest neighbor) filtering
-  const texture = useMemo(() => {
-    const tex = new THREE.TextureLoader().load(playerApeImg);
-    tex.magFilter = THREE.NearestFilter;
-    tex.minFilter = THREE.NearestFilter;
-    tex.colorSpace = THREE.SRGBColorSpace;
-    return tex;
-  }, []);
+  const furColor = "#5C3A1E";
+  const faceColor = "#C4A882";
+  const sweaterColor = "#3B5DC9";
+  const glassesColor = "#2ECC40";
+  const earringColor = "#FFD700";
 
-  useFrame((state, delta) => {
+  useFrame((_, delta) => {
     if (!ref.current) return;
     const dt = Math.min(delta, 0.05);
-
     const tx = player.x * S;
     const tz = player.y * S;
-
     const posFactor = 1 - Math.exp(-18 * dt);
     const rotFactor = 1 - Math.exp(-14 * dt);
 
     smoothPos.current.x += (tx - smoothPos.current.x) * posFactor;
     smoothPos.current.z += (tz - smoothPos.current.z) * posFactor;
-
     if (Math.abs(tx - smoothPos.current.x) < 0.0005) smoothPos.current.x = tx;
     if (Math.abs(tz - smoothPos.current.z) < 0.0005) smoothPos.current.z = tz;
 
@@ -659,45 +656,141 @@ function Player3D({ player, config }: { player: Player; config?: { color: string
     prevPos.current = { x: player.x, y: player.y };
 
     ref.current.position.set(smoothPos.current.x, 0, smoothPos.current.z);
-
-    // Walking bounce or idle bob
     if (moving) {
-      ref.current.position.y = Math.abs(Math.sin(Date.now() * 0.015)) * 0.03;
+      ref.current.position.y = Math.abs(Math.sin(Date.now() * 0.015)) * 0.025;
     } else {
       ref.current.position.y = Math.sin(Date.now() * 0.003) * 0.008;
     }
 
-    // Billboard: make sprite always face camera
-    if (spriteRef.current) {
-      const cam = state.camera;
-      spriteRef.current.quaternion.copy(cam.quaternion);
-    }
-  });
+    let diff = player.angle - smoothAngle.current;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    smoothAngle.current += diff * rotFactor;
+    ref.current.rotation.y = smoothAngle.current;
 
-  const spriteH = 0.7;  // height of the sprite in world units
-  const spriteW = spriteH; // 1:1 aspect ratio (square image)
+    const swing = moving ? Math.sin(Date.now() * 0.016) * 0.5 : 0;
+    const dampFactor = 1 - Math.exp(-8 * dt);
+    if (leftLeg.current) leftLeg.current.rotation.x += ((moving ? swing : 0) - leftLeg.current.rotation.x) * dampFactor;
+    if (rightLeg.current) rightLeg.current.rotation.x += ((moving ? -swing : 0) - rightLeg.current.rotation.x) * dampFactor;
+    if (leftArm.current) leftArm.current.rotation.x += ((moving ? -swing * 0.5 : 0) - leftArm.current.rotation.x) * dampFactor;
+    if (rightArm.current) rightArm.current.rotation.x += ((moving ? swing * 0.5 : 0) - rightArm.current.rotation.x) * dampFactor;
+  });
 
   return (
     <group ref={ref}>
-      {/* Pixel art billboard sprite */}
-      <mesh ref={spriteRef} position={[0, spriteH / 2 + 0.01, 0]}>
-        <planeGeometry args={[spriteW, spriteH]} />
-        <meshBasicMaterial map={texture} transparent alphaTest={0.1} side={THREE.DoubleSide} />
+      {/* Legs */}
+      <mesh ref={leftLeg} position={[-0.055, 0.06, 0]}>
+        <boxGeometry args={[0.07, 0.12, 0.08]} />
+        <meshStandardMaterial color="#2D3748" />
       </mesh>
-
-      {/* Shadow on ground */}
+      <mesh ref={rightLeg} position={[0.055, 0.06, 0]}>
+        <boxGeometry args={[0.07, 0.12, 0.08]} />
+        <meshStandardMaterial color="#2D3748" />
+      </mesh>
+      {/* Body (blue sweater) */}
+      <mesh position={[0, 0.25, 0]} castShadow>
+        <boxGeometry args={[0.26, 0.26, 0.15]} />
+        <meshStandardMaterial color={sweaterColor} />
+      </mesh>
+      {/* Sweater logo */}
+      <mesh position={[0, 0.23, 0.076]}>
+        <circleGeometry args={[0.04, 8]} />
+        <meshStandardMaterial color={glassesColor} />
+      </mesh>
+      {/* Arms */}
+      <mesh ref={leftArm} position={[-0.165, 0.24, 0]}>
+        <boxGeometry args={[0.06, 0.2, 0.08]} />
+        <meshStandardMaterial color={sweaterColor} />
+      </mesh>
+      <mesh ref={rightArm} position={[0.165, 0.24, 0]}>
+        <boxGeometry args={[0.06, 0.2, 0.08]} />
+        <meshStandardMaterial color={sweaterColor} />
+      </mesh>
+      {/* Hands */}
+      <mesh position={[-0.165, 0.13, 0]}>
+        <boxGeometry args={[0.05, 0.05, 0.05]} />
+        <meshStandardMaterial color={furColor} />
+      </mesh>
+      <mesh position={[0.165, 0.13, 0]}>
+        <boxGeometry args={[0.05, 0.05, 0.05]} />
+        <meshStandardMaterial color={furColor} />
+      </mesh>
+      {/* Head */}
+      <mesh position={[0, 0.47, 0]} castShadow>
+        <boxGeometry args={[0.22, 0.22, 0.2]} />
+        <meshStandardMaterial color={furColor} />
+      </mesh>
+      <mesh position={[0, 0.56, -0.02]}>
+        <boxGeometry args={[0.2, 0.06, 0.14]} />
+        <meshStandardMaterial color={furColor} />
+      </mesh>
+      {/* Muzzle */}
+      <mesh position={[0, 0.43, 0.1]}>
+        <boxGeometry args={[0.16, 0.14, 0.06]} />
+        <meshStandardMaterial color={faceColor} />
+      </mesh>
+      {[-0.025, 0.025].map((ox, i) => (
+        <mesh key={`n${i}`} position={[ox, 0.42, 0.135]}>
+          <boxGeometry args={[0.02, 0.02, 0.01]} />
+          <meshStandardMaterial color="#3A2510" />
+        </mesh>
+      ))}
+      {/* Green glasses */}
+      <mesh position={[0, 0.49, 0.11]}>
+        <boxGeometry args={[0.22, 0.06, 0.02]} />
+        <meshStandardMaterial color={glassesColor} />
+      </mesh>
+      <mesh position={[-0.055, 0.49, 0.12]}>
+        <boxGeometry args={[0.07, 0.04, 0.01]} />
+        <meshStandardMaterial color="#1a1a2e" />
+      </mesh>
+      <mesh position={[0.055, 0.49, 0.12]}>
+        <boxGeometry args={[0.07, 0.04, 0.01]} />
+        <meshStandardMaterial color="#1a1a2e" />
+      </mesh>
+      {/* Lens glare */}
+      <mesh position={[-0.04, 0.495, 0.126]}>
+        <boxGeometry args={[0.02, 0.02, 0.005]} />
+        <meshStandardMaterial color="#FFF" emissive="#FFF" emissiveIntensity={0.3} />
+      </mesh>
+      <mesh position={[0.07, 0.495, 0.126]}>
+        <boxGeometry args={[0.02, 0.02, 0.005]} />
+        <meshStandardMaterial color="#FFF" emissive="#FFF" emissiveIntensity={0.3} />
+      </mesh>
+      {/* Ears */}
+      <mesh position={[-0.14, 0.48, 0]}>
+        <boxGeometry args={[0.06, 0.08, 0.06]} />
+        <meshStandardMaterial color={furColor} />
+      </mesh>
+      <mesh position={[-0.14, 0.48, 0]}>
+        <boxGeometry args={[0.03, 0.05, 0.04]} />
+        <meshStandardMaterial color={faceColor} />
+      </mesh>
+      <mesh position={[0.14, 0.48, 0]}>
+        <boxGeometry args={[0.06, 0.08, 0.06]} />
+        <meshStandardMaterial color={furColor} />
+      </mesh>
+      <mesh position={[0.14, 0.48, 0]}>
+        <boxGeometry args={[0.03, 0.05, 0.04]} />
+        <meshStandardMaterial color={faceColor} />
+      </mesh>
+      {/* Gold earring */}
+      <mesh position={[-0.17, 0.44, 0]}>
+        <torusGeometry args={[0.02, 0.005, 6, 8]} />
+        <meshStandardMaterial color={earringColor} metalness={0.8} roughness={0.2} />
+      </mesh>
+      {/* Shadow */}
       <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[0.16, 16]} />
-        <meshBasicMaterial color="#000" transparent opacity={0.2} />
+        <meshBasicMaterial color="#000" transparent opacity={0.18} />
       </mesh>
-
       {/* Crown */}
-      <Html position={[0, spriteH + 0.12, 0]} center>
+      <Html position={[0, 0.68, 0]} center>
         <span className="text-sm select-none pointer-events-none">👑</span>
       </Html>
       {/* Name tag */}
-      <Html position={[0, spriteH + 0.25, 0]} center>
-        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full whitespace-nowrap pointer-events-none select-none" style={{ backgroundColor: "#3B5DC9" }}>
+      <Html position={[0, 0.8, 0]} center>
+        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full whitespace-nowrap pointer-events-none select-none" style={{ backgroundColor: sweaterColor }}>
           <div className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
           <span className="text-[9px] text-white font-bold">{player.name}</span>
         </div>
@@ -779,15 +872,15 @@ export function OfficeScene({
           gl.toneMappingExposure = 1.0;
         }}
       >
-        {/* Dark swamp night sky */}
-        <color attach="background" args={["#0A0F0A"]} />
-        <fog attach="fog" args={["#0A0F0A", 20, 45]} />
+        {/* Warm BAYC clubhouse atmosphere */}
+        <color attach="background" args={["#1A1408"]} />
+        <fog attach="fog" args={["#1A1408", 25, 50]} />
 
-        {/* Dim moonlight ambient */}
-        <ambientLight intensity={0.25} color="#8899AA" />
+        {/* Warm ambient - well-lit interior */}
+        <ambientLight intensity={0.7} color="#FFE8C8" />
         <directionalLight
           position={[10, 20, 8]}
-          intensity={0.35}
+          intensity={0.6}
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
@@ -796,11 +889,11 @@ export function OfficeScene({
           shadow-camera-right={20}
           shadow-camera-top={20}
           shadow-camera-bottom={-20}
-          color="#B8C8E8"
+          color="#FFE0B0"
         />
-        {/* Warm interior fill */}
-        <directionalLight position={[-8, 10, -6]} intensity={0.2} color="#FFE0A0" />
-        <hemisphereLight args={["#1A2030", "#0A1008", 0.15]} />
+        {/* Warm fill from opposite side */}
+        <directionalLight position={[-8, 10, -6]} intensity={0.4} color="#FFD090" />
+        <hemisphereLight args={["#FFE8D0", "#4A3520", 0.35]} />
 
         {/* Camera controls - mouse drag rotate, wheel zoom, right-drag pan; works on trackpad wheel for zoom */}
         <OrbitControls
