@@ -710,22 +710,23 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         <fog attach="fog" args={[dn.fogColor, dn.fogNear, dn.fogFar + 15]} />
 
         <ambientLight intensity={dn.ambientIntensity} color={dn.ambientColor} />
-        <directionalLight position={dn.sunPosition} intensity={dn.sunIntensity} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-far={80} shadow-camera-left={-40} shadow-camera-right={40} shadow-camera-top={40} shadow-camera-bottom={-40} color={dn.sunColor} />
+        <directionalLight position={dn.sunPosition} intensity={dn.sunIntensity} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-far={50} shadow-camera-left={-25} shadow-camera-right={25} shadow-camera-top={25} shadow-camera-bottom={-25} color={dn.sunColor} />
         <directionalLight position={[-10, 18, -8]} intensity={0.15} color="#8899CC" />
         <hemisphereLight args={[dn.skyColor, dn.groundColor, dn.hemiIntensity]} />
         
-        {dn.showStars && <Stars radius={80} depth={50} count={3000} factor={4} saturation={0.2} fade speed={0.5} />}
+        {dn.showStars && <Stars radius={80} depth={50} count={1500} factor={4} saturation={0.2} fade speed={0.5} />}
 
         <OrbitControls
           ref={controlsRef}
-          enableDamping dampingFactor={0.08}
-          enablePan enableZoom enableRotate
-          minDistance={4} maxDistance={50}
-          minPolarAngle={Math.PI / 6} maxPolarAngle={Math.PI / 2.4}
-          zoomSpeed={0.9} rotateSpeed={0.6} panSpeed={0.7}
-          mouseButtons={{ LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN }}
+          enableDamping dampingFactor={0.12}
+          enablePan={false}
+          enableZoom enableRotate
+          minDistance={6} maxDistance={25}
+          minPolarAngle={Math.PI / 6} maxPolarAngle={Math.PI / 2.6}
+          zoomSpeed={0.8} rotateSpeed={0.5}
+          mouseButtons={{ LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE }}
           touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
-          target={[playerPos[0], 0, playerPos[2]]}
+          target={[playerPos[0], 0.5, playerPos[2]]}
         />
         <ControlsUpdater controlsRef={controlsRef} />
         <CameraFollow target={playerPos} controlsRef={controlsRef} />
