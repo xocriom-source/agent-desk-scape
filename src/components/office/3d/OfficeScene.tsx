@@ -958,6 +958,9 @@ export function OfficeScene({
         <directionalLight position={[5, 8, 12]} intensity={0.4} color="#FFD090" />
         <hemisphereLight args={["#1A1A30", "#4A3520", 0.25]} />
 
+        {/* Stars in the sky */}
+        <Stars />
+
         <OrbitControls
           ref={controlsRef}
           enableDamping dampingFactor={0.08}
