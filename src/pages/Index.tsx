@@ -121,6 +121,7 @@ const Index = () => {
         hoveredFurnitureId={hoveredFurnitureId}
         onFurnitureClick={handleFurnitureClick}
         onFurnitureHover={setHoveredFurnitureId}
+        onMapClick={(x, y) => setPlayerDestination(x, y)}
       />
 
       {/* Edit mode toolbar */}
