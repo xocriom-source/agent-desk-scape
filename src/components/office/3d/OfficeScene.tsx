@@ -13,23 +13,89 @@ const STATUS_COLORS: Record<string, string> = {
 
 const S = 0.5; // tile to world scale
 
-// ── Distant skyline building (far away, purely decorative) ──
+// ── Distant skyline building with glowing windows ──
 function SkylineBuilding({ position, width, height, color }: { position: [number, number, number]; width: number; height: number; color: string }) {
+  const windows = useMemo(() => {
+    const rows = Math.floor(height / 0.5);
+    const cols = Math.max(2, Math.floor(width / 0.5));
+    const data: { r: number; c: number; lit: boolean }[] = [];
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        data.push({ r, c, lit: Math.random() > 0.4 });
+      }
+    }
+    return { rows, cols, data };
+  }, [height, width]);
+
   return (
-    <mesh position={[position[0], height / 2, position[2]]}>
-      <boxGeometry args={[width, height, width * 0.6]} />
-      <meshStandardMaterial color={color} roughness={0.95} />
-    </mesh>
+    <group>
+      <mesh position={[position[0], height / 2, position[2]]}>
+        <boxGeometry args={[width, height, width * 0.6]} />
+        <meshStandardMaterial color={color} roughness={0.95} />
+      </mesh>
+      {/* Rooftop accent */}
+      <mesh position={[position[0], height + 0.03, position[2]]}>
+        <boxGeometry args={[width + 0.06, 0.06, width * 0.6 + 0.06]} />
+        <meshStandardMaterial color="#222" />
+      </mesh>
+      {/* Windows on front face */}
+      {windows.data.map((w, i) => (
+        <mesh key={i} position={[
+          position[0] - width / 2 + 0.25 + w.c * (width / (windows.cols + 0.5)),
+          0.3 + w.r * 0.5,
+          position[2] + width * 0.3 + 0.01,
+        ]}>
+          <boxGeometry args={[0.15, 0.2, 0.01]} />
+          <meshStandardMaterial
+            color={w.lit ? "#FFE4A8" : "#0A0A14"}
+            emissive={w.lit ? "#FFD060" : "#000"}
+            emissiveIntensity={w.lit ? 0.6 : 0}
+          />
+        </mesh>
+      ))}
+    </group>
   );
 }
 
-// ── Exterior Ground ──
+// ── Exterior Ground with subtle grid pattern ──
 function ExteriorGround({ cx, cz }: { cx: number; cz: number }) {
   return (
-    <mesh position={[cx, -0.02, cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-      <planeGeometry args={[60, 60]} />
-      <meshStandardMaterial color="#1A1E22" />
-    </mesh>
+    <group>
+      <mesh position={[cx, -0.02, cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[80, 80]} />
+        <meshStandardMaterial color="#141820" />
+      </mesh>
+      {/* Roads/paths */}
+      {[-20, -10, 0, 10, 20].map(off => (
+        <mesh key={`rh-${off}`} position={[cx, -0.015, cz + off]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[70, 0.8]} />
+          <meshStandardMaterial color="#1E222A" />
+        </mesh>
+      ))}
+      {[-20, -10, 0, 10, 20].map(off => (
+        <mesh key={`rv-${off}`} position={[cx + off, -0.015, cz]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.8, 70]} />
+          <meshStandardMaterial color="#1E222A" />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+// ── Street lamp ──
+function StreetLamp({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      <mesh position={[0, 0.8, 0]}>
+        <cylinderGeometry args={[0.02, 0.03, 1.6, 6]} />
+        <meshStandardMaterial color="#333" metalness={0.6} />
+      </mesh>
+      <mesh position={[0, 1.65, 0]}>
+        <sphereGeometry args={[0.06, 8, 8]} />
+        <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={1.5} />
+      </mesh>
+      <pointLight position={[0, 1.6, 0]} intensity={0.3} distance={4} color="#FFD060" />
+    </group>
   );
 }
 
