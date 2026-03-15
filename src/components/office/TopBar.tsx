@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Settings, Wifi, LogOut, Palette, Home, Clock, MessageSquare, CheckCircle2, Radio, ImageIcon, BarChart3, Store, Vote, Sparkles } from "lucide-react";
+import { Settings, Wifi, LogOut, Palette, Home, Clock, MessageSquare, CheckCircle2, Radio, ImageIcon, BarChart3, Store, Vote, Sparkles, Database, Shield } from "lucide-react";
 import logo from "@/assets/logo.png";
 import type { Agent } from "@/types/agent";
 
@@ -18,20 +18,20 @@ interface TopBarProps {
   onOpenMarketplace?: () => void;
   onOpenGovernance?: () => void;
   onOpenStudios?: () => void;
+  onOpenMemory?: () => void;
+  onOpenCommand?: () => void;
+  notifications?: Record<string, number>;
 }
 
 function LocalClock() {
   const [now, setNow] = useState(new Date());
-
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
-
   const timeStr = now.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
   const dateStr = now.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
   const tzName = Intl.DateTimeFormat().resolvedOptions().timeZone.split("/").pop()?.replace(/_/g, " ") || "";
-
   return (
     <div className="glass-panel rounded-2xl px-3 py-2 flex items-center gap-2 shadow-lg">
       <Clock className="w-3.5 h-3.5 text-muted-foreground" />
@@ -43,7 +43,20 @@ function LocalClock() {
   );
 }
 
-export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onRoomEditor, onLogout, onOpenFeed, onOpenTasks, onOpenMessaging, onOpenGallery, onOpenAnalytics, onOpenMarketplace, onOpenGovernance, onOpenStudios }: TopBarProps) {
+function NavBtn({ onClick, title, icon: Icon, color, badge }: { onClick?: () => void; title: string; icon: typeof MessageSquare; color: string; badge?: number }) {
+  return (
+    <button onClick={onClick} className="relative p-2 rounded-xl hover:bg-muted/30 transition-colors" title={title}>
+      <Icon className="w-4 h-4" style={{ color }} />
+      {badge && badge > 0 && (
+        <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-3.5 flex items-center justify-center bg-destructive text-destructive-foreground text-[8px] font-bold rounded-full px-0.5">
+          {badge > 99 ? "99+" : badge}
+        </span>
+      )}
+    </button>
+  );
+}
+
+export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onRoomEditor, onLogout, onOpenFeed, onOpenTasks, onOpenMessaging, onOpenGallery, onOpenAnalytics, onOpenMarketplace, onOpenGovernance, onOpenStudios, onOpenMemory, onOpenCommand, notifications = {} }: TopBarProps) {
   return (
     <div className="absolute top-3 left-3 right-3 z-20 flex items-center justify-between pointer-events-none">
       <div className="flex items-center gap-2 pointer-events-auto">
@@ -56,48 +69,18 @@ export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onRo
         </div>
         <LocalClock />
 
-        {/* New feature buttons */}
+        {/* Feature buttons with badges */}
         <div className="glass-panel rounded-2xl flex items-center gap-0.5 px-1 py-1 shadow-lg">
-          {onOpenFeed && (
-            <button onClick={onOpenFeed} className="p-2 rounded-xl hover:bg-muted/30 transition-colors" title="Feed Social">
-              <MessageSquare className="w-4 h-4 text-primary" />
-            </button>
-          )}
-          {onOpenTasks && (
-            <button onClick={onOpenTasks} className="p-2 rounded-xl hover:bg-muted/30 transition-colors" title="Task Engine">
-              <CheckCircle2 className="w-4 h-4 text-accent" />
-            </button>
-          )}
-          {onOpenMessaging && (
-            <button onClick={onOpenMessaging} className="p-2 rounded-xl hover:bg-muted/30 transition-colors" title="Mensagens">
-              <Radio className="w-4 h-4 text-[#4ECDC4]" />
-            </button>
-          )}
-          {onOpenGallery && (
-            <button onClick={onOpenGallery} className="p-2 rounded-xl hover:bg-muted/30 transition-colors" title="Galeria">
-              <ImageIcon className="w-4 h-4 text-[#FF6BB5]" />
-            </button>
-          )}
-          {onOpenStudios && (
-            <button onClick={onOpenStudios} className="p-2 rounded-xl hover:bg-muted/30 transition-colors" title="Estúdios Criativos">
-              <Sparkles className="w-4 h-4 text-[#FFB347]" />
-            </button>
-          )}
-          {onOpenAnalytics && (
-            <button onClick={onOpenAnalytics} className="p-2 rounded-xl hover:bg-muted/30 transition-colors" title="Analytics">
-              <BarChart3 className="w-4 h-4 text-[#A78BFA]" />
-            </button>
-          )}
-          {onOpenMarketplace && (
-            <button onClick={onOpenMarketplace} className="p-2 rounded-xl hover:bg-muted/30 transition-colors" title="Marketplace">
-              <Store className="w-4 h-4 text-accent" />
-            </button>
-          )}
-          {onOpenGovernance && (
-            <button onClick={onOpenGovernance} className="p-2 rounded-xl hover:bg-muted/30 transition-colors" title="Governança IA">
-              <Vote className="w-4 h-4 text-primary" />
-            </button>
-          )}
+          {onOpenFeed && <NavBtn onClick={onOpenFeed} title="Feed Social" icon={MessageSquare} color="hsl(239 84% 67%)" badge={notifications.feed} />}
+          {onOpenTasks && <NavBtn onClick={onOpenTasks} title="Task Engine" icon={CheckCircle2} color="hsl(160 84% 39%)" badge={notifications.tasks} />}
+          {onOpenMessaging && <NavBtn onClick={onOpenMessaging} title="Mensagens" icon={Radio} color="#4ECDC4" badge={notifications.messages} />}
+          {onOpenGallery && <NavBtn onClick={onOpenGallery} title="Galeria" icon={ImageIcon} color="#FF6BB5" />}
+          {onOpenStudios && <NavBtn onClick={onOpenStudios} title="Estúdios" icon={Sparkles} color="#FFB347" />}
+          {onOpenAnalytics && <NavBtn onClick={onOpenAnalytics} title="Analytics" icon={BarChart3} color="#A78BFA" />}
+          {onOpenMarketplace && <NavBtn onClick={onOpenMarketplace} title="Marketplace" icon={Store} color="hsl(160 84% 39%)" />}
+          {onOpenGovernance && <NavBtn onClick={onOpenGovernance} title="Governança" icon={Vote} color="hsl(239 84% 67%)" badge={notifications.governance} />}
+          {onOpenMemory && <NavBtn onClick={onOpenMemory} title="Memória" icon={Database} color="#06B6D4" />}
+          {onOpenCommand && <NavBtn onClick={onOpenCommand} title="Command Center" icon={Shield} color="#EF4444" />}
         </div>
       </div>
 
@@ -127,17 +110,14 @@ export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onRo
             <Home className="w-4 h-4 text-foreground" />
           </button>
         )}
-
         {onCustomize && (
-          <button onClick={onCustomize} className="glass-panel rounded-2xl p-2.5 hover:bg-muted/30 transition-colors shadow-lg" title="Personalizar personagem">
+          <button onClick={onCustomize} className="glass-panel rounded-2xl p-2.5 hover:bg-muted/30 transition-colors shadow-lg" title="Personalizar">
             <Palette className="w-4 h-4 text-foreground" />
           </button>
         )}
-
         <button className="glass-panel rounded-2xl p-2.5 hover:bg-muted/30 transition-colors shadow-lg">
           <Settings className="w-4 h-4 text-foreground" />
         </button>
-
         {onLogout && (
           <button onClick={onLogout} className="glass-panel rounded-2xl p-2.5 hover:bg-destructive/20 transition-colors shadow-lg" title="Sair">
             <LogOut className="w-4 h-4 text-foreground" />

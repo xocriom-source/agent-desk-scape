@@ -15,6 +15,8 @@ import { CreativeStudios } from "@/components/office/CreativeStudios";
 import { AnalyticsDashboard } from "@/components/office/AnalyticsDashboard";
 import { AgentMarketplace } from "@/components/office/AgentMarketplace";
 import { AIGovernance } from "@/components/office/AIGovernance";
+import { AgentMemory } from "@/components/office/AgentMemory";
+import { CommandCenter } from "@/components/office/CommandCenter";
 import { CharacterCustomizer, type PlayerConfig } from "@/components/office/CharacterCustomizer";
 import { RoomEditor } from "@/components/office/RoomEditor";
 import { useOfficeState } from "@/hooks/useOfficeState";
@@ -39,6 +41,9 @@ const Index = () => {
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [showMarketplace, setShowMarketplace] = useState(false);
   const [showGovernance, setShowGovernance] = useState(false);
+  const [showMemory, setShowMemory] = useState(false);
+  const [showCommand, setShowCommand] = useState(false);
+  const [notifCounts, setNotifCounts] = useState({ feed: 3, tasks: 2, messages: 5, governance: 1 });
   const [playerConfig, setPlayerConfig] = useState<PlayerConfig>({
     name: "Chefe",
     color: "#4F46E5",
@@ -134,6 +139,9 @@ const Index = () => {
         onOpenAnalytics={() => setShowAnalytics(true)}
         onOpenMarketplace={() => setShowMarketplace(true)}
         onOpenGovernance={() => setShowGovernance(true)}
+        onOpenMemory={() => setShowMemory(true)}
+        onOpenCommand={() => setShowCommand(true)}
+        notifications={notifCounts}
       />
 
       <OfficeScene
@@ -184,6 +192,8 @@ const Index = () => {
       <AnalyticsDashboard agents={agents} isOpen={showAnalytics} onClose={() => setShowAnalytics(false)} />
       <AgentMarketplace agents={agents} isOpen={showMarketplace} onClose={() => setShowMarketplace(false)} />
       <AIGovernance agents={agents} isOpen={showGovernance} onClose={() => setShowGovernance(false)} />
+      <AgentMemory agents={agents} isOpen={showMemory} onClose={() => setShowMemory(false)} />
+      <CommandCenter agents={agents} isOpen={showCommand} onClose={() => setShowCommand(false)} />
 
       {!editMode && <ActionBar onMove={movePlayer} />}
       {!editMode && <MiniMap player={player} agents={agents} rooms={rooms} />}
