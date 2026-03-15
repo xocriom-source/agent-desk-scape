@@ -28,6 +28,7 @@ const STATUS_COLORS: Record<string, string> = {
 export const OfficeCanvas = memo(function OfficeCanvas({
   agents,
   player,
+  playerConfig,
   selectedAgentId,
   onAgentClick,
 }: OfficeCanvasProps) {
