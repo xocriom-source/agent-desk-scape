@@ -198,8 +198,7 @@ function CityPlaza() {
           <sphereGeometry args={[0.1, 12, 12]} />
           <meshStandardMaterial color="#C0A870" metalness={0.6} roughness={0.3} />
         </mesh>
-        {/* Water glow */}
-        <pointLight position={[0, 0.4, 0]} intensity={0.5} distance={4} color="#4AC0FF" />
+        {/* Water glow - emissive only, no pointLight */}
       </group>
 
       {/* ── Trees (6 around plaza) ── */}
@@ -250,26 +249,23 @@ function CityPlaza() {
         </group>
       ))}
 
-      {/* ── Lamp posts (8 around perimeter) ── */}
+      {/* ── Lamp posts (4 corners only, no pointLights) ── */}
       {[
         [-4.5, -4.5], [4.5, -4.5], [-4.5, 4.5], [4.5, 4.5],
-        [0, -4.8], [0, 4.8], [-4.8, 0], [4.8, 0],
       ].map(([lx, lz], i) => (
         <group key={`lamp-${i}`} position={[lx, 0, lz]}>
           <mesh position={[0, 0.9, 0]}>
-            <cylinderGeometry args={[0.025, 0.04, 1.8, 6]} />
+            <cylinderGeometry args={[0.025, 0.04, 1.8, 4]} />
             <meshStandardMaterial color="#333" metalness={0.7} />
           </mesh>
-          {/* Lamp head */}
           <mesh position={[0, 1.85, 0]}>
-            <cylinderGeometry args={[0.08, 0.04, 0.08, 6]} />
+            <cylinderGeometry args={[0.08, 0.04, 0.08, 4]} />
             <meshStandardMaterial color="#444" metalness={0.5} />
           </mesh>
           <mesh position={[0, 1.82, 0]}>
-            <sphereGeometry args={[0.04, 6, 6]} />
-            <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={2} />
+            <sphereGeometry args={[0.04, 4, 4]} />
+            <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={3} />
           </mesh>
-          <pointLight position={[0, 1.8, 0]} intensity={0.2} distance={4} color="#FFD060" />
         </group>
       ))}
 
@@ -477,13 +473,13 @@ function DistrictLabels() {
   );
 }
 
-// ── Street Lights Grid ──
+// ── Street Lights Grid (optimized - no pointLights, only emissive bulbs) ──
 function StreetLights() {
   const positions = useMemo(() => {
     const pts: [number, number][] = [];
-    for (let x = -24; x <= 24; x += 8) {
-      for (let z = -24; z <= 24; z += 8) {
-        if (Math.abs(x) < 6 && Math.abs(z) < 6) continue; // skip plaza area
+    for (let x = -24; x <= 24; x += 12) {
+      for (let z = -24; z <= 24; z += 12) {
+        if (Math.abs(x) < 6 && Math.abs(z) < 6) continue;
         pts.push([x, z]);
       }
     }
@@ -495,14 +491,13 @@ function StreetLights() {
       {positions.map(([x, z], i) => (
         <group key={i} position={[x, 0, z]}>
           <mesh position={[0, 1, 0]}>
-            <cylinderGeometry args={[0.025, 0.04, 2, 6]} />
+            <cylinderGeometry args={[0.025, 0.04, 2, 4]} />
             <meshStandardMaterial color="#333" metalness={0.6} />
           </mesh>
           <mesh position={[0, 2.05, 0]}>
-            <sphereGeometry args={[0.05, 6, 6]} />
-            <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={1.5} />
+            <sphereGeometry args={[0.05, 4, 4]} />
+            <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={2} />
           </mesh>
-          <pointLight position={[0, 2, 0]} intensity={0.12} distance={5} color="#FFD060" />
         </group>
       ))}
     </group>
@@ -557,16 +552,28 @@ function CityPlayer({ position, name }: { position: [number, number, number]; na
   );
 }
 
-// ── Camera Follow ──
+// ── Camera Follow (tight lock on player) ──
 function CameraFollow({ target, controlsRef }: { target: [number, number, number]; controlsRef: React.RefObject<any> }) {
-  useFrame((_, delta) => {
+  const camOffset = useRef(new THREE.Vector3(8, 12, 14));
+
+  useFrame(({ camera }, delta) => {
     if (!controlsRef.current) return;
     const dt = Math.min(delta, 0.05);
-    const factor = 1 - Math.exp(-6 * dt);
+    const factor = 1 - Math.exp(-10 * dt); // much tighter follow
+
+    // Move orbit target to player
     const t = controlsRef.current.target;
     t.x += (target[0] - t.x) * factor;
     t.z += (target[2] - t.z) * factor;
-    t.y += (0 - t.y) * factor;
+    t.y += (0.5 - t.y) * factor;
+
+    // Also nudge camera position to maintain relative offset
+    const idealPos = new THREE.Vector3(
+      target[0] + camOffset.current.x,
+      camOffset.current.y,
+      target[2] + camOffset.current.z
+    );
+    camera.position.lerp(idealPos, factor * 0.3);
   });
   return null;
 }
@@ -699,22 +706,23 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         <fog attach="fog" args={[dn.fogColor, dn.fogNear, dn.fogFar + 15]} />
 
         <ambientLight intensity={dn.ambientIntensity} color={dn.ambientColor} />
-        <directionalLight position={dn.sunPosition} intensity={dn.sunIntensity} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-far={80} shadow-camera-left={-40} shadow-camera-right={40} shadow-camera-top={40} shadow-camera-bottom={-40} color={dn.sunColor} />
+        <directionalLight position={dn.sunPosition} intensity={dn.sunIntensity} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-far={50} shadow-camera-left={-25} shadow-camera-right={25} shadow-camera-top={25} shadow-camera-bottom={-25} color={dn.sunColor} />
         <directionalLight position={[-10, 18, -8]} intensity={0.15} color="#8899CC" />
         <hemisphereLight args={[dn.skyColor, dn.groundColor, dn.hemiIntensity]} />
         
-        {dn.showStars && <Stars radius={80} depth={50} count={3000} factor={4} saturation={0.2} fade speed={0.5} />}
+        {dn.showStars && <Stars radius={80} depth={50} count={1500} factor={4} saturation={0.2} fade speed={0.5} />}
 
         <OrbitControls
           ref={controlsRef}
-          enableDamping dampingFactor={0.08}
-          enablePan enableZoom enableRotate
-          minDistance={4} maxDistance={50}
-          minPolarAngle={Math.PI / 6} maxPolarAngle={Math.PI / 2.4}
-          zoomSpeed={0.9} rotateSpeed={0.6} panSpeed={0.7}
-          mouseButtons={{ LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN }}
+          enableDamping dampingFactor={0.12}
+          enablePan={false}
+          enableZoom enableRotate
+          minDistance={6} maxDistance={25}
+          minPolarAngle={Math.PI / 6} maxPolarAngle={Math.PI / 2.6}
+          zoomSpeed={0.8} rotateSpeed={0.5}
+          mouseButtons={{ LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE }}
           touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
-          target={[playerPos[0], 0, playerPos[2]]}
+          target={[playerPos[0], 0.5, playerPos[2]]}
         />
         <ControlsUpdater controlsRef={controlsRef} />
         <CameraFollow target={playerPos} controlsRef={controlsRef} />

@@ -3,7 +3,7 @@ import type { CityBuilding } from "@/types/building";
 import { getAllBuildings, generateBuilding, saveBuilding, seedDemoBuildings } from "@/data/buildingRegistry";
 
 const LOAD_RADIUS = 300;
-const NPC_FILL_COUNT = 80;
+const NPC_FILL_COUNT = 40;
 
 const NPC_NAMES = [
   "Apex Digital", "Nebula Labs", "Zenith Corp", "Pulse Studio",
