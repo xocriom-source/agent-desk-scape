@@ -589,8 +589,13 @@ export function OfficeScene({
         />
 
         {/* Rooms */}
-        {rooms.map(room => (
-          <Room3D key={room.id} room={room} />
+        {rooms.map((room) => (
+          <Room3D
+            key={room.id}
+            room={room}
+            clickEnabled={!editMode}
+            onFloorClick={(x, y) => onMapClick?.(x, y)}
+          />
         ))}
 
         {/* Furniture */}
