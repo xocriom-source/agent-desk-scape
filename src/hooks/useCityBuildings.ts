@@ -12,6 +12,15 @@ const NPC_NAMES = [
   "Quantum Forge", "Aether Studio", "Helix Solutions", "Onyx Group",
   "Drift Design", "Blaze Media", "Iron Pixel", "Spark Ventures",
   "Cobalt Systems", "Jade Studios", "Raven Digital", "Storm Labs",
+  "Echo Dynamics", "Lunar Works", "Solar Forge", "Titan Corp",
+  "Crimson Studio", "Azure Labs", "Crystal Hub", "Frost Tech",
+  "Granite Works", "Ivory Design", "Marble Inc", "Opal Creative",
+  "Pearl Studio", "Ruby Labs", "Sapphire Corp", "Topaz Digital",
+  "Amber Works", "Bronze Hub", "Copper Studios", "Diamond Tech",
+  "Emerald Labs", "Garnet Corp", "Indigo Studio", "Jasper Works",
+  "Lapis Digital", "Malachite Lab", "Nickel Corp", "Obsidian Hub",
+  "Platinum Studio", "Quartz Labs", "Rose Gold Inc", "Silver Digital",
+  "Tungsten Works", "Uranium Labs", "Vermillion Corp", "Wolfram Studio",
 ];
 
 const NPC_TYPES = ["tech", "creator", "startup", "agency", "dev"];
