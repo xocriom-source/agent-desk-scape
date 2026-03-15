@@ -865,6 +865,9 @@ export function OfficeScene({
 
           {/* Player */}
           <Player3D player={player} config={playerConfig} />
+
+          {/* Walking dust particles */}
+          <WalkingDust player={player} />
         </group>
       </Canvas>
     </div>

@@ -4,6 +4,7 @@ import { OfficeScene } from "@/components/office/3d/OfficeScene";
 import { TopBar } from "@/components/office/TopBar";
 import { ActionBar } from "@/components/office/ActionBar";
 import { ActivityLog } from "@/components/office/ActivityLog";
+import { MiniMap } from "@/components/office/MiniMap";
 import { AgentPanel } from "@/components/office/AgentPanel";
 import { CharacterCustomizer, type PlayerConfig } from "@/components/office/CharacterCustomizer";
 import { RoomEditor } from "@/components/office/RoomEditor";
