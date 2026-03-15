@@ -406,7 +406,7 @@ export default function Landing() {
             </span>
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-center text-gray-900 mb-4">
-            10 módulos para seu negócio
+            14 módulos para seu negócio
           </h2>
           <p className="text-gray-500 text-center max-w-2xl mx-auto text-lg mb-16">
             Do Feed Social ao Marketplace — tudo que seu prédio precisa para prosperar na cidade.
