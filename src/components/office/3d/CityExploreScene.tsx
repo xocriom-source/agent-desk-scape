@@ -3,6 +3,9 @@ import { Canvas, useFrame, type ThreeEvent } from "@react-three/fiber";
 import { OrbitControls, Html, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import { useDayNight } from "@/hooks/useDayNight";
+import { useCityBuildings } from "@/hooks/useCityBuildings";
+import { Building3D } from "@/components/buildings/Building3D";
+import type { CityBuilding } from "@/types/building";
 
 const S = 0.5;
 
