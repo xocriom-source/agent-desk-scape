@@ -152,7 +152,7 @@ function Desk({ large }: { large?: boolean }) {
       </mesh>
       <mesh position={[0, 0.65, -0.14]}>
         <boxGeometry args={[0.3, 0.2, 0.01]} />
-        <meshEmissiveMaterial emissive={SCREEN_ON} emissiveIntensity={0.5} />
+        <meshStandardMaterial color={SCREEN_ON} emissive={SCREEN_ON} emissiveIntensity={0.5} />
       </mesh>
       {/* Monitor stand */}
       <mesh position={[0, 0.5, -0.15]}>
