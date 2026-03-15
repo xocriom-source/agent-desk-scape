@@ -21,6 +21,7 @@ export default function Signup() {
         "agentoffice_user",
         JSON.stringify({ email, name, companyName: companyName || `${name}'s Office` })
       );
+      localStorage.removeItem("skipLobby");
       navigate("/spaces");
     }, 800);
   };
