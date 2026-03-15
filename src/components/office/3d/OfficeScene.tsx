@@ -392,9 +392,9 @@ function useWalkAnimation(
     const dx = Math.abs(targetX - smoothPos.current.x);
     const dz = Math.abs(targetZ - smoothPos.current.z);
     const moving = dx > 0.005 || dz > 0.005;
-    ref.current.position.set(smoothPos.current.x, 0, smoothPos.current.z);
-    if (moving) ref.current.position.y = Math.abs(Math.sin(Date.now() * 0.015)) * 0.025;
-    else ref.current.position.y = Math.sin(Date.now() * 0.003) * 0.008;
+    ref.current.position.set(smoothPos.current.x, 0.01, smoothPos.current.z);
+    if (moving) ref.current.position.y = 0.01 + Math.abs(Math.sin(Date.now() * 0.015)) * 0.025;
+    else ref.current.position.y = 0.01 + Math.abs(Math.sin(Date.now() * 0.003)) * 0.008;
     const swing = moving ? Math.sin(Date.now() * 0.016) * 0.5 : 0;
     if (leftLeg.current) leftLeg.current.rotation.x = moving ? swing : leftLeg.current.rotation.x * 0.85;
     if (rightLeg.current) rightLeg.current.rotation.x = moving ? -swing : rightLeg.current.rotation.x * 0.85;
@@ -551,9 +551,9 @@ function Player3D({ player, config }: { player: Player; config?: { color: string
     const speed = Math.hypot(player.x - prevPos.current.x, player.y - prevPos.current.y);
     const moving = speed > 0.001;
     prevPos.current = { x: player.x, y: player.y };
-    ref.current.position.set(smoothPos.current.x, 0, smoothPos.current.z);
-    if (moving) ref.current.position.y = Math.abs(Math.sin(Date.now() * 0.015)) * 0.025;
-    else ref.current.position.y = Math.sin(Date.now() * 0.003) * 0.008;
+    ref.current.position.set(smoothPos.current.x, 0.01, smoothPos.current.z);
+    if (moving) ref.current.position.y = 0.01 + Math.abs(Math.sin(Date.now() * 0.015)) * 0.025;
+    else ref.current.position.y = 0.01 + Math.abs(Math.sin(Date.now() * 0.003)) * 0.008;
     let diff = player.angle - smoothAngle.current;
     while (diff > Math.PI) diff -= Math.PI * 2;
     while (diff < -Math.PI) diff += Math.PI * 2;
