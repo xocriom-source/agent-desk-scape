@@ -509,6 +509,80 @@ function Agent3D({ agent, selected, onClick }: { agent: Agent; selected?: boolea
   );
 }
 
+// ── Walking dust particles ──
+function WalkingDust({ player }: { player: Player }) {
+  const particles = useRef<THREE.InstancedMesh>(null);
+  const dataRef = useRef<{ positions: Float32Array; velocities: Float32Array; lifetimes: Float32Array; spawnTimer: number }>({
+    positions: new Float32Array(30 * 3),
+    velocities: new Float32Array(30 * 3),
+    lifetimes: new Float32Array(30).fill(-1),
+    spawnTimer: 0,
+  });
+  const prevPos = useRef({ x: player.x, y: player.y });
+  const dummy = useRef(new THREE.Object3D());
+  const color = useRef(new THREE.Color("#C8B898"));
+
+  useFrame((_, delta) => {
+    if (!particles.current) return;
+    const d = dataRef.current;
+    const dt = Math.min(delta, 0.05);
+
+    const dx = player.x - prevPos.current.x;
+    const dy = player.y - prevPos.current.y;
+    const speed = Math.hypot(dx, dy);
+    prevPos.current = { x: player.x, y: player.y };
+
+    // Spawn particles when moving
+    if (speed > 0.01) {
+      d.spawnTimer += dt;
+      if (d.spawnTimer > 0.06) {
+        d.spawnTimer = 0;
+        for (let i = 0; i < 30; i++) {
+          if (d.lifetimes[i] <= 0) {
+            d.positions[i * 3] = player.x * S + (Math.random() - 0.5) * 0.08;
+            d.positions[i * 3 + 1] = 0.02;
+            d.positions[i * 3 + 2] = player.y * S + (Math.random() - 0.5) * 0.08;
+            d.velocities[i * 3] = (Math.random() - 0.5) * 0.3;
+            d.velocities[i * 3 + 1] = Math.random() * 0.4 + 0.1;
+            d.velocities[i * 3 + 2] = (Math.random() - 0.5) * 0.3;
+            d.lifetimes[i] = 0.4 + Math.random() * 0.3;
+            break;
+          }
+        }
+      }
+    }
+
+    // Update all particles
+    for (let i = 0; i < 30; i++) {
+      if (d.lifetimes[i] > 0) {
+        d.lifetimes[i] -= dt;
+        d.positions[i * 3] += d.velocities[i * 3] * dt;
+        d.positions[i * 3 + 1] += d.velocities[i * 3 + 1] * dt;
+        d.positions[i * 3 + 2] += d.velocities[i * 3 + 2] * dt;
+        d.velocities[i * 3 + 1] -= 0.5 * dt; // gravity
+
+        const life = Math.max(0, d.lifetimes[i]);
+        const scale = life * 0.06;
+        dummy.current.position.set(d.positions[i * 3], d.positions[i * 3 + 1], d.positions[i * 3 + 2]);
+        dummy.current.scale.setScalar(scale);
+      } else {
+        dummy.current.scale.setScalar(0);
+        dummy.current.position.set(0, -10, 0);
+      }
+      dummy.current.updateMatrix();
+      particles.current.setMatrixAt(i, dummy.current.matrix);
+    }
+    particles.current.instanceMatrix.needsUpdate = true;
+  });
+
+  return (
+    <instancedMesh ref={particles} args={[undefined, undefined, 30]}>
+      <sphereGeometry args={[1, 6, 6]} />
+      <meshBasicMaterial color={color.current} transparent opacity={0.5} />
+    </instancedMesh>
+  );
+}
+
 // ── Player 3D (rotation-based, smooth interpolation) ──
 function Player3D({ player, config }: { player: Player; config?: { color: string; skinTone?: string } }) {
   const ref = useRef<THREE.Group>(null);
@@ -539,21 +613,18 @@ function Player3D({ player, config }: { player: Player; config?: { color: string
 
     ref.current.position.set(smoothPos.current.x, 0, smoothPos.current.z);
 
-    // Walking bounce or idle bob
     if (moving) {
       ref.current.position.y = Math.abs(Math.sin(Date.now() * 0.015)) * 0.025;
     } else {
       ref.current.position.y = Math.sin(Date.now() * 0.003) * 0.008;
     }
 
-    // Smooth rotation using the player's angle
     let diff = player.angle - smoothAngle.current;
     while (diff > Math.PI) diff -= Math.PI * 2;
     while (diff < -Math.PI) diff += Math.PI * 2;
     smoothAngle.current += diff * lerpRot;
     ref.current.rotation.y = smoothAngle.current;
 
-    // Leg & arm swing
     const swing = moving ? Math.sin(Date.now() * 0.016) * 0.5 : 0;
     if (leftLeg.current) leftLeg.current.rotation.x = moving ? swing : leftLeg.current.rotation.x * 0.85;
     if (rightLeg.current) rightLeg.current.rotation.x = moving ? -swing : rightLeg.current.rotation.x * 0.85;
@@ -563,7 +634,6 @@ function Player3D({ player, config }: { player: Player; config?: { color: string
 
   return (
     <group ref={ref}>
-      {/* Legs */}
       <mesh ref={leftLeg} position={[-0.05, 0.06, 0]}>
         <boxGeometry args={[0.06, 0.12, 0.08]} />
         <meshStandardMaterial color="#2D3748" />
@@ -572,12 +642,10 @@ function Player3D({ player, config }: { player: Player; config?: { color: string
         <boxGeometry args={[0.06, 0.12, 0.08]} />
         <meshStandardMaterial color="#2D3748" />
       </mesh>
-      {/* Body */}
       <mesh position={[0, 0.25, 0]} castShadow>
         <boxGeometry args={[0.24, 0.24, 0.13]} />
         <meshStandardMaterial color={color} />
       </mesh>
-      {/* Arms */}
       <mesh ref={leftArm} position={[-0.155, 0.24, 0]}>
         <boxGeometry args={[0.05, 0.19, 0.07]} />
         <meshStandardMaterial color={color} />
@@ -586,7 +654,6 @@ function Player3D({ player, config }: { player: Player; config?: { color: string
         <boxGeometry args={[0.05, 0.19, 0.07]} />
         <meshStandardMaterial color={color} />
       </mesh>
-      {/* Hands */}
       <mesh position={[-0.155, 0.13, 0]}>
         <boxGeometry args={[0.045, 0.045, 0.045]} />
         <meshStandardMaterial color={skin} />
@@ -595,12 +662,10 @@ function Player3D({ player, config }: { player: Player; config?: { color: string
         <boxGeometry args={[0.045, 0.045, 0.045]} />
         <meshStandardMaterial color={skin} />
       </mesh>
-      {/* Head */}
       <mesh position={[0, 0.45, 0]} castShadow>
         <boxGeometry args={[0.19, 0.19, 0.17]} />
         <meshStandardMaterial color={skin} />
       </mesh>
-      {/* Eyes */}
       {[-0.04, 0.04].map((ox, i) => (
         <group key={i}>
           <mesh position={[ox, 0.46, 0.086]}>
@@ -613,16 +678,13 @@ function Player3D({ player, config }: { player: Player; config?: { color: string
           </mesh>
         </group>
       ))}
-      {/* Shadow */}
       <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[0.14, 16]} />
         <meshBasicMaterial color="#000" transparent opacity={0.18} />
       </mesh>
-      {/* Crown */}
       <Html position={[0, 0.68, 0]} center>
         <span className="text-sm select-none pointer-events-none">👑</span>
       </Html>
-      {/* Name tag */}
       <Html position={[0, 0.8, 0]} center>
         <div className="flex items-center gap-1 px-2 py-0.5 rounded-full whitespace-nowrap pointer-events-none select-none" style={{ backgroundColor: color }}>
           <div className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
@@ -803,6 +865,9 @@ export function OfficeScene({
 
           {/* Player */}
           <Player3D player={player} config={playerConfig} />
+
+          {/* Walking dust particles */}
+          <WalkingDust player={player} />
         </group>
       </Canvas>
     </div>
