@@ -90,6 +90,7 @@ export function generateBuilding(ownerName: string, accountType?: string): CityB
     links: [],
     createdAt: new Date().toISOString(),
     claimed: false,
+    transportType: STYLE_TRANSPORT_MAP[style] || "car",
   };
 }
 
