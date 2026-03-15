@@ -30,8 +30,13 @@ const Index = () => {
 
   useEffect(() => {
     const user = localStorage.getItem("agentoffice_user");
-    if (!user) { navigate("/"); return; }
+    if (!user) { 
+      console.log("[AgentOffice] No user found, redirecting to landing");
+      navigate("/"); 
+      return; 
+    }
     const parsed = JSON.parse(user);
+    console.log("[AgentOffice] User loaded:", parsed.name);
     setPlayerConfig((prev) => ({ ...prev, name: parsed.name || "Chefe" }));
   }, [navigate]);
 
