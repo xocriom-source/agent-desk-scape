@@ -206,31 +206,68 @@ function BuildingExterior({
       {/* West wall windows */}
       {windowsAlongZ(winY, westX - wallT - 0.001, nWinZ, cz - bh / 2, bh)}
 
-      {/* ── Ceiling lights (fluorescent) ── */}
+      {/* ── Ceiling lights (warm hanging bulbs - BAYC bar style) ── */}
       {Array.from({ length: 8 }).map((_, i) => {
         const col = i % 4;
         const row = Math.floor(i / 4);
+        const bulbColors = ["#FFB347", "#FF6B6B", "#4ECDC4", "#FFE66D"];
         return (
           <group key={`cl${i}`}>
-            <mesh position={[cx - bw * 0.3 + col * (bw * 0.2), foundH + wallH - 0.04, cz - bh * 0.2 + row * (bh * 0.4)]}>
-              <boxGeometry args={[0.6, 0.025, 0.12]} />
-              <meshStandardMaterial color="#FFF8E8" emissive="#FFF8E8" emissiveIntensity={0.4} />
+            {/* Hanging wire */}
+            <mesh position={[cx - bw * 0.3 + col * (bw * 0.2), foundH + wallH - 0.15, cz - bh * 0.2 + row * (bh * 0.4)]}>
+              <cylinderGeometry args={[0.005, 0.005, 0.2, 4]} />
+              <meshBasicMaterial color="#333" />
+            </mesh>
+            {/* Warm bulb */}
+            <mesh position={[cx - bw * 0.3 + col * (bw * 0.2), foundH + wallH - 0.28, cz - bh * 0.2 + row * (bh * 0.4)]}>
+              <sphereGeometry args={[0.04, 8, 8]} />
+              <meshStandardMaterial color={bulbColors[col]} emissive={bulbColors[col]} emissiveIntensity={0.8} />
             </mesh>
             <pointLight
-              position={[cx - bw * 0.3 + col * (bw * 0.2), foundH + wallH - 0.1, cz - bh * 0.2 + row * (bh * 0.4)]}
-              intensity={0.12}
+              position={[cx - bw * 0.3 + col * (bw * 0.2), foundH + wallH - 0.3, cz - bh * 0.2 + row * (bh * 0.4)]}
+              intensity={0.15}
               distance={4}
-              color="#FFF5DC"
+              color={bulbColors[col]}
             />
           </group>
         );
       })}
 
-      {/* ── Ground plane around building ── */}
+      {/* ── String lights along north wall ── */}
+      {Array.from({ length: 20 }).map((_, i) => {
+        const t = i / 19;
+        const lx = cx - bw * 0.45 + t * bw * 0.9;
+        const ly = foundH + wallH - 0.08;
+        const lz = northZ + wallT * 0.5;
+        const sag = Math.sin(t * Math.PI) * 0.15;
+        const colors = ["#FF6B6B", "#4ECDC4", "#FFE66D", "#FF6BB5", "#6BCB77"];
+        return (
+          <mesh key={`sl${i}`} position={[lx, ly - sag, lz]}>
+            <sphereGeometry args={[0.02, 6, 6]} />
+            <meshStandardMaterial color={colors[i % 5]} emissive={colors[i % 5]} emissiveIntensity={1.2} />
+          </mesh>
+        );
+      })}
+
+      {/* ── Neon sign on north wall (BAYC style) ── */}
+      <mesh position={[cx, foundH + wallH * 0.65, northZ + wallT * 0.6]}>
+        <boxGeometry args={[1.2, 0.3, 0.02]} />
+        <meshStandardMaterial color="#00CED1" emissive="#00CED1" emissiveIntensity={1.5} transparent opacity={0.9} />
+      </mesh>
+      <pointLight position={[cx, foundH + wallH * 0.65, northZ + wallT + 0.3]} intensity={0.3} distance={5} color="#00CED1" />
+
+      {/* ── Ground plane around building (dark swamp) ── */}
       <mesh position={[cx, -0.01, cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[60, 60]} />
-        <meshStandardMaterial color="#3A3A3A" />
+        <meshStandardMaterial color="#1A2810" />
       </mesh>
+      {/* Swamp water patches */}
+      {[[-3, -2], [5, -4], [-4, 5], [7, 6]].map(([ox, oz], i) => (
+        <mesh key={`swamp${i}`} position={[cx + ox * 2, -0.005, cz + oz * 2]} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[1.5 + i * 0.3, 12]} />
+          <meshStandardMaterial color="#1A3020" transparent opacity={0.7} />
+        </mesh>
+      ))}
     </group>
   );
 }
