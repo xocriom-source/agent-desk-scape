@@ -24,6 +24,8 @@ interface TopBarProps {
   onOpenNPCs?: () => void;
   onOpenObservation?: () => void;
   onOpenDistricts?: () => void;
+  onOpenEvents?: () => void;
+  onOpenCityChat?: () => void;
   notifications?: Record<string, number>;
 }
 
