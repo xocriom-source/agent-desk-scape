@@ -402,8 +402,8 @@ function VendingMachine() {
         <meshStandardMaterial color="#263238" />
       </mesh>
       {["#F44336", "#4CAF50", "#FF9800", "#2196F3", "#E91E63", "#FFC107"].map((c, i) => (
-        <mesh key={i} position={[-0.1 + (i % 3) * 0.1, 0.7 - Math.floor(i / 3) * 0.15, 0.185]}>
-          <cylinderGeometry args={[0.025, 0.025, 0.06, 8]} rotation={[Math.PI / 2, 0, 0]} />
+        <mesh key={i} position={[-0.1 + (i % 3) * 0.1, 0.7 - Math.floor(i / 3) * 0.15, 0.185]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.025, 0.025, 0.06, 8]} />
           <meshStandardMaterial color={c} />
         </mesh>
       ))}
