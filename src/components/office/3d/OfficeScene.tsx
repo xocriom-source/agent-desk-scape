@@ -137,36 +137,36 @@ function BuildingExterior({
   // Brick pattern helper
   const brickLines = (count: number) => Array.from({ length: count }, (_, i) => (i + 1) / (count + 1));
 
-  // Window generation
+  // Memoized window lit states for exterior walls
+  const extWindowStates = useMemo(() => {
+    const states: Record<string, boolean[]> = {};
+    const genKey = (axis: string, fixedPos: number, count: number) => {
+      const key = `${axis}-${fixedPos.toFixed(2)}`;
+      if (!states[key]) states[key] = Array.from({ length: count }, () => Math.random() > 0.3);
+      return states[key];
+    };
+    return genKey;
+  }, []);
+
+  // Window generation (no Math.random in render)
   const makeWindows = (axis: 'x' | 'z', fixedPos: number, wallStart: number, wallSpan: number, y: number, count: number) => {
     const spacing = wallSpan / (count + 1);
+    const litStates = extWindowStates(axis, fixedPos, count);
     return Array.from({ length: count }).map((_, i) => {
       const offset = wallStart + spacing * (i + 1);
-      const lit = Math.random() > 0.3;
+      const lit = litStates[i];
       const pos: [number, number, number] = axis === 'x' 
         ? [offset, y, fixedPos]
         : [fixedPos, y, offset];
-      const frameSize: [number, number, number] = axis === 'x'
-        ? [0.32, 0.36, 0.04]
-        : [0.04, 0.36, 0.32];
-      const glassSize: [number, number, number] = axis === 'x'
-        ? [0.26, 0.3, 0.02]
-        : [0.02, 0.3, 0.26];
-      const glassOff: [number, number, number] = axis === 'x'
-        ? [0, 0, 0.01]
-        : [0.01, 0, 0];
-      const sillSize: [number, number, number] = axis === 'x'
-        ? [0.38, 0.03, 0.07]
-        : [0.07, 0.03, 0.38];
-      const sillOff: [number, number, number] = axis === 'x'
-        ? [0, -0.2, 0.04]
-        : [0.04, -0.2, 0];
+      // Single mesh per window (simplified for perf)
+      const size: [number, number, number] = axis === 'x'
+        ? [0.28, 0.32, 0.03]
+        : [0.03, 0.32, 0.28];
       return (
-        <group key={`w${axis}${i}-${fixedPos}`} position={pos}>
-          <mesh><boxGeometry args={frameSize} /><meshStandardMaterial color={windowFrame} /></mesh>
-          <mesh position={glassOff}><boxGeometry args={glassSize} /><meshStandardMaterial color={lit ? windowGlassLit : windowGlassDark} emissive={lit ? "#FFD060" : "#000"} emissiveIntensity={lit ? 0.3 : 0} /></mesh>
-          <mesh position={sillOff}><boxGeometry args={sillSize} /><meshStandardMaterial color={trimColor} /></mesh>
-        </group>
+        <mesh key={`w${axis}${i}-${fixedPos}`} position={pos}>
+          <boxGeometry args={size} />
+          <meshStandardMaterial color={lit ? windowGlassLit : windowGlassDark} emissive={lit ? "#FFD060" : "#000"} emissiveIntensity={lit ? 0.3 : 0} />
+        </mesh>
       );
     });
   };
