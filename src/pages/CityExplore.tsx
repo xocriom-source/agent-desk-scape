@@ -68,6 +68,7 @@ export default function CityExplore() {
           vehicleType={currentVehicle}
           vehicleColor={vehicleColor}
           onVehicleToggle={setInVehicle}
+          onBuildingClick={(id) => navigate(`/building/${id}`)}
           onReady={() => {
             const el = document.getElementById("city-loader");
             if (el) el.style.display = "none";

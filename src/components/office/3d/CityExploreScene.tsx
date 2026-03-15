@@ -89,30 +89,34 @@ function StaticBuilding({ x, z, w, d, h, color }: { x: number; z: number; w: num
   );
 }
 
-// ── Lightweight dynamic building (NO Html labels, NO Text neon) ──
-function LightBuilding3D({ building, highlighted }: { building: CityBuilding; highlighted?: boolean }) {
+// ── Lightweight dynamic building (clickable, NO Html) ──
+function LightBuilding3D({ building, highlighted, onClick }: { building: CityBuilding; highlighted?: boolean; onClick?: () => void }) {
   const h = building.height;
   const w = 2.2;
   const color = building.primaryColor;
+  const [hovered, setHovered] = useState(false);
 
   return (
-    <group position={[building.coordinates.x, 0, building.coordinates.z]}>
+    <group
+      position={[building.coordinates.x, 0, building.coordinates.z]}
+      onClick={(e) => { e.stopPropagation(); onClick?.(); }}
+      onPointerOver={() => setHovered(true)}
+      onPointerOut={() => setHovered(false)}
+    >
       <mesh position={[0, h / 2, 0]}>
         <boxGeometry args={[w, h, w]} />
         <meshStandardMaterial
           color={color}
-          emissive={highlighted ? color : "#000000"}
-          emissiveIntensity={highlighted ? 0.3 : 0}
+          emissive={highlighted || hovered ? color : "#000000"}
+          emissiveIntensity={highlighted ? 0.3 : hovered ? 0.15 : 0}
           roughness={0.6}
           metalness={0.2}
         />
       </mesh>
-      {/* Roof */}
       <mesh position={[0, h + 0.15, 0]}>
         <boxGeometry args={[w + 0.3, 0.3, w + 0.3]} />
         <meshStandardMaterial color={building.secondaryColor} roughness={0.4} metalness={0.3} />
       </mesh>
-      {/* Simplified windows - 2 per floor, front only */}
       {Array.from({ length: Math.min(building.floors, 5) }).map((_, floor) => (
         <group key={floor}>
           {[-0.4, 0.4].map((ox, i) => (
@@ -123,12 +127,20 @@ function LightBuilding3D({ building, highlighted }: { building: CityBuilding; hi
           ))}
         </group>
       ))}
-      {/* Highlight ring */}
-      {highlighted && (
+      {(highlighted || hovered) && (
         <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[w, w + 0.5, 16]} />
-          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.8} transparent opacity={0.6} />
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.8} transparent opacity={hovered ? 0.4 : 0.6} />
         </mesh>
+      )}
+      {/* Hover label - only Html that appears on demand */}
+      {hovered && (
+        <Html position={[0, h + 1, 0]} center>
+          <div className="px-2 py-1 rounded-lg bg-gray-900/90 border border-gray-700 text-white text-[10px] whitespace-nowrap pointer-events-none backdrop-blur-sm">
+            <span className="font-bold">{building.name}</span>
+            <span className="text-gray-400 ml-1">• Visitar</span>
+          </div>
+        </Html>
       )}
     </group>
   );
@@ -371,9 +383,10 @@ interface CityExploreSceneProps {
   vehicleColor?: string;
   onVehicleToggle?: (val: boolean) => void;
   onReady?: () => void;
+  onBuildingClick?: (buildingId: string) => void;
 }
 
-export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, vehicleColor, onVehicleToggle, onReady }: CityExploreSceneProps) {
+export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, vehicleColor, onVehicleToggle, onReady, onBuildingClick }: CityExploreSceneProps) {
   const controlsRef = useRef<any>(null);
   const dn = useDayNight();
 
@@ -525,7 +538,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
 
         {/* Dynamic buildings (lightweight) */}
         {dynamicBuildings.map(b => (
-          <LightBuilding3D key={b.id} building={b} highlighted={userBuilding?.id === b.id} />
+          <LightBuilding3D key={b.id} building={b} highlighted={userBuilding?.id === b.id} onClick={() => onBuildingClick?.(b.id)} />
         ))}
 
         {/* Only show vehicle for user building */}
