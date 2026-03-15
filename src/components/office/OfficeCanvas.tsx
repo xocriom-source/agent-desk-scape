@@ -281,18 +281,21 @@ export const OfficeCanvas = memo(function OfficeCanvas({
       // Body
       const bw = TILE_SIZE * 0.5;
       const bh = TILE_SIZE * 0.6;
+      const pColor = playerConfig?.color || "#4F46E5";
       // Hair
       ctx.fillStyle = "#1E1B4B";
-      ctx.beginPath();
-      ctx.roundRect(px - bw / 2 - 2, py - bh / 2 + bob - 14, bw + 4, bh * 0.35, [6, 6, 0, 0]);
-      ctx.fill();
+      if (playerConfig?.hairStyle !== "none") {
+        ctx.beginPath();
+        ctx.roundRect(px - bw / 2 - 2, py - bh / 2 + bob - 14, bw + 4, bh * 0.35, [6, 6, 0, 0]);
+        ctx.fill();
+      }
       // Face
       ctx.fillStyle = "#FBBF8B";
       ctx.beginPath();
       ctx.roundRect(px - bw / 2 + 2, py - bh / 2 + bob - 4, bw - 4, bh * 0.3, 2);
       ctx.fill();
       // Outfit
-      ctx.fillStyle = "#4F46E5";
+      ctx.fillStyle = pColor;
       ctx.beginPath();
       ctx.roundRect(px - bw / 2, py + bob, bw, bh * 0.5, [0, 0, 4, 4]);
       ctx.fill();
