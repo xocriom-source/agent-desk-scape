@@ -412,7 +412,7 @@ export default function Landing() {
             Do Feed Social ao Marketplace — tudo que seu prédio precisa para prosperar na cidade.
           </p>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {ECOSYSTEM_MODULES.map((mod, i) => (
               <motion.div
                 key={mod.name}
