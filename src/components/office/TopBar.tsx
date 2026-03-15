@@ -14,6 +14,10 @@ interface TopBarProps {
   onOpenTasks?: () => void;
   onOpenMessaging?: () => void;
   onOpenGallery?: () => void;
+  onOpenAnalytics?: () => void;
+  onOpenMarketplace?: () => void;
+  onOpenGovernance?: () => void;
+  onOpenStudios?: () => void;
 }
 
 function LocalClock() {
