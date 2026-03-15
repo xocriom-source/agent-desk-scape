@@ -1,6 +1,6 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import type { Agent, AgentLog, Player } from "@/types/agent";
-import { isWalkable, ROOMS, getRoomAt } from "@/data/officeMap";
+import { isWalkable, getRoomAt } from "@/data/officeMap";
 
 const AGENT_CONFIGS = [
   { name: "Atlas", role: "Pesquisador IA", color: "#3B82F6", emoji: "🔬" },
@@ -29,23 +29,101 @@ const AGENT_STARTS = [
   { x: 20, y: 3 }, { x: 3, y: 16 }, { x: 32, y: 13 }, { x: 16, y: 29 },
 ];
 
+type Tile = { x: number; y: number };
+
 function createAgents(): Agent[] {
   return AGENT_CONFIGS.map((cfg, i) => {
     const start = AGENT_STARTS[i];
     const room = getRoomAt(start.x, start.y);
     return {
       id: `agent-${i}`,
-      name: cfg.name, role: cfg.role, color: cfg.color,
+      name: cfg.name,
+      role: cfg.role,
+      color: cfg.color,
       status: (["active", "thinking", "idle", "busy"] as const)[i % 4],
-      avatar: i, x: start.x, y: start.y, targetX: start.x, targetY: start.y,
-      tasks: [TASKS[i], TASKS[(i + 2) % 8]], currentTask: TASKS[i],
+      avatar: i,
+      x: start.x,
+      y: start.y,
+      targetX: start.x,
+      targetY: start.y,
+      tasks: [TASKS[i], TASKS[(i + 2) % 8]],
+      currentTask: TASKS[i],
       room: room?.name || "Corredor",
       logs: [
-        { id: `log-${i}-0`, timestamp: new Date(Date.now() - 60000), message: "Conectado ao escritório virtual", type: "success" as const },
-        { id: `log-${i}-1`, timestamp: new Date(), message: `Iniciou: ${TASKS[i].slice(0, 40)}...`, type: "info" as const },
+        {
+          id: `log-${i}-0`,
+          timestamp: new Date(Date.now() - 60000),
+          message: "Conectado ao escritório virtual",
+          type: "success" as const,
+        },
+        {
+          id: `log-${i}-1`,
+          timestamp: new Date(),
+          message: `Iniciou: ${TASKS[i].slice(0, 40)}...`,
+          type: "info" as const,
+        },
       ],
     };
   });
+}
+
+function keyToMoveDelta(keys: Set<string>) {
+  const has = (k: string) => keys.has(k) || keys.has(k.toLowerCase()) || keys.has(k.toUpperCase());
+  let dx = 0;
+  let dy = 0;
+
+  if (has("ArrowUp") || has("w")) dy -= 1;
+  if (has("ArrowDown") || has("s")) dy += 1;
+  if (has("ArrowLeft") || has("a")) dx -= 1;
+  if (has("ArrowRight") || has("d")) dx += 1;
+
+  return { dx, dy };
+}
+
+function bfsPath(start: Tile, goal: Tile): Tile[] {
+  if (start.x === goal.x && start.y === goal.y) return [];
+  if (!isWalkable(goal.x, goal.y)) return [];
+
+  const key = (t: Tile) => `${t.x},${t.y}`;
+  const q: Tile[] = [start];
+  const prev = new Map<string, string>();
+  const seen = new Set<string>([key(start)]);
+
+  const dirs = [
+    { x: 1, y: 0 },
+    { x: -1, y: 0 },
+    { x: 0, y: 1 },
+    { x: 0, y: -1 },
+  ];
+
+  while (q.length) {
+    const cur = q.shift()!;
+    for (const d of dirs) {
+      const nx = cur.x + d.x;
+      const ny = cur.y + d.y;
+      if (!isWalkable(nx, ny)) continue;
+      const n: Tile = { x: nx, y: ny };
+      const nk = key(n);
+      if (seen.has(nk)) continue;
+      seen.add(nk);
+      prev.set(nk, key(cur));
+      if (nx === goal.x && ny === goal.y) {
+        // reconstruct
+        const path: Tile[] = [];
+        let curKey = nk;
+        while (curKey !== key(start)) {
+          const [x, y] = curKey.split(",").map(Number);
+          path.push({ x, y });
+          curKey = prev.get(curKey)!;
+        }
+        path.reverse();
+        return path;
+      }
+      q.push(n);
+    }
+  }
+
+  return [];
 }
 
 export function useOfficeState(playerName: string = "Você") {
@@ -56,45 +134,108 @@ export function useOfficeState(playerName: string = "Você") {
   const [chatOpen, setChatOpen] = useState(false);
   const [nearbyAgent, setNearbyAgent] = useState<Agent | null>(null);
 
-  // Movement with key-repeat support
-  const keysDown = useRef<Set<string>>(new Set());
-  const moveInterval = useRef<number>(0);
+  // Click-to-move path
+  const pathRef = useRef<Tile[]>([]);
+  const walkingInterval = useRef<number>(0);
 
-  const movePlayer = useCallback((dx: number, dy: number) => {
+  const clearPath = useCallback(() => {
+    pathRef.current = [];
+    if (walkingInterval.current) {
+      clearInterval(walkingInterval.current);
+      walkingInterval.current = 0;
+    }
+  }, []);
+
+  const tryMovePlayer = useCallback((dx: number, dy: number) => {
     setPlayer((p) => {
       const nx = p.x + dx;
       const ny = p.y + dy;
-      if (!isWalkable(nx, ny)) return p; // Collision — blocked by walls/furniture
+      if (!isWalkable(nx, ny)) return p;
       return { ...p, x: nx, y: ny };
     });
   }, []);
 
-  // Process held keys for smooth continuous movement
+  const movePlayer = useCallback(
+    (dx: number, dy: number) => {
+      // manual movement cancels click-to-move
+      clearPath();
+
+      // Allow diagonal feeling: attempt x then y
+      if (dx !== 0) tryMovePlayer(Math.sign(dx), 0);
+      if (dy !== 0) tryMovePlayer(0, Math.sign(dy));
+    },
+    [tryMovePlayer, clearPath]
+  );
+
+  const setPlayerDestination = useCallback((x: number, y: number) => {
+    if (chatOpen) return;
+
+    const start = { x: player.x, y: player.y };
+    const goal = { x, y };
+    const path = bfsPath(start, goal);
+    if (!path.length) return;
+
+    pathRef.current = path;
+    if (!walkingInterval.current) {
+      walkingInterval.current = window.setInterval(() => {
+        const next = pathRef.current.shift();
+        if (!next) {
+          clearPath();
+          return;
+        }
+        setPlayer((p) => ({ ...p, x: next.x, y: next.y }));
+      }, 85);
+    }
+  }, [player.x, player.y, chatOpen, clearPath]);
+
+  // Key repeat movement (hold keys)
+  const keysDown = useRef<Set<string>>(new Set());
+  const moveInterval = useRef<number>(0);
+
   useEffect(() => {
     const processKeys = () => {
       if (chatOpen) return;
-      const keys = keysDown.current;
-      if (keys.has("ArrowUp") || keys.has("w") || keys.has("W")) movePlayer(0, -1);
-      else if (keys.has("ArrowDown") || keys.has("s") || keys.has("S")) movePlayer(0, 1);
-      else if (keys.has("ArrowLeft") || keys.has("a") || keys.has("A")) movePlayer(-1, 0);
-      else if (keys.has("ArrowRight") || keys.has("d") || keys.has("D")) movePlayer(1, 0);
+      const { dx, dy } = keyToMoveDelta(keysDown.current);
+      if (dx === 0 && dy === 0) return;
+      movePlayer(dx, dy);
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
-      if (chatOpen || tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (e.target as HTMLElement)?.isContentEditable) return;
-      
-      const moveKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d", "W", "A", "S", "D"];
+      if (
+        chatOpen ||
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        tag === "SELECT" ||
+        (e.target as HTMLElement)?.isContentEditable
+      ) {
+        return;
+      }
+
+      const moveKeys = [
+        "ArrowUp",
+        "ArrowDown",
+        "ArrowLeft",
+        "ArrowRight",
+        "w",
+        "a",
+        "s",
+        "d",
+        "W",
+        "A",
+        "S",
+        "D",
+      ];
+
       if (moveKeys.includes(e.key)) {
         e.preventDefault();
-        if (!keysDown.current.has(e.key)) {
-          keysDown.current.add(e.key);
-          processKeys(); // Immediate first move
-          if (!moveInterval.current) {
-            moveInterval.current = window.setInterval(processKeys, 100); // Faster repeat
-          }
+        keysDown.current.add(e.key);
+        processKeys();
+        if (!moveInterval.current) {
+          moveInterval.current = window.setInterval(processKeys, 80);
         }
       }
+
       if (e.key === " " || e.key === "Enter") {
         e.preventDefault();
         if (nearbyAgent) {
@@ -102,6 +243,7 @@ export function useOfficeState(playerName: string = "Você") {
           setChatOpen(true);
         }
       }
+
       if (e.key === "Escape") {
         setSelectedAgent(null);
         setChatOpen(false);
@@ -131,22 +273,51 @@ export function useOfficeState(playerName: string = "Você") {
       setAgents((prev) =>
         prev.map((agent) => {
           if (Math.random() > 0.3) return agent;
-          const dirs = [{ dx: 0, dy: -1 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 }, { dx: 1, dy: 0 }];
+          const dirs = [
+            { dx: 0, dy: -1 },
+            { dx: 0, dy: 1 },
+            { dx: -1, dy: 0 },
+            { dx: 1, dy: 0 },
+          ];
           const shuffled = dirs.sort(() => Math.random() - 0.5);
           for (const d of shuffled) {
             const nx = agent.x + d.dx;
             const ny = agent.y + d.dy;
             if (isWalkable(nx, ny)) {
               const room = getRoomAt(nx, ny);
-              const newStatus: Agent["status"] = Math.random() > 0.7 ? "thinking" : Math.random() > 0.4 ? "active" : Math.random() > 0.5 ? "busy" : "idle";
-              const msgs = ["Processando dados...", "Aguardando API...", "Tarefa concluída!", "Analisando...", "Compilando...", "Sincronizando...", "Deploy em andamento..."];
+              const newStatus: Agent["status"] =
+                Math.random() > 0.7
+                  ? "thinking"
+                  : Math.random() > 0.4
+                    ? "active"
+                    : Math.random() > 0.5
+                      ? "busy"
+                      : "idle";
+
+              const msgs = [
+                "Processando dados...",
+                "Aguardando API...",
+                "Tarefa concluída!",
+                "Analisando...",
+                "Compilando...",
+                "Sincronizando...",
+                "Deploy em andamento...",
+              ];
               const newLog: AgentLog = {
                 id: `log-${agent.id}-${Date.now()}`,
                 timestamp: new Date(),
                 message: msgs[Math.floor(Math.random() * msgs.length)],
                 type: (["info", "success", "warning"] as const)[Math.floor(Math.random() * 3)],
               };
-              return { ...agent, x: nx, y: ny, status: newStatus, room: room?.name || "Corredor", logs: [newLog, ...agent.logs].slice(0, 15) };
+
+              return {
+                ...agent,
+                x: nx,
+                y: ny,
+                status: newStatus,
+                room: room?.name || "Corredor",
+                logs: [newLog, ...agent.logs].slice(0, 15),
+              };
             }
           }
           return agent;
@@ -164,20 +335,32 @@ export function useOfficeState(playerName: string = "Você") {
 
   // Sync selected agent
   useEffect(() => {
-    if (selectedAgent) {
-      const updated = agents.find((a) => a.id === selectedAgent.id);
-      if (updated) setSelectedAgent(updated);
-    }
+    if (!selectedAgent) return;
+    const updated = agents.find((a) => a.id === selectedAgent.id);
+    if (updated) setSelectedAgent(updated);
   }, [agents, selectedAgent]);
 
-  const allLogs = agents
-    .flatMap((a) => a.logs.map((l) => ({ ...l, agentName: a.name, agentColor: a.color })))
-    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-    .slice(0, 40);
+  const allLogs = useMemo(
+    () =>
+      agents
+        .flatMap((a) => a.logs.map((l) => ({ ...l, agentName: a.name, agentColor: a.color })))
+        .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+        .slice(0, 40),
+    [agents]
+  );
 
   return {
-    agents, player, selectedAgent, setSelectedAgent,
-    showActivityLog, toggleActivityLog: () => setShowActivityLog((p) => !p),
-    allLogs, chatOpen, setChatOpen, nearbyAgent, movePlayer,
+    agents,
+    player,
+    selectedAgent,
+    setSelectedAgent,
+    showActivityLog,
+    toggleActivityLog: () => setShowActivityLog((p) => !p),
+    allLogs,
+    chatOpen,
+    setChatOpen,
+    nearbyAgent,
+    movePlayer,
+    setPlayerDestination,
   };
 }

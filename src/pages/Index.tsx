@@ -41,8 +41,16 @@ const Index = () => {
   }, [navigate]);
 
   const {
-    agents, player, selectedAgent, setSelectedAgent,
-    showActivityLog, toggleActivityLog, allLogs, nearbyAgent, movePlayer,
+    agents,
+    player,
+    selectedAgent,
+    setSelectedAgent,
+    showActivityLog,
+    toggleActivityLog,
+    allLogs,
+    nearbyAgent,
+    movePlayer,
+    setPlayerDestination,
   } = useOfficeState(playerConfig.name);
 
   const handleSaveCharacter = (config: PlayerConfig) => {
@@ -113,6 +121,7 @@ const Index = () => {
         hoveredFurnitureId={hoveredFurnitureId}
         onFurnitureClick={handleFurnitureClick}
         onFurnitureHover={setHoveredFurnitureId}
+        onMapClick={(x, y) => setPlayerDestination(x, y)}
       />
 
       {/* Edit mode toolbar */}

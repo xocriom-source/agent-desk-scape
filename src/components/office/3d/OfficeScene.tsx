@@ -1,5 +1,5 @@
-import { useRef, useState, useEffect } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useRef, useState } from "react";
+import { Canvas, useFrame, type ThreeEvent } from "@react-three/fiber";
 import { OrbitControls, Html } from "@react-three/drei";
 import * as THREE from "three";
 import type { Agent, Player } from "@/types/agent";
@@ -13,33 +13,64 @@ const STATUS_COLORS: Record<string, string> = {
 const S = 0.5; // tile to world scale
 
 // ── Interior building shell ──
-function BuildingInterior({ rooms }: { rooms: RoomDef[] }) {
-  const minX = Math.min(...rooms.map(r => r.x)) - 1;
-  const minY = Math.min(...rooms.map(r => r.y)) - 1;
-  const maxX = Math.max(...rooms.map(r => r.x + r.w)) + 1;
-  const maxY = Math.max(...rooms.map(r => r.y + r.h)) + 1;
+function BuildingInterior({
+  rooms,
+  onFloorClick,
+  clickEnabled,
+}: {
+  rooms: RoomDef[];
+  onFloorClick?: (x: number, y: number) => void;
+  clickEnabled?: boolean;
+}) {
+  const minX = Math.min(...rooms.map((r) => r.x)) - 1;
+  const minY = Math.min(...rooms.map((r) => r.y)) - 1;
+  const maxX = Math.max(...rooms.map((r) => r.x + r.w)) + 1;
+  const maxY = Math.max(...rooms.map((r) => r.y + r.h)) + 1;
   const bw = (maxX - minX) * S;
   const bh = (maxY - minY) * S;
   const cx = ((minX + maxX) / 2) * S;
   const cz = ((minY + maxY) / 2) * S;
   const wallH = 0.9;
 
+  const handleFloorDown = (e: ThreeEvent<PointerEvent>) => {
+    if (!clickEnabled) return;
+    e.stopPropagation();
+    const tx = Math.round(e.point.x / S);
+    const ty = Math.round(e.point.z / S);
+    onFloorClick?.(tx, ty);
+  };
+
   return (
     <group>
       {/* ── Main building floor (tile look) ── */}
-      <mesh position={[cx, 0.001, cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      <mesh
+        position={[cx, 0.001, cz]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        receiveShadow
+        onPointerDown={handleFloorDown}
+      >
         <planeGeometry args={[bw, bh]} />
         <meshStandardMaterial color="#D5CFC5" />
       </mesh>
-      {/* Tile grid lines on floor */}
+      {/* Tile grid lines on floor (non-interactive so clicks go through) */}
       {Array.from({ length: Math.ceil(bw) + 1 }).map((_, i) => (
-        <mesh key={`vl${i}`} position={[cx - bw / 2 + i, 0.002, cz]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh
+          key={`vl${i}`}
+          raycast={() => null}
+          position={[cx - bw / 2 + i, 0.002, cz]}
+          rotation={[-Math.PI / 2, 0, 0]}
+        >
           <planeGeometry args={[0.01, bh]} />
           <meshBasicMaterial color="#C0B8A8" />
         </mesh>
       ))}
       {Array.from({ length: Math.ceil(bh) + 1 }).map((_, i) => (
-        <mesh key={`hl${i}`} position={[cx, 0.002, cz - bh / 2 + i]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh
+          key={`hl${i}`}
+          raycast={() => null}
+          position={[cx, 0.002, cz - bh / 2 + i]}
+          rotation={[-Math.PI / 2, 0, 0]}
+        >
           <planeGeometry args={[bw, 0.01]} />
           <meshBasicMaterial color="#C0B8A8" />
         </mesh>
@@ -97,7 +128,15 @@ function BuildingInterior({ rooms }: { rooms: RoomDef[] }) {
 }
 
 // ── Room 3D ──
-function Room3D({ room }: { room: RoomDef }) {
+function Room3D({
+  room,
+  onFloorClick,
+  clickEnabled,
+}: {
+  room: RoomDef;
+  onFloorClick?: (x: number, y: number) => void;
+  clickEnabled?: boolean;
+}) {
   const w = room.w * S;
   const h = room.h * S;
   const x = room.x * S + w / 2;
@@ -105,15 +144,23 @@ function Room3D({ room }: { room: RoomDef }) {
   const wallH = 0.75;
   const wallT = 0.08;
 
+  const handleDown = (e: ThreeEvent<PointerEvent>) => {
+    if (!clickEnabled) return;
+    e.stopPropagation();
+    const tx = Math.round(e.point.x / S);
+    const ty = Math.round(e.point.z / S);
+    onFloorClick?.(tx, ty);
+  };
+
   return (
     <group position={[x, 0, z]}>
       {/* Room floor */}
-      <mesh position={[0, 0.004, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      <mesh position={[0, 0.004, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow onPointerDown={handleDown}>
         <planeGeometry args={[w, h]} />
         <meshStandardMaterial color={room.floorColor} />
       </mesh>
       {room.carpetColor && (
-        <mesh position={[0, 0.006, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh position={[0, 0.006, 0]} rotation={[-Math.PI / 2, 0, 0]} onPointerDown={handleDown}>
           <planeGeometry args={[w * 0.7, h * 0.7]} />
           <meshStandardMaterial color={room.carpetColor} />
         </mesh>
@@ -422,8 +469,7 @@ function CameraTarget({ player, controlsRef }: { player: Player; controlsRef: Re
     targetPos.current.z += (pz - targetPos.current.z) * 0.08;
 
     if (controlsRef.current) {
-      controlsRef.current.target.copy(targetPos.current);
-      controlsRef.current.update();
+      controlsRef.current.target.lerp(targetPos.current, 0.2);
     }
   });
 
@@ -444,11 +490,30 @@ interface OfficeSceneProps {
   hoveredFurnitureId?: string | null;
   onFurnitureClick?: (id: string) => void;
   onFurnitureHover?: (id: string | null) => void;
+  onMapClick?: (x: number, y: number) => void;
+}
+
+function ControlsUpdater({ controlsRef }: { controlsRef: React.RefObject<any> }) {
+  useFrame(() => {
+    controlsRef.current?.update();
+  });
+  return null;
 }
 
 export function OfficeScene({
-  agents, player, rooms, furniture, playerConfig, selectedAgentId, onAgentClick,
-  editMode, selectedFurnitureId, hoveredFurnitureId, onFurnitureClick, onFurnitureHover,
+  agents,
+  player,
+  rooms,
+  furniture,
+  playerConfig,
+  selectedAgentId,
+  onAgentClick,
+  editMode,
+  selectedFurnitureId,
+  hoveredFurnitureId,
+  onFurnitureClick,
+  onFurnitureHover,
+  onMapClick,
 }: OfficeSceneProps) {
   const controlsRef = useRef<any>(null);
 
@@ -456,6 +521,7 @@ export function OfficeScene({
     <div className="absolute inset-0">
       <Canvas
         shadows
+        style={{ touchAction: "none" }}
         camera={{ position: [14, 12, 14], fov: 35, near: 0.1, far: 100 }}
         gl={{ antialias: true }}
         onCreated={({ gl }) => {
@@ -484,30 +550,52 @@ export function OfficeScene({
         <directionalLight position={[-8, 10, -6]} intensity={0.3} color="#E8E4DC" />
         <hemisphereLight args={["#FFF8F0", "#D5CFC5", 0.25]} />
 
-        {/* Camera controls - orbit around player */}
+        {/* Camera controls - mouse drag rotate, wheel zoom, right-drag pan; works on trackpad wheel for zoom */}
         <OrbitControls
           ref={controlsRef}
-          enablePan={editMode || false}
-          enableZoom={true}
-          enableRotate={true}
+          enableDamping
+          dampingFactor={0.08}
+          enablePan
+          enableZoom
+          enableRotate
           minDistance={3}
-          maxDistance={18}
+          maxDistance={22}
           minPolarAngle={Math.PI / 6}
-          maxPolarAngle={Math.PI / 2.8}
-          minAzimuthAngle={-Math.PI / 3}
-          maxAzimuthAngle={Math.PI / 3}
-          zoomSpeed={0.8}
-          rotateSpeed={0.5}
+          maxPolarAngle={Math.PI / 2.6}
+          minAzimuthAngle={-Math.PI}
+          maxAzimuthAngle={Math.PI}
+          zoomSpeed={0.9}
+          rotateSpeed={0.7}
+          panSpeed={0.75}
+          mouseButtons={{
+            LEFT: THREE.MOUSE.ROTATE,
+            MIDDLE: THREE.MOUSE.DOLLY,
+            RIGHT: THREE.MOUSE.PAN,
+          }}
+          touches={{
+            ONE: THREE.TOUCH.ROTATE,
+            TWO: THREE.TOUCH.DOLLY_PAN,
+          }}
           target={[player.x * S, 0, player.y * S]}
         />
+        <ControlsUpdater controlsRef={controlsRef} />
         <CameraTarget player={player} controlsRef={controlsRef} />
 
-        {/* Building interior */}
-        <BuildingInterior rooms={rooms} />
+        {/* Building interior (click-to-move) */}
+        <BuildingInterior
+          rooms={rooms}
+          clickEnabled={!editMode}
+          onFloorClick={(x, y) => onMapClick?.(x, y)}
+        />
 
         {/* Rooms */}
-        {rooms.map(room => (
-          <Room3D key={room.id} room={room} />
+        {rooms.map((room) => (
+          <Room3D
+            key={room.id}
+            room={room}
+            clickEnabled={!editMode}
+            onFloorClick={(x, y) => onMapClick?.(x, y)}
+          />
         ))}
 
         {/* Furniture */}
