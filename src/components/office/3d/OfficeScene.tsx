@@ -141,7 +141,7 @@ function BuildingExterior({
       {/* Floor tile grid */}
       {Array.from({ length: Math.ceil(bw) + 1 }).map((_, i) => (
         <mesh key={`vl${i}`} raycast={() => null} position={[cx - bw / 2 + i, foundH + 0.002, cz]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[0.015, bh]} /><meshBasicMaterial color="#4A3828" />
+          <planeGeometry args={[0.015, bh]} /><meshBasicMaterial color="#7A6040" />
         </mesh>
       ))}
       {Array.from({ length: Math.ceil(bh) + 1 }).map((_, i) => (
