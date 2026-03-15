@@ -356,6 +356,16 @@ export default function CityExplore() {
           <PublicWorkspaces isOpen={showPublicSpaces} onClose={() => setShowPublicSpaces(false)} />
           <MessengerHub isOpen={showMessenger} onClose={() => setShowMessenger(false)} />
           <AgentTraining isOpen={showTraining} onClose={() => setShowTraining(false)} />
+
+          {/* Workspace Panels */}
+          <MeetingSystem isOpen={showMeeting} onClose={() => setShowMeeting(false)} />
+          <TeamChatSystem isOpen={showTeamChat} onClose={() => setShowTeamChat(false)} />
+          <FocusMode isOpen={showFocusMode} onClose={() => setShowFocusMode(false)} currentMode={focusMode} onModeChange={setFocusMode} />
+          <TeamAnalytics isOpen={showAnalytics} onClose={() => setShowAnalytics(false)} />
+          <VirtualEvents isOpen={showEvents} onClose={() => setShowEvents(false)} />
+          <ScreenSharing isOpen={showScreenShare} onClose={() => setShowScreenShare(false)} />
+          <ToolIntegrations isOpen={showIntegrations} onClose={() => setShowIntegrations(false)} />
+          <TeamEngagement isOpen={showEngagement} onClose={() => setShowEngagement(false)} />
         </>
       )}
     </div>
