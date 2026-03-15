@@ -25,6 +25,7 @@ export default function CityExplore() {
   const [showVehicleShop, setShowVehicleShop] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [showMissions, setShowMissions] = useState(false);
+  const [showMarketplace, setShowMarketplace] = useState(false);
   const [flyMode, setFlyMode] = useState(false);
   const [inVehicle, setInVehicle] = useState(false);
   const [currentVehicle, setCurrentVehicle] = useState<TransportType>("car");
