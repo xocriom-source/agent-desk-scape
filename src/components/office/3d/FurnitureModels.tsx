@@ -797,8 +797,3 @@ function GenericBox() {
     </mesh>
   );
 }
-
-// Emissive helper material
-function meshEmissiveMaterial({ emissive, emissiveIntensity }: { emissive: string; emissiveIntensity: number }) {
-  return <meshStandardMaterial color={emissive} emissive={emissive} emissiveIntensity={emissiveIntensity} />;
-}
