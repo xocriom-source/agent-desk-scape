@@ -13,58 +13,13 @@ const STATUS_COLORS: Record<string, string> = {
 
 const S = 0.5; // tile to world scale
 
-// ── Neighboring building (city block filler) ──
-function CityBuilding({ position, width, depth, height, color, label }: { position: [number, number, number]; width: number; depth: number; height: number; color: string; label?: string }) {
-  const darkColor = useMemo(() => new THREE.Color(color).multiplyScalar(0.7).getStyle(), [color]);
-
-  const windowData = useMemo(() => {
-    const windowRows = Math.floor(height / 0.5);
-    const windowColsW = Math.max(1, Math.floor(width / 0.8));
-    const windowColsD = Math.max(1, Math.floor(depth / 0.8));
-    const front: boolean[][] = [];
-    for (let r = 0; r < windowRows; r++) {
-      front[r] = [];
-      for (let c = 0; c < windowColsW; c++) front[r][c] = Math.random() > 0.35;
-    }
-    return { windowRows, windowColsW, windowColsD, front };
-  }, [height, width, depth]);
-
+// ── Distant skyline building (far away, purely decorative) ──
+function SkylineBuilding({ position, width, height, color }: { position: [number, number, number]; width: number; height: number; color: string }) {
   return (
-    <group position={position}>
-      <mesh position={[0, height / 2, 0]}>
-        <boxGeometry args={[width, height, depth]} />
-        <meshStandardMaterial color={color} roughness={0.9} />
-      </mesh>
-      <mesh position={[0, height + 0.03, 0]}>
-        <boxGeometry args={[width + 0.08, 0.06, depth + 0.08]} />
-        <meshStandardMaterial color="#2A2A2A" />
-      </mesh>
-      {windowData.front.map((row, ri) =>
-        row.map((lit, ci) => (
-          <mesh key={`wf${ri}-${ci}`} position={[
-            -width / 2 + 0.3 + ci * (width / (windowData.windowColsW + 0.5)),
-            0.4 + ri * 0.5,
-            depth / 2 + 0.01
-          ]}>
-            <boxGeometry args={[0.18, 0.24, 0.01]} />
-            <meshStandardMaterial color={lit ? "#FFE4A8" : "#1A1A2A"} emissive={lit ? "#FFD060" : "#000"} emissiveIntensity={lit ? 0.4 : 0} />
-          </mesh>
-        ))
-      )}
-      {[0.4, 0.8].map((frac) => (
-        <mesh key={`ledge${frac}`} position={[0, height * frac, depth / 2 + 0.03]}>
-          <boxGeometry args={[width + 0.06, 0.04, 0.06]} />
-          <meshStandardMaterial color={darkColor} />
-        </mesh>
-      ))}
-      {label && (
-        <Html position={[0, height + 0.3, 0]} center>
-          <div className="px-2 py-0.5 text-[8px] font-bold whitespace-nowrap pointer-events-none select-none rounded-sm bg-black/70 text-gray-300 border border-gray-700">
-            {label}
-          </div>
-        </Html>
-      )}
-    </group>
+    <mesh position={[position[0], height / 2, position[2]]}>
+      <boxGeometry args={[width, height, width * 0.6]} />
+      <meshStandardMaterial color={color} roughness={0.95} />
+    </mesh>
   );
 }
 
