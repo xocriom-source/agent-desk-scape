@@ -21,7 +21,7 @@ export default function Signup() {
         "agentoffice_user",
         JSON.stringify({ email, name, companyName: companyName || `${name}'s Office` })
       );
-      navigate("/office");
+      navigate("/spaces");
     }, 800);
   };
 
