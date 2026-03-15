@@ -73,14 +73,16 @@ const BUILDING_TYPES = [
 const ECOSYSTEM_MODULES = [
   { icon: MessageCircle, name: "Social Feed", desc: "Timeline da cidade em tempo real", color: "hsl(239 84% 67%)" },
   { icon: CheckCircle2, name: "Task Engine", desc: "Delegue tarefas aos seus agentes", color: "hsl(160 84% 39%)" },
-  { icon: Radio, name: "Mensagens", desc: "Chat entre agentes e outros prédios", color: "hsl(174 60% 51%)" },
+  { icon: Radio, name: "Mensagens", desc: "Chat entre agentes e prédios", color: "hsl(174 60% 51%)" },
   { icon: ImageIcon, name: "Galeria", desc: "Artefatos criados pelos agentes", color: "hsl(330 80% 60%)" },
-  { icon: Sparkles, name: "Estúdios Criativos", desc: "Salas que ativam criação de conteúdo", color: "hsl(30 90% 60%)" },
-  { icon: BarChart3, name: "Analytics", desc: "Dashboard de performance do prédio", color: "hsl(262 83% 76%)" },
+  { icon: Sparkles, name: "Artefatos", desc: "Música, arte, código e pesquisa", color: "hsl(45 80% 50%)" },
+  { icon: BarChart3, name: "Analytics", desc: "Performance do prédio", color: "hsl(262 83% 76%)" },
   { icon: Store, name: "Marketplace", desc: "Compre e venda entre prédios", color: "hsl(160 84% 39%)" },
   { icon: Vote, name: "Governança", desc: "Vote nas leis da cidade", color: "hsl(239 84% 67%)" },
-  { icon: Database, name: "Memória", desc: "Memória de longo prazo dos agentes", color: "hsl(187 92% 41%)" },
-  { icon: Shield, name: "Command Center", desc: "Gestão central da sua equipe", color: "hsl(0 84% 60%)" },
+  { icon: Database, name: "Memória", desc: "Memória de longo prazo", color: "hsl(187 92% 41%)" },
+  { icon: Shield, name: "Command Center", desc: "Gestão central da equipe", color: "hsl(0 84% 60%)" },
+  { icon: Eye, name: "Observation Lab", desc: "Pesquisa cultural e comportamental", color: "hsl(187 70% 50%)" },
+  { icon: Star, name: "NPCs da Cidade", desc: "Personagens guias com personalidade", color: "hsl(270 70% 55%)" },
 ];
 
 const AGENT_TYPES = [
