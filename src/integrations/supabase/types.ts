@@ -142,6 +142,267 @@ export type Database = {
         }
         Relationships: []
       }
+      workspace_agents: {
+        Row: {
+          agent_type: string
+          building_id: string
+          config: Json | null
+          created_at: string
+          id: string
+          model: string | null
+          name: string
+          skills: string[] | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_type?: string
+          building_id: string
+          config?: Json | null
+          created_at?: string
+          id?: string
+          model?: string | null
+          name: string
+          skills?: string[] | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_type?: string
+          building_id?: string
+          config?: Json | null
+          created_at?: string
+          id?: string
+          model?: string | null
+          name?: string
+          skills?: string[] | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      workspace_messengers: {
+        Row: {
+          agent_id: string | null
+          bot_token_configured: boolean | null
+          building_id: string
+          created_at: string
+          id: string
+          platform: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          bot_token_configured?: boolean | null
+          building_id: string
+          created_at?: string
+          id?: string
+          platform: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          bot_token_configured?: boolean | null
+          building_id?: string
+          created_at?: string
+          id?: string
+          platform?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_messengers_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "workspace_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_prompts: {
+        Row: {
+          building_id: string | null
+          category: string | null
+          content: string
+          created_at: string
+          id: string
+          is_public: boolean | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          usage_count: number | null
+          user_id: string
+          version: number | null
+        }
+        Insert: {
+          building_id?: string | null
+          category?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          is_public?: boolean | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          usage_count?: number | null
+          user_id: string
+          version?: number | null
+        }
+        Update: {
+          building_id?: string | null
+          category?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          is_public?: boolean | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          usage_count?: number | null
+          user_id?: string
+          version?: number | null
+        }
+        Relationships: []
+      }
+      workspace_skills: {
+        Row: {
+          category: string | null
+          config: Json | null
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          is_system: boolean | null
+          name: string
+        }
+        Insert: {
+          category?: string | null
+          config?: Json | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_system?: boolean | null
+          name: string
+        }
+        Update: {
+          category?: string | null
+          config?: Json | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_system?: boolean | null
+          name?: string
+        }
+        Relationships: []
+      }
+      workspace_tasks: {
+        Row: {
+          agent_id: string | null
+          building_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          result: string | null
+          status: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          building_id: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          result?: string | null
+          status?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          building_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          result?: string | null
+          status?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_tasks_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "workspace_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspace_workflows: {
+        Row: {
+          agent_id: string | null
+          building_id: string
+          created_at: string
+          description: string | null
+          id: string
+          last_run_at: string | null
+          name: string
+          provider: string
+          run_count: number | null
+          status: string
+          updated_at: string
+          user_id: string
+          webhook_url: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          building_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          last_run_at?: string | null
+          name: string
+          provider?: string
+          run_count?: number | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          webhook_url?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          building_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          last_run_at?: string | null
+          name?: string
+          provider?: string
+          run_count?: number | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          webhook_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_workflows_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "workspace_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
