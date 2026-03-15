@@ -90,7 +90,6 @@ export function Building3D({ building, onClick, highlighted = false }: Building3
           anchorY="middle"
           outlineWidth={0.02}
           outlineColor={building.primaryColor}
-          font="/fonts/Inter-Bold.woff"
           maxWidth={4}
         >
           {building.name}
