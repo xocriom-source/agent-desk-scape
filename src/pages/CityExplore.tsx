@@ -149,8 +149,9 @@ export default function CityExplore() {
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50">
           <div className="bg-[#1A1A20]/95 backdrop-blur-xl border border-gray-700/50 rounded-2xl px-8 py-6 text-center shadow-2xl">
             <h3 className="text-sm font-bold text-gray-300 tracking-widest mb-4" style={{ fontFamily: "monospace" }}>FLIGHT CONTROLS</h3>
+            <p className="text-[10px] text-gray-500 mb-3" style={{ fontFamily: "monospace" }}>CLICK THE SCREEN TO LOCK MOUSE</p>
             <div className="space-y-2 text-xs" style={{ fontFamily: "monospace" }}>
-              {[["MOUSE", "STEER"], ["SCROLL", "SPEED"], ["SHIFT / ALT", "BOOST / SLOW"], ["ESC", "EXIT"]].map(([k, a]) => (
+              {[["W A S D", "MOVE"], ["MOUSE", "LOOK"], ["SPACE", "UP"], ["CTRL", "DOWN"], ["SHIFT", "BOOST"]].map(([k, a]) => (
                 <div key={k} className="flex justify-between gap-8">
                   <span className="text-white font-bold">{k}</span>
                   <span className="text-gray-500">{a}</span>
