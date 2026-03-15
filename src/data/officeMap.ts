@@ -300,8 +300,85 @@ function buildMap(): TileType[][] {
     }
   }
 
-  // Furniture blocking
+  // Building interior fill (corridors) so rooms connect (keeps room walls as blockers)
+  const padding = 3;
+  const minRoomX = Math.min(...ROOMS.map((r) => r.x));
+  const minRoomY = Math.min(...ROOMS.map((r) => r.y));
+  const maxRoomX = Math.max(...ROOMS.map((r) => r.x + r.w - 1));
+  const maxRoomY = Math.max(...ROOMS.map((r) => r.y + r.h - 1));
+
+  const bMinX = Math.max(0, Math.floor(minRoomX - padding));
+  const bMinY = Math.max(0, Math.floor(minRoomY - padding));
+  const bMaxX = Math.min(MAP_COLS - 1, Math.floor(maxRoomX + padding));
+  const bMaxY = Math.min(MAP_ROWS - 1, Math.floor(maxRoomY + padding));
+
+  for (let y = bMinY; y <= bMaxY; y++) {
+    for (let x = bMinX; x <= bMaxX; x++) {
+      if (map[y][x] === 4) map[y][x] = 0;
+    }
+  }
+
+  // Exterior boundary walls (keeps player inside the building)
+  for (let x = bMinX; x <= bMaxX; x++) {
+    if (map[bMinY]?.[x] === 0) map[bMinY][x] = 1;
+    if (map[bMaxY]?.[x] === 0) map[bMaxY][x] = 1;
+  }
+  for (let y = bMinY; y <= bMaxY; y++) {
+    if (map[y]?.[bMinX] === 0) map[y][bMinX] = 1;
+    if (map[y]?.[bMaxX] === 0) map[y][bMaxX] = 1;
+  }
+
+  // Door openings on room walls (so you don't get stuck inside rooms)
+  const carveDoor = (x: number, y: number, ox: number, oy: number) => {
+    if (x < 0 || x >= MAP_COLS || y < 0 || y >= MAP_ROWS) return;
+    const outX = x + ox;
+    const outY = y + oy;
+    if (outX < 0 || outX >= MAP_COLS || outY < 0 || outY >= MAP_ROWS) return;
+
+    // Only carve if it leads to non-wall space
+    if (map[outY][outX] === 1) return;
+
+    if (map[y][x] === 1) map[y][x] = 0;
+    if (map[outY][outX] === 4) map[outY][outX] = 0;
+  };
+
+  for (const room of ROOMS) {
+    const cx = room.x + Math.floor(room.w / 2);
+    const cy = room.y + Math.floor(room.h / 2);
+
+    const candidates = [
+      // prefer south then north, then sides
+      { x: cx, y: room.y + room.h, ox: 0, oy: 1 },
+      { x: cx, y: room.y - 1, ox: 0, oy: -1 },
+      { x: room.x + room.w, y: cy, ox: 1, oy: 0 },
+      { x: room.x - 1, y: cy, ox: -1, oy: 0 },
+    ];
+
+    for (const c of candidates) {
+      const outX = c.x + c.ox;
+      const outY = c.y + c.oy;
+      if (outX < 0 || outX >= MAP_COLS || outY < 0 || outY >= MAP_ROWS) continue;
+      if (map[outY][outX] === 1) continue;
+      carveDoor(c.x, c.y, c.ox, c.oy);
+      break;
+    }
+  }
+
+  // Furniture blocking (only larger items; small props are walkable to reduce "stuck")
+  const BLOCKING_TYPES = new Set([
+    "desk",
+    "table",
+    "sofa",
+    "bookshelf",
+    "server",
+    "vending",
+    "tv",
+    "printer",
+    "screen",
+  ]);
+
   for (const f of FURNITURE) {
+    if (!BLOCKING_TYPES.has(f.type)) continue;
     if (f.y >= 0 && f.y < MAP_ROWS && f.x >= 0 && f.x < MAP_COLS) {
       if (map[f.y][f.x] === 0 || map[f.y][f.x] === 2) {
         map[f.y][f.x] = 3;

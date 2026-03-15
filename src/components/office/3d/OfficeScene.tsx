@@ -42,11 +42,34 @@ function BuildingExterior({
   const windowColor = "#6BA3D6";   // window glass
   const windowFrame = "#3A3A3A";   // window frame
 
+  const downRef = useRef<{ x: number; y: number; t: number; button: number } | null>(null);
+
   const handleFloorDown = (e: ThreeEvent<PointerEvent>) => {
     if (!clickEnabled) return;
-    e.stopPropagation();
-    const tx = Math.round(e.point.x / S);
-    const ty = Math.round(e.point.z / S);
+    // Don't stopPropagation here — OrbitControls needs the native pointer events.
+    downRef.current = {
+      x: e.nativeEvent.clientX,
+      y: e.nativeEvent.clientY,
+      t: performance.now(),
+      button: e.nativeEvent.button,
+    };
+  };
+
+  const handleFloorUp = (e: ThreeEvent<PointerEvent>) => {
+    if (!clickEnabled) return;
+    const down = downRef.current;
+    downRef.current = null;
+    if (!down) return;
+    if (down.button !== 0) return; // left click only
+
+    const dist = Math.hypot(e.nativeEvent.clientX - down.x, e.nativeEvent.clientY - down.y);
+    const dt = performance.now() - down.t;
+
+    // Treat as click only if the pointer didn't move (so drag rotates camera)
+    if (dist > 6 || dt > 450) return;
+
+    const tx = Math.floor(e.point.x / S + 0.5);
+    const ty = Math.floor(e.point.z / S + 0.5);
     onFloorClick?.(tx, ty);
   };
 
@@ -109,6 +132,7 @@ function BuildingExterior({
         rotation={[-Math.PI / 2, 0, 0]}
         receiveShadow
         onPointerDown={handleFloorDown}
+        onPointerUp={handleFloorUp}
       >
         <planeGeometry args={[bw, bh]} />
         <meshStandardMaterial color="#E8E0D4" />
@@ -227,23 +251,54 @@ function Room3D({
   const wallH = 0.75;
   const wallT = 0.08;
 
+  const downRef = useRef<{ x: number; y: number; t: number; button: number } | null>(null);
+
   const handleDown = (e: ThreeEvent<PointerEvent>) => {
     if (!clickEnabled) return;
-    e.stopPropagation();
-    const tx = Math.round(e.point.x / S);
-    const ty = Math.round(e.point.z / S);
+    downRef.current = {
+      x: e.nativeEvent.clientX,
+      y: e.nativeEvent.clientY,
+      t: performance.now(),
+      button: e.nativeEvent.button,
+    };
+  };
+
+  const handleUp = (e: ThreeEvent<PointerEvent>) => {
+    if (!clickEnabled) return;
+    const down = downRef.current;
+    downRef.current = null;
+    if (!down) return;
+    if (down.button !== 0) return;
+
+    const dist = Math.hypot(e.nativeEvent.clientX - down.x, e.nativeEvent.clientY - down.y);
+    const dt = performance.now() - down.t;
+    if (dist > 6 || dt > 450) return;
+
+    const tx = Math.floor(e.point.x / S + 0.5);
+    const ty = Math.floor(e.point.z / S + 0.5);
     onFloorClick?.(tx, ty);
   };
 
   return (
     <group position={[x, 0, z]}>
       {/* Room floor */}
-      <mesh position={[0, 0.004, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow onPointerDown={handleDown}>
+      <mesh
+        position={[0, 0.004, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        receiveShadow
+        onPointerDown={handleDown}
+        onPointerUp={handleUp}
+      >
         <planeGeometry args={[w, h]} />
         <meshStandardMaterial color={room.floorColor} />
       </mesh>
       {room.carpetColor && (
-        <mesh position={[0, 0.006, 0]} rotation={[-Math.PI / 2, 0, 0]} onPointerDown={handleDown}>
+        <mesh
+          position={[0, 0.006, 0]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          onPointerDown={handleDown}
+          onPointerUp={handleUp}
+        >
           <planeGeometry args={[w * 0.7, h * 0.7]} />
           <meshStandardMaterial color={room.carpetColor} />
         </mesh>
