@@ -130,6 +130,10 @@ const Index = () => {
         onOpenTasks={() => setShowTasks(true)}
         onOpenMessaging={() => setShowMessaging(true)}
         onOpenGallery={() => setShowGallery(true)}
+        onOpenStudios={() => setShowStudios(true)}
+        onOpenAnalytics={() => setShowAnalytics(true)}
+        onOpenMarketplace={() => setShowMarketplace(true)}
+        onOpenGovernance={() => setShowGovernance(true)}
       />
 
       <OfficeScene
