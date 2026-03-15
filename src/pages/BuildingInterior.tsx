@@ -61,6 +61,13 @@ export default function BuildingInterior() {
             <span className="text-[10px] text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded-full">Aberto</span>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowWorkspace(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-violet-500/20 text-violet-400 text-xs font-medium hover:bg-violet-500/30 transition-colors"
+            >
+              <Cpu className="w-3.5 h-3.5" />
+              Agent Workspace
+            </button>
             {isOwner && (
               <button
                 onClick={() => navigate("/find-building")}
