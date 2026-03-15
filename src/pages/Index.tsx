@@ -15,6 +15,8 @@ import { CreativeStudios } from "@/components/office/CreativeStudios";
 import { AnalyticsDashboard } from "@/components/office/AnalyticsDashboard";
 import { AgentMarketplace } from "@/components/office/AgentMarketplace";
 import { AIGovernance } from "@/components/office/AIGovernance";
+import { AgentMemory } from "@/components/office/AgentMemory";
+import { CommandCenter } from "@/components/office/CommandCenter";
 import { CharacterCustomizer, type PlayerConfig } from "@/components/office/CharacterCustomizer";
 import { RoomEditor } from "@/components/office/RoomEditor";
 import { useOfficeState } from "@/hooks/useOfficeState";
