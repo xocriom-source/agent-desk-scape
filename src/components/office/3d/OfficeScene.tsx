@@ -759,7 +759,7 @@ function WalkingDust({ player }: { player: Player }) {
   );
 }
 
-// ── Player 3D (Voxel Bored Ape - 3D model) ──
+// ── Player 3D (Pixel Alien Character) ──
 function Player3D({ player, config }: { player: Player; config?: { color: string; skinTone?: string } }) {
   const ref = useRef<THREE.Group>(null);
   const smoothPos = useRef(new THREE.Vector3(player.x * S, 0, player.y * S));
@@ -770,11 +770,13 @@ function Player3D({ player, config }: { player: Player; config?: { color: string
   const rightArm = useRef<THREE.Mesh>(null);
   const prevPos = useRef({ x: player.x, y: player.y });
 
-  const furColor = "#5C3A1E";
-  const faceColor = "#C4A882";
-  const sweaterColor = "#3B5DC9";
-  const glassesColor = "#2ECC40";
-  const earringColor = "#FFD700";
+  const bodyColor = "#F5DEB3"; // beige/cream skin
+  const earInner = "#FFCBA4";
+  const shirtBase = "#2E8B57"; // hawaiian shirt green
+  const shirtPattern = "#FF8C00"; // orange pattern
+  const shortsColor = "#4A90D9"; // blue shorts
+  const eyeColor = "#1a1a1a";
+  const mouthColor = "#8B4513";
 
   useFrame((_, delta) => {
     if (!ref.current) return;
@@ -816,106 +818,134 @@ function Player3D({ player, config }: { player: Player; config?: { color: string
 
   return (
     <group ref={ref}>
-      {/* Legs */}
-      <mesh ref={leftLeg} position={[-0.055, 0.06, 0]}>
+      {/* Feet / Shoes */}
+      <mesh position={[-0.055, 0.02, 0.02]}>
+        <boxGeometry args={[0.07, 0.04, 0.1]} />
+        <meshStandardMaterial color="#333" />
+      </mesh>
+      <mesh position={[0.055, 0.02, 0.02]}>
+        <boxGeometry args={[0.07, 0.04, 0.1]} />
+        <meshStandardMaterial color="#333" />
+      </mesh>
+      {/* Legs (blue shorts) */}
+      <mesh ref={leftLeg} position={[-0.055, 0.1, 0]}>
         <boxGeometry args={[0.07, 0.12, 0.08]} />
-        <meshStandardMaterial color="#2D3748" />
+        <meshStandardMaterial color={shortsColor} />
       </mesh>
-      <mesh ref={rightLeg} position={[0.055, 0.06, 0]}>
+      <mesh ref={rightLeg} position={[0.055, 0.1, 0]}>
         <boxGeometry args={[0.07, 0.12, 0.08]} />
-        <meshStandardMaterial color="#2D3748" />
+        <meshStandardMaterial color={shortsColor} />
       </mesh>
-      {/* Body (blue sweater) */}
-      <mesh position={[0, 0.25, 0]} castShadow>
-        <boxGeometry args={[0.26, 0.26, 0.15]} />
-        <meshStandardMaterial color={sweaterColor} />
+      {/* Body (Hawaiian shirt) */}
+      <mesh position={[0, 0.27, 0]} castShadow>
+        <boxGeometry args={[0.26, 0.24, 0.15]} />
+        <meshStandardMaterial color={shirtBase} />
       </mesh>
-      {/* Sweater logo */}
-      <mesh position={[0, 0.23, 0.076]}>
-        <circleGeometry args={[0.04, 8]} />
-        <meshStandardMaterial color={glassesColor} />
-      </mesh>
-      {/* Arms */}
-      <mesh ref={leftArm} position={[-0.165, 0.24, 0]}>
-        <boxGeometry args={[0.06, 0.2, 0.08]} />
-        <meshStandardMaterial color={sweaterColor} />
-      </mesh>
-      <mesh ref={rightArm} position={[0.165, 0.24, 0]}>
-        <boxGeometry args={[0.06, 0.2, 0.08]} />
-        <meshStandardMaterial color={sweaterColor} />
-      </mesh>
-      {/* Hands */}
-      <mesh position={[-0.165, 0.13, 0]}>
-        <boxGeometry args={[0.05, 0.05, 0.05]} />
-        <meshStandardMaterial color={furColor} />
-      </mesh>
-      <mesh position={[0.165, 0.13, 0]}>
-        <boxGeometry args={[0.05, 0.05, 0.05]} />
-        <meshStandardMaterial color={furColor} />
-      </mesh>
-      {/* Head */}
-      <mesh position={[0, 0.47, 0]} castShadow>
-        <boxGeometry args={[0.22, 0.22, 0.2]} />
-        <meshStandardMaterial color={furColor} />
-      </mesh>
-      <mesh position={[0, 0.56, -0.02]}>
-        <boxGeometry args={[0.2, 0.06, 0.14]} />
-        <meshStandardMaterial color={furColor} />
-      </mesh>
-      {/* Muzzle */}
-      <mesh position={[0, 0.43, 0.1]}>
-        <boxGeometry args={[0.16, 0.14, 0.06]} />
-        <meshStandardMaterial color={faceColor} />
-      </mesh>
-      {[-0.025, 0.025].map((ox, i) => (
-        <mesh key={`n${i}`} position={[ox, 0.42, 0.135]}>
-          <boxGeometry args={[0.02, 0.02, 0.01]} />
-          <meshStandardMaterial color="#3A2510" />
+      {/* Hawaiian shirt pattern spots */}
+      {[[-0.06, 0.30, 0.076], [0.04, 0.24, 0.076], [-0.02, 0.20, 0.076],
+        [0.08, 0.32, 0.076], [-0.08, 0.22, 0.076], [0.06, 0.26, 0.076]].map((pos, i) => (
+        <mesh key={`pat${i}`} position={pos as [number, number, number]}>
+          <boxGeometry args={[0.04, 0.04, 0.005]} />
+          <meshStandardMaterial color={i % 2 === 0 ? shirtPattern : "#FFD700"} />
         </mesh>
       ))}
-      {/* Green glasses */}
-      <mesh position={[0, 0.49, 0.11]}>
-        <boxGeometry args={[0.22, 0.06, 0.02]} />
-        <meshStandardMaterial color={glassesColor} />
+      {/* Shirt back pattern */}
+      {[[-0.04, 0.28, -0.076], [0.05, 0.23, -0.076], [0.0, 0.32, -0.076]].map((pos, i) => (
+        <mesh key={`patb${i}`} position={pos as [number, number, number]}>
+          <boxGeometry args={[0.04, 0.04, 0.005]} />
+          <meshStandardMaterial color={i % 2 === 0 ? shirtPattern : "#FFD700"} />
+        </mesh>
+      ))}
+      {/* Arms */}
+      <mesh ref={leftArm} position={[-0.165, 0.26, 0]}>
+        <boxGeometry args={[0.06, 0.2, 0.08]} />
+        <meshStandardMaterial color={bodyColor} />
       </mesh>
-      <mesh position={[-0.055, 0.49, 0.12]}>
-        <boxGeometry args={[0.07, 0.04, 0.01]} />
-        <meshStandardMaterial color="#1a1a2e" />
+      <mesh ref={rightArm} position={[0.165, 0.26, 0]}>
+        <boxGeometry args={[0.06, 0.2, 0.08]} />
+        <meshStandardMaterial color={bodyColor} />
       </mesh>
-      <mesh position={[0.055, 0.49, 0.12]}>
-        <boxGeometry args={[0.07, 0.04, 0.01]} />
-        <meshStandardMaterial color="#1a1a2e" />
+      {/* Hands */}
+      <mesh position={[-0.165, 0.15, 0]}>
+        <boxGeometry args={[0.05, 0.05, 0.06]} />
+        <meshStandardMaterial color={bodyColor} />
       </mesh>
-      {/* Lens glare */}
-      <mesh position={[-0.04, 0.495, 0.126]}>
-        <boxGeometry args={[0.02, 0.02, 0.005]} />
-        <meshStandardMaterial color="#FFF" emissive="#FFF" emissiveIntensity={0.3} />
+      <mesh position={[0.165, 0.15, 0]}>
+        <boxGeometry args={[0.05, 0.05, 0.06]} />
+        <meshStandardMaterial color={bodyColor} />
       </mesh>
-      <mesh position={[0.07, 0.495, 0.126]}>
-        <boxGeometry args={[0.02, 0.02, 0.005]} />
-        <meshStandardMaterial color="#FFF" emissive="#FFF" emissiveIntensity={0.3} />
+      {/* Head */}
+      <mesh position={[0, 0.48, 0]} castShadow>
+        <boxGeometry args={[0.24, 0.22, 0.2]} />
+        <meshStandardMaterial color={bodyColor} />
       </mesh>
-      {/* Ears */}
-      <mesh position={[-0.14, 0.48, 0]}>
-        <boxGeometry args={[0.06, 0.08, 0.06]} />
-        <meshStandardMaterial color={furColor} />
+      {/* Tall pointy ears (alien/bunny style) */}
+      <mesh position={[-0.08, 0.72, 0]}>
+        <boxGeometry args={[0.06, 0.28, 0.05]} />
+        <meshStandardMaterial color={bodyColor} />
       </mesh>
-      <mesh position={[-0.14, 0.48, 0]}>
-        <boxGeometry args={[0.03, 0.05, 0.04]} />
-        <meshStandardMaterial color={faceColor} />
+      <mesh position={[-0.08, 0.74, 0]}>
+        <boxGeometry args={[0.03, 0.22, 0.03]} />
+        <meshStandardMaterial color={earInner} />
       </mesh>
-      <mesh position={[0.14, 0.48, 0]}>
-        <boxGeometry args={[0.06, 0.08, 0.06]} />
-        <meshStandardMaterial color={furColor} />
+      <mesh position={[-0.08, 0.87, 0]}>
+        <boxGeometry args={[0.04, 0.04, 0.04]} />
+        <meshStandardMaterial color={bodyColor} />
       </mesh>
-      <mesh position={[0.14, 0.48, 0]}>
-        <boxGeometry args={[0.03, 0.05, 0.04]} />
-        <meshStandardMaterial color={faceColor} />
+      <mesh position={[0.08, 0.72, 0]}>
+        <boxGeometry args={[0.06, 0.28, 0.05]} />
+        <meshStandardMaterial color={bodyColor} />
       </mesh>
-      {/* Gold earring */}
-      <mesh position={[-0.17, 0.44, 0]}>
-        <torusGeometry args={[0.02, 0.005, 6, 8]} />
-        <meshStandardMaterial color={earringColor} metalness={0.8} roughness={0.2} />
+      <mesh position={[0.08, 0.74, 0]}>
+        <boxGeometry args={[0.03, 0.22, 0.03]} />
+        <meshStandardMaterial color={earInner} />
+      </mesh>
+      <mesh position={[0.08, 0.87, 0]}>
+        <boxGeometry args={[0.04, 0.04, 0.04]} />
+        <meshStandardMaterial color={bodyColor} />
+      </mesh>
+      {/* Angry eyes (V-shaped brow + dark pupils) */}
+      {/* Left eye white */}
+      <mesh position={[-0.055, 0.50, 0.101]}>
+        <boxGeometry args={[0.06, 0.05, 0.01]} />
+        <meshStandardMaterial color="#FFF" />
+      </mesh>
+      {/* Left pupil */}
+      <mesh position={[-0.055, 0.495, 0.106]}>
+        <boxGeometry args={[0.03, 0.035, 0.005]} />
+        <meshStandardMaterial color={eyeColor} />
+      </mesh>
+      {/* Right eye white */}
+      <mesh position={[0.055, 0.50, 0.101]}>
+        <boxGeometry args={[0.06, 0.05, 0.01]} />
+        <meshStandardMaterial color="#FFF" />
+      </mesh>
+      {/* Right pupil */}
+      <mesh position={[0.055, 0.495, 0.106]}>
+        <boxGeometry args={[0.03, 0.035, 0.005]} />
+        <meshStandardMaterial color={eyeColor} />
+      </mesh>
+      {/* Angry eyebrows (angled) */}
+      <mesh position={[-0.055, 0.535, 0.105]} rotation={[0, 0, 0.3]}>
+        <boxGeometry args={[0.06, 0.015, 0.01]} />
+        <meshStandardMaterial color="#1a1a1a" />
+      </mesh>
+      <mesh position={[0.055, 0.535, 0.105]} rotation={[0, 0, -0.3]}>
+        <boxGeometry args={[0.06, 0.015, 0.01]} />
+        <meshStandardMaterial color="#1a1a1a" />
+      </mesh>
+      {/* Mouth (angry frown) */}
+      <mesh position={[0, 0.44, 0.101]}>
+        <boxGeometry args={[0.08, 0.015, 0.01]} />
+        <meshStandardMaterial color={mouthColor} />
+      </mesh>
+      <mesh position={[-0.035, 0.445, 0.101]}>
+        <boxGeometry args={[0.02, 0.015, 0.01]} />
+        <meshStandardMaterial color={mouthColor} />
+      </mesh>
+      <mesh position={[0.035, 0.445, 0.101]}>
+        <boxGeometry args={[0.02, 0.015, 0.01]} />
+        <meshStandardMaterial color={mouthColor} />
       </mesh>
       {/* Shadow */}
       <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -923,12 +953,12 @@ function Player3D({ player, config }: { player: Player; config?: { color: string
         <meshBasicMaterial color="#000" transparent opacity={0.18} />
       </mesh>
       {/* Crown */}
-      <Html position={[0, 0.68, 0]} center>
+      <Html position={[0, 0.95, 0]} center>
         <span className="text-sm select-none pointer-events-none">👑</span>
       </Html>
       {/* Name tag */}
-      <Html position={[0, 0.8, 0]} center>
-        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full whitespace-nowrap pointer-events-none select-none" style={{ backgroundColor: sweaterColor }}>
+      <Html position={[0, 1.05, 0]} center>
+        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full whitespace-nowrap pointer-events-none select-none" style={{ backgroundColor: shirtBase }}>
           <div className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
           <span className="text-[9px] text-white font-bold">{player.name}</span>
         </div>
