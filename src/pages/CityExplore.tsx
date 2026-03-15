@@ -1,17 +1,24 @@
 import { useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Building2, Map, Users2, Trophy, Megaphone, Plane, Search } from "lucide-react";
+import { ArrowLeft, Building2, Map, Users2, Trophy, Megaphone, Plane, Search, Car, ShoppingBag } from "lucide-react";
 import { motion } from "framer-motion";
 import { CityExploreScene } from "@/components/office/3d/CityExploreScene";
 import { CityLeaderboard } from "@/components/city/CityLeaderboard";
 import { CityAdPlacement } from "@/components/city/CityAdPlacement";
+import { CityActivityTicker } from "@/components/city/CityActivityTicker";
+import { VehicleShop } from "@/components/city/VehicleShop";
+import type { TransportType } from "@/types/building";
 import logo from "@/assets/logo.png";
 
 export default function CityExplore() {
   const navigate = useNavigate();
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showAds, setShowAds] = useState(false);
+  const [showVehicleShop, setShowVehicleShop] = useState(false);
   const [flyMode, setFlyMode] = useState(false);
+  const [inVehicle, setInVehicle] = useState(false);
+  const [currentVehicle, setCurrentVehicle] = useState<TransportType>("car");
+  const [vehicleColor, setVehicleColor] = useState("#4A90D9");
 
   const userName = useMemo(() => {
     const stored = localStorage.getItem("agentoffice_user");
@@ -23,10 +30,22 @@ export default function CityExplore() {
     return stored ? JSON.parse(stored) : { name: "São Paulo", flag: "🇧🇷" };
   }, []);
 
+  const handleVehicleSelect = useCallback((type: TransportType, color: string) => {
+    setCurrentVehicle(type);
+    setVehicleColor(color);
+  }, []);
+
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-background select-none">
       {/* 3D City Scene */}
-      <CityExploreScene playerName={userName} flyMode={flyMode} />
+      <CityExploreScene
+        playerName={userName}
+        flyMode={flyMode}
+        inVehicle={inVehicle}
+        vehicleType={currentVehicle}
+        vehicleColor={vehicleColor}
+        onVehicleToggle={setInVehicle}
+      />
 
       {/* Top HUD */}
       <motion.div
@@ -34,7 +53,7 @@ export default function CityExplore() {
         animate={{ opacity: 1, y: 0 }}
         className="absolute top-0 left-0 right-0 z-40"
       >
-        <div className="mx-auto max-w-6xl px-4 py-3 flex items-center justify-between">
+        <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/city")}
@@ -50,6 +69,17 @@ export default function CityExplore() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Vehicle indicator */}
+            {inVehicle && (
+              <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#C8D880]/20 backdrop-blur-md border border-[#C8D880]/50 text-[#C8D880] text-xs font-medium"
+                style={{ fontFamily: "monospace" }}
+              >
+                <Car className="w-3.5 h-3.5" />
+                EM VEÍCULO
+                <span className="text-[8px] bg-black/40 px-1.5 py-0.5 rounded">[E] SAIR</span>
+              </div>
+            )}
+
             {/* Flight mode toggle */}
             <button
               onClick={() => setFlyMode(!flyMode)}
@@ -60,8 +90,16 @@ export default function CityExplore() {
               }`}
             >
               <Plane className="w-3.5 h-3.5" />
-              + FLY
-              {!flyMode && <span className="text-[8px] bg-red-500 text-white px-1 rounded-sm ml-1">NEW</span>}
+              FLY
+            </button>
+
+            <button
+              onClick={() => setShowVehicleShop(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium"
+            >
+              <ShoppingBag className="w-3.5 h-3.5" />
+              GARAGE
+              <span className="text-[8px] bg-amber-500 text-black px-1 rounded-sm font-bold">NEW</span>
             </button>
 
             <button
@@ -69,7 +107,7 @@ export default function CityExplore() {
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium"
             >
               <Trophy className="w-3.5 h-3.5" />
-              🏆 LEADERBOARD
+              RANK
             </button>
 
             <button
@@ -77,8 +115,7 @@ export default function CityExplore() {
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium"
             >
               <Megaphone className="w-3.5 h-3.5" />
-              PLACE YOUR AD
-              <span className="text-[8px] bg-red-500 text-white px-1 rounded-sm">NEW</span>
+              ADS
             </button>
 
             <button
@@ -86,7 +123,6 @@ export default function CityExplore() {
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium"
             >
               <Search className="w-3.5 h-3.5" />
-              Buscar
             </button>
 
             <button
@@ -135,6 +171,16 @@ export default function CityExplore() {
         </motion.div>
       )}
 
+      {/* Activity Ticker */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.8 }}
+        className="absolute bottom-14 left-1/2 -translate-x-1/2 z-40"
+      >
+        <CityActivityTicker />
+      </motion.div>
+
       {/* Bottom controls hint */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -144,11 +190,11 @@ export default function CityExplore() {
       >
         <div className="flex items-center gap-4 px-4 py-2 rounded-2xl bg-black/60 backdrop-blur-md border border-gray-700/50">
           <span className="text-[10px] text-gray-400">
-            <span className="text-white font-bold">WASD</span> ou <span className="text-white font-bold">Setas</span> para andar
+            <span className="text-white font-bold">WASD</span> andar
           </span>
           <span className="text-gray-600">•</span>
           <span className="text-[10px] text-gray-400">
-            <span className="text-white font-bold">CLICK</span> para teleportar
+            <span className="text-white font-bold">CLICK</span> teleportar
           </span>
           <span className="text-gray-600">•</span>
           <span className="text-[10px] text-gray-400">
@@ -156,7 +202,11 @@ export default function CityExplore() {
           </span>
           <span className="text-gray-600">•</span>
           <span className="text-[10px] text-gray-400">
-            <span className="text-white font-bold">ARRASTAR</span> câmera
+            <span className="text-white font-bold">E</span> veículo
+          </span>
+          <span className="text-gray-600">•</span>
+          <span className="text-[10px] text-gray-400">
+            <span className="text-white font-bold">DRAG</span> câmera
           </span>
         </div>
       </motion.div>
@@ -171,7 +221,7 @@ export default function CityExplore() {
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50">
           <Users2 className="w-3.5 h-3.5 text-emerald-400" />
           <span className="text-[10px] text-gray-300">
-            Cidade com prédios dinâmicos carregados
+            Cidade com prédios dinâmicos
           </span>
         </div>
       </motion.div>
@@ -191,6 +241,12 @@ export default function CityExplore() {
       {/* Panels */}
       <CityLeaderboard isOpen={showLeaderboard} onClose={() => setShowLeaderboard(false)} />
       <CityAdPlacement isOpen={showAds} onClose={() => setShowAds(false)} />
+      <VehicleShop
+        isOpen={showVehicleShop}
+        onClose={() => setShowVehicleShop(false)}
+        currentVehicle={currentVehicle}
+        onSelect={handleVehicleSelect}
+      />
     </div>
   );
 }
