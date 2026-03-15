@@ -332,6 +332,3 @@ export function Vehicle3D({ type, position, color, isActive, ownerName, onClick 
   );
 }
 
-// Need this import at the top for useState
-import { useState } from "react";
-import { TRANSPORT_INFO } from "@/types/building";
