@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Building2, Users2, Trophy, Megaphone, Plane, Search, ShoppingBag, MessageCircle, Target, Car, Award, Briefcase, Dna, Users, Zap, Bot, Globe, Monitor } from "lucide-react";
+import { ArrowLeft, Building2, Users2, Trophy, Megaphone, Plane, Search, ShoppingBag, MessageCircle, Target, Car, Award, Briefcase, Dna, Users, Zap, Bot, Globe, Monitor, Video, Hash, Eye, BarChart3, Calendar, Gamepad2, Link2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { CityExploreScene } from "@/components/office/3d/CityExploreScene";
 import { CityLeaderboard } from "@/components/city/CityLeaderboard";
@@ -23,6 +23,14 @@ import { TeamAgents } from "@/components/collaboration/TeamAgents";
 import { PublicWorkspaces } from "@/components/collaboration/PublicWorkspaces";
 import { MessengerHub } from "@/components/collaboration/MessengerHub";
 import { AgentTraining } from "@/components/collaboration/AgentTraining";
+import { MeetingSystem } from "@/components/workspace/MeetingSystem";
+import { TeamChatSystem } from "@/components/workspace/TeamChatSystem";
+import { FocusMode, type FocusModeType } from "@/components/workspace/FocusMode";
+import { TeamAnalytics } from "@/components/workspace/TeamAnalytics";
+import { VirtualEvents } from "@/components/workspace/VirtualEvents";
+import { ScreenSharing } from "@/components/workspace/ScreenSharing";
+import { ToolIntegrations } from "@/components/workspace/ToolIntegrations";
+import { TeamEngagement } from "@/components/workspace/TeamEngagement";
 import type { TransportType } from "@/types/building";
 import logo from "@/assets/logo.png";
 
@@ -54,6 +62,17 @@ export default function CityExplore() {
   const [showMessenger, setShowMessenger] = useState(false);
   const [showTraining, setShowTraining] = useState(false);
   const [userStatus, setUserStatus] = useState<UserStatus>("available");
+
+  // Workspace states
+  const [showMeeting, setShowMeeting] = useState(false);
+  const [showTeamChat, setShowTeamChat] = useState(false);
+  const [showFocusMode, setShowFocusMode] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showEvents, setShowEvents] = useState(false);
+  const [showScreenShare, setShowScreenShare] = useState(false);
+  const [showIntegrations, setShowIntegrations] = useState(false);
+  const [showEngagement, setShowEngagement] = useState(false);
+  const [focusMode, setFocusMode] = useState<FocusModeType>("normal");
 
   const userName = useMemo(() => {
     const stored = localStorage.getItem("agentoffice_user");
@@ -199,6 +218,32 @@ export default function CityExplore() {
                 <button onClick={() => setShowRanking(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
                   <Award className="w-3.5 h-3.5" />
                 </button>
+                {/* Workspace tools */}
+                <button onClick={() => setShowMeeting(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-red-700/30 text-red-400 hover:bg-red-400/10 transition-all text-xs font-medium" title="Reuniões">
+                  <Video className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => setShowTeamChat(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Team Chat">
+                  <Hash className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => setShowFocusMode(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Foco">
+                  <Eye className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => setShowAnalytics(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Analytics">
+                  <BarChart3 className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => setShowEvents(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Eventos">
+                  <Calendar className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => setShowScreenShare(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Compartilhar">
+                  <Monitor className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => setShowIntegrations(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Integrações">
+                  <Link2 className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={() => setShowEngagement(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Engajamento">
+                  <Gamepad2 className="w-3.5 h-3.5" />
+                </button>
+
                 <button onClick={() => navigate("/ecosystem")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-violet-700/30 text-violet-400 hover:bg-violet-400/10 transition-all text-xs font-medium" title="Ecosystem">
                   <Dna className="w-3.5 h-3.5" />
                 </button>
@@ -311,6 +356,16 @@ export default function CityExplore() {
           <PublicWorkspaces isOpen={showPublicSpaces} onClose={() => setShowPublicSpaces(false)} />
           <MessengerHub isOpen={showMessenger} onClose={() => setShowMessenger(false)} />
           <AgentTraining isOpen={showTraining} onClose={() => setShowTraining(false)} />
+
+          {/* Workspace Panels */}
+          <MeetingSystem isOpen={showMeeting} onClose={() => setShowMeeting(false)} />
+          <TeamChatSystem isOpen={showTeamChat} onClose={() => setShowTeamChat(false)} />
+          <FocusMode isOpen={showFocusMode} onClose={() => setShowFocusMode(false)} currentMode={focusMode} onModeChange={setFocusMode} />
+          <TeamAnalytics isOpen={showAnalytics} onClose={() => setShowAnalytics(false)} />
+          <VirtualEvents isOpen={showEvents} onClose={() => setShowEvents(false)} />
+          <ScreenSharing isOpen={showScreenShare} onClose={() => setShowScreenShare(false)} />
+          <ToolIntegrations isOpen={showIntegrations} onClose={() => setShowIntegrations(false)} />
+          <TeamEngagement isOpen={showEngagement} onClose={() => setShowEngagement(false)} />
         </>
       )}
     </div>
