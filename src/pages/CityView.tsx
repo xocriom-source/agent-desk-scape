@@ -149,13 +149,22 @@ export default function CityView() {
               {buildings.length} prédios
             </span>
           </div>
-          <button
-            onClick={() => navigate("/office")}
-            className="text-sm font-medium bg-primary text-white hover:bg-primary/90 px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
-          >
-            <Building2 className="w-4 h-4" />
-            Meu Prédio
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate("/city-explore")}
+              className="text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+            >
+              <Globe className="w-4 h-4" />
+              Explorar 3D
+            </button>
+            <button
+              onClick={() => navigate("/office")}
+              className="text-sm font-medium bg-primary text-white hover:bg-primary/90 px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+            >
+              <Building2 className="w-4 h-4" />
+              Meu Prédio
+            </button>
+          </div>
         </div>
       </div>
 
