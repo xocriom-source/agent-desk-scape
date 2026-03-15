@@ -125,6 +125,77 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_channels: {
+        Row: {
+          building_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          type: string
+        }
+        Insert: {
+          building_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          type?: string
+        }
+        Update: {
+          building_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          type?: string
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          author_name: string
+          channel_id: string
+          content: string
+          created_at: string
+          file_name: string | null
+          file_size: string | null
+          id: string
+          thread_id: string | null
+          user_id: string
+        }
+        Insert: {
+          author_name: string
+          channel_id: string
+          content: string
+          created_at?: string
+          file_name?: string | null
+          file_size?: string | null
+          id?: string
+          thread_id?: string | null
+          user_id: string
+        }
+        Update: {
+          author_name?: string
+          channel_id?: string
+          content?: string
+          created_at?: string
+          file_name?: string | null
+          file_size?: string | null
+          id?: string
+          thread_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "chat_channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       city_events: {
         Row: {
           agents_involved: string[] | null
@@ -361,6 +432,106 @@ export type Database = {
         }
         Relationships: []
       }
+      meeting_notes: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          meeting_id: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          meeting_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          meeting_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_notes_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_participants: {
+        Row: {
+          id: string
+          joined_at: string | null
+          meeting_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          joined_at?: string | null
+          meeting_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          joined_at?: string | null
+          meeting_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_participants_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meetings: {
+        Row: {
+          building_id: string | null
+          created_at: string
+          created_by: string
+          duration_minutes: number
+          external_link: string | null
+          id: string
+          room: string
+          scheduled_at: string
+          status: string
+          title: string
+        }
+        Insert: {
+          building_id?: string | null
+          created_at?: string
+          created_by: string
+          duration_minutes?: number
+          external_link?: string | null
+          id?: string
+          room: string
+          scheduled_at?: string
+          status?: string
+          title: string
+        }
+        Update: {
+          building_id?: string | null
+          created_at?: string
+          created_by?: string
+          duration_minutes?: number
+          external_link?: string | null
+          id?: string
+          room?: string
+          scheduled_at?: string
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -394,6 +565,39 @@ export type Database = {
           id?: string
           status?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      user_presence: {
+        Row: {
+          building_id: string | null
+          id: string
+          last_seen: string
+          position_x: number | null
+          position_y: number | null
+          position_z: number | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          building_id?: string | null
+          id?: string
+          last_seen?: string
+          position_x?: number | null
+          position_y?: number | null
+          position_z?: number | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          building_id?: string | null
+          id?: string
+          last_seen?: string
+          position_x?: number | null
+          position_y?: number | null
+          position_z?: number | null
+          status?: string
+          user_id?: string
         }
         Relationships: []
       }

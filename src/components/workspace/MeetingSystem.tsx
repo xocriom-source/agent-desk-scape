@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Video, Calendar, FileText, Brain, Users, Plus, Clock, Mic, MicOff, Monitor, MessageSquare, ExternalLink } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface Meeting {
   id: string;
@@ -10,27 +13,9 @@ interface Meeting {
   duration: string;
   participants: { name: string; avatar: string }[];
   status: "scheduled" | "live" | "ended";
-  hasTranscription: boolean;
   notes: string[];
+  createdBy: string;
 }
-
-const MOCK_MEETINGS: Meeting[] = [
-  {
-    id: "m1", title: "Sprint Planning", room: "Sala Alpha", time: "14:00", duration: "45min",
-    participants: [{ name: "Ana", avatar: "👩‍💼" }, { name: "Carlos", avatar: "👨‍💻" }, { name: "Bot Atlas", avatar: "🤖" }],
-    status: "live", hasTranscription: true, notes: ["Definir prioridades Q2", "Revisar backlog"],
-  },
-  {
-    id: "m2", title: "Design Review", room: "Sala Beta", time: "16:00", duration: "30min",
-    participants: [{ name: "Marina", avatar: "👩‍🎨" }, { name: "João", avatar: "👨‍🔬" }],
-    status: "scheduled", hasTranscription: false, notes: [],
-  },
-  {
-    id: "m3", title: "Retrospectiva", room: "Sala Gamma", time: "10:00", duration: "60min",
-    participants: [{ name: "Time Alpha", avatar: "👥" }],
-    status: "ended", hasTranscription: true, notes: ["Melhorar CI/CD", "Mais pair programming"],
-  },
-];
 
 const ROOMS = ["Sala Alpha", "Sala Beta", "Sala Gamma", "Auditório", "Sala 1:1"];
 
@@ -40,15 +25,97 @@ interface Props {
 }
 
 export function MeetingSystem({ isOpen, onClose }: Props) {
+  const { user, profile } = useAuth();
+  const { toast } = useToast();
   const [tab, setTab] = useState<"rooms" | "schedule" | "active">("rooms");
-  const [meetings] = useState<Meeting[]>(MOCK_MEETINGS);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [micOn, setMicOn] = useState(false);
   const [showNewMeeting, setShowNewMeeting] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newRoom, setNewRoom] = useState(ROOMS[0]);
   const [newTime, setNewTime] = useState("14:00");
+  const [loading, setLoading] = useState(false);
 
   const mainColor = "#6b8fc4";
+
+  // Load meetings
+  useEffect(() => {
+    if (!isOpen) return;
+    const load = async () => {
+      setLoading(true);
+      const { data } = await supabase
+        .from("meetings")
+        .select("*")
+        .order("scheduled_at", { ascending: true });
+      if (data) {
+        setMeetings(data.map(m => ({
+          id: m.id,
+          title: m.title,
+          room: m.room,
+          time: new Date(m.scheduled_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+          duration: `${m.duration_minutes}min`,
+          participants: [],
+          status: m.status as "scheduled" | "live" | "ended",
+          notes: [],
+          createdBy: m.created_by,
+        })));
+      }
+      setLoading(false);
+    };
+    load();
+  }, [isOpen]);
+
+  const handleCreate = async () => {
+    if (!newTitle.trim() || !user) return;
+    const [h, m] = newTime.split(":").map(Number);
+    const scheduledAt = new Date();
+    scheduledAt.setHours(h, m, 0, 0);
+
+    const { error } = await supabase.from("meetings").insert({
+      title: newTitle.trim(),
+      room: newRoom,
+      scheduled_at: scheduledAt.toISOString(),
+      duration_minutes: 30,
+      created_by: user.id,
+      status: "scheduled",
+    });
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Reunião agendada!" });
+      setNewTitle("");
+      setShowNewMeeting(false);
+      // Reload
+      const { data } = await supabase.from("meetings").select("*").order("scheduled_at");
+      if (data) {
+        setMeetings(data.map(m => ({
+          id: m.id, title: m.title, room: m.room,
+          time: new Date(m.scheduled_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+          duration: `${m.duration_minutes}min`, participants: [],
+          status: m.status as "scheduled" | "live" | "ended", notes: [], createdBy: m.created_by,
+        })));
+      }
+    }
+  };
+
+  const handleStartNow = async () => {
+    if (!newTitle.trim() || !user) return;
+    const { error } = await supabase.from("meetings").insert({
+      title: newTitle.trim(),
+      room: newRoom,
+      scheduled_at: new Date().toISOString(),
+      duration_minutes: 30,
+      created_by: user.id,
+      status: "live",
+    });
+    if (error) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Reunião iniciada!" });
+      setNewTitle("");
+      setShowNewMeeting(false);
+    }
+  };
 
   const liveMeetings = meetings.filter(m => m.status === "live");
   const scheduled = meetings.filter(m => m.status === "scheduled");
@@ -88,9 +155,7 @@ export function MeetingSystem({ isOpen, onClose }: Props) {
       {/* Tabs */}
       <div className="flex border-b" style={{ borderColor: `${mainColor}10` }}>
         {(["rooms", "schedule", "active"] as const).map(t => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
+          <button key={t} onClick={() => setTab(t)}
             className="flex-1 py-2.5 text-[10px] font-mono tracking-wider uppercase transition-colors"
             style={{ color: tab === t ? mainColor : "#6b7280", borderBottom: tab === t ? `2px solid ${mainColor}` : "2px solid transparent" }}
           >
@@ -99,7 +164,7 @@ export function MeetingSystem({ isOpen, onClose }: Props) {
         ))}
       </div>
 
-      {/* New Meeting Form */}
+      {/* New meeting form */}
       <AnimatePresence>
         {showNewMeeting && (
           <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }} className="overflow-hidden border-b" style={{ borderColor: `${mainColor}10` }}>
@@ -112,12 +177,8 @@ export function MeetingSystem({ isOpen, onClose }: Props) {
                 <input type="time" value={newTime} onChange={e => setNewTime(e.target.value)} className="px-3 py-2 rounded-lg text-xs font-mono bg-white/5 border text-white focus:outline-none" style={{ borderColor: `${mainColor}20` }} />
               </div>
               <div className="flex gap-2">
-                <button onClick={() => setShowNewMeeting(false)} className="flex-1 py-2 rounded-lg text-[10px] font-mono font-bold tracking-wider" style={{ backgroundColor: `${mainColor}20`, color: mainColor }}>
-                  AGENDAR
-                </button>
-                <button className="py-2 px-4 rounded-lg text-[10px] font-mono tracking-wider bg-red-500/20 text-red-400">
-                  INICIAR AGORA
-                </button>
+                <button onClick={handleCreate} className="flex-1 py-2 rounded-lg text-[10px] font-mono font-bold tracking-wider" style={{ backgroundColor: `${mainColor}20`, color: mainColor }}>AGENDAR</button>
+                <button onClick={handleStartNow} className="py-2 px-4 rounded-lg text-[10px] font-mono tracking-wider bg-red-500/20 text-red-400">INICIAR AGORA</button>
               </div>
             </div>
           </motion.div>
@@ -126,6 +187,8 @@ export function MeetingSystem({ isOpen, onClose }: Props) {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {loading && <p className="text-[10px] font-mono text-gray-500 text-center">Carregando...</p>}
+
         {tab === "rooms" && ROOMS.map(room => {
           const active = liveMeetings.find(m => m.room === room);
           return (
@@ -148,36 +211,31 @@ export function MeetingSystem({ isOpen, onClose }: Props) {
           );
         })}
 
-        {tab === "schedule" && [...scheduled, ...ended].map(m => (
-          <div key={m.id} className="p-3 rounded-xl border" style={{ borderColor: `${mainColor}10` }}>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Clock className="w-3 h-3" style={{ color: mainColor }} />
-                <span className="text-xs font-mono font-bold text-white">{m.title}</span>
-              </div>
-              <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${m.status === "ended" ? "bg-gray-700 text-gray-400" : "bg-blue-500/20 text-blue-400"}`}>
-                {m.status === "ended" ? "ENCERRADA" : m.time}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 text-[9px] font-mono" style={{ color: `${mainColor}50` }}>
-              <span>{m.room}</span>
-              <span>·</span>
-              <span>{m.duration}</span>
-              <span>·</span>
-              <span>{m.participants.length} participantes</span>
-            </div>
-            {m.hasTranscription && (
-              <div className="flex gap-2 mt-2">
-                <button className="flex items-center gap-1 px-2 py-1 rounded text-[8px] font-mono" style={{ backgroundColor: `${mainColor}10`, color: mainColor }}>
-                  <Brain className="w-2.5 h-2.5" /> RESUMO AI
-                </button>
-                <button className="flex items-center gap-1 px-2 py-1 rounded text-[8px] font-mono" style={{ backgroundColor: `${mainColor}10`, color: mainColor }}>
-                  <FileText className="w-2.5 h-2.5" /> TRANSCRIÇÃO
-                </button>
-              </div>
+        {tab === "schedule" && (
+          <>
+            {[...scheduled, ...ended].length === 0 && !loading && (
+              <p className="text-[10px] font-mono text-gray-500 text-center mt-8">Nenhuma reunião agendada</p>
             )}
-          </div>
-        ))}
+            {[...scheduled, ...ended].map(m => (
+              <div key={m.id} className="p-3 rounded-xl border" style={{ borderColor: `${mainColor}10` }}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-3 h-3" style={{ color: mainColor }} />
+                    <span className="text-xs font-mono font-bold text-white">{m.title}</span>
+                  </div>
+                  <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${m.status === "ended" ? "bg-gray-700 text-gray-400" : "bg-blue-500/20 text-blue-400"}`}>
+                    {m.status === "ended" ? "ENCERRADA" : m.time}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-[9px] font-mono" style={{ color: `${mainColor}50` }}>
+                  <span>{m.room}</span>
+                  <span>·</span>
+                  <span>{m.duration}</span>
+                </div>
+              </div>
+            ))}
+          </>
+        )}
 
         {tab === "active" && (
           liveMeetings.length === 0 ? (
@@ -191,11 +249,6 @@ export function MeetingSystem({ isOpen, onClose }: Props) {
                 <span className="text-sm font-mono font-bold text-white">{m.title}</span>
                 <span className="text-[8px] font-mono px-2 py-0.5 rounded bg-red-500/20 text-red-400 animate-pulse">● LIVE</span>
               </div>
-              <div className="flex gap-1.5 mb-3">
-                {m.participants.map((p, i) => (
-                  <span key={i} className="text-lg" title={p.name}>{p.avatar}</span>
-                ))}
-              </div>
               <div className="flex gap-2">
                 <button onClick={() => setMicOn(!micOn)} className="p-2 rounded-lg" style={{ backgroundColor: micOn ? `${mainColor}20` : "rgba(255,255,255,0.05)" }}>
                   {micOn ? <Mic className="w-4 h-4" style={{ color: mainColor }} /> : <MicOff className="w-4 h-4 text-gray-500" />}
@@ -203,16 +256,7 @@ export function MeetingSystem({ isOpen, onClose }: Props) {
                 <button className="p-2 rounded-lg bg-white/5"><Monitor className="w-4 h-4 text-gray-400" /></button>
                 <button className="p-2 rounded-lg bg-white/5"><MessageSquare className="w-4 h-4 text-gray-400" /></button>
                 <button className="p-2 rounded-lg bg-white/5"><FileText className="w-4 h-4 text-gray-400" /></button>
-                <button className="ml-auto flex items-center gap-1 px-3 py-2 rounded-lg text-[9px] font-mono" style={{ backgroundColor: `${mainColor}15`, color: mainColor }}>
-                  <ExternalLink className="w-3 h-3" /> LINK EXTERNO
-                </button>
               </div>
-              {m.notes.length > 0 && (
-                <div className="mt-3 p-2 rounded-lg bg-white/5">
-                  <p className="text-[8px] font-mono text-gray-500 mb-1">NOTAS COMPARTILHADAS</p>
-                  {m.notes.map((n, i) => <p key={i} className="text-[10px] font-mono text-gray-300">• {n}</p>)}
-                </div>
-              )}
             </div>
           ))
         )}
