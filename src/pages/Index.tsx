@@ -1,4 +1,4 @@
-import { OfficeCanvas } from "@/components/office/OfficeCanvas";
+import { OfficeScene3D } from "@/components/office3d/OfficeScene3D";
 import { TopBar } from "@/components/office/TopBar";
 import { ActionBar } from "@/components/office/ActionBar";
 import { ActivityLog } from "@/components/office/ActivityLog";
@@ -17,14 +17,17 @@ const Index = () => {
   } = useOfficeState();
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-canvas">
-      <TopBar agentCount={agents.filter((a) => a.status === "active").length} />
+    <div className="relative w-screen h-screen overflow-hidden">
+      <TopBar
+        agentCount={agents.length}
+        activeCount={agents.filter((a) => a.status === "active").length}
+      />
 
-      <OfficeCanvas
+      <OfficeScene3D
         agents={agents}
         furniture={furniture}
-        onAgentClick={selectAgent}
         selectedAgentId={selectedAgent?.id}
+        onAgentClick={selectAgent}
       />
 
       <ActivityLog
