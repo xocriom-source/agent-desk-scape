@@ -13,33 +13,64 @@ const STATUS_COLORS: Record<string, string> = {
 const S = 0.5; // tile to world scale
 
 // ── Interior building shell ──
-function BuildingInterior({ rooms }: { rooms: RoomDef[] }) {
-  const minX = Math.min(...rooms.map(r => r.x)) - 1;
-  const minY = Math.min(...rooms.map(r => r.y)) - 1;
-  const maxX = Math.max(...rooms.map(r => r.x + r.w)) + 1;
-  const maxY = Math.max(...rooms.map(r => r.y + r.h)) + 1;
+function BuildingInterior({
+  rooms,
+  onFloorClick,
+  clickEnabled,
+}: {
+  rooms: RoomDef[];
+  onFloorClick?: (x: number, y: number) => void;
+  clickEnabled?: boolean;
+}) {
+  const minX = Math.min(...rooms.map((r) => r.x)) - 1;
+  const minY = Math.min(...rooms.map((r) => r.y)) - 1;
+  const maxX = Math.max(...rooms.map((r) => r.x + r.w)) + 1;
+  const maxY = Math.max(...rooms.map((r) => r.y + r.h)) + 1;
   const bw = (maxX - minX) * S;
   const bh = (maxY - minY) * S;
   const cx = ((minX + maxX) / 2) * S;
   const cz = ((minY + maxY) / 2) * S;
   const wallH = 0.9;
 
+  const handleFloorDown = (e: ThreeEvent<PointerEvent>) => {
+    if (!clickEnabled) return;
+    e.stopPropagation();
+    const tx = Math.round(e.point.x / S);
+    const ty = Math.round(e.point.z / S);
+    onFloorClick?.(tx, ty);
+  };
+
   return (
     <group>
       {/* ── Main building floor (tile look) ── */}
-      <mesh position={[cx, 0.001, cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      <mesh
+        position={[cx, 0.001, cz]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        receiveShadow
+        onPointerDown={handleFloorDown}
+      >
         <planeGeometry args={[bw, bh]} />
         <meshStandardMaterial color="#D5CFC5" />
       </mesh>
-      {/* Tile grid lines on floor */}
+      {/* Tile grid lines on floor (non-interactive so clicks go through) */}
       {Array.from({ length: Math.ceil(bw) + 1 }).map((_, i) => (
-        <mesh key={`vl${i}`} position={[cx - bw / 2 + i, 0.002, cz]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh
+          key={`vl${i}`}
+          raycast={() => null}
+          position={[cx - bw / 2 + i, 0.002, cz]}
+          rotation={[-Math.PI / 2, 0, 0]}
+        >
           <planeGeometry args={[0.01, bh]} />
           <meshBasicMaterial color="#C0B8A8" />
         </mesh>
       ))}
       {Array.from({ length: Math.ceil(bh) + 1 }).map((_, i) => (
-        <mesh key={`hl${i}`} position={[cx, 0.002, cz - bh / 2 + i]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh
+          key={`hl${i}`}
+          raycast={() => null}
+          position={[cx, 0.002, cz - bh / 2 + i]}
+          rotation={[-Math.PI / 2, 0, 0]}
+        >
           <planeGeometry args={[bw, 0.01]} />
           <meshBasicMaterial color="#C0B8A8" />
         </mesh>
