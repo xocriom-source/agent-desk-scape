@@ -403,7 +403,7 @@ function BuildingExterior({
             <sphereGeometry args={[0.06, 8, 8]} />
             <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={1.5} />
           </mesh>
-          <pointLight position={[0, 1.6, 0]} intensity={0.3} distance={4} color="#FFD060" />
+          {i < 2 && <pointLight position={[0, 1.6, 0]} intensity={0.25} distance={4} color="#FFD060" />}
         </group>
       ))}
     </group>
