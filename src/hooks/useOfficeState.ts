@@ -71,9 +71,9 @@ function createAgents(): Agent[] {
   });
 }
 
-export function useOfficeState() {
+export function useOfficeState(playerName: string = "Você") {
   const [agents, setAgents] = useState<Agent[]>(createAgents);
-  const [player, setPlayer] = useState<Player>({ x: 13, y: 18, name: "Você" });
+  const [player, setPlayer] = useState<Player>({ x: 13, y: 18, name: playerName });
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [showActivityLog, setShowActivityLog] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);

@@ -5,6 +5,7 @@ import { TILE_MAP, TILE_SIZE, MAP_COLS, MAP_ROWS, FURNITURE, ROOMS } from "@/dat
 interface OfficeCanvasProps {
   agents: Agent[];
   player: Player;
+  playerConfig?: { color: string; hairStyle: string; outfitStyle: string };
   selectedAgentId?: string;
   onAgentClick: (agent: Agent) => void;
 }
@@ -27,6 +28,7 @@ const STATUS_COLORS: Record<string, string> = {
 export const OfficeCanvas = memo(function OfficeCanvas({
   agents,
   player,
+  playerConfig,
   selectedAgentId,
   onAgentClick,
 }: OfficeCanvasProps) {
@@ -279,18 +281,21 @@ export const OfficeCanvas = memo(function OfficeCanvas({
       // Body
       const bw = TILE_SIZE * 0.5;
       const bh = TILE_SIZE * 0.6;
+      const pColor = playerConfig?.color || "#4F46E5";
       // Hair
       ctx.fillStyle = "#1E1B4B";
-      ctx.beginPath();
-      ctx.roundRect(px - bw / 2 - 2, py - bh / 2 + bob - 14, bw + 4, bh * 0.35, [6, 6, 0, 0]);
-      ctx.fill();
+      if (playerConfig?.hairStyle !== "none") {
+        ctx.beginPath();
+        ctx.roundRect(px - bw / 2 - 2, py - bh / 2 + bob - 14, bw + 4, bh * 0.35, [6, 6, 0, 0]);
+        ctx.fill();
+      }
       // Face
       ctx.fillStyle = "#FBBF8B";
       ctx.beginPath();
       ctx.roundRect(px - bw / 2 + 2, py - bh / 2 + bob - 4, bw - 4, bh * 0.3, 2);
       ctx.fill();
       // Outfit
-      ctx.fillStyle = "#4F46E5";
+      ctx.fillStyle = pColor;
       ctx.beginPath();
       ctx.roundRect(px - bw / 2, py + bob, bw, bh * 0.5, [0, 0, 4, 4]);
       ctx.fill();
@@ -300,22 +305,26 @@ export const OfficeCanvas = memo(function OfficeCanvas({
       ctx.fillRect(px - 4, py - 4 + bob, 2, 2);
       ctx.fillRect(px + 2, py - 4 + bob, 2, 2);
 
+      // Crown for boss
+      ctx.font = "10px serif";
+      ctx.fillText("👑", px, py - bh / 2 + bob - 20);
+
       // Name tag
       ctx.font = "bold 10px 'Space Grotesk', sans-serif";
       ctx.textAlign = "center";
       const tw = ctx.measureText(player.name).width + 12;
-      ctx.fillStyle = "rgba(79, 70, 229, 0.9)";
+      ctx.fillStyle = pColor + "E6";
       ctx.beginPath();
-      ctx.roundRect(px - tw / 2, py - bh / 2 + bob - 30, tw, 16, 8);
+      ctx.roundRect(px - tw / 2, py - bh / 2 + bob - 36, tw, 16, 8);
       ctx.fill();
       ctx.fillStyle = "#FFFFFF";
-      ctx.fillText(player.name, px, py - bh / 2 + bob - 20);
+      ctx.fillText(player.name, px, py - bh / 2 + bob - 26);
     }
 
     ctx.restore();
 
     animFrameRef.current = requestAnimationFrame(draw);
-  }, [agents, player, selectedAgentId]);
+  }, [agents, player, playerConfig, selectedAgentId]);
 
   useEffect(() => {
     animFrameRef.current = requestAnimationFrame(draw);
