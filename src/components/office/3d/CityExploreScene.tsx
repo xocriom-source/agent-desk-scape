@@ -250,26 +250,23 @@ function CityPlaza() {
         </group>
       ))}
 
-      {/* ── Lamp posts (8 around perimeter) ── */}
+      {/* ── Lamp posts (4 corners only, no pointLights) ── */}
       {[
         [-4.5, -4.5], [4.5, -4.5], [-4.5, 4.5], [4.5, 4.5],
-        [0, -4.8], [0, 4.8], [-4.8, 0], [4.8, 0],
       ].map(([lx, lz], i) => (
         <group key={`lamp-${i}`} position={[lx, 0, lz]}>
           <mesh position={[0, 0.9, 0]}>
-            <cylinderGeometry args={[0.025, 0.04, 1.8, 6]} />
+            <cylinderGeometry args={[0.025, 0.04, 1.8, 4]} />
             <meshStandardMaterial color="#333" metalness={0.7} />
           </mesh>
-          {/* Lamp head */}
           <mesh position={[0, 1.85, 0]}>
-            <cylinderGeometry args={[0.08, 0.04, 0.08, 6]} />
+            <cylinderGeometry args={[0.08, 0.04, 0.08, 4]} />
             <meshStandardMaterial color="#444" metalness={0.5} />
           </mesh>
           <mesh position={[0, 1.82, 0]}>
-            <sphereGeometry args={[0.04, 6, 6]} />
-            <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={2} />
+            <sphereGeometry args={[0.04, 4, 4]} />
+            <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={3} />
           </mesh>
-          <pointLight position={[0, 1.8, 0]} intensity={0.2} distance={4} color="#FFD060" />
         </group>
       ))}
 
