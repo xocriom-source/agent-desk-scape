@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import type { Agent, AgentLog, Player } from "@/types/agent";
-import { isWalkable, getRoomAt } from "@/data/officeMap";
+import { isWalkable, getRoomAt, ROOMS } from "@/data/officeMap";
 import {
   bfsPath8,
   findClosestWalkable,
