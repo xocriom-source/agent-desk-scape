@@ -664,8 +664,8 @@ export function OfficeScene({
         <ControlsUpdater controlsRef={controlsRef} />
         <CameraTarget player={player} controlsRef={controlsRef} />
 
-        {/* Building interior (click-to-move) */}
-        <BuildingInterior
+        {/* Building (click-to-move) */}
+        <BuildingExterior
           rooms={rooms}
           clickEnabled={!editMode}
           onFloorClick={(x, y) => onMapClick?.(x, y)}
