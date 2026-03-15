@@ -180,6 +180,10 @@ const Index = () => {
       <TaskBoard agents={agents} isOpen={showTasks} onClose={() => setShowTasks(false)} />
       <AgentMessaging agents={agents} isOpen={showMessaging} onClose={() => setShowMessaging(false)} />
       <AgentGallery agents={agents} isOpen={showGallery} onClose={() => setShowGallery(false)} />
+      <CreativeStudios agents={agents} isOpen={showStudios} onClose={() => setShowStudios(false)} />
+      <AnalyticsDashboard agents={agents} isOpen={showAnalytics} onClose={() => setShowAnalytics(false)} />
+      <AgentMarketplace agents={agents} isOpen={showMarketplace} onClose={() => setShowMarketplace(false)} />
+      <AIGovernance agents={agents} isOpen={showGovernance} onClose={() => setShowGovernance(false)} />
 
       {!editMode && <ActionBar onMove={movePlayer} />}
       {!editMode && <MiniMap player={player} agents={agents} rooms={rooms} />}
