@@ -34,29 +34,6 @@ function ExteriorGround({ cx, cz }: { cx: number; cz: number }) {
 }
 
 
-        {/* Basin */}
-        <mesh position={[0, 0.32, 0]}>
-          <cylinderGeometry args={[0.45, 0.5, 0.05, 16]} />
-          <meshStandardMaterial color="#7A7A88" roughness={0.6} />
-        </mesh>
-        {/* Water */}
-        <mesh position={[0, 0.3, 0]}>
-          <cylinderGeometry args={[0.43, 0.43, 0.08, 16]} />
-          <meshStandardMaterial color="#4A90C0" transparent opacity={0.6} roughness={0.1} />
-        </mesh>
-        {/* Pillar */}
-        <mesh position={[0, 0.55, 0]}>
-          <cylinderGeometry args={[0.06, 0.08, 0.5, 8]} />
-          <meshStandardMaterial color="#8A8A98" />
-        </mesh>
-        {/* Top basin */}
-        <mesh position={[0, 0.75, 0]}>
-          <cylinderGeometry args={[0.18, 0.2, 0.08, 12]} />
-          <meshStandardMaterial color="#7A7A88" />
-        </mesh>
-        {/* Water glow */}
-        <pointLight position={[0, 0.5, 0]} intensity={0.3} distance={3} color="#4AC0FF" />
-      </group>
 
       {/* ── Trees (4 corners) ── */}
       {[[-2.5, -2.5], [2.5, -2.5], [-2.5, 2.5], [2.5, 2.5]].map(([tx, tz], i) => (
