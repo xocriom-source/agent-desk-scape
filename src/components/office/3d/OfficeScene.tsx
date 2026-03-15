@@ -251,11 +251,31 @@ function Room3D({
   const wallH = 0.75;
   const wallT = 0.08;
 
+  const downRef = useRef<{ x: number; y: number; t: number; button: number } | null>(null);
+
   const handleDown = (e: ThreeEvent<PointerEvent>) => {
     if (!clickEnabled) return;
-    e.stopPropagation();
-    const tx = Math.round(e.point.x / S);
-    const ty = Math.round(e.point.z / S);
+    downRef.current = {
+      x: e.nativeEvent.clientX,
+      y: e.nativeEvent.clientY,
+      t: performance.now(),
+      button: e.nativeEvent.button,
+    };
+  };
+
+  const handleUp = (e: ThreeEvent<PointerEvent>) => {
+    if (!clickEnabled) return;
+    const down = downRef.current;
+    downRef.current = null;
+    if (!down) return;
+    if (down.button !== 0) return;
+
+    const dist = Math.hypot(e.nativeEvent.clientX - down.x, e.nativeEvent.clientY - down.y);
+    const dt = performance.now() - down.t;
+    if (dist > 6 || dt > 450) return;
+
+    const tx = Math.floor(e.point.x / S + 0.5);
+    const ty = Math.floor(e.point.z / S + 0.5);
     onFloorClick?.(tx, ty);
   };
 
