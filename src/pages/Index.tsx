@@ -53,7 +53,9 @@ const Index = () => {
   const [showNPCs, setShowNPCs] = useState(false);
   const [showObservation, setShowObservation] = useState(false);
   const [showDistricts, setShowDistricts] = useState(false);
-  const [notifCounts, setNotifCounts] = useState({ feed: 3, tasks: 2, messages: 5, governance: 1 });
+  const [showEvents, setShowEvents] = useState(false);
+  const [showCityChat, setShowCityChat] = useState(false);
+  const [notifCounts, setNotifCounts] = useState({ feed: 3, tasks: 2, messages: 5, governance: 1, events: 2 });
   const [playerConfig, setPlayerConfig] = useState<PlayerConfig>({
     name: "Chefe",
     color: "#4F46E5",
