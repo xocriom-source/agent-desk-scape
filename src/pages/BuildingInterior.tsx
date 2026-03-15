@@ -8,6 +8,7 @@ import {
 import { getBuildingById } from "@/data/buildingRegistry";
 import { DISTRICTS, BUILDING_STYLES } from "@/types/building";
 import { AIReceptionistChat } from "@/components/building/AIReceptionistChat";
+import { AgentWorkspaceHub } from "@/components/workspace/AgentWorkspaceHub";
 import logo from "@/assets/logo.png";
 
 export default function BuildingInterior() {
