@@ -139,6 +139,9 @@ const Index = () => {
         onOpenAnalytics={() => setShowAnalytics(true)}
         onOpenMarketplace={() => setShowMarketplace(true)}
         onOpenGovernance={() => setShowGovernance(true)}
+        onOpenMemory={() => setShowMemory(true)}
+        onOpenCommand={() => setShowCommand(true)}
+        notifications={notifCounts}
       />
 
       <OfficeScene
