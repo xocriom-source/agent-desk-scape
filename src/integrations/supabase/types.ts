@@ -14,6 +14,225 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_activity_log: {
+        Row: {
+          action_type: string
+          agent_id: string
+          agent_name: string
+          building_id: string | null
+          created_at: string
+          description: string
+          id: string
+          metadata: Json | null
+        }
+        Insert: {
+          action_type?: string
+          agent_id: string
+          agent_name: string
+          building_id?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          metadata?: Json | null
+        }
+        Update: {
+          action_type?: string
+          agent_id?: string
+          agent_name?: string
+          building_id?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
+      agent_creations: {
+        Row: {
+          agent_id: string
+          agent_name: string
+          building_id: string | null
+          content: string | null
+          created_at: string
+          creation_type: string
+          id: string
+          reactions: number | null
+          reuse_count: number | null
+          tags: string[] | null
+          title: string
+        }
+        Insert: {
+          agent_id: string
+          agent_name: string
+          building_id?: string | null
+          content?: string | null
+          created_at?: string
+          creation_type?: string
+          id?: string
+          reactions?: number | null
+          reuse_count?: number | null
+          tags?: string[] | null
+          title: string
+        }
+        Update: {
+          agent_id?: string
+          agent_name?: string
+          building_id?: string | null
+          content?: string | null
+          created_at?: string
+          creation_type?: string
+          id?: string
+          reactions?: number | null
+          reuse_count?: number | null
+          tags?: string[] | null
+          title?: string
+        }
+        Relationships: []
+      }
+      agent_protocols: {
+        Row: {
+          created_at: string
+          from_agent: string
+          id: string
+          message: string | null
+          metadata: Json | null
+          protocol_type: string
+          resolved_at: string | null
+          status: string | null
+          to_agent: string
+        }
+        Insert: {
+          created_at?: string
+          from_agent: string
+          id?: string
+          message?: string | null
+          metadata?: Json | null
+          protocol_type?: string
+          resolved_at?: string | null
+          status?: string | null
+          to_agent: string
+        }
+        Update: {
+          created_at?: string
+          from_agent?: string
+          id?: string
+          message?: string | null
+          metadata?: Json | null
+          protocol_type?: string
+          resolved_at?: string | null
+          status?: string | null
+          to_agent?: string
+        }
+        Relationships: []
+      }
+      city_events: {
+        Row: {
+          agents_involved: string[] | null
+          created_at: string
+          description: string | null
+          event_type: string
+          id: string
+          importance: number | null
+          metadata: Json | null
+          title: string
+        }
+        Insert: {
+          agents_involved?: string[] | null
+          created_at?: string
+          description?: string | null
+          event_type: string
+          id?: string
+          importance?: number | null
+          metadata?: Json | null
+          title: string
+        }
+        Update: {
+          agents_involved?: string[] | null
+          created_at?: string
+          description?: string | null
+          event_type?: string
+          id?: string
+          importance?: number | null
+          metadata?: Json | null
+          title?: string
+        }
+        Relationships: []
+      }
+      emergent_terms: {
+        Row: {
+          agents_using: string[] | null
+          category: string | null
+          created_at: string
+          estimated_meaning: string | null
+          first_seen_at: string
+          id: string
+          occurrences: number | null
+          status: string | null
+          term: string
+          updated_at: string
+        }
+        Insert: {
+          agents_using?: string[] | null
+          category?: string | null
+          created_at?: string
+          estimated_meaning?: string | null
+          first_seen_at?: string
+          id?: string
+          occurrences?: number | null
+          status?: string | null
+          term: string
+          updated_at?: string
+        }
+        Update: {
+          agents_using?: string[] | null
+          category?: string | null
+          created_at?: string
+          estimated_meaning?: string | null
+          first_seen_at?: string
+          id?: string
+          occurrences?: number | null
+          status?: string | null
+          term?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      emergent_workflows: {
+        Row: {
+          description: string | null
+          detection_count: number | null
+          first_detected_at: string
+          id: string
+          is_saved: boolean | null
+          last_detected_at: string
+          name: string
+          saved_by: string | null
+          sequence: Json
+        }
+        Insert: {
+          description?: string | null
+          detection_count?: number | null
+          first_detected_at?: string
+          id?: string
+          is_saved?: boolean | null
+          last_detected_at?: string
+          name: string
+          saved_by?: string | null
+          sequence?: Json
+        }
+        Update: {
+          description?: string | null
+          detection_count?: number | null
+          first_detected_at?: string
+          id?: string
+          is_saved?: boolean | null
+          last_detected_at?: string
+          name?: string
+          saved_by?: string | null
+          sequence?: Json
+        }
+        Relationships: []
+      }
       marketplace_profiles: {
         Row: {
           availability: string | null
