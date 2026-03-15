@@ -564,9 +564,9 @@ export function OfficeScene({
           maxPolarAngle={Math.PI / 2.6}
           minAzimuthAngle={-Math.PI}
           maxAzimuthAngle={Math.PI}
-          zoomSpeed={0.8}
-          rotateSpeed={0.55}
-          panSpeed={0.6}
+          zoomSpeed={0.9}
+          rotateSpeed={0.7}
+          panSpeed={0.75}
           mouseButtons={{
             LEFT: THREE.MOUSE.ROTATE,
             MIDDLE: THREE.MOUSE.DOLLY,
