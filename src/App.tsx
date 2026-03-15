@@ -10,6 +10,7 @@ import Onboarding from "./pages/Onboarding.tsx";
 import Office from "./pages/Index.tsx";
 import WorldMap from "./pages/WorldMap.tsx";
 import CityView from "./pages/CityView.tsx";
+import CityExplore from "./pages/CityExplore.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/world" element={<WorldMap />} />
           <Route path="/city" element={<CityView />} />
+          <Route path="/city-explore" element={<CityExplore />} />
           <Route path="/office" element={<Office />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
