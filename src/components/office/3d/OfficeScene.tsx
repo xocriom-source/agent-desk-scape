@@ -33,15 +33,15 @@ function BuildingExterior({
   const cx = ((minX + maxX) / 2) * S;
   const cz = ((minY + maxY) / 2) * S;
 
-  const foundH = 0.25;   // foundation height
+  const foundH = 0.25;   // foundation height (stilts/dock)
   const wallH = 1.1;     // exterior wall height
   const wallT = 0.25;    // wall thickness
-  const brickColor = "#8B6B52";    // warm brown brick
-  const brickDark = "#6B4F3A";     // darker accent
-  const trimColor = "#D4C8B8";     // light trim/molding
-  const foundColor = "#5A5A5A";    // concrete foundation
-  const windowColor = "#6BA3D6";   // window glass
-  const windowFrame = "#3A3A3A";   // window frame
+  const brickColor = "#4A3525";    // dark weathered wood
+  const brickDark = "#352518";     // darker wood planks
+  const trimColor = "#6B5A45";     // wood trim
+  const foundColor = "#2A2018";    // dark wood stilts/dock
+  const windowColor = "#FF6B9D";   // neon pink window glow
+  const windowFrame = "#2A2018";   // dark wood frame
 
   const downRef = useRef<{ x: number; y: number; t: number; button: number } | null>(null);
 
@@ -136,17 +136,17 @@ function BuildingExterior({
         onPointerUp={handleFloorUp}
       >
         <planeGeometry args={[bw, bh]} />
-        <meshStandardMaterial color="#E8E0D4" />
+        <meshStandardMaterial color="#5C4A38" />
       </mesh>
       {/* Floor tile grid */}
       {Array.from({ length: Math.ceil(bw) + 1 }).map((_, i) => (
         <mesh key={`vl${i}`} raycast={() => null} position={[cx - bw / 2 + i, foundH + 0.002, cz]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[0.015, bh]} /><meshBasicMaterial color="#D0C8B8" />
+          <planeGeometry args={[0.015, bh]} /><meshBasicMaterial color="#4A3828" />
         </mesh>
       ))}
       {Array.from({ length: Math.ceil(bh) + 1 }).map((_, i) => (
         <mesh key={`hl${i}`} raycast={() => null} position={[cx, foundH + 0.002, cz - bh / 2 + i]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[bw, 0.015]} /><meshBasicMaterial color="#D0C8B8" />
+          <planeGeometry args={[bw, 0.015]} /><meshBasicMaterial color="#4A3828" />
         </mesh>
       ))}
 
@@ -206,31 +206,68 @@ function BuildingExterior({
       {/* West wall windows */}
       {windowsAlongZ(winY, westX - wallT - 0.001, nWinZ, cz - bh / 2, bh)}
 
-      {/* ── Ceiling lights (fluorescent) ── */}
+      {/* ── Ceiling lights (warm hanging bulbs - BAYC bar style) ── */}
       {Array.from({ length: 8 }).map((_, i) => {
         const col = i % 4;
         const row = Math.floor(i / 4);
+        const bulbColors = ["#FFB347", "#FF6B6B", "#4ECDC4", "#FFE66D"];
         return (
           <group key={`cl${i}`}>
-            <mesh position={[cx - bw * 0.3 + col * (bw * 0.2), foundH + wallH - 0.04, cz - bh * 0.2 + row * (bh * 0.4)]}>
-              <boxGeometry args={[0.6, 0.025, 0.12]} />
-              <meshStandardMaterial color="#FFF8E8" emissive="#FFF8E8" emissiveIntensity={0.4} />
+            {/* Hanging wire */}
+            <mesh position={[cx - bw * 0.3 + col * (bw * 0.2), foundH + wallH - 0.15, cz - bh * 0.2 + row * (bh * 0.4)]}>
+              <cylinderGeometry args={[0.005, 0.005, 0.2, 4]} />
+              <meshBasicMaterial color="#333" />
+            </mesh>
+            {/* Warm bulb */}
+            <mesh position={[cx - bw * 0.3 + col * (bw * 0.2), foundH + wallH - 0.28, cz - bh * 0.2 + row * (bh * 0.4)]}>
+              <sphereGeometry args={[0.04, 8, 8]} />
+              <meshStandardMaterial color={bulbColors[col]} emissive={bulbColors[col]} emissiveIntensity={0.8} />
             </mesh>
             <pointLight
-              position={[cx - bw * 0.3 + col * (bw * 0.2), foundH + wallH - 0.1, cz - bh * 0.2 + row * (bh * 0.4)]}
-              intensity={0.12}
+              position={[cx - bw * 0.3 + col * (bw * 0.2), foundH + wallH - 0.3, cz - bh * 0.2 + row * (bh * 0.4)]}
+              intensity={0.15}
               distance={4}
-              color="#FFF5DC"
+              color={bulbColors[col]}
             />
           </group>
         );
       })}
 
-      {/* ── Ground plane around building ── */}
+      {/* ── String lights along north wall ── */}
+      {Array.from({ length: 20 }).map((_, i) => {
+        const t = i / 19;
+        const lx = cx - bw * 0.45 + t * bw * 0.9;
+        const ly = foundH + wallH - 0.08;
+        const lz = northZ + wallT * 0.5;
+        const sag = Math.sin(t * Math.PI) * 0.15;
+        const colors = ["#FF6B6B", "#4ECDC4", "#FFE66D", "#FF6BB5", "#6BCB77"];
+        return (
+          <mesh key={`sl${i}`} position={[lx, ly - sag, lz]}>
+            <sphereGeometry args={[0.02, 6, 6]} />
+            <meshStandardMaterial color={colors[i % 5]} emissive={colors[i % 5]} emissiveIntensity={1.2} />
+          </mesh>
+        );
+      })}
+
+      {/* ── Neon sign on north wall (BAYC style) ── */}
+      <mesh position={[cx, foundH + wallH * 0.65, northZ + wallT * 0.6]}>
+        <boxGeometry args={[1.2, 0.3, 0.02]} />
+        <meshStandardMaterial color="#00CED1" emissive="#00CED1" emissiveIntensity={1.5} transparent opacity={0.9} />
+      </mesh>
+      <pointLight position={[cx, foundH + wallH * 0.65, northZ + wallT + 0.3]} intensity={0.3} distance={5} color="#00CED1" />
+
+      {/* ── Ground plane around building (dark swamp) ── */}
       <mesh position={[cx, -0.01, cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[60, 60]} />
-        <meshStandardMaterial color="#3A3A3A" />
+        <meshStandardMaterial color="#1A2810" />
       </mesh>
+      {/* Swamp water patches */}
+      {[[-3, -2], [5, -4], [-4, 5], [7, 6]].map(([ox, oz], i) => (
+        <mesh key={`swamp${i}`} position={[cx + ox * 2, -0.005, cz + oz * 2]} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[1.5 + i * 0.3, 12]} />
+          <meshStandardMaterial color="#1A3020" transparent opacity={0.7} />
+        </mesh>
+      ))}
     </group>
   );
 }
@@ -344,13 +381,13 @@ function Room3D({
         );
       })()}
 
-      {/* Room name sign on back wall */}
+      {/* Room name neon sign on back wall */}
       <mesh position={[0, wallH - 0.12, -h / 2 + wallT / 2 + 0.001]}>
         <planeGeometry args={[Math.min(w * 0.6, 1.2), 0.15]} />
-        <meshStandardMaterial color="#F5F0E8" />
+        <meshStandardMaterial color="#1A1A1A" />
       </mesh>
       <Html position={[0, wallH - 0.12, -h / 2 + wallT / 2 + 0.01]} center>
-        <div className="px-2 py-0.5 text-[9px] font-bold text-gray-700 whitespace-nowrap pointer-events-none select-none" style={{ fontFamily: "monospace" }}>
+        <div className="px-2 py-0.5 text-[9px] font-bold whitespace-nowrap pointer-events-none select-none" style={{ fontFamily: "monospace", color: "#00CED1", textShadow: "0 0 8px #00CED1" }}>
           {room.name}
         </div>
       </Html>
@@ -742,15 +779,15 @@ export function OfficeScene({
           gl.toneMappingExposure = 1.0;
         }}
       >
-        {/* Dark background like Habbo/Sims */}
-        <color attach="background" args={["#1A1A2E"]} />
-        <fog attach="fog" args={["#1A1A2E", 25, 55]} />
+        {/* Dark swamp night sky */}
+        <color attach="background" args={["#0A0F0A"]} />
+        <fog attach="fog" args={["#0A0F0A", 20, 45]} />
 
-        {/* Indoor lighting - warm office lights */}
-        <ambientLight intensity={0.6} color="#FFF5E6" />
+        {/* Dim moonlight ambient */}
+        <ambientLight intensity={0.25} color="#8899AA" />
         <directionalLight
           position={[10, 20, 8]}
-          intensity={0.8}
+          intensity={0.35}
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
@@ -759,10 +796,11 @@ export function OfficeScene({
           shadow-camera-right={20}
           shadow-camera-top={20}
           shadow-camera-bottom={-20}
+          color="#B8C8E8"
         />
-        {/* Fill light from opposite side */}
-        <directionalLight position={[-8, 10, -6]} intensity={0.3} color="#E8E4DC" />
-        <hemisphereLight args={["#FFF8F0", "#D5CFC5", 0.25]} />
+        {/* Warm interior fill */}
+        <directionalLight position={[-8, 10, -6]} intensity={0.2} color="#FFE0A0" />
+        <hemisphereLight args={["#1A2030", "#0A1008", 0.15]} />
 
         {/* Camera controls - mouse drag rotate, wheel zoom, right-drag pan; works on trackpad wheel for zoom */}
         <OrbitControls

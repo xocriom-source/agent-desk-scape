@@ -17,25 +17,25 @@ export interface RoomDef {
 }
 
 export const DEFAULT_ROOMS: RoomDef[] = [
-  // Top-left: Main work area (large)
-  { id: "work1", name: "Product Team", x: 1, y: 1, w: 14, h: 10, floorColor: "#E8DFD0", wallColor: "#8B95A8", carpetColor: "#C8C0B0" },
-  // Top-center: Meeting rooms
-  { id: "meeting1", name: "Meeting Room A", x: 18, y: 1, w: 8, h: 5, floorColor: "#C8CCE0", wallColor: "#7B85A0", carpetColor: "#B0B4D0" },
-  { id: "meeting2", name: "Meeting Room B", x: 18, y: 8, w: 8, h: 5, floorColor: "#D0C8E0", wallColor: "#8B80A0", carpetColor: "#B8B0D0" },
-  // Top-right: Library / Quiet zone
-  { id: "library", name: "Library", x: 29, y: 1, w: 10, h: 7, floorColor: "#E0D8C8", wallColor: "#8B8575", carpetColor: "#C8C0A8" },
-  // Mid-left: Design / Creative area
-  { id: "design", name: "Design Lab", x: 1, y: 14, w: 10, h: 8, floorColor: "#D8E4D8", wallColor: "#6B9080", carpetColor: "#B8D0B8" },
-  // Mid-center: Lounge / Kitchen
-  { id: "lounge", name: "Lounge", x: 14, y: 16, w: 10, h: 8, floorColor: "#E8E0D0", wallColor: "#9B8B70", carpetColor: "#D0C8B0" },
-  // Mid-right: Server / Infra
-  { id: "server", name: "Server Room", x: 29, y: 11, w: 10, h: 7, floorColor: "#D0D0D8", wallColor: "#606878", carpetColor: "#B0B0C0" },
-  // Bottom: Reception / Entrance
-  { id: "reception", name: "Reception", x: 14, y: 27, w: 12, h: 7, floorColor: "#E4E0D8", wallColor: "#8B8578", carpetColor: "#D8D4C8" },
-  // Bottom-left: Game room
-  { id: "game", name: "Game Room", x: 1, y: 25, w: 10, h: 8, floorColor: "#D8D0E4", wallColor: "#7B70A0", carpetColor: "#C0B8D0" },
-  // Bottom-right: Zen room
-  { id: "zen", name: "Zen Garden", x: 29, y: 21, w: 10, h: 8, floorColor: "#D0E0D8", wallColor: "#608870", carpetColor: "#A8D0B8" },
+  // Top-left: Main work area (large) - dark wood floor, warm glow
+  { id: "work1", name: "Product Team", x: 1, y: 1, w: 14, h: 10, floorColor: "#5C4A3A", wallColor: "#3D2E22", carpetColor: "#4A3828" },
+  // Top-center: Meeting rooms - moody purple/neon
+  { id: "meeting1", name: "Meeting Room A", x: 18, y: 1, w: 8, h: 5, floorColor: "#4A3D50", wallColor: "#2E2235", carpetColor: "#3D2E45" },
+  { id: "meeting2", name: "Meeting Room B", x: 18, y: 8, w: 8, h: 5, floorColor: "#4D3A4A", wallColor: "#352230", carpetColor: "#402E40" },
+  // Top-right: Library / Quiet zone - warm wood
+  { id: "library", name: "Library", x: 29, y: 1, w: 10, h: 7, floorColor: "#6B5840", wallColor: "#3D3028", carpetColor: "#5A4830" },
+  // Mid-left: Design / Creative area - teal accent
+  { id: "design", name: "Design Lab", x: 1, y: 14, w: 10, h: 8, floorColor: "#3A4A48", wallColor: "#223530", carpetColor: "#2E3D38" },
+  // Mid-center: Lounge / Kitchen - warm planks
+  { id: "lounge", name: "Lounge", x: 14, y: 16, w: 10, h: 8, floorColor: "#6B5540", wallColor: "#4A3828", carpetColor: "#5A4530" },
+  // Mid-right: Server / Infra - dark tech
+  { id: "server", name: "Server Room", x: 29, y: 11, w: 10, h: 7, floorColor: "#2E3038", wallColor: "#1A1E28", carpetColor: "#252830" },
+  // Bottom: Reception / Entrance - boardwalk
+  { id: "reception", name: "Reception", x: 14, y: 27, w: 12, h: 7, floorColor: "#7A6548", wallColor: "#4A3828", carpetColor: "#685538" },
+  // Bottom-left: Game room - neon/fun
+  { id: "game", name: "Game Room", x: 1, y: 25, w: 10, h: 8, floorColor: "#3A3050", wallColor: "#252040", carpetColor: "#302845" },
+  // Bottom-right: Zen room - swamp green
+  { id: "zen", name: "Zen Garden", x: 29, y: 21, w: 10, h: 8, floorColor: "#3A4A30", wallColor: "#223020", carpetColor: "#2E3D25" },
 ];
 
 export let ROOMS = [...DEFAULT_ROOMS];
