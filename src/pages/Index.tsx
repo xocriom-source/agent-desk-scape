@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { OfficeScene } from "@/components/office/3d/OfficeScene";
 import { TopBar } from "@/components/office/TopBar";
 import { ActionBar } from "@/components/office/ActionBar";
