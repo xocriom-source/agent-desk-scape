@@ -2,6 +2,7 @@ import { useRef, useState, useMemo, useCallback, useEffect } from "react";
 import { Canvas, useFrame, type ThreeEvent } from "@react-three/fiber";
 import { OrbitControls, Html, Stars } from "@react-three/drei";
 import * as THREE from "three";
+import { useDayNight } from "@/hooks/useDayNight";
 
 const S = 0.5;
 

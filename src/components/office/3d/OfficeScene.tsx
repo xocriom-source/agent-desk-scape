@@ -716,19 +716,18 @@ export function OfficeScene({
         gl={{ antialias: true }}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = 1.0;
+          gl.toneMappingExposure = dn.exposure;
         }}
       >
-        <color attach="background" args={["#0A0A14"]} />
-        <fog attach="fog" args={["#0A0A14", 25, 55]} />
+        <color attach="background" args={[dn.bgColor]} />
+        <fog attach="fog" args={[dn.fogColor, dn.fogNear, dn.fogFar]} />
 
-        <ambientLight intensity={0.55} color="#FFE8C8" />
-        <directionalLight position={[10, 20, 8]} intensity={0.5} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-far={60} shadow-camera-left={-30} shadow-camera-right={30} shadow-camera-top={30} shadow-camera-bottom={-30} color="#FFE0B0" />
+        <ambientLight intensity={dn.ambientIntensity} color={dn.ambientColor} />
+        <directionalLight position={dn.sunPosition} intensity={dn.sunIntensity} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-far={60} shadow-camera-left={-30} shadow-camera-right={30} shadow-camera-top={30} shadow-camera-bottom={-30} color={dn.sunColor} />
         <directionalLight position={[-8, 15, -6]} intensity={0.15} color="#8899CC" />
-        <directionalLight position={[5, 8, 12]} intensity={0.4} color="#FFD090" />
-        <hemisphereLight args={["#1A1A30", "#4A3520", 0.25]} />
+        <hemisphereLight args={[dn.skyColor, dn.groundColor, dn.hemiIntensity]} />
 
-        <Stars />
+        {dn.showStars && <Stars />}
 
         <OrbitControls
           ref={controlsRef}
