@@ -779,15 +779,15 @@ export function OfficeScene({
           gl.toneMappingExposure = 1.0;
         }}
       >
-        {/* Dark background like Habbo/Sims */}
-        <color attach="background" args={["#1A1A2E"]} />
-        <fog attach="fog" args={["#1A1A2E", 25, 55]} />
+        {/* Dark swamp night sky */}
+        <color attach="background" args={["#0A0F0A"]} />
+        <fog attach="fog" args={["#0A0F0A", 20, 45]} />
 
-        {/* Indoor lighting - warm office lights */}
-        <ambientLight intensity={0.6} color="#FFF5E6" />
+        {/* Dim moonlight ambient */}
+        <ambientLight intensity={0.25} color="#8899AA" />
         <directionalLight
           position={[10, 20, 8]}
-          intensity={0.8}
+          intensity={0.35}
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
@@ -796,10 +796,11 @@ export function OfficeScene({
           shadow-camera-right={20}
           shadow-camera-top={20}
           shadow-camera-bottom={-20}
+          color="#B8C8E8"
         />
-        {/* Fill light from opposite side */}
-        <directionalLight position={[-8, 10, -6]} intensity={0.3} color="#E8E4DC" />
-        <hemisphereLight args={["#FFF8F0", "#D5CFC5", 0.25]} />
+        {/* Warm interior fill */}
+        <directionalLight position={[-8, 10, -6]} intensity={0.2} color="#FFE0A0" />
+        <hemisphereLight args={["#1A2030", "#0A1008", 0.15]} />
 
         {/* Camera controls - mouse drag rotate, wheel zoom, right-drag pan; works on trackpad wheel for zoom */}
         <OrbitControls
