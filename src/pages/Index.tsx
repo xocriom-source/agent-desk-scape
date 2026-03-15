@@ -56,13 +56,21 @@ const Index = () => {
   const [showEvents, setShowEvents] = useState(false);
   const [showCityChat, setShowCityChat] = useState(false);
   const [notifCounts, setNotifCounts] = useState({ feed: 3, tasks: 2, messages: 5, governance: 1, events: 2 });
-  const [playerConfig, setPlayerConfig] = useState<PlayerConfig>({
-    name: "Chefe",
-    color: "#4F46E5",
-    hairStyle: "spiky",
-    outfitStyle: "suit",
-    skinTone: "medium",
-    accessory: "none",
+  const [playerConfig, setPlayerConfig] = useState<PlayerConfig>(() => {
+    // Load saved config from localStorage
+    try {
+      const saved = localStorage.getItem("playerConfig");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    const lobbyName = localStorage.getItem("playerName");
+    return {
+      name: lobbyName || "Chefe",
+      color: "#4F46E5",
+      hairStyle: "spiky",
+      outfitStyle: "suit",
+      skinTone: "medium",
+      accessory: "none",
+    };
   });
 
   useEffect(() => {
