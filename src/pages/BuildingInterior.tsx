@@ -3,12 +3,17 @@ import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Building2, User, Globe, Link2,
-  Star, MapPin, Clock, Settings2, Eye, BarChart3, TrendingUp, Cpu
+  Star, MapPin, Clock, Settings2, Eye, BarChart3, TrendingUp, Cpu,
+  Users, Bot, MessageCircle, Brain, Monitor
 } from "lucide-react";
 import { getBuildingById } from "@/data/buildingRegistry";
 import { DISTRICTS, BUILDING_STYLES } from "@/types/building";
 import { AIReceptionistChat } from "@/components/building/AIReceptionistChat";
 import { AgentWorkspaceHub } from "@/components/workspace/AgentWorkspaceHub";
+import { InteractiveObjects } from "@/components/collaboration/InteractiveObjects";
+import { TeamAgents } from "@/components/collaboration/TeamAgents";
+import { MessengerHub } from "@/components/collaboration/MessengerHub";
+import { AgentTraining } from "@/components/collaboration/AgentTraining";
 import logo from "@/assets/logo.png";
 
 export default function BuildingInterior() {
@@ -23,6 +28,10 @@ export default function BuildingInterior() {
 
   const isOwner = building?.ownerId === (currentUser?.email || currentUser?.name);
   const [showWorkspace, setShowWorkspace] = useState(false);
+  const [showObjects, setShowObjects] = useState(false);
+  const [showTeamAgents, setShowTeamAgents] = useState(false);
+  const [showMessenger, setShowMessenger] = useState(false);
+  const [showTraining, setShowTraining] = useState(false);
   const district = DISTRICTS.find(d => d.id === building?.district);
   const styleInfo = BUILDING_STYLES.find(s => s.id === building?.style);
 
@@ -61,12 +70,20 @@ export default function BuildingInterior() {
             <span className="text-[10px] text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded-full">Aberto</span>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowWorkspace(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-violet-500/20 text-violet-400 text-xs font-medium hover:bg-violet-500/30 transition-colors"
-            >
-              <Cpu className="w-3.5 h-3.5" />
-              Agent Workspace
+            <button onClick={() => setShowWorkspace(true)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-violet-500/20 text-violet-400 text-xs font-medium hover:bg-violet-500/30 transition-colors">
+              <Cpu className="w-3.5 h-3.5" /> Agent Workspace
+            </button>
+            <button onClick={() => setShowTeamAgents(true)} className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl bg-black/40 text-gray-300 text-xs font-medium hover:bg-black/60 transition-colors">
+              <Users className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={() => setShowTraining(true)} className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl bg-black/40 text-gray-300 text-xs font-medium hover:bg-black/60 transition-colors">
+              <Brain className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={() => setShowMessenger(true)} className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl bg-black/40 text-gray-300 text-xs font-medium hover:bg-black/60 transition-colors">
+              <MessageCircle className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={() => setShowObjects(true)} className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl bg-black/40 text-gray-300 text-xs font-medium hover:bg-black/60 transition-colors">
+              <Monitor className="w-3.5 h-3.5" />
             </button>
             {isOwner && (
               <button
@@ -233,13 +250,11 @@ export default function BuildingInterior() {
           </motion.div>
         </div>
       </div>
-      {/* Agent Workspace Hub */}
-      <AgentWorkspaceHub
-        isOpen={showWorkspace}
-        onClose={() => setShowWorkspace(false)}
-        buildingId={building.id}
-        buildingName={building.name}
-      />
+      <AgentWorkspaceHub isOpen={showWorkspace} onClose={() => setShowWorkspace(false)} buildingId={building.id} buildingName={building.name} />
+      <InteractiveObjects isOpen={showObjects} onClose={() => setShowObjects(false)} buildingId={building.id} />
+      <TeamAgents isOpen={showTeamAgents} onClose={() => setShowTeamAgents(false)} />
+      <MessengerHub isOpen={showMessenger} onClose={() => setShowMessenger(false)} />
+      <AgentTraining isOpen={showTraining} onClose={() => setShowTraining(false)} />
     </div>
   );
 }

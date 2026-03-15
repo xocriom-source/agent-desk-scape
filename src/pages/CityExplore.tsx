@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Building2, Users2, Trophy, Megaphone, Plane, Search, ShoppingBag, MessageCircle, Target, Car, Award, Briefcase, Dna } from "lucide-react";
+import { ArrowLeft, Building2, Users2, Trophy, Megaphone, Plane, Search, ShoppingBag, MessageCircle, Target, Car, Award, Briefcase, Dna, Users, Zap, Bot, Globe, Monitor } from "lucide-react";
 import { motion } from "framer-motion";
 import { CityExploreScene } from "@/components/office/3d/CityExploreScene";
 import { CityLeaderboard } from "@/components/city/CityLeaderboard";
@@ -14,6 +14,15 @@ import { CityMiniMap } from "@/components/city/CityMiniMap";
 import { CinematicIntro } from "@/components/city/CinematicIntro";
 import { CityMarketplace } from "@/components/city/CityMarketplace";
 import { useCityBuildings } from "@/hooks/useCityBuildings";
+import { ProximityChat } from "@/components/collaboration/ProximityChat";
+import { InteractiveObjects } from "@/components/collaboration/InteractiveObjects";
+import { UserStatusSystem, type UserStatus } from "@/components/collaboration/UserStatusSystem";
+import { TeleportSystem } from "@/components/collaboration/TeleportSystem";
+import { PersonalAgent } from "@/components/collaboration/PersonalAgent";
+import { TeamAgents } from "@/components/collaboration/TeamAgents";
+import { PublicWorkspaces } from "@/components/collaboration/PublicWorkspaces";
+import { MessengerHub } from "@/components/collaboration/MessengerHub";
+import { AgentTraining } from "@/components/collaboration/AgentTraining";
 import type { TransportType } from "@/types/building";
 import logo from "@/assets/logo.png";
 
@@ -33,6 +42,18 @@ export default function CityExplore() {
   const [playerPos, setPlayerPos] = useState<[number, number, number]>([0, 0, 5]);
   const [showIntro, setShowIntro] = useState(true);
   const [cityReady, setCityReady] = useState(false);
+
+  // Collaboration states
+  const [showProximity, setShowProximity] = useState(false);
+  const [showObjects, setShowObjects] = useState(false);
+  const [showStatus, setShowStatus] = useState(false);
+  const [showTeleport, setShowTeleport] = useState(false);
+  const [showPersonalAgent, setShowPersonalAgent] = useState(false);
+  const [showTeamAgents, setShowTeamAgents] = useState(false);
+  const [showPublicSpaces, setShowPublicSpaces] = useState(false);
+  const [showMessenger, setShowMessenger] = useState(false);
+  const [showTraining, setShowTraining] = useState(false);
+  const [userStatus, setUserStatus] = useState<UserStatus>("available");
 
   const userName = useMemo(() => {
     const stored = localStorage.getItem("agentoffice_user");
@@ -148,6 +169,26 @@ export default function CityExplore() {
                   <MessageCircle className="w-3.5 h-3.5" />
                 </button>
 
+                <button onClick={() => setShowProximity(!showProximity)} className={`flex items-center gap-1 px-2.5 py-2 rounded-xl backdrop-blur-md border text-xs font-medium transition-all ${showProximity ? "bg-emerald-400/20 border-emerald-400/50 text-emerald-400" : "bg-black/60 border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80"}`}>
+                  <Users className="w-3.5 h-3.5" />
+                </button>
+
+                <button onClick={() => setShowTeleport(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-cyan-700/30 text-cyan-400 hover:bg-cyan-400/10 transition-all text-xs font-medium">
+                  <Zap className="w-3.5 h-3.5" />
+                </button>
+
+                <button onClick={() => setShowPersonalAgent(!showPersonalAgent)} className={`flex items-center gap-1 px-2.5 py-2 rounded-xl backdrop-blur-md border text-xs font-medium transition-all ${showPersonalAgent ? "bg-violet-400/20 border-violet-400/50 text-violet-400" : "bg-black/60 border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80"}`}>
+                  <Bot className="w-3.5 h-3.5" />
+                </button>
+
+                <button onClick={() => setShowPublicSpaces(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
+                  <Globe className="w-3.5 h-3.5" />
+                </button>
+
+                <button onClick={() => setShowStatus(!showStatus)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
+                  <div className={`w-2.5 h-2.5 rounded-full ${userStatus === "available" ? "bg-emerald-400" : userStatus === "focused" ? "bg-amber-400" : userStatus === "in-meeting" ? "bg-red-400" : "bg-gray-500"}`} />
+                </button>
+
                 <button onClick={() => setShowVehicleShop(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
                   <ShoppingBag className="w-3.5 h-3.5" />
                 </button>
@@ -259,6 +300,17 @@ export default function CityExplore() {
           <VehicleShop isOpen={showVehicleShop} onClose={() => setShowVehicleShop(false)} currentVehicle={currentVehicle} onSelect={handleVehicleSelect} />
           <DailyMissions isOpen={showMissions} onClose={() => setShowMissions(false)} />
           <CityMarketplace isOpen={showMarketplace} onClose={() => setShowMarketplace(false)} />
+
+          {/* Collaboration Panels */}
+          <ProximityChat isOpen={showProximity} onClose={() => setShowProximity(false)} playerPos={playerPos} />
+          <InteractiveObjects isOpen={showObjects} onClose={() => setShowObjects(false)} />
+          <UserStatusSystem isOpen={showStatus} onClose={() => setShowStatus(false)} currentStatus={userStatus} onStatusChange={setUserStatus} userName={userName} />
+          <TeleportSystem isOpen={showTeleport} onClose={() => setShowTeleport(false)} onTeleport={setPlayerPos} />
+          <PersonalAgent isOpen={showPersonalAgent} onClose={() => setShowPersonalAgent(false)} />
+          <TeamAgents isOpen={showTeamAgents} onClose={() => setShowTeamAgents(false)} />
+          <PublicWorkspaces isOpen={showPublicSpaces} onClose={() => setShowPublicSpaces(false)} />
+          <MessengerHub isOpen={showMessenger} onClose={() => setShowMessenger(false)} />
+          <AgentTraining isOpen={showTraining} onClose={() => setShowTraining(false)} />
         </>
       )}
     </div>
