@@ -575,6 +575,7 @@ function ControlsUpdater({ controlsRef }: { controlsRef: React.RefObject<any> })
 export function CityExploreScene({ playerName }: { playerName: string }) {
   const controlsRef = useRef<any>(null);
   const [playerPos, setPlayerPos] = useState<[number, number, number]>([0, 0, 5]);
+  const dn = useDayNight();
 
   // Click to move
   const handleFloorClick = useCallback((e: ThreeEvent<PointerEvent>) => {
