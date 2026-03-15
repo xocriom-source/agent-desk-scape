@@ -250,13 +250,11 @@ export default function BuildingInterior() {
           </motion.div>
         </div>
       </div>
-      {/* Agent Workspace Hub */}
-      <AgentWorkspaceHub
-        isOpen={showWorkspace}
-        onClose={() => setShowWorkspace(false)}
-        buildingId={building.id}
-        buildingName={building.name}
-      />
+      <AgentWorkspaceHub isOpen={showWorkspace} onClose={() => setShowWorkspace(false)} buildingId={building.id} buildingName={building.name} />
+      <InteractiveObjects isOpen={showObjects} onClose={() => setShowObjects(false)} buildingId={building.id} />
+      <TeamAgents isOpen={showTeamAgents} onClose={() => setShowTeamAgents(false)} />
+      <MessengerHub isOpen={showMessenger} onClose={() => setShowMessenger(false)} />
+      <AgentTraining isOpen={showTraining} onClose={() => setShowTraining(false)} />
     </div>
   );
 }
