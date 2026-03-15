@@ -7,6 +7,8 @@ import Landing from "./pages/Landing.tsx";
 import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";
 import Office from "./pages/Index.tsx";
+import WorldMap from "./pages/WorldMap.tsx";
+import CityView from "./pages/CityView.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
