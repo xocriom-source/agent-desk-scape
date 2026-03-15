@@ -75,7 +75,7 @@ export default function Onboarding() {
       localStorage.setItem("agentoffice_user", JSON.stringify(parsed));
     }
 
-    navigate("/world");
+    navigate("/lobby");
   };
 
   return (
