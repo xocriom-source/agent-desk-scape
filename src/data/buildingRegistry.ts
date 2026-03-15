@@ -1,4 +1,5 @@
-import type { CityBuilding, BuildingStyle, District, DEFAULT_CUSTOMIZATIONS } from "@/types/building";
+import type { CityBuilding, BuildingStyle, District } from "@/types/building";
+import { STYLE_TRANSPORT_MAP } from "@/types/building";
 
 const STORAGE_KEY = "agentoffice_buildings";
 
