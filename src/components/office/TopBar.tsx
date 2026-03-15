@@ -85,6 +85,10 @@ export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onRo
           {onOpenGovernance && <NavBtn onClick={onOpenGovernance} title="Governança" icon={Vote} color="hsl(239 84% 67%)" badge={notifications.governance} />}
           {onOpenMemory && <NavBtn onClick={onOpenMemory} title="Memória" icon={Database} color="#06B6D4" />}
           {onOpenCommand && <NavBtn onClick={onOpenCommand} title="Command Center" icon={Shield} color="#EF4444" />}
+          {onOpenArtifacts && <NavBtn onClick={onOpenArtifacts} title="Artefatos" icon={Sparkles} color="#F59E0B" />}
+          {onOpenNPCs && <NavBtn onClick={onOpenNPCs} title="NPCs" icon={Star} color="#A78BFA" />}
+          {onOpenObservation && <NavBtn onClick={onOpenObservation} title="Observation Lab" icon={Eye} color="#06B6D4" />}
+          {onOpenDistricts && <NavBtn onClick={onOpenDistricts} title="Distritos" icon={MapPin} color="#10B981" />}
         </div>
       </div>
 
