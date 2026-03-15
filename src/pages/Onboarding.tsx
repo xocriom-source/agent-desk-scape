@@ -64,18 +64,31 @@ export default function Onboarding() {
     const building = BUILDING_OPTIONS.find(b => b.id === selectedBuilding);
     if (!building) return;
 
+    const spaceName = buildingName || building.name;
     const userData = localStorage.getItem("agentoffice_user");
     if (userData) {
       const parsed = JSON.parse(userData);
-      parsed.building = {
-        type: selectedBuilding,
-        name: buildingName || `${parsed.name}'s ${building.name}`,
-      };
+      parsed.building = { type: selectedBuilding, name: spaceName };
       parsed.onboarded = true;
       localStorage.setItem("agentoffice_user", JSON.stringify(parsed));
     }
 
-    navigate("/lobby");
+    // Create a new space entry for the Spaces page
+    const newSpace = {
+      id: "space-" + Date.now(),
+      name: spaceName,
+      city: localStorage.getItem("selectedCity") || "São Paulo",
+      type: selectedBuilding,
+      agents: Math.floor(Math.random() * 8) + 3,
+      lastVisit: "agora",
+      color: building.color.startsWith("hsl") ? "#4F46E5" : building.color,
+      emoji: "🏢",
+    };
+    localStorage.setItem("pendingNewSpace", JSON.stringify(newSpace));
+    localStorage.setItem("buildingName", spaceName);
+    localStorage.setItem("buildingType", selectedBuilding || "corporate");
+
+    navigate("/spaces");
   };
 
   return (
