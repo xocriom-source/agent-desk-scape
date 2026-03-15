@@ -521,6 +521,7 @@ export function OfficeScene({
     <div className="absolute inset-0">
       <Canvas
         shadows
+        style={{ touchAction: "none" }}
         camera={{ position: [14, 12, 14], fov: 35, near: 0.1, far: 100 }}
         gl={{ antialias: true }}
         onCreated={({ gl }) => {
