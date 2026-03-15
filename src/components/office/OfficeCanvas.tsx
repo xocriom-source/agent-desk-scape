@@ -305,16 +305,20 @@ export const OfficeCanvas = memo(function OfficeCanvas({
       ctx.fillRect(px - 4, py - 4 + bob, 2, 2);
       ctx.fillRect(px + 2, py - 4 + bob, 2, 2);
 
+      // Crown for boss
+      ctx.font = "10px serif";
+      ctx.fillText("👑", px, py - bh / 2 + bob - 20);
+
       // Name tag
       ctx.font = "bold 10px 'Space Grotesk', sans-serif";
       ctx.textAlign = "center";
       const tw = ctx.measureText(player.name).width + 12;
-      ctx.fillStyle = "rgba(79, 70, 229, 0.9)";
+      ctx.fillStyle = pColor + "E6";
       ctx.beginPath();
-      ctx.roundRect(px - tw / 2, py - bh / 2 + bob - 30, tw, 16, 8);
+      ctx.roundRect(px - tw / 2, py - bh / 2 + bob - 36, tw, 16, 8);
       ctx.fill();
       ctx.fillStyle = "#FFFFFF";
-      ctx.fillText(player.name, px, py - bh / 2 + bob - 20);
+      ctx.fillText(player.name, px, py - bh / 2 + bob - 26);
     }
 
     ctx.restore();
