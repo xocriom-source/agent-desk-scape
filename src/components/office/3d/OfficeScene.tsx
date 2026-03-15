@@ -313,14 +313,14 @@ function BuildingExterior({
       {makeWindows('x', northZ - wallT - 0.001, cx - bw / 2, bw, winY, nWinX)}
       {makeWindows('z', westX - wallT - 0.001, cz - bh / 2, bh, winY, nWinZ)}
 
-      {/* ── Warm hanging lights (BAYC bar / clubhouse) ── */}
-      {Array.from({ length: 12 }).map((_, i) => {
-        const col = i % 4;
-        const row = Math.floor(i / 4);
+      {/* ── Warm hanging lights (reduced for perf - 6 lights) ── */}
+      {[0, 1, 2, 3, 4, 5].map((i) => {
+        const col = i % 3;
+        const row = Math.floor(i / 3);
         const bulbColors = ["#FFB347", "#FF6B6B", "#4ECDC4", "#FFE66D", "#FF6BB5", "#6BCB77"];
-        const bc = bulbColors[i % bulbColors.length];
-        const lx = cx - bw * 0.35 + col * (bw * 0.24);
-        const lz = cz - bh * 0.3 + row * (bh * 0.3);
+        const bc = bulbColors[i];
+        const lx = cx - bw * 0.3 + col * (bw * 0.3);
+        const lz = cz - bh * 0.2 + row * (bh * 0.4);
         return (
           <group key={`cl${i}`}>
             <mesh position={[lx, foundH + wallH - 0.1, lz]}>
@@ -328,40 +328,28 @@ function BuildingExterior({
               <meshBasicMaterial color="#333" />
             </mesh>
             <mesh position={[lx, foundH + wallH - 0.22, lz]}>
-              <sphereGeometry args={[0.035, 8, 8]} />
-              <meshStandardMaterial color={bc} emissive={bc} emissiveIntensity={1.0} />
+              <sphereGeometry args={[0.04, 6, 6]} />
+              <meshStandardMaterial color={bc} emissive={bc} emissiveIntensity={1.2} />
             </mesh>
-            {i % 3 === 0 && <pointLight position={[lx, foundH + wallH - 0.25, lz]} intensity={0.15} distance={4} color={bc} />}
           </group>
         );
       })}
+      {/* 2 warm interior point lights only */}
+      <pointLight position={[cx - bw * 0.2, foundH + wallH - 0.3, cz]} intensity={0.3} distance={6} color="#FFD090" />
+      <pointLight position={[cx + bw * 0.2, foundH + wallH - 0.3, cz]} intensity={0.3} distance={6} color="#FFD090" />
 
-      {/* ── String lights along north wall (party bunting) ── */}
-      {Array.from({ length: 25 }).map((_, i) => {
-        const t = i / 24;
-        const lx = cx - bw * 0.45 + t * bw * 0.9;
+      {/* ── String lights along north wall (simplified - 10 bulbs) ── */}
+      {Array.from({ length: 10 }).map((_, i) => {
+        const t = i / 9;
+        const lx = cx - bw * 0.42 + t * bw * 0.84;
         const ly = foundH + wallH - 0.06;
         const lz = northZ + wallT * 0.6;
-        const sag = Math.sin(t * Math.PI) * 0.12;
+        const sag = Math.sin(t * Math.PI) * 0.1;
         const colors = ["#FF6B6B", "#4ECDC4", "#FFE66D", "#FF6BB5", "#6BCB77"];
         return (
           <mesh key={`sl${i}`} position={[lx, ly - sag, lz]}>
-            <sphereGeometry args={[0.018, 6, 6]} />
+            <sphereGeometry args={[0.02, 6, 6]} />
             <meshStandardMaterial color={colors[i % 5]} emissive={colors[i % 5]} emissiveIntensity={1.5} />
-          </mesh>
-        );
-      })}
-      {/* Bunting flags along north wall */}
-      {Array.from({ length: 15 }).map((_, i) => {
-        const t = (i + 0.5) / 15;
-        const lx = cx - bw * 0.42 + t * bw * 0.84;
-        const ly = foundH + wallH - 0.14 - Math.sin(t * Math.PI) * 0.08;
-        const lz = northZ + wallT * 0.7;
-        const flagColors = ["#FF4444", "#FFAA00", "#44BB44", "#4488FF", "#FF44FF"];
-        return (
-          <mesh key={`flag${i}`} position={[lx, ly, lz]} rotation={[0.2, 0, Math.sin(i) * 0.3]}>
-            <boxGeometry args={[0.06, 0.08, 0.005]} />
-            <meshStandardMaterial color={flagColors[i % flagColors.length]} />
           </mesh>
         );
       })}
@@ -375,35 +363,25 @@ function BuildingExterior({
         <boxGeometry args={[1.3, 0.28, 0.01]} />
         <meshStandardMaterial color="#FF6B00" emissive="#FF6B00" emissiveIntensity={1.8} transparent opacity={0.9} />
       </mesh>
-      <pointLight position={[cx, foundH + wallH * 0.7, northZ + wallT + 0.4]} intensity={0.35} distance={5} color="#FF6B00" />
 
-      {/* ── Neighboring city buildings (same ground level, moderate heights) ── */}
-      {/* Behind (north) */}
+      {/* ── Neighboring city buildings (fewer for perf) ── */}
       <CityBuilding position={[cx - 5, 0, northZ - 4]} width={3.5} depth={2.5} height={2} color="#7A6B5A" />
       <CityBuilding position={[cx + 3, 0, northZ - 5]} width={4} depth={3} height={2.5} color="#6B5A4A" />
-      <CityBuilding position={[cx + 9, 0, northZ - 3.5]} width={3} depth={2.5} height={1.8} color="#8A7A6A" />
-      {/* Left (west) */}
-      <CityBuilding position={[westX - 4, 0, cz - 3]} width={2.5} depth={3} height={2.2} color="#6A5848" />
-      <CityBuilding position={[westX - 4, 0, cz + 4]} width={3} depth={3} height={1.6} color="#7A6858" />
-      {/* Right (east) */}
-      <CityBuilding position={[eastX + 4, 0, cz - 1]} width={3} depth={3} height={2} color="#5A5040" />
-      <CityBuilding position={[eastX + 4, 0, cz + 5]} width={2.5} depth={3} height={2.4} color="#6A6050" />
-      {/* Far background */}
+      <CityBuilding position={[westX - 4, 0, cz - 1]} width={2.5} depth={3} height={2.2} color="#6A5848" />
+      <CityBuilding position={[eastX + 4, 0, cz + 2]} width={3} depth={3} height={2} color="#5A5040" />
       <CityBuilding position={[cx - 2, 0, northZ - 10]} width={5} depth={3} height={3} color="#5A4A3A" />
-      <CityBuilding position={[cx + 8, 0, northZ - 9]} width={4} depth={2.5} height={2.8} color="#6A5848" />
 
-      {/* ── Street lights ── */}
-      {[[-3, 1], [3, 1], [-3, -1], [3, -1]].map(([ox, oz], i) => (
+      {/* ── Street lights (2 only) ── */}
+      {[[-1, 1], [1, -1]].map(([ox, oz], i) => (
         <group key={`streetlight${i}`} position={[cx + ox * (bw / 2 + 1.5), 0, cz + oz * (bh / 2 + 1.5)]}>
           <mesh position={[0, 0.8, 0]}>
             <cylinderGeometry args={[0.02, 0.03, 1.6, 6]} />
             <meshStandardMaterial color="#333" metalness={0.6} />
           </mesh>
           <mesh position={[0, 1.65, 0]}>
-            <sphereGeometry args={[0.06, 8, 8]} />
+            <sphereGeometry args={[0.06, 6, 6]} />
             <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={1.5} />
           </mesh>
-          {i < 2 && <pointLight position={[0, 1.6, 0]} intensity={0.25} distance={4} color="#FFD060" />}
         </group>
       ))}
     </group>
