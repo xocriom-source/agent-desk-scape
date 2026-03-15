@@ -1,8 +1,8 @@
 import type { TileType } from "@/types/agent";
 
 export const TILE_SIZE = 32;
-export const MAP_COLS = 48;
-export const MAP_ROWS = 36;
+export const MAP_COLS = 64;
+export const MAP_ROWS = 52;
 
 export interface RoomDef {
   id: string;
@@ -17,17 +17,37 @@ export interface RoomDef {
 }
 
 export const DEFAULT_ROOMS: RoomDef[] = [
-  // Warm wood floors, dark wood walls - BAYC clubhouse style
+  // ── CENTRAL PLAZA (open spawn area with fountain) ──
+  { id: "plaza", name: "🏛️ Central Plaza", x: 20, y: 18, w: 14, h: 12, floorColor: "#A09880", wallColor: "#6B6050", carpetColor: "#908868" },
+  
+  // ── WORK DISTRICT ──
   { id: "work1", name: "Product Team", x: 1, y: 1, w: 14, h: 10, floorColor: "#9B7B55", wallColor: "#5C3A22", carpetColor: "#7A6040" },
   { id: "meeting1", name: "Meeting Room A", x: 18, y: 1, w: 8, h: 5, floorColor: "#8B6B48", wallColor: "#4A2E1A", carpetColor: "#6B5035" },
   { id: "meeting2", name: "Meeting Room B", x: 18, y: 8, w: 8, h: 5, floorColor: "#8E6E4A", wallColor: "#4D3020", carpetColor: "#6E5238" },
-  { id: "library", name: "Library", x: 29, y: 1, w: 10, h: 7, floorColor: "#A08058", wallColor: "#5A3820", carpetColor: "#806540" },
-  { id: "design", name: "Design Lab", x: 1, y: 14, w: 10, h: 8, floorColor: "#8A7050", wallColor: "#4A3018", carpetColor: "#6A5538" },
-  { id: "lounge", name: "Lounge", x: 14, y: 16, w: 10, h: 8, floorColor: "#A58860", wallColor: "#6B4528", carpetColor: "#856D48" },
-  { id: "server", name: "Server Room", x: 29, y: 11, w: 10, h: 7, floorColor: "#706058", wallColor: "#3A2E28", carpetColor: "#5A4E48" },
-  { id: "reception", name: "Reception", x: 14, y: 27, w: 12, h: 7, floorColor: "#B09068", wallColor: "#6B4528", carpetColor: "#907550" },
-  { id: "game", name: "Game Room", x: 1, y: 25, w: 10, h: 8, floorColor: "#8A7050", wallColor: "#4A3520", carpetColor: "#705840" },
-  { id: "zen", name: "Zen Garden", x: 29, y: 21, w: 10, h: 8, floorColor: "#7A7048", wallColor: "#3A3520", carpetColor: "#5A5530" },
+  { id: "library", name: "📚 Library", x: 29, y: 1, w: 10, h: 7, floorColor: "#A08058", wallColor: "#5A3820", carpetColor: "#806540" },
+  
+  // ── CREATIVE DISTRICT ──
+  { id: "music_studio", name: "🎵 Music Studio", x: 1, y: 14, w: 8, h: 7, floorColor: "#6A5078", wallColor: "#3A2848", carpetColor: "#5A4068" },
+  { id: "art_studio", name: "🎨 Pixel Art Studio", x: 1, y: 24, w: 8, h: 7, floorColor: "#78605A", wallColor: "#4A3830", carpetColor: "#685048" },
+  { id: "writing_studio", name: "✍️ Writing Studio", x: 1, y: 34, w: 8, h: 7, floorColor: "#7A7058", wallColor: "#4A4030", carpetColor: "#6A6048" },
+  
+  // ── INNOVATION DISTRICT ──
+  { id: "coding_lab", name: "💻 Coding Lab", x: 38, y: 1, w: 10, h: 8, floorColor: "#506068", wallColor: "#303840", carpetColor: "#405058" },
+  { id: "ai_lab", name: "🧪 AI Experiment Lab", x: 38, y: 12, w: 10, h: 8, floorColor: "#485868", wallColor: "#283040", carpetColor: "#384858" },
+  
+  // ── COMMERCE DISTRICT ──
+  { id: "marketplace", name: "🏪 Marketplace", x: 38, y: 24, w: 10, h: 8, floorColor: "#907050", wallColor: "#604028", carpetColor: "#806040" },
+  { id: "hiring_board", name: "📋 Agent Hiring", x: 38, y: 35, w: 10, h: 7, floorColor: "#887858", wallColor: "#585038", carpetColor: "#786848" },
+  
+  // ── SOCIAL DISTRICT ──
+  { id: "cafe", name: "☕ Café Filosófico", x: 12, y: 34, w: 8, h: 7, floorColor: "#A58860", wallColor: "#6B4528", carpetColor: "#856D48" },
+  { id: "lounge", name: "🛋️ Lounge", x: 12, y: 14, w: 7, h: 7, floorColor: "#A58860", wallColor: "#6B4528", carpetColor: "#856D48" },
+  
+  // ── EXISTING (kept) ──
+  { id: "design", name: "🎨 Design Lab", x: 22, y: 34, w: 10, h: 8, floorColor: "#8A7050", wallColor: "#4A3018", carpetColor: "#6A5538" },
+  { id: "server", name: "🖥️ Server Room", x: 50, y: 1, w: 8, h: 7, floorColor: "#706058", wallColor: "#3A2E28", carpetColor: "#5A4E48" },
+  { id: "game", name: "🎮 Game Room", x: 50, y: 12, w: 8, h: 7, floorColor: "#8A7050", wallColor: "#4A3520", carpetColor: "#705840" },
+  { id: "zen", name: "🧘 Zen Garden", x: 50, y: 22, w: 8, h: 7, floorColor: "#7A7048", wallColor: "#3A3520", carpetColor: "#5A5530" },
 ];
 
 export let ROOMS = [...DEFAULT_ROOMS];
@@ -47,7 +67,24 @@ export interface FurnitureItem {
 }
 
 export const DEFAULT_FURNITURE: FurnitureItem[] = [
-  // Product Team - desks in pairs with chairs
+  // ── CENTRAL PLAZA (fountain, benches, trees) ──
+  { id: "plaza1", type: "plant_large", x: 24, y: 21, emoji: "🌳", roomId: "plaza" },
+  { id: "plaza2", type: "plant_large", x: 30, y: 21, emoji: "🌳", roomId: "plaza" },
+  { id: "plaza3", type: "plant_large", x: 24, y: 27, emoji: "🌳", roomId: "plaza" },
+  { id: "plaza4", type: "plant_large", x: 30, y: 27, emoji: "🌳", roomId: "plaza" },
+  { id: "plaza5", type: "water", x: 27, y: 24, emoji: "⛲", roomId: "plaza" },
+  { id: "plaza6", type: "sofa", x: 22, y: 24, emoji: "🪑", roomId: "plaza" },
+  { id: "plaza7", type: "sofa", x: 32, y: 24, emoji: "🪑", roomId: "plaza" },
+  { id: "plaza8", type: "sofa", x: 27, y: 20, emoji: "🪑", roomId: "plaza" },
+  { id: "plaza9", type: "sofa", x: 27, y: 28, emoji: "🪑", roomId: "plaza" },
+  { id: "plaza10", type: "lamp", x: 21, y: 19, emoji: "💡", roomId: "plaza" },
+  { id: "plaza11", type: "lamp", x: 33, y: 19, emoji: "💡", roomId: "plaza" },
+  { id: "plaza12", type: "lamp", x: 21, y: 29, emoji: "💡", roomId: "plaza" },
+  { id: "plaza13", type: "lamp", x: 33, y: 29, emoji: "💡", roomId: "plaza" },
+  { id: "plaza14", type: "plant", x: 26, y: 22, emoji: "🌿", roomId: "plaza" },
+  { id: "plaza15", type: "plant", x: 28, y: 26, emoji: "🌿", roomId: "plaza" },
+
+  // ── Product Team ──
   { id: "f1", type: "desk", x: 2, y: 2, emoji: "🖥️", roomId: "work1" },
   { id: "f2", type: "desk", x: 3, y: 2, emoji: "🖥️", roomId: "work1" },
   { id: "f3", type: "desk", x: 5, y: 2, emoji: "🖥️", roomId: "work1" },
@@ -66,146 +103,145 @@ export const DEFAULT_FURNITURE: FurnitureItem[] = [
   { id: "f16", type: "desk", x: 6, y: 5, emoji: "🖥️", roomId: "work1" },
   { id: "f17", type: "chair", x: 2, y: 6, emoji: "🪑", roomId: "work1" },
   { id: "f18", type: "chair", x: 3, y: 6, emoji: "🪑", roomId: "work1" },
-  { id: "f19", type: "chair", x: 5, y: 6, emoji: "🪑", roomId: "work1" },
-  { id: "f20", type: "chair", x: 6, y: 6, emoji: "🪑", roomId: "work1" },
-  { id: "f21", type: "desk", x: 2, y: 8, emoji: "🖥️", roomId: "work1" },
-  { id: "f22", type: "desk", x: 3, y: 8, emoji: "🖥️", roomId: "work1" },
-  { id: "f23", type: "desk", x: 5, y: 8, emoji: "🖥️", roomId: "work1" },
-  { id: "f24", type: "desk", x: 6, y: 8, emoji: "🖥️", roomId: "work1" },
-  { id: "f25", type: "chair", x: 2, y: 9, emoji: "🪑", roomId: "work1" },
-  { id: "f26", type: "chair", x: 3, y: 9, emoji: "🪑", roomId: "work1" },
   { id: "f27", type: "plant", x: 1, y: 1, emoji: "🌿", roomId: "work1" },
   { id: "f28", type: "plant", x: 14, y: 1, emoji: "🪴", roomId: "work1" },
-  { id: "f29", type: "plant", x: 1, y: 10, emoji: "🌱", roomId: "work1" },
   { id: "f30", type: "whiteboard", x: 11, y: 2, emoji: "📋", roomId: "work1" },
-  { id: "f31", type: "whiteboard", x: 12, y: 2, emoji: "📊", roomId: "work1" },
   { id: "f32", type: "printer", x: 13, y: 5, emoji: "🖨️", roomId: "work1" },
-  { id: "f33", type: "water", x: 13, y: 8, emoji: "🚰", roomId: "work1" },
-  { id: "f34", type: "trash", x: 10, y: 9, emoji: "🗑️", roomId: "work1" },
 
-  // Meeting Room A
+  // ── Meeting Room A ──
   { id: "f40", type: "table", x: 20, y: 2, emoji: "📋", roomId: "meeting1" },
   { id: "f41", type: "table", x: 21, y: 2, emoji: "📋", roomId: "meeting1" },
   { id: "f42", type: "table", x: 22, y: 2, emoji: "📋", roomId: "meeting1" },
   { id: "f43", type: "chair", x: 19, y: 3, emoji: "🪑", roomId: "meeting1" },
   { id: "f44", type: "chair", x: 20, y: 3, emoji: "🪑", roomId: "meeting1" },
   { id: "f45", type: "chair", x: 21, y: 3, emoji: "🪑", roomId: "meeting1" },
-  { id: "f46", type: "chair", x: 22, y: 3, emoji: "🪑", roomId: "meeting1" },
-  { id: "f47", type: "chair", x: 23, y: 3, emoji: "🪑", roomId: "meeting1" },
   { id: "f48", type: "screen", x: 24, y: 1, emoji: "📺", roomId: "meeting1" },
-  { id: "f49", type: "plant", x: 18, y: 1, emoji: "🌿", roomId: "meeting1" },
 
-  // Meeting Room B
+  // ── Meeting Room B ──
   { id: "f50", type: "table", x: 20, y: 9, emoji: "📋", roomId: "meeting2" },
   { id: "f51", type: "table", x: 21, y: 9, emoji: "📋", roomId: "meeting2" },
   { id: "f52", type: "chair", x: 19, y: 10, emoji: "🪑", roomId: "meeting2" },
   { id: "f53", type: "chair", x: 20, y: 10, emoji: "🪑", roomId: "meeting2" },
-  { id: "f54", type: "chair", x: 21, y: 10, emoji: "🪑", roomId: "meeting2" },
-  { id: "f55", type: "chair", x: 22, y: 10, emoji: "🪑", roomId: "meeting2" },
   { id: "f56", type: "screen", x: 24, y: 8, emoji: "📺", roomId: "meeting2" },
 
-  // Library
+  // ── Library ──
   { id: "f60", type: "bookshelf", x: 30, y: 1, emoji: "📚", roomId: "library" },
   { id: "f61", type: "bookshelf", x: 31, y: 1, emoji: "📚", roomId: "library" },
   { id: "f62", type: "bookshelf", x: 32, y: 1, emoji: "📚", roomId: "library" },
   { id: "f63", type: "bookshelf", x: 33, y: 1, emoji: "📚", roomId: "library" },
   { id: "f64", type: "bookshelf", x: 34, y: 1, emoji: "📚", roomId: "library" },
   { id: "f65", type: "bookshelf", x: 35, y: 1, emoji: "📚", roomId: "library" },
-  { id: "f66", type: "bookshelf", x: 36, y: 1, emoji: "📚", roomId: "library" },
   { id: "f67", type: "desk", x: 31, y: 4, emoji: "📖", roomId: "library" },
   { id: "f68", type: "desk", x: 33, y: 4, emoji: "📖", roomId: "library" },
-  { id: "f69", type: "desk", x: 35, y: 4, emoji: "📖", roomId: "library" },
   { id: "f70", type: "chair", x: 31, y: 5, emoji: "🪑", roomId: "library" },
   { id: "f71", type: "chair", x: 33, y: 5, emoji: "🪑", roomId: "library" },
-  { id: "f72", type: "chair", x: 35, y: 5, emoji: "🪑", roomId: "library" },
-  { id: "f73", type: "plant", x: 29, y: 1, emoji: "🌿", roomId: "library" },
-  { id: "f74", type: "plant", x: 38, y: 1, emoji: "🪴", roomId: "library" },
 
-  // Design Lab
-  { id: "f80", type: "desk", x: 2, y: 15, emoji: "🖥️", roomId: "design" },
-  { id: "f81", type: "desk", x: 3, y: 15, emoji: "🖥️", roomId: "design" },
-  { id: "f82", type: "desk", x: 5, y: 15, emoji: "🎨", roomId: "design" },
-  { id: "f83", type: "desk", x: 6, y: 15, emoji: "🎨", roomId: "design" },
-  { id: "f84", type: "chair", x: 2, y: 16, emoji: "🪑", roomId: "design" },
-  { id: "f85", type: "chair", x: 3, y: 16, emoji: "🪑", roomId: "design" },
-  { id: "f86", type: "chair", x: 5, y: 16, emoji: "🪑", roomId: "design" },
-  { id: "f87", type: "chair", x: 6, y: 16, emoji: "🪑", roomId: "design" },
-  { id: "f88", type: "whiteboard", x: 8, y: 14, emoji: "📋", roomId: "design" },
-  { id: "f89", type: "whiteboard", x: 9, y: 14, emoji: "🎨", roomId: "design" },
-  { id: "f90", type: "desk", x: 2, y: 19, emoji: "🖥️", roomId: "design" },
-  { id: "f91", type: "desk", x: 3, y: 19, emoji: "🖥️", roomId: "design" },
-  { id: "f92", type: "chair", x: 2, y: 20, emoji: "🪑", roomId: "design" },
-  { id: "f93", type: "chair", x: 3, y: 20, emoji: "🪑", roomId: "design" },
-  { id: "f94", type: "plant", x: 1, y: 14, emoji: "🌿", roomId: "design" },
-  { id: "f95", type: "plant", x: 10, y: 14, emoji: "🪴", roomId: "design" },
+  // ── Music Studio ──
+  { id: "ms1", type: "desk", x: 2, y: 15, emoji: "🎹", roomId: "music_studio" },
+  { id: "ms2", type: "desk", x: 4, y: 15, emoji: "🎸", roomId: "music_studio" },
+  { id: "ms3", type: "chair", x: 2, y: 16, emoji: "🪑", roomId: "music_studio" },
+  { id: "ms4", type: "chair", x: 4, y: 16, emoji: "🪑", roomId: "music_studio" },
+  { id: "ms5", type: "screen", x: 6, y: 14, emoji: "🎵", roomId: "music_studio" },
+  { id: "ms6", type: "sofa", x: 3, y: 19, emoji: "🛋️", roomId: "music_studio" },
+  { id: "ms7", type: "lamp", x: 1, y: 14, emoji: "💡", roomId: "music_studio" },
 
-  // Lounge
-  { id: "f100", type: "sofa", x: 15, y: 17, emoji: "🛋️", roomId: "lounge" },
-  { id: "f101", type: "sofa", x: 16, y: 17, emoji: "🛋️", roomId: "lounge" },
-  { id: "f102", type: "sofa", x: 15, y: 19, emoji: "🛋️", roomId: "lounge" },
-  { id: "f103", type: "sofa", x: 16, y: 19, emoji: "🛋️", roomId: "lounge" },
-  { id: "f104", type: "table", x: 15, y: 18, emoji: "☕", roomId: "lounge" },
-  { id: "f105", type: "table", x: 16, y: 18, emoji: "🍩", roomId: "lounge" },
-  { id: "f106", type: "coffee", x: 20, y: 16, emoji: "☕", roomId: "lounge" },
-  { id: "f107", type: "vending", x: 21, y: 16, emoji: "🥤", roomId: "lounge" },
-  { id: "f108", type: "vending", x: 22, y: 16, emoji: "🍫", roomId: "lounge" },
-  { id: "f109", type: "tv", x: 19, y: 21, emoji: "📺", roomId: "lounge" },
-  { id: "f110", type: "sofa", x: 18, y: 21, emoji: "🛋️", roomId: "lounge" },
-  { id: "f111", type: "plant", x: 14, y: 16, emoji: "🌿", roomId: "lounge" },
-  { id: "f112", type: "plant", x: 23, y: 16, emoji: "🪴", roomId: "lounge" },
+  // ── Pixel Art Studio ──
+  { id: "as1", type: "desk", x: 2, y: 25, emoji: "🎨", roomId: "art_studio" },
+  { id: "as2", type: "desk", x: 4, y: 25, emoji: "🖌️", roomId: "art_studio" },
+  { id: "as3", type: "chair", x: 2, y: 26, emoji: "🪑", roomId: "art_studio" },
+  { id: "as4", type: "chair", x: 4, y: 26, emoji: "🪑", roomId: "art_studio" },
+  { id: "as5", type: "whiteboard", x: 6, y: 24, emoji: "🎨", roomId: "art_studio" },
+  { id: "as6", type: "painting", x: 7, y: 24, emoji: "🖼️", roomId: "art_studio" },
 
-  // Server Room
-  { id: "f120", type: "server", x: 30, y: 12, emoji: "🖧", roomId: "server" },
-  { id: "f121", type: "server", x: 31, y: 12, emoji: "🖧", roomId: "server" },
-  { id: "f122", type: "server", x: 32, y: 12, emoji: "🖧", roomId: "server" },
-  { id: "f123", type: "server", x: 33, y: 12, emoji: "🖧", roomId: "server" },
-  { id: "f124", type: "server", x: 34, y: 12, emoji: "🖧", roomId: "server" },
-  { id: "f125", type: "server", x: 30, y: 14, emoji: "🖧", roomId: "server" },
-  { id: "f126", type: "server", x: 31, y: 14, emoji: "🖧", roomId: "server" },
-  { id: "f127", type: "server", x: 32, y: 14, emoji: "🖧", roomId: "server" },
-  { id: "f128", type: "server", x: 33, y: 14, emoji: "🖧", roomId: "server" },
-  { id: "f129", type: "server", x: 34, y: 14, emoji: "🖧", roomId: "server" },
-  { id: "f130", type: "monitor", x: 36, y: 12, emoji: "📡", roomId: "server" },
-  { id: "f131", type: "monitor", x: 37, y: 12, emoji: "🖥️", roomId: "server" },
-  { id: "f132", type: "desk", x: 36, y: 15, emoji: "💻", roomId: "server" },
-  { id: "f133", type: "chair", x: 37, y: 15, emoji: "🪑", roomId: "server" },
+  // ── Writing Studio ──
+  { id: "ws1", type: "desk", x: 2, y: 35, emoji: "📝", roomId: "writing_studio" },
+  { id: "ws2", type: "desk", x: 4, y: 35, emoji: "✍️", roomId: "writing_studio" },
+  { id: "ws3", type: "chair", x: 2, y: 36, emoji: "🪑", roomId: "writing_studio" },
+  { id: "ws4", type: "chair", x: 4, y: 36, emoji: "🪑", roomId: "writing_studio" },
+  { id: "ws5", type: "bookshelf", x: 7, y: 34, emoji: "📚", roomId: "writing_studio" },
+  { id: "ws6", type: "coffee", x: 6, y: 39, emoji: "☕", roomId: "writing_studio" },
 
-  // Reception
-  { id: "f140", type: "desk", x: 18, y: 28, emoji: "💻", roomId: "reception" },
-  { id: "f141", type: "desk", x: 19, y: 28, emoji: "💻", roomId: "reception" },
-  { id: "f142", type: "sofa", x: 15, y: 30, emoji: "🛋️", roomId: "reception" },
-  { id: "f143", type: "sofa", x: 16, y: 30, emoji: "🛋️", roomId: "reception" },
-  { id: "f144", type: "sofa", x: 22, y: 30, emoji: "🛋️", roomId: "reception" },
-  { id: "f145", type: "sofa", x: 23, y: 30, emoji: "🛋️", roomId: "reception" },
-  { id: "f146", type: "table", x: 17, y: 30, emoji: "📰", roomId: "reception" },
-  { id: "f147", type: "table", x: 21, y: 30, emoji: "📰", roomId: "reception" },
-  { id: "f148", type: "plant", x: 14, y: 27, emoji: "🌿", roomId: "reception" },
-  { id: "f149", type: "plant", x: 25, y: 27, emoji: "🌿", roomId: "reception" },
-  { id: "f150", type: "plant", x: 14, y: 33, emoji: "🪴", roomId: "reception" },
-  { id: "f151", type: "plant", x: 25, y: 33, emoji: "🪴", roomId: "reception" },
+  // ── Coding Lab ──
+  { id: "cl1", type: "desk", x: 39, y: 2, emoji: "💻", roomId: "coding_lab" },
+  { id: "cl2", type: "desk", x: 41, y: 2, emoji: "💻", roomId: "coding_lab" },
+  { id: "cl3", type: "desk", x: 43, y: 2, emoji: "💻", roomId: "coding_lab" },
+  { id: "cl4", type: "chair", x: 39, y: 3, emoji: "🪑", roomId: "coding_lab" },
+  { id: "cl5", type: "chair", x: 41, y: 3, emoji: "🪑", roomId: "coding_lab" },
+  { id: "cl6", type: "chair", x: 43, y: 3, emoji: "🪑", roomId: "coding_lab" },
+  { id: "cl7", type: "server", x: 46, y: 2, emoji: "🖧", roomId: "coding_lab" },
+  { id: "cl8", type: "whiteboard", x: 45, y: 6, emoji: "📋", roomId: "coding_lab" },
 
-  // Game Room
-  { id: "f160", type: "table", x: 2, y: 26, emoji: "🎮", roomId: "game" },
-  { id: "f161", type: "table", x: 4, y: 26, emoji: "🕹️", roomId: "game" },
-  { id: "f162", type: "sofa", x: 6, y: 26, emoji: "🛋️", roomId: "game" },
-  { id: "f163", type: "sofa", x: 7, y: 26, emoji: "🛋️", roomId: "game" },
-  { id: "f164", type: "tv", x: 9, y: 25, emoji: "📺", roomId: "game" },
-  { id: "f165", type: "table", x: 2, y: 29, emoji: "🎯", roomId: "game" },
-  { id: "f166", type: "table", x: 4, y: 29, emoji: "🎱", roomId: "game" },
-  { id: "f167", type: "vending", x: 9, y: 30, emoji: "🥤", roomId: "game" },
-  { id: "f168", type: "plant", x: 1, y: 25, emoji: "🌿", roomId: "game" },
+  // ── AI Experiment Lab ──
+  { id: "al1", type: "desk", x: 39, y: 13, emoji: "🧪", roomId: "ai_lab" },
+  { id: "al2", type: "desk", x: 41, y: 13, emoji: "🔬", roomId: "ai_lab" },
+  { id: "al3", type: "chair", x: 39, y: 14, emoji: "🪑", roomId: "ai_lab" },
+  { id: "al4", type: "chair", x: 41, y: 14, emoji: "🪑", roomId: "ai_lab" },
+  { id: "al5", type: "server", x: 45, y: 12, emoji: "🖧", roomId: "ai_lab" },
+  { id: "al6", type: "server", x: 46, y: 12, emoji: "🖧", roomId: "ai_lab" },
+  { id: "al7", type: "monitor", x: 44, y: 17, emoji: "📡", roomId: "ai_lab" },
 
-  // Zen Garden
-  { id: "f170", type: "plant", x: 30, y: 22, emoji: "🌿", roomId: "zen" },
-  { id: "f171", type: "plant", x: 32, y: 22, emoji: "🌿", roomId: "zen" },
-  { id: "f172", type: "plant", x: 34, y: 22, emoji: "🌿", roomId: "zen" },
-  { id: "f173", type: "plant", x: 36, y: 22, emoji: "🌿", roomId: "zen" },
-  { id: "f174", type: "plant", x: 30, y: 26, emoji: "🪴", roomId: "zen" },
-  { id: "f175", type: "plant", x: 38, y: 26, emoji: "🪴", roomId: "zen" },
-  { id: "f176", type: "sofa", x: 32, y: 25, emoji: "🧘", roomId: "zen" },
-  { id: "f177", type: "sofa", x: 34, y: 25, emoji: "🧘", roomId: "zen" },
-  { id: "f178", type: "sofa", x: 36, y: 25, emoji: "🧘", roomId: "zen" },
-  { id: "f179", type: "water", x: 34, y: 23, emoji: "⛲", roomId: "zen" },
+  // ── Marketplace ──
+  { id: "mk1", type: "table", x: 39, y: 25, emoji: "🏪", roomId: "marketplace" },
+  { id: "mk2", type: "table", x: 41, y: 25, emoji: "💰", roomId: "marketplace" },
+  { id: "mk3", type: "table", x: 43, y: 25, emoji: "📦", roomId: "marketplace" },
+  { id: "mk4", type: "vending", x: 46, y: 24, emoji: "🥤", roomId: "marketplace" },
+  { id: "mk5", type: "screen", x: 45, y: 29, emoji: "📊", roomId: "marketplace" },
+
+  // ── Agent Hiring Board ──
+  { id: "hb1", type: "whiteboard", x: 39, y: 35, emoji: "📋", roomId: "hiring_board" },
+  { id: "hb2", type: "whiteboard", x: 40, y: 35, emoji: "📋", roomId: "hiring_board" },
+  { id: "hb3", type: "desk", x: 42, y: 36, emoji: "💼", roomId: "hiring_board" },
+  { id: "hb4", type: "chair", x: 42, y: 37, emoji: "🪑", roomId: "hiring_board" },
+  { id: "hb5", type: "sofa", x: 45, y: 38, emoji: "🛋️", roomId: "hiring_board" },
+
+  // ── Café Filosófico ──
+  { id: "cf1", type: "table", x: 13, y: 35, emoji: "☕", roomId: "cafe" },
+  { id: "cf2", type: "table", x: 15, y: 35, emoji: "☕", roomId: "cafe" },
+  { id: "cf3", type: "chair", x: 13, y: 36, emoji: "🪑", roomId: "cafe" },
+  { id: "cf4", type: "chair", x: 15, y: 36, emoji: "🪑", roomId: "cafe" },
+  { id: "cf5", type: "coffee", x: 18, y: 34, emoji: "☕", roomId: "cafe" },
+  { id: "cf6", type: "sofa", x: 14, y: 39, emoji: "🛋️", roomId: "cafe" },
+  { id: "cf7", type: "plant", x: 12, y: 34, emoji: "🌿", roomId: "cafe" },
+
+  // ── Lounge ──
+  { id: "lg1", type: "sofa", x: 13, y: 15, emoji: "🛋️", roomId: "lounge" },
+  { id: "lg2", type: "sofa", x: 14, y: 15, emoji: "🛋️", roomId: "lounge" },
+  { id: "lg3", type: "table", x: 13, y: 17, emoji: "☕", roomId: "lounge" },
+  { id: "lg4", type: "tv", x: 16, y: 14, emoji: "📺", roomId: "lounge" },
+  { id: "lg5", type: "vending", x: 17, y: 18, emoji: "🥤", roomId: "lounge" },
+
+  // ── Design Lab ──
+  { id: "dl1", type: "desk", x: 23, y: 35, emoji: "🎨", roomId: "design" },
+  { id: "dl2", type: "desk", x: 25, y: 35, emoji: "🎨", roomId: "design" },
+  { id: "dl3", type: "chair", x: 23, y: 36, emoji: "🪑", roomId: "design" },
+  { id: "dl4", type: "chair", x: 25, y: 36, emoji: "🪑", roomId: "design" },
+  { id: "dl5", type: "whiteboard", x: 28, y: 34, emoji: "📋", roomId: "design" },
+  { id: "dl6", type: "plant", x: 22, y: 34, emoji: "🌿", roomId: "design" },
+
+  // ── Server Room ──
+  { id: "sr1", type: "server", x: 51, y: 2, emoji: "🖧", roomId: "server" },
+  { id: "sr2", type: "server", x: 52, y: 2, emoji: "🖧", roomId: "server" },
+  { id: "sr3", type: "server", x: 53, y: 2, emoji: "🖧", roomId: "server" },
+  { id: "sr4", type: "server", x: 54, y: 2, emoji: "🖧", roomId: "server" },
+  { id: "sr5", type: "server", x: 51, y: 4, emoji: "🖧", roomId: "server" },
+  { id: "sr6", type: "server", x: 52, y: 4, emoji: "🖧", roomId: "server" },
+  { id: "sr7", type: "monitor", x: 55, y: 5, emoji: "🖥️", roomId: "server" },
+
+  // ── Game Room ──
+  { id: "gr1", type: "arcade", x: 51, y: 13, emoji: "🕹️", roomId: "game" },
+  { id: "gr2", type: "foosball", x: 53, y: 13, emoji: "⚽", roomId: "game" },
+  { id: "gr3", type: "pingpong", x: 55, y: 13, emoji: "🏓", roomId: "game" },
+  { id: "gr4", type: "sofa", x: 52, y: 16, emoji: "🛋️", roomId: "game" },
+  { id: "gr5", type: "tv", x: 56, y: 16, emoji: "📺", roomId: "game" },
+  { id: "gr6", type: "vending", x: 56, y: 12, emoji: "🥤", roomId: "game" },
+
+  // ── Zen Garden ──
+  { id: "zn1", type: "plant_large", x: 51, y: 23, emoji: "🌳", roomId: "zen" },
+  { id: "zn2", type: "plant_large", x: 55, y: 23, emoji: "🌳", roomId: "zen" },
+  { id: "zn3", type: "plant", x: 53, y: 25, emoji: "🌿", roomId: "zen" },
+  { id: "zn4", type: "water", x: 53, y: 23, emoji: "⛲", roomId: "zen" },
+  { id: "zn5", type: "sofa", x: 51, y: 26, emoji: "🧘", roomId: "zen" },
+  { id: "zn6", type: "sofa", x: 55, y: 26, emoji: "🧘", roomId: "zen" },
 ];
 
 export let FURNITURE = [...DEFAULT_FURNITURE];

@@ -224,73 +224,40 @@ function BuildingExterior({
         </mesh>
       ))}
 
-      {/* ── Exterior Brick Walls ── */}
-      {/* North wall (back - full height, visible) */}
-      <mesh position={[cx, foundH + wallH / 2, northZ - wallT / 2]}>
-        <boxGeometry args={[bw + wallT * 2, wallH, wallT]} />
-        <meshStandardMaterial color={brickColor} roughness={0.95} />
-      </mesh>
-      {/* Brick lines north (reduced to 3) */}
-      {[0.25, 0.5, 0.75].map((frac) => (
-        <mesh key={`bn${frac}`} position={[cx, foundH + wallH * frac, northZ - wallT / 2 - 0.001]} raycast={() => null}>
-          <boxGeometry args={[bw + wallT * 2 + 0.01, 0.012, 0.01]} />
-          <meshStandardMaterial color={brickDark} />
-        </mesh>
-      ))}
-
-      {/* West wall (left - full height) */}
-      <mesh position={[westX - wallT / 2, foundH + wallH / 2, cz]}>
-        <boxGeometry args={[wallT, wallH, bh + wallT * 2]} />
-        <meshStandardMaterial color={brickDark} roughness={0.95} />
-      </mesh>
-      {/* Brick lines west (reduced to 3) */}
-      {[0.25, 0.5, 0.75].map((frac) => (
-        <mesh key={`bw${frac}`} position={[westX - wallT / 2 - 0.001, foundH + wallH * frac, cz]} raycast={() => null}>
-          <boxGeometry args={[0.01, 0.012, bh + wallT * 2 + 0.01]} />
-          <meshStandardMaterial color="#4A2E1A" />
-        </mesh>
-      ))}
-
-      {/* South wall (front - cutaway, low wall for visibility) */}
-      <mesh position={[cx, foundH + wallH * 0.2 / 2, southZ + wallT / 2]}>
-        <boxGeometry args={[bw + wallT * 2, wallH * 0.2, wallT]} />
-        <meshStandardMaterial color={brickColor} roughness={0.95} />
+      {/* ── Exterior Brick Walls (LOW - never block agents) ── */}
+      {/* North wall (back - LOW for visibility) */}
+      <mesh position={[cx, foundH + wallH * 0.25, northZ - wallT / 2]}>
+        <boxGeometry args={[bw + wallT * 2, wallH * 0.5, wallT]} />
+        <meshStandardMaterial color={brickColor} roughness={0.95} transparent opacity={0.7} />
       </mesh>
 
-      {/* East wall (right - partial cutaway) */}
-      <mesh position={[eastX + wallT / 2, foundH + wallH * 0.3 / 2, cz]}>
-        <boxGeometry args={[wallT, wallH * 0.3, bh + wallT * 2]} />
-        <meshStandardMaterial color={brickDark} roughness={0.95} />
+      {/* West wall (left - LOW) */}
+      <mesh position={[westX - wallT / 2, foundH + wallH * 0.25, cz]}>
+        <boxGeometry args={[wallT, wallH * 0.5, bh + wallT * 2]} />
+        <meshStandardMaterial color={brickDark} roughness={0.95} transparent opacity={0.7} />
       </mesh>
 
-      {/* ── Roof (partial cutaway - dark slate style like The Sims) ── */}
-      {/* Back portion of roof (visible, sloped look) */}
-      <mesh position={[cx, foundH + wallH + 0.04, northZ + bh * 0.15]}>
-        <boxGeometry args={[bw + wallT * 2 + 0.3, 0.08, bh * 0.35]} />
-        <meshStandardMaterial color={roofColor} roughness={0.8} />
-      </mesh>
-      {/* Roof edge trim */}
-      <mesh position={[cx, foundH + wallH + 0.09, northZ + bh * 0.15 + bh * 0.175]}>
-        <boxGeometry args={[bw + wallT * 2 + 0.4, 0.04, 0.08]} />
-        <meshStandardMaterial color="#444" />
-      </mesh>
-      {/* Left roof strip */}
-      <mesh position={[westX - wallT * 0.3, foundH + wallH + 0.04, cz]}>
-        <boxGeometry args={[bw * 0.12, 0.08, bh + wallT * 2 + 0.3]} />
-        <meshStandardMaterial color={roofColor} roughness={0.8} />
+      {/* South wall (front - very low baseboard only) */}
+      <mesh position={[cx, foundH + wallH * 0.1 / 2, southZ + wallT / 2]}>
+        <boxGeometry args={[bw + wallT * 2, wallH * 0.1, wallT]} />
+        <meshStandardMaterial color={brickColor} roughness={0.95} transparent opacity={0.5} />
       </mesh>
 
-      {/* ── Top trim / cornice (brownstone style) ── */}
-      <mesh position={[cx, foundH + wallH, northZ - wallT / 2]}>
-        <boxGeometry args={[bw + wallT * 2 + 0.3, 0.08, wallT + 0.15]} />
+      {/* East wall (right - very low baseboard only) */}
+      <mesh position={[eastX + wallT / 2, foundH + wallH * 0.1 / 2, cz]}>
+        <boxGeometry args={[wallT, wallH * 0.1, bh + wallT * 2]} />
+        <meshStandardMaterial color={brickDark} roughness={0.95} transparent opacity={0.5} />
+      </mesh>
+
+      {/* ── NO ROOF - fully open top so agents are always visible ── */}
+
+      {/* ── Top trim / cornice (low, decorative only) ── */}
+      <mesh position={[cx, foundH + wallH * 0.52, northZ - wallT / 2]}>
+        <boxGeometry args={[bw + wallT * 2 + 0.3, 0.04, wallT + 0.1]} />
         <meshStandardMaterial color={trimColor} />
       </mesh>
-      <mesh position={[cx, foundH + wallH - 0.08, northZ - wallT / 2]}>
-        <boxGeometry args={[bw + wallT * 2 + 0.25, 0.04, wallT + 0.12]} />
-        <meshStandardMaterial color={brickLight} />
-      </mesh>
-      <mesh position={[westX - wallT / 2, foundH + wallH, cz]}>
-        <boxGeometry args={[wallT + 0.15, 0.08, bh + wallT * 2 + 0.3]} />
+      <mesh position={[westX - wallT / 2, foundH + wallH * 0.52, cz]}>
+        <boxGeometry args={[wallT + 0.1, 0.04, bh + wallT * 2 + 0.3]} />
         <meshStandardMaterial color={trimColor} />
       </mesh>
 
@@ -464,15 +431,15 @@ function Room3D({
         <meshStandardMaterial color={room.wallColor} />
       </mesh>
 
-      {/* Low back wall (north) - visible, won't block view */}
-      <mesh position={[0, wallH / 2, -h / 2]}>
+      {/* Ultra-low back wall (north) - never blocks agents */}
+      <mesh position={[0, wallH * 0.5, -h / 2]}>
         <boxGeometry args={[w + wallT, wallH, wallT]} />
-        <meshStandardMaterial color={room.wallColor} transparent opacity={0.85} />
+        <meshStandardMaterial color={room.wallColor} transparent opacity={0.6} />
       </mesh>
-      {/* Low left wall (west) */}
-      <mesh position={[-w / 2, wallH / 2, 0]}>
+      {/* Ultra-low left wall (west) */}
+      <mesh position={[-w / 2, wallH * 0.5, 0]}>
         <boxGeometry args={[wallT, wallH, h + wallT]} />
-        <meshStandardMaterial color={room.wallColor} transparent opacity={0.85} />
+        <meshStandardMaterial color={room.wallColor} transparent opacity={0.6} />
       </mesh>
 
       {/* Front (south) - just a floor-level strip, no wall */}

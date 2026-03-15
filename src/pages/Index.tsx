@@ -19,6 +19,10 @@ import { AgentMemory } from "@/components/office/AgentMemory";
 import { CommandCenter } from "@/components/office/CommandCenter";
 import { CharacterCustomizer, type PlayerConfig } from "@/components/office/CharacterCustomizer";
 import { RoomEditor } from "@/components/office/RoomEditor";
+import { ArtifactExplorer } from "@/components/office/ArtifactExplorer";
+import { CityNPCs } from "@/components/office/CityNPCs";
+import { ObservationLab } from "@/components/office/ObservationLab";
+import { DistrictInfo } from "@/components/office/DistrictInfo";
 import { useOfficeState } from "@/hooks/useOfficeState";
 import { ROOMS, setRooms, FURNITURE, setFurniture, type RoomDef, type FurnitureItem, DEFAULT_ROOMS, DEFAULT_FURNITURE } from "@/data/officeMap";
 import type { Agent } from "@/types/agent";
@@ -43,6 +47,10 @@ const Index = () => {
   const [showGovernance, setShowGovernance] = useState(false);
   const [showMemory, setShowMemory] = useState(false);
   const [showCommand, setShowCommand] = useState(false);
+  const [showArtifacts, setShowArtifacts] = useState(false);
+  const [showNPCs, setShowNPCs] = useState(false);
+  const [showObservation, setShowObservation] = useState(false);
+  const [showDistricts, setShowDistricts] = useState(false);
   const [notifCounts, setNotifCounts] = useState({ feed: 3, tasks: 2, messages: 5, governance: 1 });
   const [playerConfig, setPlayerConfig] = useState<PlayerConfig>({
     name: "Chefe",
@@ -141,6 +149,10 @@ const Index = () => {
         onOpenGovernance={() => setShowGovernance(true)}
         onOpenMemory={() => setShowMemory(true)}
         onOpenCommand={() => setShowCommand(true)}
+        onOpenArtifacts={() => setShowArtifacts(true)}
+        onOpenNPCs={() => setShowNPCs(true)}
+        onOpenObservation={() => setShowObservation(true)}
+        onOpenDistricts={() => setShowDistricts(true)}
         notifications={notifCounts}
       />
 
@@ -194,6 +206,10 @@ const Index = () => {
       <AIGovernance agents={agents} isOpen={showGovernance} onClose={() => setShowGovernance(false)} />
       <AgentMemory agents={agents} isOpen={showMemory} onClose={() => setShowMemory(false)} />
       <CommandCenter agents={agents} isOpen={showCommand} onClose={() => setShowCommand(false)} />
+      <ArtifactExplorer agents={agents} isOpen={showArtifacts} onClose={() => setShowArtifacts(false)} />
+      <CityNPCs isOpen={showNPCs} onClose={() => setShowNPCs(false)} />
+      <ObservationLab agents={agents} isOpen={showObservation} onClose={() => setShowObservation(false)} />
+      <DistrictInfo isOpen={showDistricts} onClose={() => setShowDistricts(false)} />
 
       {!editMode && <ActionBar onMove={movePlayer} />}
       {!editMode && <MiniMap player={player} agents={agents} rooms={rooms} />}
