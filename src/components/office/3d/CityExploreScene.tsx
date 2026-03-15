@@ -575,7 +575,7 @@ function ControlsUpdater({ controlsRef }: { controlsRef: React.RefObject<any> })
 }
 
 // ── Main Export ──
-export function CityExploreScene({ playerName }: { playerName: string }) {
+export function CityExploreScene({ playerName, flyMode }: { playerName: string; flyMode?: boolean }) {
   const controlsRef = useRef<any>(null);
   const dn = useDayNight();
 
