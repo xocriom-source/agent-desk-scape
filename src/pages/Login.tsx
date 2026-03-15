@@ -17,6 +17,7 @@ export default function Login() {
     // Simulate login — real auth will be added with Lovable Cloud
     setTimeout(() => {
       localStorage.setItem("agentoffice_user", JSON.stringify({ email, name: email.split("@")[0] }));
+      localStorage.removeItem("skipLobby"); // Reset lobby skip on fresh login
       navigate("/spaces");
     }, 800);
   };
