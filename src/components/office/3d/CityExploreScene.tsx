@@ -577,7 +577,16 @@ function ControlsUpdater({ controlsRef }: { controlsRef: React.RefObject<any> })
 }
 
 // ── Main Export ──
-export function CityExploreScene({ playerName, flyMode }: { playerName: string; flyMode?: boolean }) {
+interface CityExploreSceneProps {
+  playerName: string;
+  flyMode?: boolean;
+  inVehicle?: boolean;
+  vehicleType?: string;
+  vehicleColor?: string;
+  onVehicleToggle?: (val: boolean) => void;
+}
+
+export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, vehicleColor, onVehicleToggle }: CityExploreSceneProps) {
   const controlsRef = useRef<any>(null);
   const dn = useDayNight();
 
