@@ -20,6 +20,7 @@ const Index = () => {
   const [rooms, setLocalRooms] = useState<RoomDef[]>(() => [...DEFAULT_ROOMS]);
   const [furnitureItems, setLocalFurniture] = useState<FurnitureItem[]>(() => [...DEFAULT_FURNITURE]);
   const [editMode, setEditMode] = useState(false);
+  const [profileAgent, setProfileAgent] = useState<Agent | null>(null);
   const [selectedFurnitureId, setSelectedFurnitureId] = useState<string | null>(null);
   const [hoveredFurnitureId, setHoveredFurnitureId] = useState<string | null>(null);
   const [playerConfig, setPlayerConfig] = useState<PlayerConfig>({
