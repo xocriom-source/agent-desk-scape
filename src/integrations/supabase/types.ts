@@ -568,6 +568,36 @@ export type Database = {
         }
         Relationships: []
       }
+      system_logs: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          log_type: string
+          message: string
+          metadata: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          log_type?: string
+          message: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          log_type?: string
+          message?: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_presence: {
         Row: {
           building_id: string | null
@@ -597,6 +627,27 @@ export type Database = {
           position_y?: number | null
           position_z?: number | null
           status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
         Relationships: []
@@ -867,10 +918,37 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      admin_get_counts: { Args: never; Returns: Json }
+      admin_list_profiles: {
+        Args: never
+        Returns: {
+          avatar_url: string | null
+          building_id: string | null
+          city: string | null
+          company_name: string | null
+          created_at: string
+          display_name: string
+          id: string
+          status: string | null
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "manager" | "member" | "guest"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -997,6 +1075,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "manager", "member", "guest"],
+    },
   },
 } as const
