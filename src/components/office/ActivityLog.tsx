@@ -17,10 +17,10 @@ interface ActivityLogProps {
 }
 
 const typeDots: Record<string, string> = {
-  info: "bg-primary",
-  success: "bg-accent",
-  warning: "bg-agent-idle",
-  error: "bg-destructive",
+  info: "#6366F1",
+  success: "#10B981",
+  warning: "#F59E0B",
+  error: "#EF4444",
 };
 
 export function ActivityLog({ logs, isOpen, onToggle }: ActivityLogProps) {
@@ -29,23 +29,26 @@ export function ActivityLog({ logs, isOpen, onToggle }: ActivityLogProps) {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, x: -20, scale: 0.95 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: -20, scale: 0.95 }}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
-            className="glass-panel rounded-2xl w-72 max-h-full flex flex-col overflow-hidden"
+            className="glass-panel rounded-2xl w-72 max-h-full flex flex-col overflow-hidden shadow-lg"
           >
             <div className="flex items-center gap-2 px-4 py-3 border-b border-border/10">
               <Activity className="w-4 h-4 text-accent" />
-              <h3 className="text-sm font-display font-semibold text-card-foreground">
+              <h3 className="text-sm font-display font-semibold text-foreground">
                 Atividade em Tempo Real
               </h3>
+              <span className="ml-auto text-[10px] bg-accent/20 text-accent px-2 py-0.5 rounded-full font-medium">
+                LIVE
+              </span>
             </div>
             <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
               {logs.map((log, i) => (
                 <motion.div
                   key={log.id}
-                  initial={i === 0 ? { opacity: 0, y: -10 } : false}
+                  initial={i === 0 ? { opacity: 0, y: -8 } : false}
                   animate={{ opacity: 1, y: 0 }}
                   className="px-3 py-2 rounded-xl hover:bg-muted/50 transition-colors"
                 >
@@ -57,6 +60,10 @@ export function ActivityLog({ logs, isOpen, onToggle }: ActivityLogProps) {
                     <span className="text-xs font-semibold text-foreground">
                       {log.agentName}
                     </span>
+                    <div
+                      className="w-1.5 h-1.5 rounded-full shrink-0"
+                      style={{ backgroundColor: typeDots[log.type] }}
+                    />
                     <span className="text-[10px] text-muted-foreground ml-auto">
                       {log.timestamp.toLocaleTimeString("pt-BR", {
                         hour: "2-digit",

@@ -1,17 +1,20 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Zap, Clock, ListTodo, Terminal, Play, Pause } from "lucide-react";
+import { X, Zap, Clock, ListTodo, Terminal, Play, Pause, Send, MessageCircle } from "lucide-react";
 import type { Agent } from "@/types/agent";
+import { useState } from "react";
 
 const statusLabels: Record<string, string> = {
   active: "Ativo",
   idle: "Ocioso",
   thinking: "Pensando...",
+  busy: "Ocupado",
 };
 
-const statusConfig: Record<string, { bg: string; text: string; icon: typeof Play }> = {
-  active: { bg: "bg-accent/15", text: "text-accent", icon: Play },
-  idle: { bg: "bg-agent-idle/15", text: "text-agent-idle", icon: Pause },
-  thinking: { bg: "bg-primary/15", text: "text-primary", icon: Zap },
+const statusConfig: Record<string, { bg: string; text: string; dot: string }> = {
+  active: { bg: "bg-accent/15", text: "text-accent", dot: "#10B981" },
+  idle: { bg: "bg-agent-idle/15", text: "text-agent-idle", dot: "#F59E0B" },
+  thinking: { bg: "bg-primary/15", text: "text-primary", dot: "#6366F1" },
+  busy: { bg: "bg-destructive/15", text: "text-destructive", dot: "#EF4444" },
 };
 
 interface AgentPanelProps {
@@ -20,6 +23,22 @@ interface AgentPanelProps {
 }
 
 export function AgentPanel({ agent, onClose }: AgentPanelProps) {
+  const [chatMessage, setChatMessage] = useState("");
+  const [chatHistory, setChatHistory] = useState<{ from: string; text: string }[]>([]);
+
+  const sendMessage = () => {
+    if (!chatMessage.trim() || !agent) return;
+    setChatHistory((prev) => [
+      ...prev,
+      { from: "you", text: chatMessage },
+      {
+        from: agent.name,
+        text: `Olá! Estou atualmente trabalhando em: "${agent.currentTask}". Como posso ajudar?`,
+      },
+    ]);
+    setChatMessage("");
+  };
+
   return (
     <AnimatePresence>
       {agent && (
@@ -28,19 +47,17 @@ export function AgentPanel({ agent, onClose }: AgentPanelProps) {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: 60 }}
           transition={{ duration: 0.2 }}
-          className="absolute right-3 top-16 bottom-16 z-30 w-80"
+          className="absolute right-3 top-16 bottom-4 z-30 w-80"
         >
-          <div className="glass-panel rounded-2xl h-full flex flex-col overflow-hidden">
+          <div className="glass-panel rounded-2xl h-full flex flex-col overflow-hidden shadow-xl">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border/10">
               <div className="flex items-center gap-3">
                 <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
                   style={{ backgroundColor: agent.color }}
                 >
-                  <span className="text-lg">
-                    {["🔬", "✍️", "💻", "📊", "🎨", "📞"][agent.avatar]}
-                  </span>
+                  {["🔬", "✍️", "💻", "📊", "🎨", "🔧", "⚡", "🧪"][agent.avatar]}
                 </div>
                 <div>
                   <h3 className="font-display font-bold text-foreground text-sm">
@@ -57,83 +74,111 @@ export function AgentPanel({ agent, onClose }: AgentPanelProps) {
               </button>
             </div>
 
-            {/* Status */}
-            <div className="px-4 py-3 border-b border-border/10">
-              <div className="flex items-center gap-2">
-                {(() => {
-                  const cfg = statusConfig[agent.status];
-                  const Icon = cfg.icon;
-                  return (
-                    <>
-                      <Icon className={`w-3.5 h-3.5 ${cfg.text}`} />
-                      <span className="text-xs text-muted-foreground">Status</span>
-                      <span
-                        className={`ml-auto text-[11px] px-2.5 py-1 rounded-full font-medium ${cfg.bg} ${cfg.text}`}
-                      >
-                        {statusLabels[agent.status]}
-                      </span>
-                    </>
-                  );
-                })()}
+            {/* Status + Room */}
+            <div className="px-4 py-2.5 border-b border-border/10 flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: statusConfig[agent.status].dot }} />
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${statusConfig[agent.status].bg} ${statusConfig[agent.status].text}`}>
+                  {statusLabels[agent.status]}
+                </span>
               </div>
+              <span className="text-[10px] text-muted-foreground">
+                📍 {agent.room}
+              </span>
             </div>
 
             {/* Current Task */}
             {agent.currentTask && (
-              <div className="px-4 py-3 border-b border-border/10">
-                <div className="flex items-center gap-2 mb-2">
+              <div className="px-4 py-2.5 border-b border-border/10">
+                <div className="flex items-center gap-2 mb-1.5">
                   <Clock className="w-3.5 h-3.5 text-accent" />
-                  <span className="text-xs font-display font-semibold text-foreground">
+                  <span className="text-[11px] font-display font-semibold text-foreground">
                     Tarefa Atual
                   </span>
                 </div>
-                <p className="text-xs text-muted-foreground bg-muted/50 px-3 py-2.5 rounded-xl">
+                <p className="text-[11px] text-muted-foreground bg-muted/50 px-3 py-2 rounded-xl">
                   {agent.currentTask}
                 </p>
               </div>
             )}
 
-            {/* Tasks */}
-            <div className="px-4 py-3 flex-1 overflow-y-auto">
-              <div className="flex items-center gap-2 mb-2">
+            {/* Tasks queue */}
+            <div className="px-4 py-2.5 border-b border-border/10">
+              <div className="flex items-center gap-2 mb-1.5">
                 <ListTodo className="w-3.5 h-3.5 text-primary" />
-                <span className="text-xs font-display font-semibold text-foreground">
-                  Fila de Tarefas
+                <span className="text-[11px] font-display font-semibold text-foreground">
+                  Fila ({agent.tasks.length})
                 </span>
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 {agent.tasks.map((task, i) => (
-                  <div
-                    key={i}
-                    className="text-xs text-muted-foreground bg-muted/30 px-3 py-2.5 rounded-xl flex items-center gap-2"
-                  >
-                    <div
-                      className="w-1.5 h-1.5 rounded-full shrink-0"
-                      style={{ backgroundColor: agent.color }}
-                    />
-                    {task}
+                  <div key={i} className="text-[11px] text-muted-foreground bg-muted/30 px-3 py-1.5 rounded-lg flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: agent.color }} />
+                    {task.slice(0, 45)}...
                   </div>
                 ))}
               </div>
             </div>
 
+            {/* Chat */}
+            <div className="flex-1 flex flex-col min-h-0">
+              <div className="flex items-center gap-2 px-4 py-2 border-b border-border/10">
+                <MessageCircle className="w-3.5 h-3.5 text-primary" />
+                <span className="text-[11px] font-display font-semibold text-foreground">Chat</span>
+              </div>
+              <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
+                {chatHistory.length === 0 && (
+                  <p className="text-[10px] text-muted-foreground text-center py-4">
+                    Envie uma mensagem para interagir com {agent.name}
+                  </p>
+                )}
+                {chatHistory.map((msg, i) => (
+                  <div
+                    key={i}
+                    className={`text-[11px] px-3 py-2 rounded-xl max-w-[90%] ${
+                      msg.from === "you"
+                        ? "bg-primary/20 text-foreground ml-auto"
+                        : "bg-muted/50 text-foreground"
+                    }`}
+                  >
+                    <span className="font-semibold text-[10px] block mb-0.5">
+                      {msg.from === "you" ? "Você" : msg.from}
+                    </span>
+                    {msg.text}
+                  </div>
+                ))}
+              </div>
+              <div className="px-3 py-2 border-t border-border/10 flex gap-2">
+                <input
+                  type="text"
+                  value={chatMessage}
+                  onChange={(e) => setChatMessage(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                  placeholder={`Mensagem para ${agent.name}...`}
+                  className="flex-1 text-xs bg-muted/30 rounded-xl px-3 py-2 text-foreground placeholder:text-muted-foreground border-0 outline-none focus:ring-1 focus:ring-primary/30"
+                />
+                <button
+                  onClick={sendMessage}
+                  className="p-2 bg-primary/20 hover:bg-primary/30 rounded-xl transition-colors"
+                >
+                  <Send className="w-3.5 h-3.5 text-primary" />
+                </button>
+              </div>
+            </div>
+
             {/* Logs */}
-            <div className="px-4 py-3 border-t border-border/10 max-h-44 overflow-y-auto">
-              <div className="flex items-center gap-2 mb-2">
-                <Terminal className="w-3.5 h-3.5 text-muted-foreground" />
-                <span className="text-[10px] font-display text-muted-foreground uppercase tracking-wider">
+            <div className="px-4 py-2 border-t border-border/10 max-h-28 overflow-y-auto">
+              <div className="flex items-center gap-2 mb-1">
+                <Terminal className="w-3 h-3 text-muted-foreground" />
+                <span className="text-[9px] font-display text-muted-foreground uppercase tracking-wider">
                   Logs
                 </span>
               </div>
-              <div className="space-y-1 font-mono">
-                {agent.logs.map((log) => (
-                  <div key={log.id} className="text-[10px] text-muted-foreground/70">
-                    <span className="text-muted-foreground/40">
-                      [{log.timestamp.toLocaleTimeString("pt-BR", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit",
-                      })}]
+              <div className="space-y-0.5 font-mono">
+                {agent.logs.slice(0, 5).map((log) => (
+                  <div key={log.id} className="text-[9px] text-muted-foreground/60">
+                    <span className="text-muted-foreground/30">
+                      [{log.timestamp.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}]
                     </span>{" "}
                     {log.message}
                   </div>

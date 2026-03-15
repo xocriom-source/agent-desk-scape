@@ -1,4 +1,4 @@
-import { OfficeScene3D } from "@/components/office3d/OfficeScene3D";
+import { OfficeCanvas } from "@/components/office/OfficeCanvas";
 import { TopBar } from "@/components/office/TopBar";
 import { ActionBar } from "@/components/office/ActionBar";
 import { ActivityLog } from "@/components/office/ActivityLog";
@@ -8,26 +8,29 @@ import { useOfficeState } from "@/hooks/useOfficeState";
 const Index = () => {
   const {
     agents,
-    furniture,
+    player,
     selectedAgent,
-    selectAgent,
+    setSelectedAgent,
     showActivityLog,
     toggleActivityLog,
     allLogs,
+    nearbyAgent,
+    movePlayer,
   } = useOfficeState();
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden">
+    <div className="relative w-screen h-screen overflow-hidden bg-canvas select-none">
       <TopBar
         agentCount={agents.length}
         activeCount={agents.filter((a) => a.status === "active").length}
+        nearbyAgent={nearbyAgent}
       />
 
-      <OfficeScene3D
+      <OfficeCanvas
         agents={agents}
-        furniture={furniture}
+        player={player}
         selectedAgentId={selectedAgent?.id}
-        onAgentClick={selectAgent}
+        onAgentClick={setSelectedAgent}
       />
 
       <ActivityLog
@@ -36,9 +39,12 @@ const Index = () => {
         onToggle={toggleActivityLog}
       />
 
-      <AgentPanel agent={selectedAgent} onClose={() => selectAgent(null)} />
+      <AgentPanel
+        agent={selectedAgent}
+        onClose={() => setSelectedAgent(null)}
+      />
 
-      <ActionBar />
+      <ActionBar onMove={movePlayer} />
     </div>
   );
 };
