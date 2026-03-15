@@ -129,6 +129,7 @@ const Index = () => {
     lastCollabCount.current = newCollabs;
   }, [agents]);
 
+  const handleSaveCharacter = (config: PlayerConfig) => {
     setPlayerConfig(config);
     localStorage.setItem("playerConfig", JSON.stringify(config));
     localStorage.setItem("playerName", config.name);
