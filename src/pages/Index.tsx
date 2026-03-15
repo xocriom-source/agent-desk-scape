@@ -16,9 +16,10 @@ const Index = () => {
     color: "#4F46E5",
     hairStyle: "spiky",
     outfitStyle: "suit",
+    skinTone: "medium",
+    accessory: "none",
   });
 
-  // Check if user is "logged in"
   useEffect(() => {
     const user = localStorage.getItem("agentoffice_user");
     if (!user) {
