@@ -13,74 +13,53 @@ const STATUS_COLORS: Record<string, string> = {
 
 const S = 0.5; // tile to world scale
 
-// ── Neighboring building (city block filler) ──
+// ── Neighboring building (city block filler - memoized for perf) ──
 function CityBuilding({ position, width, depth, height, color }: { position: [number, number, number]; width: number; depth: number; height: number; color: string }) {
-  const windowRows = Math.floor(height / 0.5);
-  const windowColsW = Math.floor(width / 0.6);
-  const windowColsD = Math.floor(depth / 0.6);
-  const darkColor = new THREE.Color(color).multiplyScalar(0.7).getStyle();
-  
+  const darkColor = useMemo(() => new THREE.Color(color).multiplyScalar(0.7).getStyle(), [color]);
+
+  // Pre-compute window lit states once (not every frame)
+  const windowData = useMemo(() => {
+    const windowRows = Math.floor(height / 0.5);
+    const windowColsW = Math.max(1, Math.floor(width / 0.8));
+    const windowColsD = Math.max(1, Math.floor(depth / 0.8));
+    const front: boolean[][] = [];
+    for (let r = 0; r < windowRows; r++) {
+      front[r] = [];
+      for (let c = 0; c < windowColsW; c++) front[r][c] = Math.random() > 0.35;
+    }
+    const side: boolean[][] = [];
+    for (let r = 0; r < windowRows; r++) {
+      side[r] = [];
+      for (let c = 0; c < windowColsD; c++) side[r][c] = Math.random() > 0.4;
+    }
+    return { windowRows, windowColsW, windowColsD, front, side };
+  }, [height, width, depth]);
+
   return (
     <group position={position}>
-      {/* Main structure */}
-      <mesh position={[0, height / 2, 0]} castShadow>
+      <mesh position={[0, height / 2, 0]}>
         <boxGeometry args={[width, height, depth]} />
         <meshStandardMaterial color={color} roughness={0.9} />
       </mesh>
-      {/* Roof */}
       <mesh position={[0, height + 0.03, 0]}>
         <boxGeometry args={[width + 0.08, 0.06, depth + 0.08]} />
         <meshStandardMaterial color="#2A2A2A" />
       </mesh>
-      {/* Roof details */}
-      {Math.random() > 0.5 && (
-        <mesh position={[width * 0.2, height + 0.2, 0]}>
-          <boxGeometry args={[0.15, 0.35, 0.15]} />
-          <meshStandardMaterial color="#555" />
-        </mesh>
+      {/* Simplified windows - fewer meshes */}
+      {windowData.front.map((row, ri) =>
+        row.map((lit, ci) => (
+          <mesh key={`wf${ri}-${ci}`} position={[
+            -width / 2 + 0.3 + ci * (width / (windowData.windowColsW + 0.5)),
+            0.4 + ri * 0.5,
+            depth / 2 + 0.01
+          ]}>
+            <boxGeometry args={[0.18, 0.24, 0.01]} />
+            <meshStandardMaterial color={lit ? "#FFE4A8" : "#1A1A2A"} emissive={lit ? "#FFD060" : "#000"} emissiveIntensity={lit ? 0.4 : 0} />
+          </mesh>
+        ))
       )}
-      {/* Windows on front face */}
-      {Array.from({ length: windowRows }).map((_, row) =>
-        Array.from({ length: windowColsW }).map((_, col) => {
-          const lit = Math.random() > 0.35;
-          return (
-            <mesh key={`wf${row}-${col}`} position={[
-              -width / 2 + 0.3 + col * (width / (windowColsW + 0.5)),
-              0.4 + row * 0.5,
-              depth / 2 + 0.01
-            ]}>
-              <boxGeometry args={[0.2, 0.28, 0.01]} />
-              <meshStandardMaterial 
-                color={lit ? "#FFE4A8" : "#1A1A2A"} 
-                emissive={lit ? "#FFD060" : "#000"} 
-                emissiveIntensity={lit ? 0.4 : 0} 
-              />
-            </mesh>
-          );
-        })
-      )}
-      {/* Windows on side face */}
-      {Array.from({ length: windowRows }).map((_, row) =>
-        Array.from({ length: windowColsD }).map((_, col) => {
-          const lit = Math.random() > 0.4;
-          return (
-            <mesh key={`ws${row}-${col}`} position={[
-              width / 2 + 0.01,
-              0.4 + row * 0.5,
-              -depth / 2 + 0.3 + col * (depth / (windowColsD + 0.5))
-            ]}>
-              <boxGeometry args={[0.01, 0.28, 0.2]} />
-              <meshStandardMaterial 
-                color={lit ? "#FFE4A8" : "#1A1A2A"} 
-                emissive={lit ? "#FFD060" : "#000"} 
-                emissiveIntensity={lit ? 0.3 : 0} 
-              />
-            </mesh>
-          );
-        })
-      )}
-      {/* Ledges */}
-      {[0.3, 0.6, 0.85].map((frac) => (
+      {/* Ledges - reduced to 2 */}
+      {[0.4, 0.8].map((frac) => (
         <mesh key={`ledge${frac}`} position={[0, height * frac, depth / 2 + 0.03]}>
           <boxGeometry args={[width + 0.06, 0.04, 0.06]} />
           <meshStandardMaterial color={darkColor} />
@@ -158,36 +137,36 @@ function BuildingExterior({
   // Brick pattern helper
   const brickLines = (count: number) => Array.from({ length: count }, (_, i) => (i + 1) / (count + 1));
 
-  // Window generation
+  // Memoized window lit states for exterior walls
+  const extWindowStates = useMemo(() => {
+    const states: Record<string, boolean[]> = {};
+    const genKey = (axis: string, fixedPos: number, count: number) => {
+      const key = `${axis}-${fixedPos.toFixed(2)}`;
+      if (!states[key]) states[key] = Array.from({ length: count }, () => Math.random() > 0.3);
+      return states[key];
+    };
+    return genKey;
+  }, []);
+
+  // Window generation (no Math.random in render)
   const makeWindows = (axis: 'x' | 'z', fixedPos: number, wallStart: number, wallSpan: number, y: number, count: number) => {
     const spacing = wallSpan / (count + 1);
+    const litStates = extWindowStates(axis, fixedPos, count);
     return Array.from({ length: count }).map((_, i) => {
       const offset = wallStart + spacing * (i + 1);
-      const lit = Math.random() > 0.3;
+      const lit = litStates[i];
       const pos: [number, number, number] = axis === 'x' 
         ? [offset, y, fixedPos]
         : [fixedPos, y, offset];
-      const frameSize: [number, number, number] = axis === 'x'
-        ? [0.32, 0.36, 0.04]
-        : [0.04, 0.36, 0.32];
-      const glassSize: [number, number, number] = axis === 'x'
-        ? [0.26, 0.3, 0.02]
-        : [0.02, 0.3, 0.26];
-      const glassOff: [number, number, number] = axis === 'x'
-        ? [0, 0, 0.01]
-        : [0.01, 0, 0];
-      const sillSize: [number, number, number] = axis === 'x'
-        ? [0.38, 0.03, 0.07]
-        : [0.07, 0.03, 0.38];
-      const sillOff: [number, number, number] = axis === 'x'
-        ? [0, -0.2, 0.04]
-        : [0.04, -0.2, 0];
+      // Single mesh per window (simplified for perf)
+      const size: [number, number, number] = axis === 'x'
+        ? [0.28, 0.32, 0.03]
+        : [0.03, 0.32, 0.28];
       return (
-        <group key={`w${axis}${i}-${fixedPos}`} position={pos}>
-          <mesh><boxGeometry args={frameSize} /><meshStandardMaterial color={windowFrame} /></mesh>
-          <mesh position={glassOff}><boxGeometry args={glassSize} /><meshStandardMaterial color={lit ? windowGlassLit : windowGlassDark} emissive={lit ? "#FFD060" : "#000"} emissiveIntensity={lit ? 0.3 : 0} /></mesh>
-          <mesh position={sillOff}><boxGeometry args={sillSize} /><meshStandardMaterial color={trimColor} /></mesh>
-        </group>
+        <mesh key={`w${axis}${i}-${fixedPos}`} position={pos}>
+          <boxGeometry args={size} />
+          <meshStandardMaterial color={lit ? windowGlassLit : windowGlassDark} emissive={lit ? "#FFD060" : "#000"} emissiveIntensity={lit ? 0.3 : 0} />
+        </mesh>
       );
     });
   };
@@ -352,7 +331,7 @@ function BuildingExterior({
               <sphereGeometry args={[0.035, 8, 8]} />
               <meshStandardMaterial color={bc} emissive={bc} emissiveIntensity={1.0} />
             </mesh>
-            <pointLight position={[lx, foundH + wallH - 0.25, lz]} intensity={0.12} distance={3.5} color={bc} />
+            {i % 3 === 0 && <pointLight position={[lx, foundH + wallH - 0.25, lz]} intensity={0.15} distance={4} color={bc} />}
           </group>
         );
       })}
@@ -398,24 +377,20 @@ function BuildingExterior({
       </mesh>
       <pointLight position={[cx, foundH + wallH * 0.7, northZ + wallT + 0.4]} intensity={0.35} distance={5} color="#FF6B00" />
 
-      {/* ── Neighboring city buildings ── */}
+      {/* ── Neighboring city buildings (same ground level, moderate heights) ── */}
       {/* Behind (north) */}
-      <CityBuilding position={[cx - 6, 0, northZ - 5]} width={4} depth={3} height={4.5} color="#7A6B5A" />
-      <CityBuilding position={[cx + 2, 0, northZ - 6]} width={5} depth={3.5} height={6} color="#6B5A4A" />
-      <CityBuilding position={[cx + 9, 0, northZ - 4.5]} width={3.5} depth={3} height={3.5} color="#8A7A6A" />
-      <CityBuilding position={[cx - 12, 0, northZ - 7]} width={4.5} depth={4} height={5.5} color="#5A4A3A" />
+      <CityBuilding position={[cx - 5, 0, northZ - 4]} width={3.5} depth={2.5} height={2} color="#7A6B5A" />
+      <CityBuilding position={[cx + 3, 0, northZ - 5]} width={4} depth={3} height={2.5} color="#6B5A4A" />
+      <CityBuilding position={[cx + 9, 0, northZ - 3.5]} width={3} depth={2.5} height={1.8} color="#8A7A6A" />
       {/* Left (west) */}
-      <CityBuilding position={[westX - 5, 0, cz - 4]} width={3} depth={4} height={5} color="#6A5848" />
-      <CityBuilding position={[westX - 4.5, 0, cz + 3]} width={3.5} depth={3.5} height={3.8} color="#7A6858" />
+      <CityBuilding position={[westX - 4, 0, cz - 3]} width={2.5} depth={3} height={2.2} color="#6A5848" />
+      <CityBuilding position={[westX - 4, 0, cz + 4]} width={3} depth={3} height={1.6} color="#7A6858" />
       {/* Right (east) */}
-      <CityBuilding position={[eastX + 5, 0, cz - 2]} width={4} depth={3.5} height={4.2} color="#5A5040" />
-      <CityBuilding position={[eastX + 4, 0, cz + 5]} width={3} depth={4} height={5.5} color="#6A6050" />
-      {/* Behind far */}
-      <CityBuilding position={[cx - 3, 0, northZ - 12]} width={6} depth={4} height={8} color="#5A4A3A" />
-      <CityBuilding position={[cx + 8, 0, northZ - 11]} width={5} depth={3} height={7} color="#6A5848" />
-      {/* Far sides */}
-      <CityBuilding position={[westX - 10, 0, cz]} width={4} depth={5} height={6.5} color="#4A4038" />
-      <CityBuilding position={[eastX + 10, 0, cz + 2]} width={5} depth={4} height={5} color="#5A5040" />
+      <CityBuilding position={[eastX + 4, 0, cz - 1]} width={3} depth={3} height={2} color="#5A5040" />
+      <CityBuilding position={[eastX + 4, 0, cz + 5]} width={2.5} depth={3} height={2.4} color="#6A6050" />
+      {/* Far background */}
+      <CityBuilding position={[cx - 2, 0, northZ - 10]} width={5} depth={3} height={3} color="#5A4A3A" />
+      <CityBuilding position={[cx + 8, 0, northZ - 9]} width={4} depth={2.5} height={2.8} color="#6A5848" />
 
       {/* ── Street lights ── */}
       {[[-3, 1], [3, 1], [-3, -1], [3, -1]].map(([ox, oz], i) => (
@@ -428,7 +403,7 @@ function BuildingExterior({
             <sphereGeometry args={[0.06, 8, 8]} />
             <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={1.5} />
           </mesh>
-          <pointLight position={[0, 1.6, 0]} intensity={0.3} distance={4} color="#FFD060" />
+          {i < 2 && <pointLight position={[0, 1.6, 0]} intensity={0.25} distance={4} color="#FFD060" />}
         </group>
       ))}
     </group>
@@ -1099,7 +1074,7 @@ export function OfficeScene({
         />
 
         {/* All interior objects raised by foundation height */}
-        <group position={[0, 0.25, 0]}>
+        <group position={[0, 0.35, 0]}>
           {/* Rooms */}
           {rooms.map((room) => (
             <Room3D
