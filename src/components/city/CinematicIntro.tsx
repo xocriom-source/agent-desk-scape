@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface CinematicIntroProps {
@@ -8,27 +8,51 @@ interface CinematicIntroProps {
   onComplete: () => void;
 }
 
-const PHASES = [
-  { duration: 2200, label: "CONNECTING TO SERVER..." },
-  { duration: 2000, label: "" },
-  { duration: 2500, label: "" },
-  { duration: 2000, label: "" },
-];
-
 export function CinematicIntro({ cityName, cityFlag, playerName, onComplete }: CinematicIntroProps) {
-  const [phase, setPhase] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [phase, setPhase] = useState<"loading" | "city" | "welcome">("loading");
   const [skipped, setSkipped] = useState(false);
+
+  const mainColor = "#6b8fc4";
+  const darkColor = "#4a6fa5";
+
+  // Skyline buildings
+  const buildings = useMemo(() =>
+    Array.from({ length: 70 }, (_, i) => ({
+      x: (i / 70) * 100,
+      width: 0.8 + Math.random() * 1.2,
+      height: 8 + Math.random() * 30,
+      lit: Math.random() > 0.4,
+      windows: Math.floor(Math.random() * 5) + 2,
+    })),
+  []);
 
   useEffect(() => {
     if (skipped) return;
-    const timer = setTimeout(() => {
-      if (phase < PHASES.length - 1) {
-        setPhase(phase + 1);
-      } else {
-        onComplete();
-      }
-    }, PHASES[phase].duration);
-    return () => clearTimeout(timer);
+
+    if (phase === "loading") {
+      const interval = setInterval(() => {
+        setProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            setTimeout(() => setPhase("city"), 200);
+            return 100;
+          }
+          return prev + Math.random() * 6 + 2;
+        });
+      }, 80);
+      return () => clearInterval(interval);
+    }
+
+    if (phase === "city") {
+      const timer = setTimeout(() => setPhase("welcome"), 2500);
+      return () => clearTimeout(timer);
+    }
+
+    if (phase === "welcome") {
+      const timer = setTimeout(onComplete, 2000);
+      return () => clearTimeout(timer);
+    }
   }, [phase, skipped, onComplete]);
 
   const handleSkip = useCallback(() => {
@@ -42,216 +66,133 @@ export function CinematicIntro({ cityName, cityFlag, playerName, onComplete }: C
     <AnimatePresence>
       <motion.div
         className="fixed inset-0 z-[200] flex items-center justify-center"
-        style={{ background: "radial-gradient(ellipse at center, #0A1628 0%, #000 100%)" }}
+        style={{ background: "linear-gradient(180deg, #0a0e1a 0%, #0d1525 50%, #111d33 100%)" }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.8 }}
+        transition={{ duration: 0.5 }}
       >
-        {/* Starfield background */}
-        <div className="absolute inset-0 overflow-hidden">
-          {Array.from({ length: 60 }).map((_, i) => (
+        {/* Skyline */}
+        <div className="absolute bottom-0 left-0 right-0 h-[40%] overflow-hidden pointer-events-none">
+          {buildings.map((b, i) => (
             <motion.div
               key={i}
-              className="absolute rounded-full bg-white"
+              className="absolute bottom-0"
               style={{
-                width: Math.random() * 2 + 1,
-                height: Math.random() * 2 + 1,
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
+                left: `${b.x}%`,
+                width: `${b.width}%`,
+                backgroundColor: b.lit ? `${darkColor}35` : `${darkColor}18`,
+                borderTop: `1px solid ${darkColor}40`,
+                borderLeft: `1px solid ${darkColor}25`,
+                borderRight: `1px solid ${darkColor}25`,
               }}
-              animate={{
-                opacity: [0.2, 0.8, 0.2],
-                scale: [1, 1.5, 1],
-              }}
-              transition={{
-                duration: 2 + Math.random() * 3,
-                repeat: Infinity,
-                delay: Math.random() * 2,
-              }}
-            />
+              initial={{ height: 0 }}
+              animate={{ height: `${b.height}%` }}
+              transition={{ duration: 0.6, delay: i * 0.01, ease: "easeOut" }}
+            >
+              {b.lit && Array.from({ length: b.windows }).map((_, j) => (
+                <motion.div
+                  key={j}
+                  className="absolute"
+                  style={{
+                    width: "25%",
+                    height: "2px",
+                    left: `${20 + (j % 2) * 40}%`,
+                    bottom: `${15 + Math.floor(j / 2) * 25}%`,
+                    backgroundColor: `${mainColor}70`,
+                    boxShadow: `0 0 3px ${mainColor}40`,
+                  }}
+                  animate={{ opacity: [0.2, 0.8, 0.2] }}
+                  transition={{ duration: 2 + Math.random() * 2, repeat: Infinity, delay: Math.random() * 2 }}
+                />
+              ))}
+            </motion.div>
           ))}
         </div>
 
-        {/* Phase 0: Loading/connecting */}
-        {phase === 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="text-center z-10"
-          >
-            <div className="w-12 h-12 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin mx-auto mb-6" />
-            <p className="text-xs text-emerald-400 tracking-[0.3em] font-mono">{PHASES[0].label}</p>
-            <motion.div
-              className="mt-4 h-0.5 bg-gray-800 rounded-full w-48 mx-auto overflow-hidden"
-            >
-              <motion.div
-                className="h-full bg-emerald-400 rounded-full"
-                initial={{ width: "0%" }}
-                animate={{ width: "100%" }}
-                transition={{ duration: 2, ease: "easeInOut" }}
-              />
+        {/* Content */}
+        <div className="relative z-10 text-center">
+          {phase === "loading" && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <h1
+                className="text-4xl sm:text-5xl font-mono font-bold tracking-[0.25em] mb-6"
+                style={{ color: mainColor }}
+              >
+                AGENT OFFICE
+              </h1>
+              <p className="text-xs font-mono tracking-[0.3em] uppercase mb-6" style={{ color: darkColor }}>
+                FETCHING BUILDINGS...
+              </p>
+              <div className="w-56 h-3 mx-auto border rounded-sm overflow-hidden" style={{ borderColor: `${mainColor}30` }}>
+                <div className="h-full rounded-sm transition-all" style={{ backgroundColor: mainColor, width: `${Math.min(progress, 100)}%` }} />
+              </div>
+              <p className="text-[10px] font-mono tracking-[0.2em] uppercase mt-6" style={{ color: `${darkColor}60` }}>
+                CLICK ANY BUILDING TO SEE THAT DEV'S PROFILE
+              </p>
             </motion.div>
-          </motion.div>
-        )}
+          )}
 
-        {/* Phase 1: Globe view */}
-        {phase === 1 && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 2 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="text-center z-10"
-          >
-            <motion.div
-              className="text-8xl mb-6"
-              animate={{ rotateY: [0, 360] }}
-              transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-            >
-              🌍
-            </motion.div>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="text-2xl font-black text-white tracking-[0.15em] font-mono"
-            >
-              AGENT OFFICE
-            </motion.p>
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-              className="text-xs text-gray-500 tracking-[0.3em] mt-2 font-mono"
-            >
-              GLOBAL AI CITY NETWORK
-            </motion.p>
-          </motion.div>
-        )}
-
-        {/* Phase 2: Zoom to city */}
-        {phase === 2 && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.3 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 3 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="text-center z-10"
-          >
-            {/* City rings */}
-            <div className="relative w-64 h-64 mx-auto mb-6 flex items-center justify-center">
-              {[1, 2, 3].map(ring => (
-                <motion.div
-                  key={ring}
-                  className="absolute rounded-full border border-emerald-400/20"
-                  style={{ width: ring * 80, height: ring * 80 }}
-                  initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: ring * 0.2, duration: 0.5 }}
-                />
-              ))}
+          {phase === "city" && (
+            <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
               <motion.span
-                className="text-6xl relative z-10"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.4, type: "spring", stiffness: 200 }}
+                className="text-6xl block mb-6"
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
               >
                 {cityFlag}
               </motion.span>
-            </div>
-
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="text-4xl font-black text-white tracking-wider font-mono"
-            >
-              {cityName.toUpperCase()}
-            </motion.h2>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.8 }}
-              className="flex items-center justify-center gap-3 mt-3"
-            >
-              <span className="text-[10px] text-emerald-400 tracking-wider font-mono bg-emerald-400/10 px-3 py-1 rounded-full">
-                ● LIVE
-              </span>
+              <h2 className="text-4xl sm:text-5xl font-mono font-bold tracking-[0.2em]" style={{ color: mainColor }}>
+                {cityName.toUpperCase()}
+              </h2>
+              <div className="flex items-center justify-center gap-2 mt-4">
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[10px] font-mono tracking-[0.3em]" style={{ color: "#34d399" }}>LIVE</span>
+              </div>
             </motion.div>
-          </motion.div>
-        )}
+          )}
 
-        {/* Phase 3: Welcome */}
-        {phase === 3 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="text-center z-10"
-          >
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 150 }}
-              className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 mx-auto mb-6 flex items-center justify-center text-3xl shadow-lg shadow-emerald-500/30"
-            >
-              🏢
-            </motion.div>
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="text-lg text-gray-400 font-mono tracking-wider"
-            >
-              BEM-VINDO,
-            </motion.p>
-            <motion.h2
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="text-3xl font-black text-white tracking-wider font-mono mt-1"
-            >
-              {playerName.toUpperCase()}
-            </motion.h2>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1 }}
-              className="mt-6"
-            >
-              <div className="flex items-center justify-center gap-1">
+          {phase === "welcome" && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              <div className="text-5xl mb-6">🏢</div>
+              <p className="text-sm font-mono tracking-[0.2em] uppercase mb-2" style={{ color: darkColor }}>
+                WELCOME,
+              </p>
+              <h2 className="text-3xl sm:text-4xl font-mono font-bold tracking-[0.2em]" style={{ color: mainColor }}>
+                {playerName.toUpperCase()}
+              </h2>
+              <div className="flex items-center justify-center gap-1 mt-6">
                 {[0, 1, 2].map(i => (
                   <motion.div
                     key={i}
-                    className="w-1.5 h-1.5 rounded-full bg-emerald-400"
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ backgroundColor: mainColor }}
                     animate={{ opacity: [0.3, 1, 0.3] }}
-                    transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.2 }}
+                    transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
                   />
                 ))}
               </div>
-              <p className="text-[10px] text-gray-600 font-mono tracking-wider mt-2">
+              <p className="text-[10px] font-mono tracking-[0.3em] mt-3" style={{ color: `${darkColor}50` }}>
                 ENTERING CITY...
               </p>
             </motion.div>
-          </motion.div>
-        )}
+          )}
+        </div>
 
-        {/* Skip button */}
+        {/* Skip */}
         <motion.button
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          animate={{ opacity: 0.5 }}
           transition={{ delay: 1 }}
           onClick={handleSkip}
-          className="absolute bottom-8 right-8 text-[10px] text-gray-600 hover:text-gray-400 font-mono tracking-wider transition-colors z-20"
+          className="absolute bottom-6 right-6 text-[10px] font-mono tracking-[0.2em] hover:opacity-100 transition-opacity z-20"
+          style={{ color: `${darkColor}60` }}
         >
           SKIP →
         </motion.button>
 
-        {/* Scan lines overlay */}
+        {/* Scanlines */}
         <div
-          className="absolute inset-0 pointer-events-none z-50 opacity-[0.03]"
+          className="absolute inset-0 pointer-events-none z-50 opacity-[0.02]"
           style={{
-            backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.1) 2px, rgba(255,255,255,0.1) 4px)",
+            backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.08) 2px, rgba(255,255,255,0.08) 4px)",
           }}
         />
       </motion.div>
