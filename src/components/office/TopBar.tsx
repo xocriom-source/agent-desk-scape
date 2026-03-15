@@ -62,7 +62,7 @@ function NavBtn({ onClick, title, icon: Icon, color, badge }: { onClick?: () => 
   );
 }
 
-export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onRoomEditor, onLogout, onOpenFeed, onOpenTasks, onOpenMessaging, onOpenGallery, onOpenAnalytics, onOpenMarketplace, onOpenGovernance, onOpenStudios, onOpenMemory, onOpenCommand, onOpenArtifacts, onOpenNPCs, onOpenObservation, onOpenDistricts, notifications = {} }: TopBarProps) {
+export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onRoomEditor, onLogout, onOpenFeed, onOpenTasks, onOpenMessaging, onOpenGallery, onOpenAnalytics, onOpenMarketplace, onOpenGovernance, onOpenStudios, onOpenMemory, onOpenCommand, onOpenArtifacts, onOpenNPCs, onOpenObservation, onOpenDistricts, onOpenEvents, onOpenCityChat, notifications = {} }: TopBarProps) {
   return (
     <div className="absolute top-3 left-3 right-3 z-20 flex items-center justify-between pointer-events-none">
       <div className="flex items-center gap-2 pointer-events-auto">
