@@ -2,29 +2,41 @@ import { Bot, Armchair, Plus, Zap, LayoutGrid } from "lucide-react";
 import { motion } from "framer-motion";
 
 const actions = [
-  { icon: Plus, label: "Novo Agente", color: "text-accent" },
-  { icon: Bot, label: "Agentes", color: "text-primary" },
-  { icon: Armchair, label: "Mobília", color: "text-agent-idle" },
-  { icon: Zap, label: "Automações", color: "text-agent-thinking" },
-  { icon: LayoutGrid, label: "Layout", color: "text-muted-foreground" },
+  { icon: Plus, label: "Novo Agente", accent: true },
+  { icon: Bot, label: "Agentes" },
+  { icon: Armchair, label: "Mobília" },
+  { icon: Zap, label: "Automações" },
+  { icon: LayoutGrid, label: "Layout" },
 ];
 
 export function ActionBar() {
   return (
     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.2 }}
+        transition={{ duration: 0.3, delay: 0.3 }}
         className="glass-panel rounded-2xl px-2 py-2 flex items-center gap-1"
       >
         {actions.map((action) => (
           <button
             key={action.label}
-            className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl hover:bg-card/15 transition-colors group"
+            className={`flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all group ${
+              action.accent
+                ? "bg-accent/20 hover:bg-accent/30"
+                : "hover:bg-muted/30"
+            }`}
           >
-            <action.icon className={`w-5 h-5 ${action.color} group-hover:scale-110 transition-transform`} />
-            <span className="text-[10px] font-display text-primary-foreground/70 group-hover:text-primary-foreground transition-colors">
+            <action.icon
+              className={`w-5 h-5 group-hover:scale-110 transition-transform ${
+                action.accent ? "text-accent" : "text-foreground"
+              }`}
+            />
+            <span
+              className={`text-[10px] font-display font-medium ${
+                action.accent ? "text-accent" : "text-muted-foreground group-hover:text-foreground"
+              } transition-colors`}
+            >
               {action.label}
             </span>
           </button>
