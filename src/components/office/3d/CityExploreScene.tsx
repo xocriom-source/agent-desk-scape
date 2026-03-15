@@ -577,7 +577,16 @@ function ControlsUpdater({ controlsRef }: { controlsRef: React.RefObject<any> })
 }
 
 // ── Main Export ──
-export function CityExploreScene({ playerName, flyMode }: { playerName: string; flyMode?: boolean }) {
+interface CityExploreSceneProps {
+  playerName: string;
+  flyMode?: boolean;
+  inVehicle?: boolean;
+  vehicleType?: string;
+  vehicleColor?: string;
+  onVehicleToggle?: (val: boolean) => void;
+}
+
+export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, vehicleColor, onVehicleToggle }: CityExploreSceneProps) {
   const controlsRef = useRef<any>(null);
   const dn = useDayNight();
 
@@ -621,17 +630,25 @@ export function CityExploreScene({ playerName, flyMode }: { playerName: string; 
   // Keyboard movement
   useEffect(() => {
     const keys = new Set<string>();
-    const onDown = (e: KeyboardEvent) => keys.add(e.key);
-    const onUp = (e: KeyboardEvent) => keys.delete(e.key);
+    const onDown = (e: KeyboardEvent) => {
+      keys.add(e.key.toLowerCase());
+      // Toggle vehicle with E key
+      if (e.key.toLowerCase() === "e" && onVehicleToggle) {
+        onVehicleToggle(!inVehicle);
+      }
+    };
+    const onUp = (e: KeyboardEvent) => keys.delete(e.key.toLowerCase());
     window.addEventListener("keydown", onDown);
     window.addEventListener("keyup", onUp);
 
+    const speed = inVehicle ? 0.6 : 0.3;
+
     const interval = setInterval(() => {
       let dx = 0, dz = 0;
-      if (keys.has("ArrowUp") || keys.has("w")) dz -= 0.3;
-      if (keys.has("ArrowDown") || keys.has("s")) dz += 0.3;
-      if (keys.has("ArrowLeft") || keys.has("a")) dx -= 0.3;
-      if (keys.has("ArrowRight") || keys.has("d")) dx += 0.3;
+      if (keys.has("arrowup") || keys.has("w")) dz -= speed;
+      if (keys.has("arrowdown") || keys.has("s")) dz += speed;
+      if (keys.has("arrowleft") || keys.has("a")) dx -= speed;
+      if (keys.has("arrowright") || keys.has("d")) dx += speed;
       if (dx !== 0 || dz !== 0) {
         setPlayerPos(prev => {
           const newPos: [number, number, number] = [
@@ -650,7 +667,7 @@ export function CityExploreScene({ playerName, flyMode }: { playerName: string; 
       window.removeEventListener("keyup", onUp);
       clearInterval(interval);
     };
-  }, [updateCameraCenter]);
+  }, [updateCameraCenter, inVehicle, onVehicleToggle]);
 
   // Map dynamic buildings to scene-scale positions
   const dynamicBuildings = useMemo(() => {
@@ -750,8 +767,17 @@ export function CityExploreScene({ playerName, flyMode }: { playerName: string; 
           <CityNPC key={i} startX={npc.x} startZ={npc.z} color={npc.color} name={npc.name} activity={npc.activity} />
         ))}
 
-        {/* Player */}
-        <CityPlayer position={playerPos} name={playerName} />
+        {/* Player + active vehicle */}
+        {inVehicle && vehicleType && vehicleType !== "none" && (
+          <Vehicle3D
+            type={vehicleType as any}
+            position={playerPos}
+            color={vehicleColor}
+            ownerName={playerName}
+            isActive
+          />
+        )}
+        {!inVehicle && <CityPlayer position={playerPos} name={playerName} />}
       </Canvas>
     </div>
   );
