@@ -612,8 +612,9 @@ export function OfficeScene({
           gl.toneMappingExposure = 1.0;
         }}
       >
-        {/* Indoor background color - muted ceiling tone */}
-        <color attach="background" args={["#C8C4BC"]} />
+        {/* Dark background like Habbo/Sims */}
+        <color attach="background" args={["#1A1A2E"]} />
+        <fog attach="fog" args={["#1A1A2E", 25, 55]} />
 
         {/* Indoor lighting - warm office lights */}
         <ambientLight intensity={0.6} color="#FFF5E6" />
