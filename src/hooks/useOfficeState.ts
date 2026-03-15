@@ -56,7 +56,7 @@ export function useOfficeState(playerName: string = "Você") {
   const [chatOpen, setChatOpen] = useState(false);
   const [nearbyAgent, setNearbyAgent] = useState<Agent | null>(null);
 
-  // Movement with key-repeat support (hold arrow key = continuous movement)
+  // Movement with key-repeat support
   const keysDown = useRef<Set<string>>(new Set());
   const moveInterval = useRef<number>(0);
 
@@ -64,34 +64,34 @@ export function useOfficeState(playerName: string = "Você") {
     setPlayer((p) => {
       const nx = p.x + dx;
       const ny = p.y + dy;
-      return isWalkable(nx, ny) ? { ...p, x: nx, y: ny } : p;
+      if (!isWalkable(nx, ny)) return p; // Collision — blocked by walls/furniture
+      return { ...p, x: nx, y: ny };
     });
   }, []);
 
-  // Process held keys for smooth movement
+  // Process held keys for smooth continuous movement
   useEffect(() => {
     const processKeys = () => {
       if (chatOpen) return;
       const keys = keysDown.current;
-      if (keys.has("ArrowUp")) movePlayer(0, -1);
-      else if (keys.has("ArrowDown")) movePlayer(0, 1);
-      else if (keys.has("ArrowLeft")) movePlayer(-1, 0);
-      else if (keys.has("ArrowRight")) movePlayer(1, 0);
+      if (keys.has("ArrowUp") || keys.has("w") || keys.has("W")) movePlayer(0, -1);
+      else if (keys.has("ArrowDown") || keys.has("s") || keys.has("S")) movePlayer(0, 1);
+      else if (keys.has("ArrowLeft") || keys.has("a") || keys.has("A")) movePlayer(-1, 0);
+      else if (keys.has("ArrowRight") || keys.has("d") || keys.has("D")) movePlayer(1, 0);
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't move when typing in input fields
       const tag = (e.target as HTMLElement)?.tagName;
       if (chatOpen || tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (e.target as HTMLElement)?.isContentEditable) return;
-      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+      
+      const moveKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d", "W", "A", "S", "D"];
+      if (moveKeys.includes(e.key)) {
         e.preventDefault();
         if (!keysDown.current.has(e.key)) {
           keysDown.current.add(e.key);
-          // Immediate first move
-          processKeys();
-          // Start repeat
+          processKeys(); // Immediate first move
           if (!moveInterval.current) {
-            moveInterval.current = window.setInterval(processKeys, 120);
+            moveInterval.current = window.setInterval(processKeys, 100); // Faster repeat
           }
         }
       }
