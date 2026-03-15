@@ -272,6 +272,8 @@ function Ground() {
 interface OfficeSceneProps {
   agents: Agent[];
   player: Player;
+  rooms: RoomDef[];
+  furniture: FurnitureItem[];
   playerConfig?: { color: string; hairStyle?: string; outfitStyle?: string; skinTone?: string; accessory?: string };
   selectedAgentId?: string;
   onAgentClick: (agent: Agent) => void;
