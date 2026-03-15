@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Building2, Users2, Trophy, Megaphone, Plane, Search, ShoppingBag, MessageCircle, Target, Car, Award } from "lucide-react";
+import { ArrowLeft, Building2, Users2, Trophy, Megaphone, Plane, Search, ShoppingBag, MessageCircle, Target, Car, Award, Briefcase } from "lucide-react";
 import { motion } from "framer-motion";
 import { CityExploreScene } from "@/components/office/3d/CityExploreScene";
 import { CityLeaderboard } from "@/components/city/CityLeaderboard";
@@ -12,6 +12,7 @@ import { CityChat } from "@/components/city/CityChat";
 import { DailyMissions } from "@/components/city/DailyMissions";
 import { CityMiniMap } from "@/components/city/CityMiniMap";
 import { CinematicIntro } from "@/components/city/CinematicIntro";
+import { CityMarketplace } from "@/components/city/CityMarketplace";
 import { useCityBuildings } from "@/hooks/useCityBuildings";
 import type { TransportType } from "@/types/building";
 import logo from "@/assets/logo.png";
@@ -24,6 +25,7 @@ export default function CityExplore() {
   const [showVehicleShop, setShowVehicleShop] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [showMissions, setShowMissions] = useState(false);
+  const [showMarketplace, setShowMarketplace] = useState(false);
   const [flyMode, setFlyMode] = useState(false);
   const [inVehicle, setInVehicle] = useState(false);
   const [currentVehicle, setCurrentVehicle] = useState<TransportType>("car");
@@ -150,6 +152,9 @@ export default function CityExplore() {
                   <ShoppingBag className="w-3.5 h-3.5" />
                 </button>
 
+                <button onClick={() => setShowMarketplace(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-amber-700/30 text-amber-400 hover:bg-amber-400/10 transition-all text-xs font-medium">
+                  <Briefcase className="w-3.5 h-3.5" />
+                </button>
                 <button onClick={() => setShowRanking(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
                   <Award className="w-3.5 h-3.5" />
                 </button>
@@ -250,6 +255,7 @@ export default function CityExplore() {
           <CityAdPlacement isOpen={showAds} onClose={() => setShowAds(false)} />
           <VehicleShop isOpen={showVehicleShop} onClose={() => setShowVehicleShop(false)} currentVehicle={currentVehicle} onSelect={handleVehicleSelect} />
           <DailyMissions isOpen={showMissions} onClose={() => setShowMissions(false)} />
+          <CityMarketplace isOpen={showMarketplace} onClose={() => setShowMarketplace(false)} />
         </>
       )}
     </div>
