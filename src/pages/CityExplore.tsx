@@ -158,6 +158,9 @@ export default function CityExplore() {
                 <button onClick={() => setShowRanking(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
                   <Award className="w-3.5 h-3.5" />
                 </button>
+                <button onClick={() => navigate("/ecosystem")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-violet-700/30 text-violet-400 hover:bg-violet-400/10 transition-all text-xs font-medium" title="Ecosystem">
+                  <Dna className="w-3.5 h-3.5" />
+                </button>
 
                 <button onClick={() => setShowLeaderboard(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
                   <Trophy className="w-3.5 h-3.5" />
