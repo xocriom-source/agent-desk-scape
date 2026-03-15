@@ -10,6 +10,7 @@ import Onboarding from "./pages/Onboarding.tsx";
 import Office from "./pages/Index.tsx";
 import WorldMap from "./pages/WorldMap.tsx";
 import CityView from "./pages/CityView.tsx";
+import CityExplore from "./pages/CityExplore.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
