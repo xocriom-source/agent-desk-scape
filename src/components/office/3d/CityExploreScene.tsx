@@ -584,6 +584,7 @@ interface CityExploreSceneProps {
   vehicleType?: string;
   vehicleColor?: string;
   onVehicleToggle?: (val: boolean) => void;
+  onReady?: () => void;
 }
 
 export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, vehicleColor, onVehicleToggle }: CityExploreSceneProps) {
