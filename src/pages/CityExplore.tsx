@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Building2, Users2, Trophy, Megaphone, Plane, Search, ShoppingBag, MessageCircle, Target, Car } from "lucide-react";
 import { motion } from "framer-motion";
