@@ -192,6 +192,8 @@ const Index = () => {
       <AnalyticsDashboard agents={agents} isOpen={showAnalytics} onClose={() => setShowAnalytics(false)} />
       <AgentMarketplace agents={agents} isOpen={showMarketplace} onClose={() => setShowMarketplace(false)} />
       <AIGovernance agents={agents} isOpen={showGovernance} onClose={() => setShowGovernance(false)} />
+      <AgentMemory agents={agents} isOpen={showMemory} onClose={() => setShowMemory(false)} />
+      <CommandCenter agents={agents} isOpen={showCommand} onClose={() => setShowCommand(false)} />
 
       {!editMode && <ActionBar onMove={movePlayer} />}
       {!editMode && <MiniMap player={player} agents={agents} rooms={rooms} />}
