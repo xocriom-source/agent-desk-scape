@@ -556,16 +556,28 @@ function CityPlayer({ position, name }: { position: [number, number, number]; na
   );
 }
 
-// ── Camera Follow ──
+// ── Camera Follow (tight lock on player) ──
 function CameraFollow({ target, controlsRef }: { target: [number, number, number]; controlsRef: React.RefObject<any> }) {
-  useFrame((_, delta) => {
+  const camOffset = useRef(new THREE.Vector3(8, 12, 14));
+
+  useFrame(({ camera }, delta) => {
     if (!controlsRef.current) return;
     const dt = Math.min(delta, 0.05);
-    const factor = 1 - Math.exp(-6 * dt);
+    const factor = 1 - Math.exp(-10 * dt); // much tighter follow
+
+    // Move orbit target to player
     const t = controlsRef.current.target;
     t.x += (target[0] - t.x) * factor;
     t.z += (target[2] - t.z) * factor;
-    t.y += (0 - t.y) * factor;
+    t.y += (0.5 - t.y) * factor;
+
+    // Also nudge camera position to maintain relative offset
+    const idealPos = new THREE.Vector3(
+      target[0] + camOffset.current.x,
+      camOffset.current.y,
+      target[2] + camOffset.current.z
+    );
+    camera.position.lerp(idealPos, factor * 0.3);
   });
   return null;
 }
