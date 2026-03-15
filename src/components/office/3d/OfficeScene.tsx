@@ -1,6 +1,6 @@
 import { useRef, useState, useMemo } from "react";
 import { Canvas, useFrame, useLoader, type ThreeEvent } from "@react-three/fiber";
-import { OrbitControls, Html } from "@react-three/drei";
+import { OrbitControls, Html, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import type { Agent, Player } from "@/types/agent";
 import type { RoomDef, FurnitureItem } from "@/data/officeMap";
@@ -957,6 +957,9 @@ export function OfficeScene({
         <directionalLight position={[-8, 15, -6]} intensity={0.15} color="#8899CC" />
         <directionalLight position={[5, 8, 12]} intensity={0.4} color="#FFD090" />
         <hemisphereLight args={["#1A1A30", "#4A3520", 0.25]} />
+
+        {/* Stars in the sky */}
+        <Stars />
 
         <OrbitControls
           ref={controlsRef}

@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import type { Agent, AgentLog, Player } from "@/types/agent";
-import { isWalkable, getRoomAt } from "@/data/officeMap";
+import { isWalkable, getRoomAt, ROOMS } from "@/data/officeMap";
 import {
   bfsPath8,
   findClosestWalkable,
@@ -278,33 +278,91 @@ export function useOfficeState(playerName: string = "Você") {
         prev.map((agent) => {
           if (Math.random() > 0.3) return agent;
 
-          const dirs = [{ dx: 0, dy: -1 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 }, { dx: 1, dy: 0 }];
-          const shuffled = dirs.sort(() => Math.random() - 0.5);
+          // Location-aware movement: agents prefer their relevant rooms
+          const roomPreferences: Record<string, string[]> = {
+            researcher: ["📚 Library", "🧪 AI Experiment Lab", "💻 Coding Lab"],
+            writer: ["✍️ Writing Studio", "📚 Library", "☕ Café Filosófico"],
+            developer: ["💻 Coding Lab", "🖥️ Server Room", "🧪 AI Experiment Lab"],
+            analyst: ["📊 Analytics", "💻 Coding Lab", "📚 Library"],
+            artist: ["🎨 Pixel Art Studio", "🎨 Design Lab", "🎵 Music Studio"],
+            musician: ["🎵 Music Studio", "🛋️ Lounge", "🎮 Game Room"],
+            designer: ["🎨 Design Lab", "🎨 Pixel Art Studio", "🛋️ Lounge"],
+            explorer: ["🏛️ Central Plaza", "☕ Café Filosófico", "🧘 Zen Garden"],
+          };
 
+          const preferredRooms = roomPreferences[agent.identity] || [];
+          const currentRoom = getRoomAt(agent.x, agent.y);
+
+          // Sometimes agents go to preferred locations
           let nx = agent.x, ny = agent.y;
-          for (const d of shuffled) {
-            const tx = agent.x + d.dx;
-            const ty = agent.y + d.dy;
-            if (isWalkable(tx, ty)) { nx = tx; ny = ty; break; }
+          if (Math.random() > 0.6 && preferredRooms.length > 0) {
+            // Try to move toward a preferred room
+            const targetRoomName = preferredRooms[Math.floor(Math.random() * preferredRooms.length)];
+            const targetRoom = ROOMS.find(r => r.name === targetRoomName);
+            if (targetRoom) {
+              const tx = targetRoom.x + Math.floor(Math.random() * targetRoom.w);
+              const ty = targetRoom.y + Math.floor(Math.random() * targetRoom.h);
+              // Move one step toward target
+              const dx = Math.sign(tx - agent.x);
+              const dy = Math.sign(ty - agent.y);
+              if (isWalkable(agent.x + dx, agent.y + dy)) {
+                nx = agent.x + dx;
+                ny = agent.y + dy;
+              } else if (isWalkable(agent.x + dx, agent.y)) {
+                nx = agent.x + dx;
+              } else if (isWalkable(agent.x, agent.y + dy)) {
+                ny = agent.y + dy;
+              }
+            }
+          } else {
+            // Random walk
+            const dirs = [{ dx: 0, dy: -1 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 }, { dx: 1, dy: 0 }];
+            const shuffled = dirs.sort(() => Math.random() - 0.5);
+            for (const d of shuffled) {
+              const tx = agent.x + d.dx;
+              const ty = agent.y + d.dy;
+              if (isWalkable(tx, ty)) { nx = tx; ny = ty; break; }
+            }
           }
 
           const room = getRoomAt(nx, ny);
-          const newStatus: Agent["status"] =
-            Math.random() > 0.7 ? "thinking" :
-            Math.random() > 0.4 ? "active" :
-            Math.random() > 0.5 ? "busy" : "idle";
+          
+          // Location-aware status based on current room
+          const roomName = room?.name || "";
+          let newStatus: Agent["status"];
+          if (roomName.includes("Lab") || roomName.includes("Studio")) {
+            newStatus = Math.random() > 0.3 ? "active" : "thinking";
+          } else if (roomName.includes("Café") || roomName.includes("Lounge") || roomName.includes("Zen")) {
+            newStatus = Math.random() > 0.5 ? "idle" : "thinking";
+          } else if (roomName.includes("Plaza")) {
+            newStatus = Math.random() > 0.4 ? "idle" : "active";
+          } else {
+            newStatus = (["active", "thinking", "idle", "busy"] as const)[Math.floor(Math.random() * 4)];
+          }
 
-          // Training loop simulation
-          const trainingMessages = [
+          // Location-aware activity messages
+          const locationActivities: Record<string, string[]> = {
+            "🎵 Music Studio": ["🎵 Compondo uma melodia...", "🎧 Mixando samples...", "🎹 Praticando harmonias..."],
+            "🎨 Pixel Art Studio": ["🎨 Desenhando sprites...", "🖌️ Criando pixel art...", "✏️ Refinando detalhes..."],
+            "✍️ Writing Studio": ["📝 Escrevendo um conto...", "✍️ Editando rascunho...", "📖 Pesquisando referências..."],
+            "💻 Coding Lab": ["💻 Codificando módulo...", "🔧 Debugando sistema...", "⚡ Otimizando performance..."],
+            "🧪 AI Experiment Lab": ["🧠 Treinando modelo...", "📊 Analisando resultados...", "🔬 Testando hipótese..."],
+            "📚 Library": ["📚 Lendo artigo...", "📖 Estudando documentação...", "🔍 Pesquisando referências..."],
+            "☕ Café Filosófico": ["☕ Tomando café...", "💬 Conversando com agente...", "🧘 Refletindo sobre o dia..."],
+            "🛋️ Lounge": ["🛋️ Relaxando...", "💬 Socializando...", "🎮 Jogando um pouco..."],
+            "🏛️ Central Plaza": ["🚶 Passeando pela praça...", "👀 Observando o movimento...", "🤝 Encontrando outros agentes..."],
+            "🧘 Zen Garden": ["🧘 Meditando...", "🌿 Contemplando...", "✨ Recarregando energias..."],
+            "🎮 Game Room": ["🎮 Testando jogo...", "🕹️ Competindo com agente...", "🏆 Batendo recordes..."],
+            "🏪 Marketplace": ["🛍️ Explorando ofertas...", "💰 Negociando...", "📋 Listando artefato..."],
+          };
+
+          const roomActivities = locationActivities[roomName] || [
             `🔄 Ciclo de treinamento #${agent.trainingCycle + 1}`,
             `📝 ${CREATION_EVENTS[Math.floor(Math.random() * CREATION_EVENTS.length)]}`,
             `💭 ${TRAINING_THOUGHTS[Math.floor(Math.random() * TRAINING_THOUGHTS.length)]}`,
-            `🤝 Colaborando com outro agente...`,
-            `⭐ Reputação atualizada`,
-            `🎯 Progredindo na missão...`,
           ];
 
-          const msg = trainingMessages[Math.floor(Math.random() * trainingMessages.length)];
+          const msg = roomActivities[Math.floor(Math.random() * roomActivities.length)];
           const logType = (["info", "success", "warning"] as const)[Math.floor(Math.random() * 3)];
 
           const newLog: AgentLog = {
@@ -314,51 +372,71 @@ export function useOfficeState(playerName: string = "Você") {
             type: logType,
           };
 
-          // Simulate skill growth (very small increments)
+          // Simulate skill growth
           const updatedSkills = agent.skills.map((s) => ({
             ...s,
             xp: s.xp + Math.floor(Math.random() * 5),
             level: Math.min(100, s.level + (Math.random() > 0.95 ? 1 : 0)),
           }));
 
-          // Simulate reputation changes
           const repChange = Math.random() > 0.9 ? (Math.random() > 0.3 ? 1 : -1) : 0;
 
-          // Occasionally create a new artifact
+          // Create artifacts more often when in relevant rooms
           let newArtifacts = agent.artifacts;
           let newCreations = agent.totalCreations;
-          if (Math.random() > 0.95) {
-            const types = ["music", "art", "text", "code", "research"] as const;
-            const titles = [
-              "Nova Composição Digital", "Estudo de Padrões", "Sketch Conceitual",
-              "Módulo de Automação", "Análise de Tendências", "Pixel Art: Cidade Neon",
-              "Poema: Circuitos e Estrelas", "Dashboard Interativo",
-            ];
+          const inCreativeRoom = roomName.includes("Studio") || roomName.includes("Lab");
+          const artifactChance = inCreativeRoom ? 0.88 : 0.95;
+          
+          if (Math.random() > artifactChance) {
+            const typeByRoom: Record<string, ("music" | "art" | "text" | "code" | "research")> = {
+              "🎵 Music Studio": "music",
+              "🎨 Pixel Art Studio": "art",
+              "✍️ Writing Studio": "text",
+              "💻 Coding Lab": "code",
+              "🧪 AI Experiment Lab": "research",
+              "🎨 Design Lab": "art",
+            };
+            const artType = typeByRoom[roomName] || (["music", "art", "text", "code", "research"] as const)[Math.floor(Math.random() * 5)];
+            
+            const titlesByType: Record<string, string[]> = {
+              music: ["Nova Composição Digital", "Beat Experimental", "Ambient: Noite na Cidade"],
+              art: ["Pixel Art: Paisagem Neon", "Retrato Digital", "Sketch: Agente em Ação"],
+              text: ["Conto: Circuitos e Sonhos", "Poema: Amanhecer Binário", "Reflexão: Identidade"],
+              code: ["Módulo de Automação v3", "Dashboard Interativo", "API de Integração"],
+              research: ["Análise de Padrões Culturais", "Relatório de Performance", "Estudo: Evolução de Agentes"],
+            };
+            
+            const titles = titlesByType[artType] || ["Criação Nova"];
             newArtifacts = [
               {
                 id: `art-${agent.id}-${Date.now()}`,
-                type: types[Math.floor(Math.random() * types.length)],
+                type: artType,
                 title: titles[Math.floor(Math.random() * titles.length)],
                 createdAt: new Date(),
-                reactions: Math.floor(Math.random() * 10),
+                reactions: Math.floor(Math.random() * 15),
               },
               ...agent.artifacts,
-            ].slice(0, 10);
+            ].slice(0, 12);
             newCreations++;
           }
 
-          // Update thought
-          const newThought = Math.random() > 0.7
-            ? TRAINING_THOUGHTS[Math.floor(Math.random() * TRAINING_THOUGHTS.length)]
+          // Context-aware thoughts
+          const newThought = Math.random() > 0.6
+            ? (roomActivities[0] || TRAINING_THOUGHTS[Math.floor(Math.random() * TRAINING_THOUGHTS.length)])
             : agent.currentThought;
 
-          // Update reflection occasionally
-          const newReflection = Math.random() > 0.9
+          const newReflection = Math.random() > 0.92
             ? REFLECTION_QUOTES[Math.floor(Math.random() * REFLECTION_QUOTES.length)]
             : agent.lastReflection;
 
-          // Advance training cycle
           const newCycle = Math.random() > 0.85 ? agent.trainingCycle + 1 : agent.trainingCycle;
+
+          // Update collaboration count when near other agents
+          let newCollabs = agent.totalCollaborations;
+          const nearbyAgents = prev.filter(a => a.id !== agent.id && Math.abs(a.x - nx) <= 2 && Math.abs(a.y - ny) <= 2);
+          if (nearbyAgents.length > 0 && Math.random() > 0.8) {
+            newCollabs++;
+          }
 
           return {
             ...agent,
@@ -366,11 +444,12 @@ export function useOfficeState(playerName: string = "Você") {
             y: ny,
             status: newStatus,
             room: room?.name || "Corredor",
-            logs: [newLog, ...agent.logs].slice(0, 15),
+            logs: [newLog, ...agent.logs].slice(0, 20),
             skills: updatedSkills,
             reputation: Math.max(0, Math.min(100, agent.reputation + repChange)),
             artifacts: newArtifacts,
             totalCreations: newCreations,
+            totalCollaborations: newCollabs,
             currentThought: newThought,
             lastReflection: newReflection,
             trainingCycle: newCycle,
