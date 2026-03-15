@@ -98,6 +98,8 @@ const Index = () => {
       <OfficeScene
         agents={agents}
         player={{ ...player, name: playerConfig.name }}
+        rooms={rooms}
+        furniture={furnitureItems}
         playerConfig={playerConfig}
         selectedAgentId={selectedAgent?.id}
         onAgentClick={setSelectedAgent}
