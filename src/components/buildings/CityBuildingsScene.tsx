@@ -134,7 +134,7 @@ export function CityBuildingsScene({ buildings, targetBuilding, onBuildingClick,
       >
         <fog attach="fog" args={[dn.fogColor, 30, 150]} />
         <Lighting />
-        <Sky sunPosition={[dn.sunPosition.x, dn.sunPosition.y, dn.sunPosition.z]} turbidity={dn.isNight ? 20 : 8} rayleigh={dn.isNight ? 0 : 2} />
+        <Sky sunPosition={dn.sunPosition} turbidity={dn.isNight ? 20 : 8} rayleigh={dn.isNight ? 0 : 2} />
         
         <CityGround />
         
