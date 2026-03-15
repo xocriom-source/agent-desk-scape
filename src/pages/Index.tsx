@@ -216,6 +216,8 @@ const Index = () => {
       <CityNPCs isOpen={showNPCs} onClose={() => setShowNPCs(false)} />
       <ObservationLab agents={agents} isOpen={showObservation} onClose={() => setShowObservation(false)} />
       <DistrictInfo isOpen={showDistricts} onClose={() => setShowDistricts(false)} />
+      <CityEvents agents={agents} isOpen={showEvents} onClose={() => setShowEvents(false)} />
+      <CityChat agents={agents} isOpen={showCityChat} onClose={() => setShowCityChat(false)} />
 
       {!editMode && <ActionBar onMove={movePlayer} />}
       {!editMode && <MiniMap player={player} agents={agents} rooms={rooms} />}
