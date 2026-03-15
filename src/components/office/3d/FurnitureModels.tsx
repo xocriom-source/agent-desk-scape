@@ -13,6 +13,43 @@ interface FurnitureProps {
   onPointerOut?: () => void;
 }
 
+// Friendly labels for furniture types
+const FURNITURE_LABELS: Record<string, string> = {
+  desk: "Mesa de trabalho",
+  desk_large: "Mesa grande",
+  chair: "Cadeira",
+  server: "Rack de servidores",
+  sofa: "Sofá",
+  plant: "Planta",
+  plant_large: "Planta grande",
+  bookshelf: "Estante",
+  whiteboard: "Quadro branco",
+  screen: "Tela",
+  tv: "TV",
+  coffee: "Café",
+  vending: "Máquina de vendas",
+  table: "Mesa",
+  monitor: "Monitor",
+  printer: "Impressora",
+  water: "Bebedouro",
+  trash: "Lixeira",
+  door: "Porta",
+  laptop: "Laptop",
+  phone: "Telefone",
+  beanbag: "Pufe",
+  painting: "Quadro",
+  lamp: "Luminária",
+  clock: "Relógio",
+  trophy: "Troféu",
+  fridge: "Geladeira",
+  microwave: "Micro-ondas",
+  arcade: "Fliperama",
+  foosball: "Pebolim",
+  pingpong: "Ping Pong",
+  dartboard: "Dardos",
+  rug: "Tapete",
+};
+
 // Color palettes for furniture
 const WOOD = "#A0805A";
 const WOOD_DARK = "#705838";
@@ -28,22 +65,41 @@ const PLANT_DARK = "#2E7D32";
 
 export function FurnitureModel({ type, position, editMode, selected, hovered, onClick, onPointerOver, onPointerOut }: FurnitureProps) {
   const groupRef = useRef<THREE.Group>(null);
+  const [localHovered, setLocalHovered] = useState(false);
 
-  const interactiveProps = editMode ? {
+  const interactiveProps = {
     onClick: (e: any) => { e.stopPropagation(); onClick?.(); },
-    onPointerOver: (e: any) => { e.stopPropagation(); onPointerOver?.(); document.body.style.cursor = "pointer"; },
-    onPointerOut: (e: any) => { onPointerOut?.(); document.body.style.cursor = "default"; },
-  } : {};
+    onPointerOver: (e: any) => {
+      e.stopPropagation();
+      setLocalHovered(true);
+      onPointerOver?.();
+      document.body.style.cursor = "pointer";
+    },
+    onPointerOut: (e: any) => {
+      setLocalHovered(false);
+      onPointerOut?.();
+      document.body.style.cursor = "default";
+    },
+  };
 
-  const outlineColor = selected ? "#FFD700" : hovered ? "#90CAF9" : null;
+  const outlineColor = selected ? "#FFD700" : (hovered || (!editMode && localHovered)) ? "#90CAF9" : null;
+  const label = FURNITURE_LABELS[type] || type;
 
   return (
     <group ref={groupRef} position={position} {...interactiveProps}>
       {outlineColor && (
         <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.45, 0.55, 32]} />
-          <meshBasicMaterial color={outlineColor} transparent opacity={0.8} />
+          <ringGeometry args={[0.35, 0.42, 24]} />
+          <meshBasicMaterial color={outlineColor} transparent opacity={0.7} />
         </mesh>
+      )}
+      {/* Hover tooltip */}
+      {localHovered && !editMode && (
+        <Html position={[0, 1, 0]} center>
+          <div className="px-2 py-1 bg-[rgba(20,20,30,0.9)] rounded-md whitespace-nowrap pointer-events-none select-none border border-[rgba(255,255,255,0.1)]">
+            <span className="text-[10px] text-white font-medium">{label}</span>
+          </div>
+        </Html>
       )}
       <FurnitureGeometry type={type} />
     </group>
