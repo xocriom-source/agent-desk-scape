@@ -152,6 +152,9 @@ export default function CityExplore() {
                   <ShoppingBag className="w-3.5 h-3.5" />
                 </button>
 
+                <button onClick={() => setShowMarketplace(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-amber-700/30 text-amber-400 hover:bg-amber-400/10 transition-all text-xs font-medium">
+                  <Briefcase className="w-3.5 h-3.5" />
+                </button>
                 <button onClick={() => setShowRanking(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
                   <Award className="w-3.5 h-3.5" />
                 </button>
