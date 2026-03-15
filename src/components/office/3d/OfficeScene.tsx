@@ -474,6 +474,7 @@ interface OfficeSceneProps {
   hoveredFurnitureId?: string | null;
   onFurnitureClick?: (id: string) => void;
   onFurnitureHover?: (id: string | null) => void;
+  onMapClick?: (x: number, y: number) => void;
 }
 
 export function OfficeScene({
