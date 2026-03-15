@@ -24,16 +24,15 @@ const TASKS = [
   "Executando testes automatizados...",
 ];
 
-// Starting positions for agents in different rooms
 const AGENT_STARTS = [
   { x: 3, y: 3, room: "Área de Trabalho" },
-  { x: 6, y: 3, room: "Área de Trabalho" },
-  { x: 9, y: 6, room: "Área de Trabalho" },
-  { x: 3, y: 6, room: "Área de Trabalho" },
-  { x: 17, y: 4, room: "Sala de Reuniões" },
-  { x: 3, y: 14, room: "Lounge" },
-  { x: 17, y: 12, room: "Servidor / Infra" },
-  { x: 13, y: 15, room: "Recepção" },
+  { x: 5, y: 4, room: "Área de Trabalho" },
+  { x: 7, y: 4, room: "Área de Trabalho" },
+  { x: 9, y: 7, room: "Área de Trabalho" },
+  { x: 21, y: 4, room: "Sala de Reuniões" },
+  { x: 3, y: 16, room: "Lounge & Café" },
+  { x: 23, y: 14, room: "Servidor / Infra" },
+  { x: 15, y: 17, room: "Recepção" },
 ];
 
 function createAgents(): Agent[] {
@@ -73,7 +72,7 @@ function createAgents(): Agent[] {
 
 export function useOfficeState(playerName: string = "Você") {
   const [agents, setAgents] = useState<Agent[]>(createAgents);
-  const [player, setPlayer] = useState<Player>({ x: 13, y: 18, name: playerName });
+  const [player, setPlayer] = useState<Player>({ x: 16, y: 22, name: playerName });
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [showActivityLog, setShowActivityLog] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
@@ -84,10 +83,8 @@ export function useOfficeState(playerName: string = "Você") {
     const interval = setInterval(() => {
       setAgents((prev) =>
         prev.map((agent) => {
-          // Only move sometimes
           if (Math.random() > 0.25) return agent;
 
-          // Pick a random adjacent walkable tile
           const dirs = [
             { dx: 0, dy: -1 },
             { dx: 0, dy: 1 },
@@ -100,7 +97,6 @@ export function useOfficeState(playerName: string = "Você") {
             const nx = agent.x + d.dx;
             const ny = agent.y + d.dy;
             if (isWalkable(nx, ny)) {
-              // Find which room agent is in
               const room = ROOMS.find(
                 (r) => nx >= r.x && nx < r.x + r.w && ny >= r.y && ny < r.y + r.h
               );
@@ -120,15 +116,15 @@ export function useOfficeState(playerName: string = "Você") {
                 `Aguardando resposta da API...`,
                 `Tarefa concluída com sucesso!`,
                 `Analisando resultados...`,
+                `Compilando código...`,
+                `Sincronizando com servidor...`,
               ];
 
               const newLog: AgentLog = {
                 id: `log-${agent.id}-${Date.now()}`,
                 timestamp: new Date(),
                 message: logMessages[Math.floor(Math.random() * logMessages.length)],
-                type: (["info", "success", "warning"] as const)[
-                  Math.floor(Math.random() * 3)
-                ],
+                type: (["info", "success", "warning"] as const)[Math.floor(Math.random() * 3)],
               };
 
               return {
@@ -149,7 +145,6 @@ export function useOfficeState(playerName: string = "Você") {
     return () => clearInterval(interval);
   }, []);
 
-  // Check proximity to agents
   useEffect(() => {
     const nearby = agents.find(
       (a) => Math.abs(a.x - player.x) <= 1 && Math.abs(a.y - player.y) <= 1
@@ -157,7 +152,6 @@ export function useOfficeState(playerName: string = "Você") {
     setNearbyAgent(nearby || null);
   }, [player, agents]);
 
-  // Keep selectedAgent synced
   useEffect(() => {
     if (selectedAgent) {
       const updated = agents.find((a) => a.id === selectedAgent.id);
@@ -165,7 +159,6 @@ export function useOfficeState(playerName: string = "Você") {
     }
   }, [agents, selectedAgent]);
 
-  // Player movement
   const movePlayer = useCallback(
     (dx: number, dy: number) => {
       setPlayer((p) => {
@@ -180,35 +173,18 @@ export function useOfficeState(playerName: string = "Você") {
     []
   );
 
-  // Keyboard controls
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (chatOpen) return; // Don't move while chatting
+      if (chatOpen) return;
       switch (e.key) {
-        case "ArrowUp":
-        case "w":
-        case "W":
-          e.preventDefault();
-          movePlayer(0, -1);
-          break;
-        case "ArrowDown":
-        case "s":
-        case "S":
-          e.preventDefault();
-          movePlayer(0, 1);
-          break;
-        case "ArrowLeft":
-        case "a":
-        case "A":
-          e.preventDefault();
-          movePlayer(-1, 0);
-          break;
-        case "ArrowRight":
-        case "d":
-        case "D":
-          e.preventDefault();
-          movePlayer(1, 0);
-          break;
+        case "ArrowUp": case "w": case "W":
+          e.preventDefault(); movePlayer(0, -1); break;
+        case "ArrowDown": case "s": case "S":
+          e.preventDefault(); movePlayer(0, 1); break;
+        case "ArrowLeft": case "a": case "A":
+          e.preventDefault(); movePlayer(-1, 0); break;
+        case "ArrowRight": case "d": case "D":
+          e.preventDefault(); movePlayer(1, 0); break;
         case " ":
           e.preventDefault();
           if (nearbyAgent) {
