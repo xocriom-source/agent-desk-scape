@@ -3,6 +3,9 @@ import { Canvas, useFrame, type ThreeEvent } from "@react-three/fiber";
 import { OrbitControls, Html, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import { useDayNight } from "@/hooks/useDayNight";
+import { useCityBuildings } from "@/hooks/useCityBuildings";
+import { Building3D } from "@/components/buildings/Building3D";
+import type { CityBuilding } from "@/types/building";
 
 const S = 0.5;
 
@@ -574,15 +577,44 @@ function ControlsUpdater({ controlsRef }: { controlsRef: React.RefObject<any> })
 // ── Main Export ──
 export function CityExploreScene({ playerName }: { playerName: string }) {
   const controlsRef = useRef<any>(null);
-  const [playerPos, setPlayerPos] = useState<[number, number, number]>([0, 0, 5]);
   const dn = useDayNight();
+
+  // Load dynamic buildings (user's + NPC fillers)
+  const userId = useMemo(() => {
+    const stored = localStorage.getItem("agentoffice_user");
+    return stored ? JSON.parse(stored).email || "" : "";
+  }, []);
+
+  const { visibleBuildings, userBuilding, updateCameraCenter } = useCityBuildings(userId);
+
+  // Spawn player near their building, or at plaza
+  const startPos = useMemo<[number, number, number]>(() => {
+    if (userBuilding) {
+      // Scale building coords to scene coords (buildings use large coords, scene is smaller)
+      const sx = Math.max(-35, Math.min(35, userBuilding.coordinates.x * 0.4));
+      const sz = Math.max(-35, Math.min(35, userBuilding.coordinates.z * 0.4));
+      return [sx + 2, 0, sz + 2];
+    }
+    return [0, 0, 5];
+  }, [userBuilding]);
+
+  const [playerPos, setPlayerPos] = useState<[number, number, number]>(startPos);
+  const hasSpawned = useRef(false);
+
+  useEffect(() => {
+    if (!hasSpawned.current && userBuilding) {
+      setPlayerPos(startPos);
+      hasSpawned.current = true;
+    }
+  }, [startPos, userBuilding]);
 
   // Click to move
   const handleFloorClick = useCallback((e: ThreeEvent<PointerEvent>) => {
     if (e.nativeEvent.button !== 0) return;
     const { x, z } = e.point;
     setPlayerPos([x, 0, z]);
-  }, []);
+    updateCameraCenter(x * 2.5, z * 2.5);
+  }, [updateCameraCenter]);
 
   // Keyboard movement
   useEffect(() => {
@@ -599,11 +631,15 @@ export function CityExploreScene({ playerName }: { playerName: string }) {
       if (keys.has("ArrowLeft") || keys.has("a")) dx -= 0.3;
       if (keys.has("ArrowRight") || keys.has("d")) dx += 0.3;
       if (dx !== 0 || dz !== 0) {
-        setPlayerPos(prev => [
-          Math.max(-30, Math.min(30, prev[0] + dx)),
-          0,
-          Math.max(-30, Math.min(30, prev[2] + dz)),
-        ]);
+        setPlayerPos(prev => {
+          const newPos: [number, number, number] = [
+            Math.max(-35, Math.min(35, prev[0] + dx)),
+            0,
+            Math.max(-35, Math.min(35, prev[2] + dz)),
+          ];
+          updateCameraCenter(newPos[0] * 2.5, newPos[2] * 2.5);
+          return newPos;
+        });
       }
     }, 50);
 
@@ -612,7 +648,19 @@ export function CityExploreScene({ playerName }: { playerName: string }) {
       window.removeEventListener("keyup", onUp);
       clearInterval(interval);
     };
-  }, []);
+  }, [updateCameraCenter]);
+
+  // Map dynamic buildings to scene-scale positions
+  const dynamicBuildings = useMemo(() => {
+    return visibleBuildings.map(b => ({
+      ...b,
+      coordinates: {
+        ...b.coordinates,
+        x: b.coordinates.x * 0.4,
+        z: b.coordinates.z * 0.4,
+      },
+    }));
+  }, [visibleBuildings]);
 
   return (
     <div className="absolute inset-0">
@@ -661,9 +709,19 @@ export function CityExploreScene({ playerName }: { playerName: string }) {
         <DistrictLabels />
         <StreetLights />
 
-        {/* Buildings */}
+        {/* Static district buildings */}
         {CITY_BUILDINGS.map((b, i) => (
           <CityBuilding3D key={i} x={b.x} z={b.z} w={b.w} d={b.d} h={b.h} color={b.color} label={b.label} />
+        ))}
+
+        {/* Dynamic user & NPC buildings from registry */}
+        {dynamicBuildings.map(b => (
+          <Building3D
+            key={b.id}
+            building={b}
+            onClick={() => {}}
+            highlighted={userBuilding?.id === b.id}
+          />
         ))}
 
         {/* NPCs */}
