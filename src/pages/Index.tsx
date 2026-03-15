@@ -149,6 +149,10 @@ const Index = () => {
         onOpenGovernance={() => setShowGovernance(true)}
         onOpenMemory={() => setShowMemory(true)}
         onOpenCommand={() => setShowCommand(true)}
+        onOpenArtifacts={() => setShowArtifacts(true)}
+        onOpenNPCs={() => setShowNPCs(true)}
+        onOpenObservation={() => setShowObservation(true)}
+        onOpenDistricts={() => setShowDistricts(true)}
         notifications={notifCounts}
       />
 
