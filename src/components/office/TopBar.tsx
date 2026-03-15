@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Settings, Wifi, LogOut, Palette, Home, Clock, MessageSquare, CheckCircle2, Radio, ImageIcon, BarChart3, Store, Vote, Sparkles, Database, Shield } from "lucide-react";
+import { Settings, Wifi, LogOut, Palette, Home, Clock, MessageSquare, CheckCircle2, Radio, ImageIcon, BarChart3, Store, Vote, Sparkles, Database, Shield, MapPin, Star, Eye } from "lucide-react";
 import logo from "@/assets/logo.png";
 import type { Agent } from "@/types/agent";
 
@@ -20,6 +20,10 @@ interface TopBarProps {
   onOpenStudios?: () => void;
   onOpenMemory?: () => void;
   onOpenCommand?: () => void;
+  onOpenArtifacts?: () => void;
+  onOpenNPCs?: () => void;
+  onOpenObservation?: () => void;
+  onOpenDistricts?: () => void;
   notifications?: Record<string, number>;
 }
 
