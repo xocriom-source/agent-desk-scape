@@ -509,11 +509,11 @@ function Agent3D({ agent, selected, onClick }: { agent: Agent; selected?: boolea
   );
 }
 
-// ── Player 3D ──
+// ── Player 3D (rotation-based, smooth interpolation) ──
 function Player3D({ player, config }: { player: Player; config?: { color: string; skinTone?: string } }) {
   const ref = useRef<THREE.Group>(null);
   const smoothPos = useRef(new THREE.Vector3(player.x * S, 0, player.y * S));
-  const prevPos = useRef({ x: player.x * S, z: player.y * S });
+  const smoothAngle = useRef(player.angle);
   const leftLeg = useRef<THREE.Mesh>(null);
   const rightLeg = useRef<THREE.Mesh>(null);
   const leftArm = useRef<THREE.Mesh>(null);
@@ -522,7 +522,44 @@ function Player3D({ player, config }: { player: Player; config?: { color: string
   const color = config?.color || "#4F46E5";
   const skin = config?.skinTone === "light" ? "#FDDCB5" : config?.skinTone === "dark" ? "#8D5B3E" : config?.skinTone === "tan" ? "#C8956C" : "#E8B88A";
 
-  useWalkAnimation(ref, leftLeg, rightLeg, leftArm, rightArm, player.x * S, player.y * S, smoothPos, prevPos, 0.18);
+  useFrame(() => {
+    if (!ref.current) return;
+
+    const tx = player.x * S;
+    const tz = player.y * S;
+    const lerpPos = 0.18;
+    const lerpRot = 0.12;
+
+    smoothPos.current.x += (tx - smoothPos.current.x) * lerpPos;
+    smoothPos.current.z += (tz - smoothPos.current.z) * lerpPos;
+
+    const dx = Math.abs(tx - smoothPos.current.x);
+    const dz = Math.abs(tz - smoothPos.current.z);
+    const moving = dx > 0.003 || dz > 0.003;
+
+    ref.current.position.set(smoothPos.current.x, 0, smoothPos.current.z);
+
+    // Walking bounce or idle bob
+    if (moving) {
+      ref.current.position.y = Math.abs(Math.sin(Date.now() * 0.015)) * 0.025;
+    } else {
+      ref.current.position.y = Math.sin(Date.now() * 0.003) * 0.008;
+    }
+
+    // Smooth rotation using the player's angle
+    let diff = player.angle - smoothAngle.current;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    smoothAngle.current += diff * lerpRot;
+    ref.current.rotation.y = smoothAngle.current;
+
+    // Leg & arm swing
+    const swing = moving ? Math.sin(Date.now() * 0.016) * 0.5 : 0;
+    if (leftLeg.current) leftLeg.current.rotation.x = moving ? swing : leftLeg.current.rotation.x * 0.85;
+    if (rightLeg.current) rightLeg.current.rotation.x = moving ? -swing : rightLeg.current.rotation.x * 0.85;
+    if (leftArm.current) leftArm.current.rotation.x = moving ? -swing * 0.5 : leftArm.current.rotation.x * 0.85;
+    if (rightArm.current) rightArm.current.rotation.x = moving ? swing * 0.5 : rightArm.current.rotation.x * 0.85;
+  });
 
   return (
     <group ref={ref}>
