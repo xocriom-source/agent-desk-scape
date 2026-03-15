@@ -23,6 +23,8 @@ import { ArtifactExplorer } from "@/components/office/ArtifactExplorer";
 import { CityNPCs } from "@/components/office/CityNPCs";
 import { ObservationLab } from "@/components/office/ObservationLab";
 import { DistrictInfo } from "@/components/office/DistrictInfo";
+import { CityEvents } from "@/components/office/CityEvents";
+import { CityChat } from "@/components/office/CityChat";
 import { useOfficeState } from "@/hooks/useOfficeState";
 import { ROOMS, setRooms, FURNITURE, setFurniture, type RoomDef, type FurnitureItem, DEFAULT_ROOMS, DEFAULT_FURNITURE } from "@/data/officeMap";
 import type { Agent } from "@/types/agent";
