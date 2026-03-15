@@ -6,10 +6,12 @@ import { ActionBar } from "@/components/office/ActionBar";
 import { ActivityLog } from "@/components/office/ActivityLog";
 import { MiniMap } from "@/components/office/MiniMap";
 import { AgentPanel } from "@/components/office/AgentPanel";
+import { ObserverCard } from "@/components/office/ObserverCard";
 import { CharacterCustomizer, type PlayerConfig } from "@/components/office/CharacterCustomizer";
 import { RoomEditor } from "@/components/office/RoomEditor";
 import { useOfficeState } from "@/hooks/useOfficeState";
 import { ROOMS, setRooms, FURNITURE, setFurniture, type RoomDef, type FurnitureItem, DEFAULT_ROOMS, DEFAULT_FURNITURE } from "@/data/officeMap";
+import type { Agent } from "@/types/agent";
 
 const Index = () => {
   const navigate = useNavigate();
