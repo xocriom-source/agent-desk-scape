@@ -154,7 +154,7 @@ const DEMO_BUSINESSES: Business[] = [
   { id: "d18", name: "TravelStack", category: "saas", description: "Travel agency management SaaS.", mrr: 36000, growth_percent: 11, sale_price: 1400000, revenue_multiple: 3.2, founder_name: "Ahmed Hassan", status: "listed", building_id: "b18", owner_id: "", product_url: null, buildingName: "Travel Hub", country: "AE", city: "Dubai", region: "Middle East", team_size: 10, business_model: "subscription", category_data: { arr: 432000, subscribers: 340, churn: 4.5, ltv: 9800 }, lat: 25.2048, lng: 55.2708 },
 ];
 
-const MAP_STYLE = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
+const MAP_STYLE = "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json";
 
 // ─── Main Component ─────────────────────────────────
 export default function DigitalMarketplace() {
