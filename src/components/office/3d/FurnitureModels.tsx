@@ -51,17 +51,17 @@ const FURNITURE_LABELS: Record<string, string> = {
 };
 
 // Color palettes for furniture
-const WOOD = "#A0805A";
-const WOOD_DARK = "#705838";
-const WOOD_LIGHT = "#C8A878";
-const METAL = "#546E7A";
-const METAL_DARK = "#37474F";
-const SCREEN_OFF = "#1a1a2e";
+const WOOD = "#8B7355";
+const WOOD_DARK = "#5C4A32";
+const WOOD_LIGHT = "#A89070";
+const METAL = "#4A5A68";
+const METAL_DARK = "#2A3540";
+const SCREEN_OFF = "#0A0A14";
 const SCREEN_ON = "#4FC3F7";
-const FABRIC_BLUE = "#5C6BC0";
-const FABRIC_PURPLE = "#7B68AE";
-const PLANT_GREEN = "#43A047";
-const PLANT_DARK = "#2E7D32";
+const FABRIC_BLUE = "#3A4F7A";
+const FABRIC_PURPLE = "#4A4A6A";
+const PLANT_GREEN = "#3A8A40";
+const PLANT_DARK = "#2A6A2A";
 
 export function FurnitureModel({ type, position, editMode, selected, hovered, onClick, onPointerOver, onPointerOut }: FurnitureProps) {
   const groupRef = useRef<THREE.Group>(null);
