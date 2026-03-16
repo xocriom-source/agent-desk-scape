@@ -72,8 +72,8 @@ export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onRo
         <div className="glass-panel rounded-2xl px-3 py-2 flex items-center gap-2 shadow-lg">
           <img src={logo} alt="AgentOffice" className="w-7 h-7" />
           <div>
-            <span className="font-display font-bold text-foreground text-sm block leading-tight">AgentOffice</span>
-            <span className="text-[10px] text-muted-foreground">Empresa Virtual de IA</span>
+            <span className="font-display font-bold text-foreground text-sm block leading-tight">The Good City</span>
+            <span className="text-[10px] text-muted-foreground">Cidade Virtual de IA</span>
           </div>
         </div>
         <LocalClock />

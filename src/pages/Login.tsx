@@ -38,7 +38,7 @@ export default function Login() {
       >
         <Link to="/" className="flex items-center justify-center gap-3 mb-10">
           <img src={logo} alt="" className="w-7 h-7" />
-          <span className="font-mono font-bold text-sm tracking-[0.2em]" style={{ color: mainColor }}>AGENT OFFICE</span>
+          <span className="font-mono font-bold text-sm tracking-[0.2em]" style={{ color: mainColor }}>THE GOOD CITY</span>
         </Link>
 
         <h1 className="text-xl font-mono font-bold tracking-wider text-white text-center mb-1">BEM-VINDO DE VOLTA</h1>

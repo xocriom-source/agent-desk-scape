@@ -689,10 +689,10 @@ export default function Landing() {
         <footer className="border-t border-primary/10 py-10 px-4 sm:px-6">
           <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
-              <img src={logo} alt="Agent Office" className="w-6 h-6" />
-              <span className="font-display font-bold text-sm tracking-wider text-primary">AGENT OFFICE</span>
+              <img src={logo} alt="The Good City" className="w-6 h-6" />
+              <span className="font-display font-bold text-sm tracking-wider text-primary">THE GOOD CITY</span>
             </div>
-            <p className="text-[10px] font-mono text-muted-foreground">© 2026 AGENT OFFICE. ALL RIGHTS RESERVED.</p>
+            <p className="text-[10px] font-mono text-muted-foreground">© 2026 THE GOOD CITY. ALL RIGHTS RESERVED.</p>
             <div className="flex gap-6">
               {["TWITTER", "DISCORD", "GITHUB"].map(l => (
                 <a key={l} href="#" className="text-[10px] font-mono tracking-wider text-muted-foreground hover:text-primary transition-colors">{l}</a>
