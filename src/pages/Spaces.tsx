@@ -107,9 +107,9 @@ export default function Spaces() {
   );
 
   return (
-    <div className="min-h-screen bg-[#1A1B2E]">
+    <div className="min-h-screen bg-background">
       {/* Top nav bar */}
-      <nav className="border-b border-border/30 bg-[#1E1F33]">
+      <nav className="border-b border-border/30 bg-card">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-6">
@@ -149,7 +149,7 @@ export default function Spaces() {
       {/* Filters */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <div className="flex items-center justify-end gap-4 mb-8">
-          <div className="flex bg-[#252640] rounded-full p-1">
+          <div className="flex bg-card rounded-full p-1">
             <button
               onClick={() => setFilter("recent")}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
@@ -174,7 +174,7 @@ export default function Spaces() {
               placeholder="Pesquisar"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="pl-9 pr-4 py-2 bg-[#252640] border border-border/30 rounded-full text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 w-48"
+              className="pl-9 pr-4 py-2 bg-card border border-border/30 rounded-full text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 w-48"
             />
           </div>
         </div>
@@ -214,7 +214,7 @@ export default function Spaces() {
 
                 {/* Online badge */}
                 <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-black/60 rounded-full px-2 py-0.5">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
                   <span className="text-[10px] text-white font-medium">{space.agents}</span>
                 </div>
 
@@ -271,7 +271,7 @@ export default function Spaces() {
             onClick={() => navigate("/onboarding")}
             className="cursor-pointer group"
           >
-            <div className="rounded-xl border-2 border-dashed border-border/40 hover:border-primary/50 transition-all aspect-[4/3] flex flex-col items-center justify-center gap-3 bg-[#1E1F33]/50 hover:bg-[#252640]/50">
+            <div className="rounded-xl border-2 border-dashed border-border/40 hover:border-primary/50 transition-all aspect-[4/3] flex flex-col items-center justify-center gap-3 bg-card/50 hover:bg-card/80">
               <div className="w-12 h-12 rounded-full bg-primary/10 group-hover:bg-primary/20 flex items-center justify-center transition-colors">
                 <Plus className="w-6 h-6 text-primary" />
               </div>
