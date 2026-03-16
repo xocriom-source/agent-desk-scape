@@ -107,9 +107,9 @@ export default function Spaces() {
   );
 
   return (
-    <div className="min-h-screen bg-[#1A1B2E]">
+    <div className="min-h-screen bg-background">
       {/* Top nav bar */}
-      <nav className="border-b border-border/30 bg-[#1E1F33]">
+      <nav className="border-b border-border/30 bg-card">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-6">
