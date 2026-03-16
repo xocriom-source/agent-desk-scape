@@ -308,6 +308,8 @@ export type Database = {
       city_buildings: {
         Row: {
           business_id: string | null
+          city: string | null
+          country: string | null
           created_at: string
           customizations: Json | null
           district: string
@@ -315,18 +317,23 @@ export type Database = {
           height: number
           id: string
           is_for_sale: boolean
+          latitude: number | null
+          longitude: number | null
           metadata: Json | null
           name: string
           owner_id: string | null
           position_x: number
           position_z: number
           primary_color: string | null
+          region: string | null
           secondary_color: string | null
           style: string
           updated_at: string
         }
         Insert: {
           business_id?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           customizations?: Json | null
           district?: string
@@ -334,18 +341,23 @@ export type Database = {
           height?: number
           id?: string
           is_for_sale?: boolean
+          latitude?: number | null
+          longitude?: number | null
           metadata?: Json | null
           name: string
           owner_id?: string | null
           position_x?: number
           position_z?: number
           primary_color?: string | null
+          region?: string | null
           secondary_color?: string | null
           style?: string
           updated_at?: string
         }
         Update: {
           business_id?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           customizations?: Json | null
           district?: string
@@ -353,12 +365,15 @@ export type Database = {
           height?: number
           id?: string
           is_for_sale?: boolean
+          latitude?: number | null
+          longitude?: number | null
           metadata?: Json | null
           name?: string
           owner_id?: string | null
           position_x?: number
           position_z?: number
           primary_color?: string | null
+          region?: string | null
           secondary_color?: string | null
           style?: string
           updated_at?: string
@@ -451,6 +466,7 @@ export type Database = {
           business_model: string | null
           category: string
           category_data: Json | null
+          city: string | null
           country: string | null
           created_at: string
           description: string | null
@@ -459,12 +475,15 @@ export type Database = {
           growth_percent: number | null
           growth_rate: number | null
           id: string
+          latitude: number | null
           logo_url: string | null
+          longitude: number | null
           mrr: number
           name: string
           owner_id: string
           product_url: string | null
           profit: number | null
+          region: string | null
           revenue_multiple: number | null
           sale_price: number | null
           status: string
@@ -476,6 +495,7 @@ export type Database = {
           business_model?: string | null
           category?: string
           category_data?: Json | null
+          city?: string | null
           country?: string | null
           created_at?: string
           description?: string | null
@@ -484,12 +504,15 @@ export type Database = {
           growth_percent?: number | null
           growth_rate?: number | null
           id?: string
+          latitude?: number | null
           logo_url?: string | null
+          longitude?: number | null
           mrr?: number
           name: string
           owner_id: string
           product_url?: string | null
           profit?: number | null
+          region?: string | null
           revenue_multiple?: number | null
           sale_price?: number | null
           status?: string
@@ -501,6 +524,7 @@ export type Database = {
           business_model?: string | null
           category?: string
           category_data?: Json | null
+          city?: string | null
           country?: string | null
           created_at?: string
           description?: string | null
@@ -509,12 +533,15 @@ export type Database = {
           growth_percent?: number | null
           growth_rate?: number | null
           id?: string
+          latitude?: number | null
           logo_url?: string | null
+          longitude?: number | null
           mrr?: number
           name?: string
           owner_id?: string
           product_url?: string | null
           profit?: number | null
+          region?: string | null
           revenue_multiple?: number | null
           sale_price?: number | null
           status?: string

@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft, Search, MapPin, List, Building2, DollarSign, TrendingUp,
   Send, ShoppingCart, ExternalLink, BarChart3, Tag, X, Users, Globe,
-  Calendar, Briefcase, Heart, Eye, ChevronDown, SlidersHorizontal
+  Calendar, Briefcase, Heart, SlidersHorizontal
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,10 @@ interface Business {
   buildingName?: string;
   lat: number;
   lng: number;
+  latitude?: number;
+  longitude?: number;
+  city?: string;
+  region?: string;
 }
 
 // ─── Categories ─────────────────────────────────────
@@ -99,16 +103,6 @@ const CATEGORY_FIELDS: Record<string, { key: string; label: string; format?: str
   ],
 };
 
-const BUILDING_NAMES = [
-  "AI Tower", "SaaS Hub", "Creator Studio", "Commerce Building",
-  "Innovation Center", "Digital Plaza", "Tech Spire", "Venture Tower",
-  "Growth Labs", "Pixel Building", "Cloud Campus", "Data Fortress",
-];
-
-// City center coordinates (virtual city mapped onto a real-world location for map tiles)
-const CITY_CENTER = { lat: -23.5505, lng: -46.6333 }; // São Paulo
-const SPREAD = 0.025;
-
 function formatCurrency(n: number) {
   if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}k`;
@@ -121,12 +115,6 @@ function formatFieldValue(value: any, format?: string) {
   if (format === "percent") return `${value}%`;
   if (format === "number") return Number(value).toLocaleString();
   return String(value);
-}
-
-function hashFloat(str: string, seed: number): number {
-  let h = seed;
-  for (let i = 0; i < str.length; i++) h = ((h << 5) - h + str.charCodeAt(i)) | 0;
-  return (Math.abs(h) % 10000) / 10000;
 }
 
 function calcScores(b: Business) {
@@ -144,27 +132,28 @@ function calcROI(b: Business) {
   return { roi: ((profit / price) * 100).toFixed(1), payback: (price / profit).toFixed(1), valuation: formatCurrency(price) };
 }
 
-// ─── Demo data ──────────────────────────────────────
+// ─── Global demo businesses across real cities ──────
 const DEMO_BUSINESSES: Business[] = [
-  { id: "d1", name: "CloudMetrics", category: "saas", description: "Real-time analytics platform for SaaS companies with AI-powered insights.", mrr: 45000, growth_percent: 12, sale_price: 1800000, revenue_multiple: 3.3, founder_name: "Ana Costa", status: "listed", building_id: "b1", owner_id: "", product_url: null, buildingName: "AI Tower", country: "BR", team_size: 12, business_model: "subscription", founded_at: "2022", category_data: { arr: 540000, subscribers: 2400, churn: 3.2, ltv: 8500, cac: 320 }, lat: 0, lng: 0 },
-  { id: "d2", name: "ShopFlex", category: "ecommerce", description: "Sustainable fashion store with 50k followers and own brand.", mrr: 85000, growth_percent: 8, sale_price: 2500000, revenue_multiple: 2.5, founder_name: "Lucas Mendes", status: "listed", building_id: "b2", owner_id: "", product_url: null, buildingName: "Commerce Building", country: "BR", team_size: 8, business_model: "ecommerce", category_data: { aov: 145, orders_per_month: 4200, conversion_rate: 3.8 }, lat: 0, lng: 0 },
-  { id: "d3", name: "PixelForge", category: "agency", description: "Design & branding agency with 40 recurring clients.", mrr: 120000, growth_percent: 5, sale_price: 3600000, revenue_multiple: 2.5, founder_name: "Marina Silva", status: "listed", building_id: "b3", owner_id: "", product_url: null, buildingName: "Creator Studio", country: "PT", team_size: 22, business_model: "service", category_data: { clients: 40, retention: 92 }, lat: 0, lng: 0 },
-  { id: "d4", name: "DevToolKit", category: "saas", description: "Developer tools suite with 10k active users.", mrr: 28000, growth_percent: 22, sale_price: 1200000, revenue_multiple: 3.6, founder_name: "Pedro Alves", status: "listed", building_id: "b4", owner_id: "", product_url: null, buildingName: "Tech Spire", country: "US", team_size: 5, business_model: "freemium", category_data: { arr: 336000, subscribers: 10200, churn: 5.1, ltv: 4200 }, lat: 0, lng: 0 },
-  { id: "d5", name: "AI Lead Engine", category: "ai", description: "AI tool that generates leads automatically using machine learning.", mrr: 14200, growth_percent: 18, sale_price: 180000, revenue_multiple: 4.4, founder_name: "Julia Rocha", status: "listed", building_id: "b5", owner_id: "", product_url: null, buildingName: "AI Tower", country: "US", team_size: 3, business_model: "usage_based", category_data: { active_users: 1850, api_usage: 520000, model_used: "GPT-4o" }, lat: 0, lng: 0 },
-  { id: "d6", name: "FreelanceHub", category: "marketplace", description: "Tech freelancer marketplace with AI matching.", mrr: 62000, growth_percent: 15, sale_price: 2200000, revenue_multiple: 3.0, founder_name: "Carlos Neto", status: "listed", building_id: "b6", owner_id: "", product_url: null, buildingName: "Digital Plaza", country: "BR", team_size: 15, business_model: "commission", lat: 0, lng: 0 },
-  { id: "d7", name: "CryptoVault", category: "crypto", description: "DeFi portfolio tracker with multi-chain support.", mrr: 38000, growth_percent: 28, sale_price: 1500000, revenue_multiple: 3.3, founder_name: "Diego Ramos", status: "listed", building_id: "b7", owner_id: "", product_url: null, buildingName: "Data Fortress", country: "SG", team_size: 6, business_model: "freemium", category_data: { tvl: 45000000, daily_volume: 1200000 }, lat: 0, lng: 0 },
-  { id: "d8", name: "NewsletterPro", category: "newsletter", description: "Premium newsletter platform for indie creators.", mrr: 12000, growth_percent: 40, sale_price: 600000, revenue_multiple: 4.2, founder_name: "Camila Duarte", status: "listed", building_id: "b8", owner_id: "", product_url: null, buildingName: "Growth Labs", country: "BR", team_size: 2, business_model: "subscription", category_data: { subscribers: 48000, open_rate: 52, ctr: 8.4, platform: "Beehiiv" }, lat: 0, lng: 0 },
-  { id: "d9", name: "AppLaunch", category: "mobile_app", description: "Mobile fitness app with 200k downloads.", mrr: 55000, growth_percent: 18, sale_price: 2000000, revenue_multiple: 3.0, founder_name: "Thiago Lima", status: "listed", building_id: "b9", owner_id: "", product_url: null, buildingName: "Innovation Center", country: "US", team_size: 9, business_model: "subscription", lat: 0, lng: 0 },
-  { id: "d10", name: "ShopifyBoost", category: "shopify_app", description: "Conversion optimization app for Shopify stores.", mrr: 32000, growth_percent: 25, sale_price: 1100000, revenue_multiple: 2.9, founder_name: "Fernanda Reis", status: "listed", building_id: "b10", owner_id: "", product_url: null, buildingName: "Venture Tower", country: "CA", team_size: 4, business_model: "subscription", lat: 0, lng: 0 },
-  { id: "d11", name: "ContentMill", category: "content", description: "AI content generation platform for marketers.", mrr: 20000, growth_percent: 30, sale_price: 900000, revenue_multiple: 3.8, founder_name: "Rafael Souza", status: "listed", building_id: "b11", owner_id: "", product_url: null, buildingName: "Pixel Building", country: "BR", team_size: 6, business_model: "credits", lat: 0, lng: 0 },
-  { id: "d12", name: "DigitalPay", category: "digital", description: "Digital payment gateway for Latin America.", mrr: 95000, growth_percent: 10, sale_price: 4000000, revenue_multiple: 3.5, founder_name: "Isabela Cruz", status: "listed", building_id: "b12", owner_id: "", product_url: null, buildingName: "Cloud Campus", country: "BR", team_size: 30, business_model: "transaction_fee", lat: 0, lng: 0 },
-].map((b, i) => ({
-  ...b,
-  lat: CITY_CENTER.lat + (hashFloat(b.id + "lat", 31 + i) - 0.5) * SPREAD * 2,
-  lng: CITY_CENTER.lng + (hashFloat(b.id + "lng", 67 + i) - 0.5) * SPREAD * 2,
-}));
+  { id: "d1", name: "CloudMetrics", category: "saas", description: "Real-time analytics platform for SaaS companies with AI-powered insights.", mrr: 45000, growth_percent: 12, sale_price: 1800000, revenue_multiple: 3.3, founder_name: "Ana Costa", status: "listed", building_id: "b1", owner_id: "", product_url: null, buildingName: "AI Tower", country: "BR", city: "São Paulo", region: "South America", team_size: 12, business_model: "subscription", founded_at: "2022", category_data: { arr: 540000, subscribers: 2400, churn: 3.2, ltv: 8500 }, lat: -23.5505, lng: -46.6333 },
+  { id: "d2", name: "ShopFlex", category: "ecommerce", description: "Sustainable fashion store with 50k followers and own brand.", mrr: 85000, growth_percent: 8, sale_price: 2500000, revenue_multiple: 2.5, founder_name: "Lucas Mendes", status: "listed", building_id: "b2", owner_id: "", product_url: null, buildingName: "Commerce Tower", country: "BR", city: "Rio de Janeiro", region: "South America", team_size: 8, business_model: "ecommerce", category_data: { aov: 145, orders_per_month: 4200, conversion_rate: 3.8 }, lat: -22.9068, lng: -43.1729 },
+  { id: "d3", name: "PixelForge", category: "agency", description: "Design & branding agency with 40 recurring clients.", mrr: 120000, growth_percent: 5, sale_price: 3600000, revenue_multiple: 2.5, founder_name: "Marina Silva", status: "listed", building_id: "b3", owner_id: "", product_url: null, buildingName: "Creator Studio", country: "PT", city: "Lisbon", region: "Europe", team_size: 22, business_model: "service", category_data: { clients: 40, retention: 92 }, lat: 38.7223, lng: -9.1393 },
+  { id: "d4", name: "DevToolKit", category: "saas", description: "Developer tools suite with 10k active users.", mrr: 28000, growth_percent: 22, sale_price: 1200000, revenue_multiple: 3.6, founder_name: "Pedro Alves", status: "listed", building_id: "b4", owner_id: "", product_url: null, buildingName: "Tech Spire", country: "US", city: "San Francisco", region: "North America", team_size: 5, business_model: "freemium", category_data: { arr: 336000, subscribers: 10200, churn: 5.1, ltv: 4200 }, lat: 37.7749, lng: -122.4194 },
+  { id: "d5", name: "AI Lead Engine", category: "ai", description: "AI tool that generates leads automatically using machine learning.", mrr: 14200, growth_percent: 18, sale_price: 180000, revenue_multiple: 4.4, founder_name: "Julia Rocha", status: "listed", building_id: "b5", owner_id: "", product_url: null, buildingName: "AI Hub", country: "US", city: "New York", region: "North America", team_size: 3, business_model: "usage_based", category_data: { active_users: 1850, api_usage: 520000, model_used: "GPT-4o" }, lat: 40.7128, lng: -74.006 },
+  { id: "d6", name: "FreelanceHub", category: "marketplace", description: "Tech freelancer marketplace with AI matching.", mrr: 62000, growth_percent: 15, sale_price: 2200000, revenue_multiple: 3.0, founder_name: "Carlos Neto", status: "listed", building_id: "b6", owner_id: "", product_url: null, buildingName: "Digital Plaza", country: "UK", city: "London", region: "Europe", team_size: 15, business_model: "commission", lat: 51.5074, lng: -0.1278 },
+  { id: "d7", name: "CryptoVault", category: "crypto", description: "DeFi portfolio tracker with multi-chain support.", mrr: 38000, growth_percent: 28, sale_price: 1500000, revenue_multiple: 3.3, founder_name: "Diego Ramos", status: "listed", building_id: "b7", owner_id: "", product_url: null, buildingName: "Data Fortress", country: "SG", city: "Singapore", region: "Asia", team_size: 6, business_model: "freemium", category_data: { tvl: 45000000, daily_volume: 1200000 }, lat: 1.3521, lng: 103.8198 },
+  { id: "d8", name: "NewsletterPro", category: "newsletter", description: "Premium newsletter platform for indie creators.", mrr: 12000, growth_percent: 40, sale_price: 600000, revenue_multiple: 4.2, founder_name: "Camila Duarte", status: "listed", building_id: "b8", owner_id: "", product_url: null, buildingName: "Growth Labs", country: "DE", city: "Berlin", region: "Europe", team_size: 2, business_model: "subscription", category_data: { subscribers: 48000, open_rate: 52, ctr: 8.4 }, lat: 52.52, lng: 13.405 },
+  { id: "d9", name: "AppLaunch", category: "mobile_app", description: "Mobile fitness app with 200k downloads.", mrr: 55000, growth_percent: 18, sale_price: 2000000, revenue_multiple: 3.0, founder_name: "Thiago Lima", status: "listed", building_id: "b9", owner_id: "", product_url: null, buildingName: "Innovation Center", country: "US", city: "Austin", region: "North America", team_size: 9, business_model: "subscription", lat: 30.2672, lng: -97.7431 },
+  { id: "d10", name: "ShopifyBoost", category: "shopify_app", description: "Conversion optimization app for Shopify stores.", mrr: 32000, growth_percent: 25, sale_price: 1100000, revenue_multiple: 2.9, founder_name: "Fernanda Reis", status: "listed", building_id: "b10", owner_id: "", product_url: null, buildingName: "Venture Tower", country: "CA", city: "Toronto", region: "North America", team_size: 4, business_model: "subscription", lat: 43.6532, lng: -79.3832 },
+  { id: "d11", name: "ContentMill", category: "content", description: "AI content generation platform for marketers.", mrr: 20000, growth_percent: 30, sale_price: 900000, revenue_multiple: 3.8, founder_name: "Rafael Souza", status: "listed", building_id: "b11", owner_id: "", product_url: null, buildingName: "Pixel Building", country: "JP", city: "Tokyo", region: "Asia", team_size: 6, business_model: "credits", lat: 35.6762, lng: 139.6503 },
+  { id: "d12", name: "DigitalPay", category: "digital", description: "Digital payment gateway for Latin America.", mrr: 95000, growth_percent: 10, sale_price: 4000000, revenue_multiple: 3.5, founder_name: "Isabela Cruz", status: "listed", building_id: "b12", owner_id: "", product_url: null, buildingName: "Cloud Campus", country: "MX", city: "Mexico City", region: "North America", team_size: 30, business_model: "transaction_fee", lat: 19.4326, lng: -99.1332 },
+  { id: "d13", name: "DataStream", category: "saas", description: "Real-time data pipeline tool for enterprise.", mrr: 72000, growth_percent: 14, sale_price: 2800000, revenue_multiple: 3.2, founder_name: "Raj Patel", status: "listed", building_id: "b13", owner_id: "", product_url: null, buildingName: "Data Tower", country: "IN", city: "Bangalore", region: "Asia", team_size: 18, business_model: "subscription", category_data: { arr: 864000, subscribers: 580, churn: 2.1, ltv: 14000 }, lat: 12.9716, lng: 77.5946 },
+  { id: "d14", name: "AdOptimize", category: "ai", description: "AI-powered ad optimization for e-commerce brands.", mrr: 41000, growth_percent: 35, sale_price: 1600000, revenue_multiple: 3.3, founder_name: "Sophie Chen", status: "listed", building_id: "b14", owner_id: "", product_url: null, buildingName: "AI Campus", country: "AU", city: "Sydney", region: "Oceania", team_size: 7, business_model: "performance", category_data: { active_users: 3200, api_usage: 1800000, model_used: "Claude 3.5" }, lat: -33.8688, lng: 151.2093 },
+  { id: "d15", name: "NomadDesk", category: "marketplace", description: "Co-working space booking platform for digital nomads.", mrr: 29000, growth_percent: 20, sale_price: 950000, revenue_multiple: 2.7, founder_name: "Erik Johansson", status: "listed", building_id: "b15", owner_id: "", product_url: null, buildingName: "Nomad Hub", country: "TH", city: "Bangkok", region: "Asia", team_size: 5, business_model: "commission", lat: 13.7563, lng: 100.5018 },
+  { id: "d16", name: "GreenCart", category: "ecommerce", description: "Organic grocery delivery platform.", mrr: 110000, growth_percent: 6, sale_price: 3200000, revenue_multiple: 2.4, founder_name: "Pierre Dubois", status: "listed", building_id: "b16", owner_id: "", product_url: null, buildingName: "Commerce Center", country: "FR", city: "Paris", region: "Europe", team_size: 25, business_model: "ecommerce", category_data: { aov: 68, orders_per_month: 15000, conversion_rate: 4.2 }, lat: 48.8566, lng: 2.3522 },
+  { id: "d17", name: "CodeReview AI", category: "ai", description: "Automated code review with AI suggestions.", mrr: 19000, growth_percent: 45, sale_price: 750000, revenue_multiple: 3.3, founder_name: "Kim Soo-jin", status: "listed", building_id: "b17", owner_id: "", product_url: null, buildingName: "Dev Tower", country: "KR", city: "Seoul", region: "Asia", team_size: 4, business_model: "subscription", category_data: { active_users: 5200, api_usage: 890000, model_used: "Gemini Pro" }, lat: 37.5665, lng: 126.978 },
+  { id: "d18", name: "TravelStack", category: "saas", description: "Travel agency management SaaS.", mrr: 36000, growth_percent: 11, sale_price: 1400000, revenue_multiple: 3.2, founder_name: "Ahmed Hassan", status: "listed", building_id: "b18", owner_id: "", product_url: null, buildingName: "Travel Hub", country: "AE", city: "Dubai", region: "Middle East", team_size: 10, business_model: "subscription", category_data: { arr: 432000, subscribers: 340, churn: 4.5, ltv: 9800 }, lat: 25.2048, lng: 55.2708 },
+];
 
-// ─── Map Style (free dark tiles) ────────────────────
 const MAP_STYLE = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
 
 // ─── Main Component ─────────────────────────────────
@@ -194,11 +183,11 @@ export default function DigitalMarketplace() {
       if (data && data.length > 0) {
         const mapped = (data as unknown as Business[]).map((b, i) => ({
           ...b,
-          buildingName: BUILDING_NAMES[i % BUILDING_NAMES.length],
+          buildingName: b.buildingName || `Building ${i + 1}`,
           category_data: typeof b.category_data === "object" ? b.category_data : {},
-          lat: CITY_CENTER.lat + (hashFloat(b.id + "lat", 31 + i) - 0.5) * SPREAD * 2,
-          lng: CITY_CENTER.lng + (hashFloat(b.id + "lng", 67 + i) - 0.5) * SPREAD * 2,
-        }));
+          lat: b.lat || b.latitude || DEMO_BUSINESSES[i % DEMO_BUSINESSES.length]?.lat || 0,
+          lng: b.lng || b.longitude || DEMO_BUSINESSES[i % DEMO_BUSINESSES.length]?.lng || 0,
+        } as Business));
         setBusinesses(mapped);
       }
     };
@@ -210,9 +199,13 @@ export default function DigitalMarketplace() {
     if (category !== "all") list = list.filter(b => b.category === category);
     if (search) {
       const q = search.toLowerCase();
-      list = list.filter(b => b.name.toLowerCase().includes(q) || b.founder_name.toLowerCase().includes(q));
+      list = list.filter(b =>
+        b.name.toLowerCase().includes(q) ||
+        b.founder_name.toLowerCase().includes(q) ||
+        (b.city || "").toLowerCase().includes(q) ||
+        (b.country || "").toLowerCase().includes(q)
+      );
     }
-    // Sort
     list = [...list].sort((a, b) => {
       if (sortBy === "price") return (b.sale_price || 0) - (a.sale_price || 0);
       if (sortBy === "growth") return (b.growth_percent || 0) - (a.growth_percent || 0);
@@ -256,6 +249,16 @@ export default function DigitalMarketplace() {
   const totalForSale = filtered.length;
   const totalValue = filtered.reduce((s, b) => s + (b.sale_price || 0), 0);
 
+  // Count businesses by region for stats
+  const regionCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    filtered.forEach(b => {
+      const r = b.region || "Other";
+      counts[r] = (counts[r] || 0) + 1;
+    });
+    return counts;
+  }, [filtered]);
+
   return (
     <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
       {/* ─── Top Bar ─── */}
@@ -263,18 +266,26 @@ export default function DigitalMarketplace() {
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-muted-foreground hover:text-foreground h-7 w-7">
           <ArrowLeft className="w-3.5 h-3.5" />
         </Button>
-        <span className="text-base">🏙️</span>
-        <h1 className="font-bold text-xs tracking-tight hidden sm:block">Digital Business Marketplace</h1>
+        <Globe className="w-4 h-4 text-primary" />
+        <h1 className="font-bold text-xs tracking-tight hidden sm:block">Global Digital Business Marketplace</h1>
         <Badge variant="outline" className="text-[8px] border-amber-500/30 text-amber-400 gap-0.5 px-1.5 py-0">
           <Tag className="w-2 h-2" /> {totalForSale} FOR SALE
         </Badge>
+        {/* Region badges */}
+        <div className="hidden lg:flex items-center gap-1 ml-2">
+          {Object.entries(regionCounts).slice(0, 4).map(([region, count]) => (
+            <span key={region} className="text-[8px] bg-muted/20 text-muted-foreground px-1.5 py-0.5 rounded-full">
+              {region} ({count})
+            </span>
+          ))}
+        </div>
         <div className="flex-1" />
         <span className="text-[9px] text-muted-foreground font-mono hidden md:block">
           {formatCurrency(totalValue)} total value
         </span>
         <div className="flex items-center gap-0.5 bg-muted/20 rounded-lg p-0.5">
           <button onClick={() => setViewMode("map")} className={`px-2 py-0.5 rounded text-[9px] font-medium transition-colors ${viewMode === "map" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
-            <MapPin className="w-3 h-3 inline mr-0.5" />Map
+            <Globe className="w-3 h-3 inline mr-0.5" />Map
           </button>
           <button onClick={() => setViewMode("list")} className={`px-2 py-0.5 rounded text-[9px] font-medium transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
             <List className="w-3 h-3 inline mr-0.5" />List
@@ -286,11 +297,10 @@ export default function DigitalMarketplace() {
       <div className="flex-1 flex overflow-hidden">
         {/* ── LEFT SIDEBAR ── */}
         <div className="w-[340px] border-r border-border/30 bg-card/80 flex flex-col shrink-0 z-10">
-          {/* Search + Filters */}
           <div className="p-2.5 space-y-2 border-b border-border/20">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
-              <Input placeholder="Search startups, founders..." className="pl-8 h-7 text-[11px] bg-muted/10 border-border/30" value={search} onChange={e => setSearch(e.target.value)} />
+              <Input placeholder="Search startups, cities, founders..." className="pl-8 h-7 text-[11px] bg-muted/10 border-border/30" value={search} onChange={e => setSearch(e.target.value)} />
             </div>
             <div className="flex items-center gap-1.5">
               <Select value={sortBy} onValueChange={setSortBy}>
@@ -307,7 +317,6 @@ export default function DigitalMarketplace() {
                 <SlidersHorizontal className="w-2.5 h-2.5" /> Filters
               </button>
             </div>
-            {/* Category pills */}
             {showFilters && (
               <div className="flex flex-wrap gap-1">
                 {CATEGORIES.map(c => (
@@ -323,15 +332,13 @@ export default function DigitalMarketplace() {
             )}
           </div>
 
-          {/* Results count */}
           <div className="px-3 py-1.5 border-b border-border/10 flex items-center justify-between">
-            <span className="text-[9px] text-muted-foreground font-medium">{filtered.length} results</span>
+            <span className="text-[9px] text-muted-foreground font-medium">{filtered.length} businesses worldwide</span>
             {category !== "all" && (
-              <button onClick={() => setCategory("all")} className="text-[9px] text-primary hover:underline">Clear filter</button>
+              <button onClick={() => setCategory("all")} className="text-[9px] text-primary hover:underline">Clear</button>
             )}
           </div>
 
-          {/* Scrollable listings */}
           <div className="flex-1 overflow-y-auto">
             {filtered.map(biz => (
               <PropertyCard
@@ -354,7 +361,7 @@ export default function DigitalMarketplace() {
         {/* ── RIGHT: MAP / GRID ── */}
         <div className="flex-1 relative">
           {viewMode === "map" ? (
-            <ZillowMap
+            <WorldMap
               businesses={filtered}
               selected={selected}
               hoveredId={hoveredId}
@@ -367,7 +374,7 @@ export default function DigitalMarketplace() {
             <GridView businesses={filtered} onSelect={handleSelect} />
           )}
 
-          {/* ── Detail Panel (slides from right like Zillow) ── */}
+          {/* Detail Panel */}
           {selected && (
             <DetailPanel
               business={selected}
@@ -380,7 +387,7 @@ export default function DigitalMarketplace() {
         </div>
       </div>
 
-      {/* ─── Offer Dialog ─── */}
+      {/* Offer Dialog */}
       <Dialog open={showOffer} onOpenChange={setShowOffer}>
         <DialogContent className="bg-card border-border/30">
           <DialogHeader>
@@ -406,7 +413,7 @@ export default function DigitalMarketplace() {
   );
 }
 
-// ─── Zillow-style Property Card (Sidebar) ───────────
+// ─── Property Card (Sidebar) ────────────────────────
 function PropertyCard({ biz, isSelected, onSelect, onHover }: {
   biz: Business;
   isSelected: boolean;
@@ -423,37 +430,38 @@ function PropertyCard({ biz, isSelected, onSelect, onHover }: {
       onMouseLeave={() => onHover(null)}
       className={`w-full text-left p-3 border-b border-border/10 transition-all duration-150 hover:bg-accent/5 ${isSelected ? "bg-primary/10 border-l-2 border-l-primary" : ""}`}
     >
-      {/* "Photo" placeholder — building preview */}
-      <div className="w-full h-24 rounded-lg mb-2 relative overflow-hidden flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${color}15, ${color}08)` }}>
+      <div className="w-full h-20 rounded-lg mb-2 relative overflow-hidden flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${color}15, ${color}08)` }}>
         <span className="text-3xl">🏢</span>
-        {/* Price badge (like Zillow) */}
-        <div className="absolute bottom-2 left-2">
-          <span className="text-sm font-bold bg-background/90 backdrop-blur-sm px-2 py-0.5 rounded-md shadow-sm">
+        <div className="absolute bottom-1.5 left-1.5">
+          <span className="text-xs font-bold bg-background/90 backdrop-blur-sm px-1.5 py-0.5 rounded-md shadow-sm">
             {biz.sale_price ? formatCurrency(biz.sale_price) : "Contact"}
           </span>
         </div>
-        {/* FOR SALE badge */}
-        <div className="absolute top-2 left-2">
-          <span className="text-[7px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-sm bg-amber-500 text-black">FOR SALE</span>
+        <div className="absolute top-1.5 left-1.5">
+          <span className="text-[6px] font-black uppercase tracking-wider px-1 py-0.5 rounded-sm bg-amber-500 text-black">FOR SALE</span>
         </div>
-        {/* Favorite */}
-        <button className="absolute top-2 right-2 p-1 rounded-full bg-background/60 hover:bg-background/90 transition-colors" onClick={e => { e.stopPropagation(); toast.info("❤️ Added to favorites!"); }}>
-          <Heart className="w-3 h-3 text-muted-foreground" />
+        <button className="absolute top-1.5 right-1.5 p-1 rounded-full bg-background/60 hover:bg-background/90 transition-colors" onClick={e => { e.stopPropagation(); toast.info("❤️ Added to favorites!"); }}>
+          <Heart className="w-2.5 h-2.5 text-muted-foreground" />
         </button>
       </div>
 
-      <h3 className="text-[12px] font-bold text-foreground truncate">{biz.name}</h3>
-      <div className="flex items-center gap-1.5 mt-0.5">
-        <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium" style={{ background: `${color}20`, color }}>{catLabel}</span>
-        <span className="text-[9px] text-muted-foreground/60">·</span>
-        <span className="text-[9px] text-muted-foreground/60">{biz.buildingName}</span>
+      <h3 className="text-[11px] font-bold text-foreground truncate">{biz.name}</h3>
+      <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+        <span className="text-[8px] px-1.5 py-0.5 rounded-full font-medium" style={{ background: `${color}20`, color }}>{catLabel}</span>
+        {biz.city && biz.country && (
+          <span className="text-[8px] text-muted-foreground/60 flex items-center gap-0.5">
+            <MapPin className="w-2 h-2" />{biz.city}, {biz.country}
+          </span>
+        )}
       </div>
-
-      {/* Metrics row (like Zillow's beds/baths/sqft) */}
-      <div className="flex items-center gap-3 mt-1.5 text-[10px]">
+      <div className="flex items-center gap-2 mt-1 text-[9px]">
         <span className="text-muted-foreground">MRR <span className="text-emerald-400 font-bold">{formatCurrency(biz.mrr)}</span></span>
         <span className="text-muted-foreground/30">·</span>
-        <span className="text-muted-foreground">Growth <span className={`font-bold ${biz.growth_percent > 0 ? "text-emerald-400" : "text-red-400"}`}>{biz.growth_percent > 0 ? "+" : ""}{biz.growth_percent}%</span></span>
+        <span className="text-muted-foreground">
+          <span className={`font-bold ${biz.growth_percent > 0 ? "text-emerald-400" : "text-red-400"}`}>
+            {biz.growth_percent > 0 ? "+" : ""}{biz.growth_percent}%
+          </span>
+        </span>
         <span className="text-muted-foreground/30">·</span>
         <span className="text-muted-foreground">{biz.revenue_multiple}x</span>
       </div>
@@ -461,8 +469,8 @@ function PropertyCard({ biz, isSelected, onSelect, onHover }: {
   );
 }
 
-// ─── Zillow-style Map (react-map-gl + maplibre) ─────
-function ZillowMap({ businesses, selected, hoveredId, popupBiz, onSelect, onHover, onPopup }: {
+// ─── World Map ──────────────────────────────────────
+function WorldMap({ businesses, selected, hoveredId, popupBiz, onSelect, onHover, onPopup }: {
   businesses: Business[];
   selected: Business | null;
   hoveredId: string | null;
@@ -474,9 +482,9 @@ function ZillowMap({ businesses, selected, hoveredId, popupBiz, onSelect, onHove
   return (
     <Map
       initialViewState={{
-        latitude: CITY_CENTER.lat,
-        longitude: CITY_CENTER.lng,
-        zoom: 14,
+        latitude: 20,
+        longitude: 0,
+        zoom: 2,
       }}
       style={{ width: "100%", height: "100%" }}
       mapStyle={MAP_STYLE}
@@ -501,7 +509,6 @@ function ZillowMap({ businesses, selected, hoveredId, popupBiz, onSelect, onHove
               onMouseLeave={() => { onHover(null); onPopup(null); }}
               className={`cursor-pointer transition-transform duration-200 ${isActive ? "scale-125 z-20" : "z-10 hover:scale-110"}`}
             >
-              {/* Price pill marker (Zillow-style) */}
               <div
                 className="px-2 py-1 rounded-full text-[10px] font-bold shadow-lg whitespace-nowrap border"
                 style={{
@@ -513,7 +520,6 @@ function ZillowMap({ businesses, selected, hoveredId, popupBiz, onSelect, onHove
               >
                 {biz.sale_price ? formatCurrency(biz.sale_price) : "🏢"}
               </div>
-              {/* Triangle pointer */}
               <div className="w-0 h-0 mx-auto" style={{
                 borderLeft: "5px solid transparent",
                 borderRight: "5px solid transparent",
@@ -524,7 +530,6 @@ function ZillowMap({ businesses, selected, hoveredId, popupBiz, onSelect, onHove
         );
       })}
 
-      {/* Popup on hover */}
       {popupBiz && !selected && (
         <Popup
           latitude={popupBiz.lat}
@@ -532,17 +537,22 @@ function ZillowMap({ businesses, selected, hoveredId, popupBiz, onSelect, onHove
           closeButton={false}
           closeOnClick={false}
           anchor="bottom"
-          offset={30}
+          offset={35}
           className="zillow-popup"
         >
-          <div className="p-2 min-w-[180px]" style={{ background: "hsl(var(--card))", borderRadius: 8 }}>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-lg">🏢</span>
+          <div className="p-2.5 min-w-[200px] rounded-lg" style={{ background: "hsl(var(--card))" }}>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="text-xl">🏢</span>
               <div>
                 <p className="text-[11px] font-bold text-foreground">{popupBiz.name}</p>
                 <p className="text-[9px] text-muted-foreground">{popupBiz.buildingName}</p>
               </div>
             </div>
+            {popupBiz.city && (
+              <p className="text-[9px] text-muted-foreground/70 flex items-center gap-1 mb-1">
+                <MapPin className="w-2.5 h-2.5" />{popupBiz.city}, {popupBiz.country}
+              </p>
+            )}
             <div className="flex items-center gap-2 text-[9px]">
               <span className="text-emerald-400 font-semibold">MRR {formatCurrency(popupBiz.mrr)}</span>
               <span className="text-muted-foreground/30">·</span>
@@ -564,7 +574,7 @@ function GridView({ businesses, onSelect }: { businesses: Business[]; onSelect: 
           const color = CAT_COLORS[biz.category] || "#6b7280";
           return (
             <button key={biz.id} onClick={() => onSelect(biz)} className="text-left bg-card border border-border/20 rounded-xl p-4 hover:border-primary/30 transition-all hover:shadow-lg">
-              <div className="flex items-center gap-3 mb-3">
+              <div className="flex items-center gap-3 mb-2">
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center text-lg relative" style={{ background: `${color}20` }}>
                   🏢
                   <div className="absolute -top-1.5 -right-1.5">
@@ -573,7 +583,10 @@ function GridView({ businesses, onSelect }: { businesses: Business[]; onSelect: 
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm font-bold truncate">{biz.name}</h3>
-                  <span className="text-[10px]" style={{ color }}>{CATEGORIES.find(c => c.value === biz.category)?.label}</span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px]" style={{ color }}>{CATEGORIES.find(c => c.value === biz.category)?.label}</span>
+                    {biz.city && <span className="text-[8px] text-muted-foreground/50">· {biz.city}, {biz.country}</span>}
+                  </div>
                 </div>
                 {biz.sale_price && <span className="text-sm font-bold">{formatCurrency(biz.sale_price)}</span>}
               </div>
@@ -600,7 +613,7 @@ function MiniStat({ label, value, color }: { label: string; value: string; color
   );
 }
 
-// ─── Detail Panel (Zillow-style slide from right) ───
+// ─── Detail Panel ───────────────────────────────────
 function DetailPanel({ business, onClose, onVisit, onOffer, onBuy }: {
   business: Business;
   onClose: () => void;
@@ -617,9 +630,9 @@ function DetailPanel({ business, onClose, onVisit, onOffer, onBuy }: {
   return (
     <div className="absolute top-0 right-0 bottom-0 w-[380px] z-20 animate-in slide-in-from-right duration-300">
       <div className="h-full bg-card/98 backdrop-blur-xl border-l border-border/30 flex flex-col overflow-hidden shadow-2xl shadow-black/30">
-        {/* Header image area */}
-        <div className="h-32 relative flex items-center justify-center shrink-0" style={{ background: `linear-gradient(135deg, ${color}20, ${color}08)` }}>
-          <span className="text-5xl">🏢</span>
+        {/* Header */}
+        <div className="h-28 relative flex items-center justify-center shrink-0" style={{ background: `linear-gradient(135deg, ${color}20, ${color}08)` }}>
+          <span className="text-4xl">🏢</span>
           <button onClick={onClose} className="absolute top-3 right-3 p-1.5 rounded-full bg-background/60 hover:bg-background/90 transition-colors">
             <X className="w-4 h-4 text-muted-foreground" />
           </button>
@@ -627,57 +640,51 @@ function DetailPanel({ business, onClose, onVisit, onOffer, onBuy }: {
             <span className="text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-sm bg-amber-500 text-black">FOR SALE</span>
             <span className="text-[9px] px-1.5 py-0.5 rounded-full font-medium" style={{ background: `${color}30`, color }}>{catLabel}</span>
           </div>
-          {/* Price overlay */}
           <div className="absolute bottom-3 left-3">
-            <span className="text-xl font-bold bg-background/90 backdrop-blur-sm px-3 py-1 rounded-lg shadow-sm">
+            <span className="text-lg font-bold bg-background/90 backdrop-blur-sm px-3 py-1 rounded-lg shadow-sm">
               {business.sale_price ? formatCurrency(business.sale_price) : "Contact"}
             </span>
           </div>
-          <button className="absolute bottom-3 right-3 p-1.5 rounded-full bg-background/60 hover:bg-background/90" onClick={() => toast.info("❤️ Added to favorites!")}>
-            <Heart className="w-4 h-4 text-muted-foreground" />
-          </button>
         </div>
 
-        {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {/* Name + info */}
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
           <div>
             <h2 className="font-bold text-lg leading-tight">{business.name}</h2>
-            <div className="flex items-center gap-2 mt-1 text-[10px] text-muted-foreground">
-              <MapPin className="w-3 h-3" /> {business.buildingName || "City Building"}
-              <span className="text-muted-foreground/30">·</span>
-              by {business.founder_name}
+            <div className="flex items-center gap-2 mt-1 text-[10px] text-muted-foreground flex-wrap">
+              <span className="flex items-center gap-0.5"><MapPin className="w-3 h-3" />{business.buildingName}</span>
+              {business.city && <span>· {business.city}, {business.country}</span>}
+              <span>· by {business.founder_name}</span>
             </div>
           </div>
 
-          {business.description && (
-            <p className="text-[11px] text-muted-foreground leading-relaxed">{business.description}</p>
-          )}
+          {business.description && <p className="text-[11px] text-muted-foreground leading-relaxed">{business.description}</p>}
 
-          {/* Universal info */}
-          <div className="flex flex-wrap items-center gap-2 text-[9px] text-muted-foreground/70">
+          {/* Location + Universal info */}
+          <div className="flex flex-wrap items-center gap-1.5 text-[9px] text-muted-foreground/70">
             {business.country && <span className="flex items-center gap-0.5 bg-muted/10 px-2 py-0.5 rounded-full"><Globe className="w-2.5 h-2.5" />{business.country}</span>}
-            {business.team_size && <span className="flex items-center gap-0.5 bg-muted/10 px-2 py-0.5 rounded-full"><Users className="w-2.5 h-2.5" />{business.team_size} people</span>}
+            {business.city && <span className="flex items-center gap-0.5 bg-muted/10 px-2 py-0.5 rounded-full"><MapPin className="w-2.5 h-2.5" />{business.city}</span>}
+            {business.team_size && <span className="flex items-center gap-0.5 bg-muted/10 px-2 py-0.5 rounded-full"><Users className="w-2.5 h-2.5" />{business.team_size}</span>}
             {business.founded_at && <span className="flex items-center gap-0.5 bg-muted/10 px-2 py-0.5 rounded-full"><Calendar className="w-2.5 h-2.5" />{business.founded_at}</span>}
             {business.business_model && <span className="flex items-center gap-0.5 bg-muted/10 px-2 py-0.5 rounded-full"><Briefcase className="w-2.5 h-2.5" />{business.business_model}</span>}
           </div>
 
           {/* Core metrics */}
           <div>
-            <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Key Metrics</h3>
-            <div className="grid grid-cols-2 gap-2">
+            <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Key Metrics</h3>
+            <div className="grid grid-cols-2 gap-1.5">
               <MetricBox label="Revenue (30d)" value={formatCurrency(business.mrr)} accent="#10b981" />
               <MetricBox label="Growth" value={`${business.growth_percent > 0 ? "+" : ""}${business.growth_percent}%`} accent={business.growth_percent > 0 ? "#10b981" : "#ef4444"} />
-              <MetricBox label="Annual Revenue" value={formatCurrency(business.mrr * 12)} accent="#3b82f6" />
-              <MetricBox label="Revenue Multiple" value={`${business.revenue_multiple}x`} accent="#f59e0b" />
+              <MetricBox label="Annual Rev" value={formatCurrency(business.mrr * 12)} accent="#3b82f6" />
+              <MetricBox label="Multiple" value={`${business.revenue_multiple}x`} accent="#f59e0b" />
             </div>
           </div>
 
-          {/* Category-specific metrics */}
+          {/* Category-specific */}
           {catFields.length > 0 && business.category_data && Object.keys(business.category_data).length > 0 && (
             <div>
-              <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">{catLabel} Details</h3>
-              <div className="grid grid-cols-2 gap-2">
+              <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">{catLabel} Details</h3>
+              <div className="grid grid-cols-2 gap-1.5">
                 {catFields.map(f => (
                   <MetricBox key={f.key} label={f.label} value={formatFieldValue(business.category_data?.[f.key], f.format)} accent={color} />
                 ))}
@@ -685,21 +692,21 @@ function DetailPanel({ business, onClose, onVisit, onOffer, onBuy }: {
             </div>
           )}
 
-          {/* Asset Scores */}
+          {/* Scores */}
           <div>
-            <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Asset Scores</h3>
-            <div className="space-y-1.5">
-              <ScoreBar label="Growth Score" value={scores.growth} color="#10b981" />
-              <ScoreBar label="Risk Score" value={scores.risk} color="#ef4444" />
-              <ScoreBar label="Liquidity Score" value={scores.liquidity} color="#3b82f6" />
-              <ScoreBar label="Automation Score" value={scores.automation} color="#8b5cf6" />
+            <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Asset Scores</h3>
+            <div className="space-y-1">
+              <ScoreBar label="Growth" value={scores.growth} color="#10b981" />
+              <ScoreBar label="Risk" value={scores.risk} color="#ef4444" />
+              <ScoreBar label="Liquidity" value={scores.liquidity} color="#3b82f6" />
+              <ScoreBar label="Automation" value={scores.automation} color="#8b5cf6" />
             </div>
           </div>
 
-          {/* ROI Simulation */}
+          {/* ROI */}
           <div>
-            <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">💰 Purchase Simulation</h3>
-            <div className="grid grid-cols-3 gap-2">
+            <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">💰 Purchase Simulation</h3>
+            <div className="grid grid-cols-3 gap-1.5">
               <div className="bg-muted/10 rounded-lg p-2 text-center">
                 <span className="text-[8px] text-muted-foreground block">Est. ROI</span>
                 <span className="text-sm font-bold text-emerald-400">{roi.roi}%</span>
@@ -716,7 +723,7 @@ function DetailPanel({ business, onClose, onVisit, onOffer, onBuy }: {
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* Actions */}
         <div className="p-3 space-y-1.5 border-t border-border/20 shrink-0">
           <Button onClick={onVisit} variant="outline" size="sm" className="w-full h-8 text-[10px] justify-start gap-2 border-border/30">
             <ExternalLink className="w-3.5 h-3.5" /> VISIT BUILDING
@@ -725,7 +732,7 @@ function DetailPanel({ business, onClose, onVisit, onOffer, onBuy }: {
             <Send className="w-3.5 h-3.5" /> MAKE OFFER
           </Button>
           <Button onClick={onBuy} size="sm" className="w-full h-8 text-[10px] justify-start gap-2 font-bold uppercase tracking-wider" style={{ background: `linear-gradient(135deg, ${color}, ${color}cc)` }}>
-            <ShoppingCart className="w-3.5 h-3.5" /> BUY BUSINESS — {business.sale_price ? formatCurrency(business.sale_price) : "Contact"}
+            <ShoppingCart className="w-3.5 h-3.5" /> BUY — {business.sale_price ? formatCurrency(business.sale_price) : "Contact"}
           </Button>
         </div>
       </div>
@@ -735,7 +742,7 @@ function DetailPanel({ business, onClose, onVisit, onOffer, onBuy }: {
 
 function MetricBox({ label, value, accent }: { label: string; value: string; accent: string }) {
   return (
-    <div className="bg-muted/10 rounded-lg px-2.5 py-2">
+    <div className="bg-muted/10 rounded-lg px-2.5 py-1.5">
       <span className="text-[8px] text-muted-foreground block mb-0.5">{label}</span>
       <span className="text-[12px] font-bold" style={{ color: accent }}>{value}</span>
     </div>
