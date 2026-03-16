@@ -5,9 +5,10 @@ import { Users, Bot, Workflow, FileText, Activity, Globe, Video, MessageCircle, 
 
 interface AdminOverviewProps {
   counts: Record<string, number> | null;
+  onNavigate?: (tab: string) => void;
 }
 
-export function AdminOverview({ counts }: AdminOverviewProps) {
+export function AdminOverview({ counts, onNavigate }: AdminOverviewProps) {
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [recentUsers, setRecentUsers] = useState<any[]>([]);
   const [topAgents, setTopAgents] = useState<any[]>([]);
