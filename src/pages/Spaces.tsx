@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
 import { Plus, Search, Calendar, MoreVertical, Globe, Star, Trash2 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
@@ -53,6 +54,7 @@ const TYPE_EMOJIS: Record<string, string> = {
 
 export default function Spaces() {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [spaces, setSpaces] = useState<SpaceData[]>(loadSpaces);
   const [filter, setFilter] = useState<"recent" | "created">("recent");
   const [search, setSearch] = useState("");
@@ -74,13 +76,7 @@ export default function Spaces() {
     }
   }, []);
 
-  const userName = (() => {
-    try {
-      const u = localStorage.getItem("agentoffice_user");
-      if (u) return JSON.parse(u).name || "Usuário";
-    } catch {}
-    return "Usuário";
-  })();
+  const userName = profile?.display_name || "Usuário";
 
   const handleEnterSpace = (space: SpaceData) => {
     localStorage.setItem("buildingName", space.name);

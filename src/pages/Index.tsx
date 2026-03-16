@@ -28,12 +28,14 @@ import { CityEvents } from "@/components/office/CityEvents";
 import { CityChat } from "@/components/office/CityChat";
 import { useOfficeState } from "@/hooks/useOfficeState";
 import { usePanelState } from "@/hooks/office/usePanelState";
+import { useAuth } from "@/contexts/AuthContext";
 import { ROOMS, setRooms, FURNITURE, setFurniture, getRoomAt, type RoomDef, type FurnitureItem, DEFAULT_ROOMS, DEFAULT_FURNITURE } from "@/data/officeMap";
 import { tileFromFloat } from "@/hooks/office/movementUtils";
 import type { Agent } from "@/types/agent";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { profile, signOut } = useAuth();
   const { openPanel, open, close, isOpen } = usePanelState();
   const [rooms, setLocalRooms] = useState<RoomDef[]>(() => [...DEFAULT_ROOMS]);
   const [furnitureItems, setLocalFurniture] = useState<FurnitureItem[]>(() => [...DEFAULT_FURNITURE]);
@@ -47,9 +49,8 @@ const Index = () => {
       const saved = localStorage.getItem("playerConfig");
       if (saved) return JSON.parse(saved);
     } catch {}
-    const lobbyName = localStorage.getItem("playerName");
     return {
-      name: lobbyName || "Chefe",
+      name: profile?.display_name || "Chefe",
       color: "#4F46E5",
       hairStyle: "spiky",
       outfitStyle: "suit",
@@ -58,17 +59,12 @@ const Index = () => {
     };
   });
 
+  // Sync player name with auth profile (no localStorage auth check needed - ProtectedRoute handles it)
   useEffect(() => {
-    const user = localStorage.getItem("agentoffice_user");
-    if (!user) {
-      console.log("[AgentOffice] No user found, redirecting to landing");
-      navigate("/", { replace: true });
-      return;
+    if (profile?.display_name) {
+      setPlayerConfig((prev) => ({ ...prev, name: profile.display_name || prev.name }));
     }
-    const parsed = JSON.parse(user);
-    console.log("[AgentOffice] User loaded:", parsed.name);
-    setPlayerConfig((prev) => ({ ...prev, name: parsed.name || "Chefe" }));
-  }, [navigate]);
+  }, [profile?.display_name]);
 
   const {
     agents,
@@ -175,9 +171,9 @@ const Index = () => {
         nearbyAgent={nearbyAgent}
         onCustomize={() => open("customizer")}
         onRoomEditor={() => { open("roomEditor"); setEditMode(true); }}
-        onLogout={() => {
-          localStorage.removeItem("agentoffice_user");
-          navigate("/");
+        onLogout={async () => {
+          await signOut();
+          navigate("/login");
         }}
         onOpenFeed={() => open("feed")}
         onOpenTasks={() => open("tasks")}
@@ -246,23 +242,23 @@ const Index = () => {
       <AgentPanel agent={selectedAgent} onClose={() => setSelectedAgent(null)} onViewProfile={(a) => setProfileAgent(a)} />
       <ObserverCard agent={profileAgent} isOpen={!!profileAgent} onClose={() => setProfileAgent(null)} />
       
-      {/* Panels */}
-      <SocialFeed agents={agents} isOpen={isOpen("feed")} onClose={close} />
-      <TaskBoard agents={agents} isOpen={isOpen("tasks")} onClose={close} />
-      <AgentMessaging agents={agents} isOpen={isOpen("messaging")} onClose={close} />
-      <AgentGallery agents={agents} isOpen={isOpen("gallery")} onClose={close} />
-      <CreativeStudios agents={agents} isOpen={isOpen("studios")} onClose={close} />
-      <AnalyticsDashboard agents={agents} isOpen={isOpen("analytics")} onClose={close} />
-      <AgentMarketplace agents={agents} isOpen={isOpen("marketplace")} onClose={close} />
-      <AIGovernance agents={agents} isOpen={isOpen("governance")} onClose={close} />
-      <AgentMemory agents={agents} isOpen={isOpen("memory")} onClose={close} />
-      <CommandCenter agents={agents} isOpen={isOpen("command")} onClose={close} />
-      <ArtifactExplorer agents={agents} isOpen={isOpen("artifacts")} onClose={close} />
-      <CityNPCs isOpen={isOpen("npcs")} onClose={close} />
-      <ObservationLab agents={agents} isOpen={isOpen("observation")} onClose={close} />
-      <DistrictInfo isOpen={isOpen("districts")} onClose={close} />
-      <CityEvents agents={agents} isOpen={isOpen("events")} onClose={close} />
-      <CityChat agents={agents} isOpen={isOpen("cityChat")} onClose={close} />
+      {/* Panels - conditionally rendered to save memory */}
+      {isOpen("feed") && <SocialFeed agents={agents} isOpen onClose={close} />}
+      {isOpen("tasks") && <TaskBoard agents={agents} isOpen onClose={close} />}
+      {isOpen("messaging") && <AgentMessaging agents={agents} isOpen onClose={close} />}
+      {isOpen("gallery") && <AgentGallery agents={agents} isOpen onClose={close} />}
+      {isOpen("studios") && <CreativeStudios agents={agents} isOpen onClose={close} />}
+      {isOpen("analytics") && <AnalyticsDashboard agents={agents} isOpen onClose={close} />}
+      {isOpen("marketplace") && <AgentMarketplace agents={agents} isOpen onClose={close} />}
+      {isOpen("governance") && <AIGovernance agents={agents} isOpen onClose={close} />}
+      {isOpen("memory") && <AgentMemory agents={agents} isOpen onClose={close} />}
+      {isOpen("command") && <CommandCenter agents={agents} isOpen onClose={close} />}
+      {isOpen("artifacts") && <ArtifactExplorer agents={agents} isOpen onClose={close} />}
+      {isOpen("npcs") && <CityNPCs isOpen onClose={close} />}
+      {isOpen("observation") && <ObservationLab agents={agents} isOpen onClose={close} />}
+      {isOpen("districts") && <DistrictInfo isOpen onClose={close} />}
+      {isOpen("events") && <CityEvents agents={agents} isOpen onClose={close} />}
+      {isOpen("cityChat") && <CityChat agents={agents} isOpen onClose={close} />}
 
       {!editMode && <ActionBar onMove={movePlayer} />}
       {!editMode && <MiniMap player={player} agents={agents} rooms={rooms} />}
