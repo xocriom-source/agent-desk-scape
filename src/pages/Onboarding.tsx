@@ -6,6 +6,7 @@ import {
   ArrowLeft, Globe, Check
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
 
 const BUILDING_OPTIONS = [
