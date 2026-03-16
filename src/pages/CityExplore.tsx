@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, Suspense } from "react";
+import { useMemo, useState, useCallback, Suspense, useReducer } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Building2, Users2, Trophy, Megaphone, Plane, Search, ShoppingBag, MessageCircle, Target, Car, Award, Briefcase, Dna, Users, Zap, Bot, Globe, Monitor, Video, Hash, Eye, BarChart3, Calendar, Gamepad2, Link2 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -34,15 +34,39 @@ import { TeamEngagement } from "@/components/workspace/TeamEngagement";
 import type { TransportType } from "@/types/building";
 import logo from "@/assets/logo.png";
 
+// Panel state reducer — replaces 20+ useState calls
+type PanelName = "leaderboard" | "ranking" | "ads" | "vehicleShop" | "chat" | "missions" | "marketplace" |
+  "proximity" | "objects" | "status" | "teleport" | "personalAgent" | "teamAgents" | "publicSpaces" |
+  "messenger" | "training" | "meeting" | "teamChat" | "focusMode" | "analytics" | "events" |
+  "screenShare" | "integrations" | "engagement";
+
+type PanelAction = { type: "toggle"; panel: PanelName } | { type: "open"; panel: PanelName } | { type: "close"; panel: PanelName };
+type PanelState = Record<PanelName, boolean>;
+
+const initialPanels: PanelState = {
+  leaderboard: false, ranking: false, ads: false, vehicleShop: false, chat: false,
+  missions: false, marketplace: false, proximity: false, objects: false, status: false,
+  teleport: false, personalAgent: false, teamAgents: false, publicSpaces: false,
+  messenger: false, training: false, meeting: false, teamChat: false, focusMode: false,
+  analytics: false, events: false, screenShare: false, integrations: false, engagement: false,
+};
+
+function panelReducer(state: PanelState, action: PanelAction): PanelState {
+  switch (action.type) {
+    case "toggle": return { ...state, [action.panel]: !state[action.panel] };
+    case "open": return { ...state, [action.panel]: true };
+    case "close": return { ...state, [action.panel]: false };
+    default: return state;
+  }
+}
+
 export default function CityExplore() {
   const navigate = useNavigate();
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
-  const [showRanking, setShowRanking] = useState(false);
-  const [showAds, setShowAds] = useState(false);
-  const [showVehicleShop, setShowVehicleShop] = useState(false);
-  const [showChat, setShowChat] = useState(false);
-  const [showMissions, setShowMissions] = useState(false);
-  const [showMarketplace, setShowMarketplace] = useState(false);
+  const [panels, dispatch] = useReducer(panelReducer, initialPanels);
+  const open = useCallback((p: PanelName) => dispatch({ type: "open", panel: p }), []);
+  const close = useCallback((p: PanelName) => dispatch({ type: "close", panel: p }), []);
+  const toggle = useCallback((p: PanelName) => dispatch({ type: "toggle", panel: p }), []);
+
   const [flyMode, setFlyMode] = useState(false);
   const [inVehicle, setInVehicle] = useState(false);
   const [currentVehicle, setCurrentVehicle] = useState<TransportType>("car");
@@ -50,43 +74,28 @@ export default function CityExplore() {
   const [playerPos, setPlayerPos] = useState<[number, number, number]>([0, 0, 5]);
   const [showIntro, setShowIntro] = useState(true);
   const [cityReady, setCityReady] = useState(false);
-
-  // Collaboration states
-  const [showProximity, setShowProximity] = useState(false);
-  const [showObjects, setShowObjects] = useState(false);
-  const [showStatus, setShowStatus] = useState(false);
-  const [showTeleport, setShowTeleport] = useState(false);
-  const [showPersonalAgent, setShowPersonalAgent] = useState(false);
-  const [showTeamAgents, setShowTeamAgents] = useState(false);
-  const [showPublicSpaces, setShowPublicSpaces] = useState(false);
-  const [showMessenger, setShowMessenger] = useState(false);
-  const [showTraining, setShowTraining] = useState(false);
   const [userStatus, setUserStatus] = useState<UserStatus>("available");
-
-  // Workspace states
-  const [showMeeting, setShowMeeting] = useState(false);
-  const [showTeamChat, setShowTeamChat] = useState(false);
-  const [showFocusMode, setShowFocusMode] = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(false);
-  const [showEvents, setShowEvents] = useState(false);
-  const [showScreenShare, setShowScreenShare] = useState(false);
-  const [showIntegrations, setShowIntegrations] = useState(false);
-  const [showEngagement, setShowEngagement] = useState(false);
   const [focusMode, setFocusMode] = useState<FocusModeType>("normal");
 
   const userName = useMemo(() => {
-    const stored = localStorage.getItem("agentoffice_user");
-    return stored ? JSON.parse(stored).name || "Chefe" : "Chefe";
+    try {
+      const stored = localStorage.getItem("agentoffice_user");
+      return stored ? JSON.parse(stored).name || "Chefe" : "Chefe";
+    } catch { return "Chefe"; }
   }, []);
 
   const cityData = useMemo(() => {
-    const stored = localStorage.getItem("agentoffice_city");
-    return stored ? JSON.parse(stored) : { name: "São Paulo", flag: "🇧🇷" };
+    try {
+      const stored = localStorage.getItem("agentoffice_city");
+      return stored ? JSON.parse(stored) : { name: "São Paulo", flag: "🇧🇷" };
+    } catch { return { name: "São Paulo", flag: "🇧🇷" }; }
   }, []);
 
   const userId = useMemo(() => {
-    const stored = localStorage.getItem("agentoffice_user");
-    return stored ? JSON.parse(stored).email || "" : "";
+    try {
+      const stored = localStorage.getItem("agentoffice_user");
+      return stored ? JSON.parse(stored).email || "" : "";
+    } catch { return ""; }
   }, []);
 
   const { visibleBuildings, userBuilding } = useCityBuildings(userId);
@@ -179,68 +188,68 @@ export default function CityExplore() {
                   <Plane className="w-3.5 h-3.5" />
                 </button>
 
-                <button onClick={() => setShowMissions(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
+                <button onClick={() => open("missions")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
                   <Target className="w-3.5 h-3.5" />
                   <span className="text-[8px] bg-red-500 text-white px-1 rounded-sm font-bold">3</span>
                 </button>
 
-                <button onClick={() => setShowChat(!showChat)} className={`flex items-center gap-1 px-2.5 py-2 rounded-xl backdrop-blur-md border text-xs font-medium transition-all ${showChat ? "bg-emerald-400/20 border-emerald-400/50 text-emerald-400" : "bg-black/60 border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80"}`}>
+                <button onClick={() => toggle("chat")} className={`flex items-center gap-1 px-2.5 py-2 rounded-xl backdrop-blur-md border text-xs font-medium transition-all ${panels.chat ? "bg-emerald-400/20 border-emerald-400/50 text-emerald-400" : "bg-black/60 border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80"}`}>
                   <MessageCircle className="w-3.5 h-3.5" />
                 </button>
 
-                <button onClick={() => setShowProximity(!showProximity)} className={`flex items-center gap-1 px-2.5 py-2 rounded-xl backdrop-blur-md border text-xs font-medium transition-all ${showProximity ? "bg-emerald-400/20 border-emerald-400/50 text-emerald-400" : "bg-black/60 border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80"}`}>
+                <button onClick={() => toggle("proximity")} className={`flex items-center gap-1 px-2.5 py-2 rounded-xl backdrop-blur-md border text-xs font-medium transition-all ${panels.proximity ? "bg-emerald-400/20 border-emerald-400/50 text-emerald-400" : "bg-black/60 border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80"}`}>
                   <Users className="w-3.5 h-3.5" />
                 </button>
 
-                <button onClick={() => setShowTeleport(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-cyan-700/30 text-cyan-400 hover:bg-cyan-400/10 transition-all text-xs font-medium">
+                <button onClick={() => open("teleport")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-cyan-700/30 text-cyan-400 hover:bg-cyan-400/10 transition-all text-xs font-medium">
                   <Zap className="w-3.5 h-3.5" />
                 </button>
 
-                <button onClick={() => setShowPersonalAgent(!showPersonalAgent)} className={`flex items-center gap-1 px-2.5 py-2 rounded-xl backdrop-blur-md border text-xs font-medium transition-all ${showPersonalAgent ? "bg-violet-400/20 border-violet-400/50 text-violet-400" : "bg-black/60 border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80"}`}>
+                <button onClick={() => toggle("personalAgent")} className={`flex items-center gap-1 px-2.5 py-2 rounded-xl backdrop-blur-md border text-xs font-medium transition-all ${panels.personalAgent ? "bg-violet-400/20 border-violet-400/50 text-violet-400" : "bg-black/60 border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80"}`}>
                   <Bot className="w-3.5 h-3.5" />
                 </button>
 
-                <button onClick={() => setShowPublicSpaces(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
+                <button onClick={() => open("publicSpaces")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
                   <Globe className="w-3.5 h-3.5" />
                 </button>
 
-                <button onClick={() => setShowStatus(!showStatus)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
+                <button onClick={() => toggle("status")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
                   <div className={`w-2.5 h-2.5 rounded-full ${userStatus === "available" ? "bg-emerald-400" : userStatus === "focused" ? "bg-amber-400" : userStatus === "in-meeting" ? "bg-red-400" : "bg-gray-500"}`} />
                 </button>
 
-                <button onClick={() => setShowVehicleShop(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
+                <button onClick={() => open("vehicleShop")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
                   <ShoppingBag className="w-3.5 h-3.5" />
                 </button>
 
-                <button onClick={() => setShowMarketplace(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-amber-700/30 text-amber-400 hover:bg-amber-400/10 transition-all text-xs font-medium">
+                <button onClick={() => open("marketplace")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-amber-700/30 text-amber-400 hover:bg-amber-400/10 transition-all text-xs font-medium">
                   <Briefcase className="w-3.5 h-3.5" />
                 </button>
-                <button onClick={() => setShowRanking(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
+                <button onClick={() => open("ranking")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
                   <Award className="w-3.5 h-3.5" />
                 </button>
                 {/* Workspace tools */}
-                <button onClick={() => setShowMeeting(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-red-700/30 text-red-400 hover:bg-red-400/10 transition-all text-xs font-medium" title="Reuniões">
+                <button onClick={() => open("meeting")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-red-700/30 text-red-400 hover:bg-red-400/10 transition-all text-xs font-medium" title="Reuniões">
                   <Video className="w-3.5 h-3.5" />
                 </button>
-                <button onClick={() => setShowTeamChat(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Team Chat">
+                <button onClick={() => open("teamChat")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Team Chat">
                   <Hash className="w-3.5 h-3.5" />
                 </button>
-                <button onClick={() => setShowFocusMode(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Foco">
+                <button onClick={() => open("focusMode")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Foco">
                   <Eye className="w-3.5 h-3.5" />
                 </button>
-                <button onClick={() => setShowAnalytics(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Analytics">
+                <button onClick={() => open("analytics")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Analytics">
                   <BarChart3 className="w-3.5 h-3.5" />
                 </button>
-                <button onClick={() => setShowEvents(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Eventos">
+                <button onClick={() => open("events")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Eventos">
                   <Calendar className="w-3.5 h-3.5" />
                 </button>
-                <button onClick={() => setShowScreenShare(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Compartilhar">
+                <button onClick={() => open("screenShare")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Compartilhar">
                   <Monitor className="w-3.5 h-3.5" />
                 </button>
-                <button onClick={() => setShowIntegrations(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Integrações">
+                <button onClick={() => open("integrations")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Integrações">
                   <Link2 className="w-3.5 h-3.5" />
                 </button>
-                <button onClick={() => setShowEngagement(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Engajamento">
+                <button onClick={() => open("engagement")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Engajamento">
                   <Gamepad2 className="w-3.5 h-3.5" />
                 </button>
 
@@ -248,11 +257,11 @@ export default function CityExplore() {
                   <Dna className="w-3.5 h-3.5" />
                 </button>
 
-                <button onClick={() => setShowLeaderboard(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
+                <button onClick={() => open("leaderboard")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
                   <Trophy className="w-3.5 h-3.5" />
                 </button>
 
-                <button onClick={() => setShowAds(true)} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
+                <button onClick={() => open("ads")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
                   <Megaphone className="w-3.5 h-3.5" />
                 </button>
 
@@ -290,7 +299,7 @@ export default function CityExplore() {
           )}
 
           {/* Chat panel */}
-          <CityChat isOpen={showChat} onClose={() => setShowChat(false)} />
+          <CityChat isOpen={panels.chat} onClose={() => close("chat")} />
 
           {/* Mini Map */}
           <motion.div
@@ -339,33 +348,33 @@ export default function CityExplore() {
           </motion.div>
 
           {/* Overlay Panels */}
-          <CityLeaderboard isOpen={showLeaderboard} onClose={() => setShowLeaderboard(false)} />
-          <CityRanking isOpen={showRanking} onClose={() => setShowRanking(false)} />
-          <CityAdPlacement isOpen={showAds} onClose={() => setShowAds(false)} />
-          <VehicleShop isOpen={showVehicleShop} onClose={() => setShowVehicleShop(false)} currentVehicle={currentVehicle} onSelect={handleVehicleSelect} />
-          <DailyMissions isOpen={showMissions} onClose={() => setShowMissions(false)} />
-          <CityMarketplace isOpen={showMarketplace} onClose={() => setShowMarketplace(false)} />
+          <CityLeaderboard isOpen={panels.leaderboard} onClose={() => close("leaderboard")} />
+          <CityRanking isOpen={panels.ranking} onClose={() => close("ranking")} />
+          <CityAdPlacement isOpen={panels.ads} onClose={() => close("ads")} />
+          <VehicleShop isOpen={panels.vehicleShop} onClose={() => close("vehicleShop")} currentVehicle={currentVehicle} onSelect={handleVehicleSelect} />
+          <DailyMissions isOpen={panels.missions} onClose={() => close("missions")} />
+          <CityMarketplace isOpen={panels.marketplace} onClose={() => close("marketplace")} />
 
           {/* Collaboration Panels */}
-          <ProximityChat isOpen={showProximity} onClose={() => setShowProximity(false)} playerPos={playerPos} />
-          <InteractiveObjects isOpen={showObjects} onClose={() => setShowObjects(false)} />
-          <UserStatusSystem isOpen={showStatus} onClose={() => setShowStatus(false)} currentStatus={userStatus} onStatusChange={setUserStatus} userName={userName} />
-          <TeleportSystem isOpen={showTeleport} onClose={() => setShowTeleport(false)} onTeleport={setPlayerPos} />
-          <PersonalAgent isOpen={showPersonalAgent} onClose={() => setShowPersonalAgent(false)} />
-          <TeamAgents isOpen={showTeamAgents} onClose={() => setShowTeamAgents(false)} />
-          <PublicWorkspaces isOpen={showPublicSpaces} onClose={() => setShowPublicSpaces(false)} />
-          <MessengerHub isOpen={showMessenger} onClose={() => setShowMessenger(false)} />
-          <AgentTraining isOpen={showTraining} onClose={() => setShowTraining(false)} />
+          <ProximityChat isOpen={panels.proximity} onClose={() => close("proximity")} playerPos={playerPos} />
+          <InteractiveObjects isOpen={panels.objects} onClose={() => close("objects")} />
+          <UserStatusSystem isOpen={panels.status} onClose={() => close("status")} currentStatus={userStatus} onStatusChange={setUserStatus} userName={userName} />
+          <TeleportSystem isOpen={panels.teleport} onClose={() => close("teleport")} onTeleport={setPlayerPos} />
+          <PersonalAgent isOpen={panels.personalAgent} onClose={() => close("personalAgent")} />
+          <TeamAgents isOpen={panels.teamAgents} onClose={() => close("teamAgents")} />
+          <PublicWorkspaces isOpen={panels.publicSpaces} onClose={() => close("publicSpaces")} />
+          <MessengerHub isOpen={panels.messenger} onClose={() => close("messenger")} />
+          <AgentTraining isOpen={panels.training} onClose={() => close("training")} />
 
           {/* Workspace Panels */}
-          <MeetingSystem isOpen={showMeeting} onClose={() => setShowMeeting(false)} />
-          <TeamChatSystem isOpen={showTeamChat} onClose={() => setShowTeamChat(false)} />
-          <FocusMode isOpen={showFocusMode} onClose={() => setShowFocusMode(false)} currentMode={focusMode} onModeChange={setFocusMode} />
-          <TeamAnalytics isOpen={showAnalytics} onClose={() => setShowAnalytics(false)} />
-          <VirtualEvents isOpen={showEvents} onClose={() => setShowEvents(false)} />
-          <ScreenSharing isOpen={showScreenShare} onClose={() => setShowScreenShare(false)} />
-          <ToolIntegrations isOpen={showIntegrations} onClose={() => setShowIntegrations(false)} />
-          <TeamEngagement isOpen={showEngagement} onClose={() => setShowEngagement(false)} />
+          <MeetingSystem isOpen={panels.meeting} onClose={() => close("meeting")} />
+          <TeamChatSystem isOpen={panels.teamChat} onClose={() => close("teamChat")} />
+          <FocusMode isOpen={panels.focusMode} onClose={() => close("focusMode")} currentMode={focusMode} onModeChange={setFocusMode} />
+          <TeamAnalytics isOpen={panels.analytics} onClose={() => close("analytics")} />
+          <VirtualEvents isOpen={panels.events} onClose={() => close("events")} />
+          <ScreenSharing isOpen={panels.screenShare} onClose={() => close("screenShare")} />
+          <ToolIntegrations isOpen={panels.integrations} onClose={() => close("integrations")} />
+          <TeamEngagement isOpen={panels.engagement} onClose={() => close("engagement")} />
         </>
       )}
     </div>
