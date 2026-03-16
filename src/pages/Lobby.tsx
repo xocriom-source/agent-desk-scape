@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Mic, MicOff, Video, VideoOff, ChevronUp } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import logo from "@/assets/logo.png";
+import logoOriginal from "@/assets/logo-original.svg";
 
 const SKIN_TONES = [
   { id: "light", color: "#FDDCB5" },
