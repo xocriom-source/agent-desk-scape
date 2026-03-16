@@ -251,7 +251,7 @@ export default function Spaces() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: filteredSpaces.length * 0.08 }}
-                onClick={() => navigate("/onboarding")}
+                onClick={() => navigate("/onboarding?mode=new")}
                 className="cursor-pointer group"
               >
                 <div className="rounded-xl border-2 border-dashed border-border/40 hover:border-primary/50 transition-all aspect-[4/3] flex flex-col items-center justify-center gap-3 bg-card/50 hover:bg-card/80">
