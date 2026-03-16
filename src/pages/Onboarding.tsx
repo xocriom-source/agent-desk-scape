@@ -66,7 +66,7 @@ const BUILDING_OPTIONS = [
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { updateProfile } = useAuth();
+  const { user, updateProfile } = useAuth();
   const [step, setStep] = useState<1 | 2>(1);
   const [selectedBuilding, setSelectedBuilding] = useState<string | null>(null);
   const [buildingName, setBuildingName] = useState("");
