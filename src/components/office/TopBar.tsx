@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Settings, Wifi, LogOut, Palette, Home, Clock, MessageSquare, CheckCircle2, Radio, ImageIcon, BarChart3, Store, Vote, Sparkles, Database, Shield, MapPin, Star, Eye, Calendar, Globe, Map, Landmark } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import logo from "@/assets/logo.png";
+import logoOriginal from "@/assets/logo-original.svg";
 import type { Agent } from "@/types/agent";
 
 interface TopBarProps {
