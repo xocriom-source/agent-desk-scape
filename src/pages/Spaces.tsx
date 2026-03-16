@@ -271,7 +271,7 @@ export default function Spaces() {
             onClick={() => navigate("/onboarding")}
             className="cursor-pointer group"
           >
-            <div className="rounded-xl border-2 border-dashed border-border/40 hover:border-primary/50 transition-all aspect-[4/3] flex flex-col items-center justify-center gap-3 bg-[#1E1F33]/50 hover:bg-[#252640]/50">
+            <div className="rounded-xl border-2 border-dashed border-border/40 hover:border-primary/50 transition-all aspect-[4/3] flex flex-col items-center justify-center gap-3 bg-card/50 hover:bg-card/80">
               <div className="w-12 h-12 rounded-full bg-primary/10 group-hover:bg-primary/20 flex items-center justify-center transition-colors">
                 <Plus className="w-6 h-6 text-primary" />
               </div>
