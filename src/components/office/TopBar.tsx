@@ -84,6 +84,7 @@ export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onRo
         <div className="glass-panel rounded-2xl flex items-center gap-0.5 px-1.5 py-1 shadow-lg overflow-x-auto scrollbar-hide">
           {/* City navigation */}
           <NavBtn onClick={() => navigate("/city-explore")} title="Explorar Cidade" icon={Map} color="#10B981" />
+          <NavBtn onClick={() => navigate("/marketplace/businesses")} title="Business Marketplace" icon={Landmark} color="#F59E0B" />
           <div className="w-px h-5 bg-border/50 mx-0.5 shrink-0" />
           {onOpenFeed && <NavBtn onClick={onOpenFeed} title="Feed Social" icon={MessageSquare} color="hsl(239 84% 67%)" badge={notifications.feed} />}
           {onOpenTasks && <NavBtn onClick={onOpenTasks} title="Task Engine" icon={CheckCircle2} color="hsl(160 84% 39%)" badge={notifications.tasks} />}
