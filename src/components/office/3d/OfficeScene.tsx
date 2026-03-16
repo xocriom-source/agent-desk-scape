@@ -774,7 +774,7 @@ export function OfficeScene({
         gl={{ antialias: true }}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = dn.exposure;
+          gl.toneMappingExposure = 1.4; // Fixed bright exposure for interior
         }}
       >
         {/* Sky/background follows day-night, but interior lighting is FIXED */}
