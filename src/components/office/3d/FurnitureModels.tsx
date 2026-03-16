@@ -99,6 +99,16 @@ export function FurnitureModel({ type, position, editMode, selected, hovered, on
   const outlineColor = selected ? "#FFD700" : (hovered || (!editMode && localHovered)) ? "#90CAF9" : null;
   const label = FURNITURE_LABELS[type] || type;
 
+  const INTERACT_HINTS: Record<string, string> = {
+    chair: "🪑 Sentar", sofa: "🛋️ Sentar", beanbag: "🫧 Sentar", meeting_chair: "💺 Sentar",
+    couch_l: "🛋️ Sentar", coffee: "☕ Usar", coffee_bar: "🍵 Pedir café",
+    vending: "🥤 Comprar", water: "💧 Beber", arcade: "🕹️ Jogar",
+    treadmill: "🏃 Correr", punching_bag: "🥊 Treinar", screen: "📺 Assistir",
+    tv: "📺 Assistir", monitor: "🖥️ Usar", laptop: "💻 Usar",
+    desk: "🖥️ Trabalhar", standing_desk: "🧍 Trabalhar", aquarium: "🐟 Observar",
+  };
+  const hint = INTERACT_HINTS[type];
+
   return (
     <group ref={groupRef} position={position} {...interactiveProps}>
       {outlineColor && (
@@ -107,11 +117,12 @@ export function FurnitureModel({ type, position, editMode, selected, hovered, on
           <meshBasicMaterial color={outlineColor} transparent opacity={0.7} />
         </mesh>
       )}
-      {/* Hover tooltip */}
+      {/* Hover tooltip with interaction hint */}
       {localHovered && !editMode && (
         <Html position={[0, 1, 0]} center>
-          <div className="px-2 py-1 bg-[rgba(20,20,30,0.9)] rounded-md whitespace-nowrap pointer-events-none select-none border border-[rgba(255,255,255,0.1)]">
+          <div className="px-2 py-1 bg-[rgba(20,20,30,0.92)] rounded-md whitespace-nowrap pointer-events-none select-none border border-[rgba(255,255,255,0.12)] flex flex-col items-center gap-0.5">
             <span className="text-[10px] text-white font-medium">{label}</span>
+            {hint && <span className="text-[9px] text-[#00CED1] font-bold">{hint}</span>}
           </div>
         </Html>
       )}
