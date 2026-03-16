@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { Text, Html } from "@react-three/drei";
+import { useRef, useState, memo } from "react";
+import { Text } from "@react-three/drei";
 import * as THREE from "three";
 import type { CityBuilding } from "@/types/building";
 
@@ -20,7 +20,11 @@ const STYLE_GEOMETRY: Record<string, { widthTop: number; widthBottom: number; se
   industrial: { widthTop: 2.5, widthBottom: 2.5, segments: 4 },
 };
 
-export function Building3D({ building, onClick, highlighted = false }: Building3DProps) {
+// Shared color instances to avoid GC pressure
+const BLACK = new THREE.Color(0x000000);
+const WINDOW_COLOR = new THREE.Color("hsl(45, 90%, 70%)");
+
+export const Building3D = memo(function Building3D({ building, onClick, highlighted = false }: Building3DProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
   
@@ -28,6 +32,8 @@ export function Building3D({ building, onClick, highlighted = false }: Building3
   const h = building.height;
   const color = new THREE.Color(building.primaryColor);
   const secColor = new THREE.Color(building.secondaryColor);
+
+  const windowFloors = Math.min(building.floors, 6); // Cap window rows for perf
 
   return (
     <group
@@ -41,34 +47,20 @@ export function Building3D({ building, onClick, highlighted = false }: Building3
         <boxGeometry args={[geo.widthBottom, h, geo.widthBottom]} />
         <meshStandardMaterial
           color={color}
-          emissive={highlighted || hovered ? color : new THREE.Color(0x000000)}
+          emissive={highlighted || hovered ? color : BLACK}
           emissiveIntensity={highlighted ? 0.3 : hovered ? 0.15 : 0}
           roughness={0.6}
           metalness={0.2}
         />
       </mesh>
 
-      {/* Windows - rows of small emissive panels */}
-      {Array.from({ length: Math.min(building.floors, 8) }).map((_, floor) => (
+      {/* Windows - emissive strips on 2 sides only (perf) */}
+      {Array.from({ length: windowFloors }).map((_, floor) => (
         <group key={floor}>
           {[-1, 1].map(side => (
             <mesh key={side} position={[side * (geo.widthBottom / 2 + 0.01), 1 + floor * (h / building.floors), 0]}>
               <planeGeometry args={[0.01, 0.4]} />
-              <meshStandardMaterial
-                emissive={new THREE.Color("hsl(45, 90%, 70%)")}
-                emissiveIntensity={0.8}
-                color="black"
-              />
-            </mesh>
-          ))}
-          {[-1, 1].map(side => (
-            <mesh key={`z${side}`} position={[0, 1 + floor * (h / building.floors), side * (geo.widthBottom / 2 + 0.01)]} rotation={[0, Math.PI / 2, 0]}>
-              <planeGeometry args={[0.01, 0.4]} />
-              <meshStandardMaterial
-                emissive={new THREE.Color("hsl(45, 90%, 70%)")}
-                emissiveIntensity={0.8}
-                color="black"
-              />
+              <meshStandardMaterial emissive={WINDOW_COLOR} emissiveIntensity={0.8} color="black" />
             </mesh>
           ))}
         </group>
@@ -99,7 +91,7 @@ export function Building3D({ building, onClick, highlighted = false }: Building3
       {/* Rooftop antenna */}
       {building.customizations.rooftop && (
         <mesh position={[0, h + 1, 0]}>
-          <cylinderGeometry args={[0.05, 0.05, 1.5, 8]} />
+          <cylinderGeometry args={[0.05, 0.05, 1.5, 6]} />
           <meshStandardMaterial color="gray" metalness={0.8} />
         </mesh>
       )}
@@ -107,7 +99,7 @@ export function Building3D({ building, onClick, highlighted = false }: Building3
       {/* Garden at base */}
       {building.customizations.garden && (
         <mesh position={[geo.widthBottom / 2 + 0.8, 0.3, 0]}>
-          <sphereGeometry args={[0.5, 8, 8]} />
+          <sphereGeometry args={[0.5, 6, 6]} />
           <meshStandardMaterial color="hsl(120, 60%, 35%)" roughness={0.9} />
         </mesh>
       )}
@@ -127,20 +119,37 @@ export function Building3D({ building, onClick, highlighted = false }: Building3
         </mesh>
       )}
 
-      {/* Hover tooltip */}
+      {/* Hover label - lightweight Text instead of Html DOM */}
       {hovered && (
-        <Html position={[0, h + 2.2, 0]} center distanceFactor={15}>
-          <div className="px-3 py-1.5 rounded-lg bg-gray-900/90 border border-gray-700 text-white text-xs whitespace-nowrap backdrop-blur-md pointer-events-none">
-            <div className="font-bold">{building.name}</div>
-            <div className="text-gray-400 text-[10px]">{building.claimed ? building.ownerName : "Disponível"}</div>
-          </div>
-        </Html>
+        <group position={[0, h + 2, 0]}>
+          <Text
+            fontSize={0.5}
+            color="white"
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0.05}
+            outlineColor="black"
+          >
+            {building.name}
+          </Text>
+          <Text
+            position={[0, -0.5, 0]}
+            fontSize={0.3}
+            color="#9ca3af"
+            anchorX="center"
+            anchorY="middle"
+            outlineWidth={0.03}
+            outlineColor="black"
+          >
+            {building.claimed ? building.ownerName : "Available"}
+          </Text>
+        </group>
       )}
 
       {/* Highlighted ring */}
       {highlighted && (
         <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[geo.widthBottom, geo.widthBottom + 0.5, 32]} />
+          <ringGeometry args={[geo.widthBottom, geo.widthBottom + 0.5, 16]} />
           <meshStandardMaterial
             color={color}
             emissive={color}
@@ -152,4 +161,4 @@ export function Building3D({ building, onClick, highlighted = false }: Building3
       )}
     </group>
   );
-}
+});
