@@ -48,6 +48,9 @@ export const DEFAULT_ROOMS: RoomDef[] = [
   { id: "server", name: "🖥️ Server Room", x: 50, y: 1, w: 8, h: 7, floorColor: "#706058", wallColor: "#3A2E28", carpetColor: "#5A4E48" },
   { id: "game", name: "🎮 Game Room", x: 50, y: 12, w: 8, h: 7, floorColor: "#8A7050", wallColor: "#4A3520", carpetColor: "#705840" },
   { id: "zen", name: "🧘 Zen Garden", x: 50, y: 22, w: 8, h: 7, floorColor: "#7A7048", wallColor: "#3A3520", carpetColor: "#5A5530" },
+  // ── NEW ROOMS ──
+  { id: "gym", name: "🏋️ Gym", x: 50, y: 32, w: 8, h: 7, floorColor: "#3A3A3A", wallColor: "#2A2A2A", carpetColor: "#4A4A4A" },
+  { id: "reception", name: "🏨 Recepção", x: 12, y: 24, w: 8, h: 6, floorColor: "#C8B898", wallColor: "#6B6050", carpetColor: "#B0A080" },
 ];
 
 export let ROOMS = [...DEFAULT_ROOMS];
