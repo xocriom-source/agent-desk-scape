@@ -312,8 +312,8 @@ function FeatureCard({ icon: Icon, name, desc, index }: { icon: any; name: strin
 export default function Landing() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [searchValue, setSearchValue] = useState("");
   const [mobileMenu, setMobileMenu] = useState(false);
+  const handleLoadComplete = useCallback(() => setLoading(false), []);
 
   return (
     <>

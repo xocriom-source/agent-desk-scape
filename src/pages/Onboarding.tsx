@@ -97,7 +97,7 @@ export default function Onboarding() {
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-8">
           <img src={logo} alt="" className="w-8 h-8" />
-          <span className="font-display font-bold text-xl">AgentOffice</span>
+          <span className="font-display font-bold text-xl text-primary">THE GOOD CITY</span>
         </div>
 
         {/* Progress */}

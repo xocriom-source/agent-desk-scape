@@ -71,8 +71,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (data) {
       setProfile(data as Profile);
       // Sync to localStorage for existing components
+      // Use the userId to get email from current session instead of stale `user` state
+      const { data: sessionData } = await supabase.auth.getSession();
+      const email = sessionData?.session?.user?.email || "";
       localStorage.setItem("agentoffice_user", JSON.stringify({
-        email: user?.email || "",
+        email,
         name: data.display_name,
         companyName: data.company_name,
       }));
