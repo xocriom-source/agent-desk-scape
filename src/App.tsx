@@ -70,7 +70,7 @@ const App = () => (
               <Route path="/find-building" element={<ProtectedRoute><FindMyBuilding /></ProtectedRoute>} />
               <Route path="/building/:id" element={<ProtectedRoute><BuildingInterior /></ProtectedRoute>} />
               <Route path="/ecosystem" element={<ProtectedRoute><EcosystemHub /></ProtectedRoute>} />
-              <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
               <Route path="/marketplace/businesses" element={<ProtectedRoute><DigitalMarketplace /></ProtectedRoute>} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

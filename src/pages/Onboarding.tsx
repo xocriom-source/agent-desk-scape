@@ -77,14 +77,29 @@ export default function Onboarding() {
 
     const spaceName = buildingName || building.name;
 
-    // Persist building choice to profile in the database
+    // Persist building choice to profile
     try {
       await updateProfile({ company_name: spaceName });
     } catch {
-      // Non-blocking — localStorage fallback below
+      // Non-blocking
     }
 
-    // Also keep localStorage for components that still read it
+    // Update the auto-created city_building with chosen name/style
+    if (user) {
+      try {
+        await supabase
+          .from("city_buildings")
+          .update({
+            name: spaceName,
+            style: selectedBuilding || "corporate",
+          })
+          .eq("owner_id", user.id);
+      } catch {
+        // Non-blocking
+      }
+    }
+
+    // Keep localStorage for legacy components
     const userData = localStorage.getItem("agentoffice_user");
     if (userData) {
       try {
@@ -95,17 +110,6 @@ export default function Onboarding() {
       } catch {}
     }
 
-    const newSpace = {
-      id: "space-" + Date.now(),
-      name: spaceName,
-      city: localStorage.getItem("selectedCity") || "São Paulo",
-      type: selectedBuilding,
-      agents: Math.floor(Math.random() * 8) + 3,
-      lastVisit: "agora",
-      color: "#4F46E5",
-      emoji: "🏢",
-    };
-    localStorage.setItem("pendingNewSpace", JSON.stringify(newSpace));
     localStorage.setItem("buildingName", spaceName);
     localStorage.setItem("buildingType", selectedBuilding || "corporate");
 
