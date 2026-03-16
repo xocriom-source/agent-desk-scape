@@ -171,9 +171,9 @@ const Index = () => {
         nearbyAgent={nearbyAgent}
         onCustomize={() => open("customizer")}
         onRoomEditor={() => { open("roomEditor"); setEditMode(true); }}
-        onLogout={() => {
-          localStorage.removeItem("agentoffice_user");
-          navigate("/");
+        onLogout={async () => {
+          await signOut();
+          navigate("/login");
         }}
         onOpenFeed={() => open("feed")}
         onOpenTasks={() => open("tasks")}
