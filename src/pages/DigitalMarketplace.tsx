@@ -262,11 +262,11 @@ export default function DigitalMarketplace() {
   return (
     <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
       {/* ─── Top Bar ─── */}
-      <header className="h-11 border-b border-border/30 bg-card/90 backdrop-blur-xl flex items-center px-3 gap-2 shrink-0 z-30">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-muted-foreground hover:text-foreground h-7 w-7">
+      <header className="h-11 border-b border-green-800/40 bg-gradient-to-r from-green-900/95 to-green-800/90 backdrop-blur-xl flex items-center px-3 gap-2 shrink-0 z-30">
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-green-300 hover:text-white h-7 w-7">
           <ArrowLeft className="w-3.5 h-3.5" />
         </Button>
-        <Globe className="w-4 h-4 text-primary" />
+        <Building2 className="w-4 h-4 text-green-400" />
         <h1 className="font-bold text-xs tracking-tight hidden sm:block">Global Digital Business Marketplace</h1>
         <Badge variant="outline" className="text-[8px] border-amber-500/30 text-amber-400 gap-0.5 px-1.5 py-0">
           <Tag className="w-2 h-2" /> {totalForSale} FOR SALE
