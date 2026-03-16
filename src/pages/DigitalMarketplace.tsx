@@ -1,13 +1,16 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, TrendingUp, DollarSign, Building2, Filter, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft, Search, Filter, MapPin, List, Building2, DollarSign, TrendingUp, Eye, Send, ShoppingCart, ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BusinessDetailPanel } from "@/components/marketplace/BusinessDetailPanel";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
+// ─── Types ──────────────────────────────────────────
 interface Business {
   id: string;
   name: string;
@@ -22,53 +25,76 @@ interface Business {
   building_id: string | null;
   owner_id: string;
   product_url: string | null;
+  // virtual positioning
+  mapX?: number;
+  mapY?: number;
 }
 
+// ─── Categories ─────────────────────────────────────
 const CATEGORIES = [
-  { value: "all", label: "Todas" },
-  { value: "saas", label: "SaaS" },
-  { value: "ecommerce", label: "E-commerce" },
-  { value: "agency", label: "Agência" },
-  { value: "tool", label: "Ferramenta" },
-  { value: "startup", label: "Startup" },
-  { value: "marketplace", label: "Marketplace" },
+  { value: "all", label: "All", icon: "🏙️" },
+  { value: "saas", label: "SaaS", icon: "💻" },
+  { value: "marketplace", label: "Marketplace", icon: "🏪" },
+  { value: "mobile_app", label: "Mobile App", icon: "📱" },
+  { value: "shopify_app", label: "Shopify App", icon: "🛍️" },
+  { value: "content", label: "Content", icon: "📝" },
+  { value: "ecommerce", label: "Ecommerce", icon: "🛒" },
+  { value: "agency", label: "Agency", icon: "🏢" },
+  { value: "crypto", label: "Crypto", icon: "🪙" },
+  { value: "ai", label: "AI", icon: "🤖" },
+  { value: "digital", label: "Digital", icon: "🌐" },
+  { value: "newsletter", label: "Newsletter", icon: "📧" },
+  { value: "other", label: "Other", icon: "📦" },
 ];
 
-const CATEGORY_ICONS: Record<string, string> = {
-  saas: "💻", ecommerce: "🛒", agency: "🏢", tool: "🔧", startup: "🚀", marketplace: "🏪",
-};
-
-const CATEGORY_COLORS: Record<string, string> = {
-  saas: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  ecommerce: "bg-green-500/20 text-green-400 border-green-500/30",
-  agency: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-  tool: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-  startup: "bg-rose-500/20 text-rose-400 border-rose-500/30",
-  marketplace: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
+const CAT_COLORS: Record<string, string> = {
+  saas: "#3b82f6", marketplace: "#06b6d4", mobile_app: "#8b5cf6",
+  shopify_app: "#22c55e", content: "#f59e0b", ecommerce: "#10b981",
+  agency: "#a855f7", crypto: "#f97316", ai: "#ec4899",
+  digital: "#6366f1", newsletter: "#14b8a6", other: "#6b7280",
 };
 
 function formatCurrency(n: number) {
-  if (n >= 1_000_000) return `R$ ${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `R$ ${(n / 1_000).toFixed(0)}k`;
-  return `R$ ${n.toFixed(0)}`;
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}k`;
+  return `$${n.toFixed(0)}`;
 }
 
+function hashPos(str: string, seed: number, max: number): number {
+  let h = seed;
+  for (let i = 0; i < str.length; i++) h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+  return Math.abs(h) % max;
+}
+
+// ─── Demo data ──────────────────────────────────────
 const DEMO_BUSINESSES: Business[] = [
-  { id: "demo-1", name: "CloudMetrics", category: "saas", description: "Plataforma de analytics para SaaS com dashboard em tempo real.", mrr: 45000, growth_percent: 12, sale_price: 1800000, revenue_multiple: 3.3, founder_name: "Ana Costa", status: "listed", building_id: "b-1", owner_id: "", product_url: null },
-  { id: "demo-2", name: "ShopFlex", category: "ecommerce", description: "Loja de moda sustentável com marca própria e 50k seguidores.", mrr: 85000, growth_percent: 8, sale_price: 2500000, revenue_multiple: 2.5, founder_name: "Lucas Mendes", status: "listed", building_id: "b-2", owner_id: "", product_url: null },
-  { id: "demo-3", name: "PixelForge Studio", category: "agency", description: "Agência de design e branding com 40 clientes recorrentes.", mrr: 120000, growth_percent: 5, sale_price: 3600000, revenue_multiple: 2.5, founder_name: "Marina Silva", status: "listed", building_id: "b-3", owner_id: "", product_url: null },
-  { id: "demo-4", name: "DevToolKit", category: "tool", description: "Suite de ferramentas para desenvolvedores com 10k usuários ativos.", mrr: 28000, growth_percent: 22, sale_price: 1200000, revenue_multiple: 3.6, founder_name: "Pedro Alves", status: "listed", building_id: "b-4", owner_id: "", product_url: null },
-  { id: "demo-5", name: "EduFlow", category: "startup", description: "Plataforma de cursos com IA personalizada. Seed round fechado.", mrr: 15000, growth_percent: 35, sale_price: 800000, revenue_multiple: 4.4, founder_name: "Julia Rocha", status: "listed", building_id: "b-5", owner_id: "", product_url: null },
-  { id: "demo-6", name: "FreelanceHub", category: "marketplace", description: "Marketplace de freelancers tech com matching por IA.", mrr: 62000, growth_percent: 15, sale_price: 2200000, revenue_multiple: 3.0, founder_name: "Carlos Neto", status: "listed", building_id: "b-6", owner_id: "", product_url: null },
+  { id: "d1", name: "CloudMetrics", category: "saas", description: "Real-time analytics platform for SaaS companies with AI-powered insights.", mrr: 45000, growth_percent: 12, sale_price: 1800000, revenue_multiple: 3.3, founder_name: "Ana Costa", status: "listed", building_id: "b1", owner_id: "", product_url: null },
+  { id: "d2", name: "ShopFlex", category: "ecommerce", description: "Sustainable fashion store with 50k followers and own brand.", mrr: 85000, growth_percent: 8, sale_price: 2500000, revenue_multiple: 2.5, founder_name: "Lucas Mendes", status: "listed", building_id: "b2", owner_id: "", product_url: null },
+  { id: "d3", name: "PixelForge", category: "agency", description: "Design & branding agency with 40 recurring clients.", mrr: 120000, growth_percent: 5, sale_price: 3600000, revenue_multiple: 2.5, founder_name: "Marina Silva", status: "listed", building_id: "b3", owner_id: "", product_url: null },
+  { id: "d4", name: "DevToolKit", category: "saas", description: "Developer tools suite with 10k active users.", mrr: 28000, growth_percent: 22, sale_price: 1200000, revenue_multiple: 3.6, founder_name: "Pedro Alves", status: "listed", building_id: "b4", owner_id: "", product_url: null },
+  { id: "d5", name: "EduFlow AI", category: "ai", description: "AI-powered learning platform with personalized courses.", mrr: 15000, growth_percent: 35, sale_price: 800000, revenue_multiple: 4.4, founder_name: "Julia Rocha", status: "listed", building_id: "b5", owner_id: "", product_url: null },
+  { id: "d6", name: "FreelanceHub", category: "marketplace", description: "Tech freelancer marketplace with AI matching.", mrr: 62000, growth_percent: 15, sale_price: 2200000, revenue_multiple: 3.0, founder_name: "Carlos Neto", status: "listed", building_id: "b6", owner_id: "", product_url: null },
+  { id: "d7", name: "CryptoVault", category: "crypto", description: "DeFi portfolio tracker with multi-chain support.", mrr: 38000, growth_percent: 28, sale_price: 1500000, revenue_multiple: 3.3, founder_name: "Diego Ramos", status: "listed", building_id: "b7", owner_id: "", product_url: null },
+  { id: "d8", name: "NewsletterPro", category: "newsletter", description: "Premium newsletter platform for indie creators.", mrr: 12000, growth_percent: 40, sale_price: 600000, revenue_multiple: 4.2, founder_name: "Camila Duarte", status: "listed", building_id: "b8", owner_id: "", product_url: null },
+  { id: "d9", name: "AppLaunch", category: "mobile_app", description: "Mobile fitness app with 200k downloads and subscription model.", mrr: 55000, growth_percent: 18, sale_price: 2000000, revenue_multiple: 3.0, founder_name: "Thiago Lima", status: "listed", building_id: "b9", owner_id: "", product_url: null },
+  { id: "d10", name: "ShopifyBoost", category: "shopify_app", description: "Conversion optimization app for Shopify stores.", mrr: 32000, growth_percent: 25, sale_price: 1100000, revenue_multiple: 2.9, founder_name: "Fernanda Reis", status: "listed", building_id: "b10", owner_id: "", product_url: null },
+  { id: "d11", name: "ContentMill", category: "content", description: "AI content generation platform for marketers.", mrr: 20000, growth_percent: 30, sale_price: 900000, revenue_multiple: 3.8, founder_name: "Rafael Souza", status: "listed", building_id: "b11", owner_id: "", product_url: null },
+  { id: "d12", name: "DigitalPay", category: "digital", description: "Digital payment gateway for Latin America.", mrr: 95000, growth_percent: 10, sale_price: 4000000, revenue_multiple: 3.5, founder_name: "Isabela Cruz", status: "listed", building_id: "b12", owner_id: "", product_url: null },
 ];
 
+// ─── Main Component ─────────────────────────────────
 export default function DigitalMarketplace() {
   const navigate = useNavigate();
   const [businesses, setBusinesses] = useState<Business[]>(DEMO_BUSINESSES);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
-  const [sortBy, setSortBy] = useState("mrr");
   const [selected, setSelected] = useState<Business | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"map" | "list">("map");
+  const [showOffer, setShowOffer] = useState(false);
+  const [offerAmount, setOfferAmount] = useState("");
+  const [offerMessage, setOfferMessage] = useState("");
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -87,136 +113,393 @@ export default function DigitalMarketplace() {
     if (category !== "all") list = list.filter(b => b.category === category);
     if (search) {
       const q = search.toLowerCase();
-      list = list.filter(b => b.name.toLowerCase().includes(q) || b.founder_name.toLowerCase().includes(q) || b.description?.toLowerCase().includes(q));
+      list = list.filter(b => b.name.toLowerCase().includes(q) || b.founder_name.toLowerCase().includes(q));
     }
-    return list.sort((a, b) => {
-      if (sortBy === "mrr") return b.mrr - a.mrr;
-      if (sortBy === "growth") return b.growth_percent - a.growth_percent;
-      if (sortBy === "price") return (b.sale_price || 0) - (a.sale_price || 0);
-      if (sortBy === "multiple") return b.revenue_multiple - a.revenue_multiple;
-      return 0;
-    });
-  }, [businesses, category, search, sortBy]);
+    return list;
+  }, [businesses, category, search]);
 
-  const totalMRR = businesses.reduce((s, b) => s + b.mrr, 0);
-  const avgGrowth = businesses.length ? businesses.reduce((s, b) => s + b.growth_percent, 0) / businesses.length : 0;
+  // Assign map positions deterministically
+  const businessesWithPos = useMemo(() => {
+    return filtered.map((b, i) => ({
+      ...b,
+      mapX: 8 + hashPos(b.id + "x", 31 + i, 82),
+      mapY: 8 + hashPos(b.id + "y", 67 + i, 78),
+    }));
+  }, [filtered]);
+
+  const handleSendOffer = useCallback(async () => {
+    if (!selected || !offerAmount || Number(offerAmount) <= 0) {
+      toast.error("Enter a valid offer amount.");
+      return;
+    }
+    setSending(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { toast.error("Log in to send offers."); setSending(false); return; }
+      const { error } = await supabase.from("business_offers").insert({
+        business_id: selected.id,
+        from_user_id: user.id,
+        offer_amount: Number(offerAmount),
+        message: offerMessage || null,
+      });
+      if (error) throw error;
+      toast.success("✅ Offer sent!", { description: `${formatCurrency(Number(offerAmount))} for ${selected.name}` });
+      setShowOffer(false);
+      setOfferAmount("");
+      setOfferMessage("");
+    } catch (e: any) {
+      toast.error("Error sending offer", { description: e.message });
+    } finally {
+      setSending(false);
+    }
+  }, [selected, offerAmount, offerMessage]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <div className="border-b border-border/50 bg-card/50 backdrop-blur-xl sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-            <div>
-              <h1 className="font-display font-bold text-lg">🏙️ Digital Business Marketplace</h1>
-              <p className="text-xs text-muted-foreground">Descubra, avalie e adquira negócios digitais</p>
+    <div className="h-screen flex flex-col bg-[#0a0e17] text-foreground overflow-hidden">
+      {/* Top Bar */}
+      <div className="h-14 border-b border-border/30 bg-[#0d1220]/90 backdrop-blur-xl flex items-center px-4 gap-3 shrink-0 z-20">
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="w-4 h-4" />
+        </Button>
+        <div className="flex items-center gap-2">
+          <span className="text-xl">🏙️</span>
+          <h1 className="font-bold text-base tracking-tight">Business Marketplace</h1>
+        </div>
+        <div className="flex-1" />
+        <div className="flex items-center gap-1 bg-muted/20 rounded-lg p-0.5">
+          <button onClick={() => setViewMode("map")} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === "map" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+            <MapPin className="w-3.5 h-3.5 inline mr-1" />Map
+          </button>
+          <button onClick={() => setViewMode("list")} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+            <List className="w-3.5 h-3.5 inline mr-1" />List
+          </button>
+        </div>
+        <Badge variant="outline" className="text-xs border-emerald-500/30 text-emerald-400">
+          {filtered.length} businesses
+        </Badge>
+      </div>
+
+      {/* Main content */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Sidebar - Business List */}
+        <div className="w-80 border-r border-border/30 bg-[#0d1220]/80 flex flex-col shrink-0">
+          {/* Filters */}
+          <div className="p-3 space-y-2 border-b border-border/20">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <Input placeholder="Search businesses..." className="pl-8 h-8 text-xs bg-muted/10 border-border/30" value={search} onChange={e => setSearch(e.target.value)} />
             </div>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="h-8 text-xs bg-muted/10 border-border/30">
+                <Filter className="w-3 h-3 mr-1.5" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CATEGORIES.map(c => (
+                  <SelectItem key={c.value} value={c.value}>
+                    <span className="mr-1.5">{c.icon}</span>{c.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <div className="flex items-center gap-4">
-            <StatPill icon={Building2} label="Listados" value={businesses.length.toString()} />
-            <StatPill icon={DollarSign} label="MRR Total" value={formatCurrency(totalMRR)} />
-            <StatPill icon={TrendingUp} label="Cresc. Médio" value={`${avgGrowth.toFixed(1)}%`} />
+
+          {/* List */}
+          <div className="flex-1 overflow-y-auto">
+            {businessesWithPos.map(biz => (
+              <button
+                key={biz.id}
+                onClick={() => setSelected(biz)}
+                onMouseEnter={() => setHoveredId(biz.id)}
+                onMouseLeave={() => setHoveredId(null)}
+                className={`w-full text-left p-3 border-b border-border/10 transition-all duration-150 hover:bg-primary/5 ${selected?.id === biz.id ? "bg-primary/10 border-l-2 border-l-primary" : ""}`}
+              >
+                <div className="flex items-start gap-2.5">
+                  {/* Building preview */}
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center text-lg shrink-0" style={{ background: `${CAT_COLORS[biz.category] || "#6b7280"}20` }}>
+                    {CATEGORIES.find(c => c.value === biz.category)?.icon || "🏢"}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-semibold text-foreground truncate">{biz.name}</h3>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium" style={{ background: `${CAT_COLORS[biz.category] || "#6b7280"}20`, color: CAT_COLORS[biz.category] || "#6b7280" }}>
+                        {CATEGORIES.find(c => c.value === biz.category)?.label || biz.category}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 mt-1.5">
+                      <span className="text-[10px] text-muted-foreground">MRR <span className="text-emerald-400 font-bold">{formatCurrency(biz.mrr)}</span></span>
+                      {biz.sale_price && <span className="text-[10px] text-muted-foreground">Price <span className="text-foreground font-bold">{formatCurrency(biz.sale_price)}</span></span>}
+                    </div>
+                  </div>
+                </div>
+              </button>
+            ))}
+            {businessesWithPos.length === 0 && (
+              <div className="p-8 text-center">
+                <Building2 className="w-8 h-8 text-muted-foreground/20 mx-auto mb-2" />
+                <p className="text-xs text-muted-foreground">No businesses found</p>
+              </div>
+            )}
           </div>
+        </div>
+
+        {/* Map / Grid Area */}
+        <div className="flex-1 relative">
+          {viewMode === "map" ? (
+            <CityMapView
+              businesses={businessesWithPos}
+              selected={selected}
+              hoveredId={hoveredId}
+              onSelect={setSelected}
+              onHover={setHoveredId}
+            />
+          ) : (
+            <GridView businesses={businessesWithPos} onSelect={setSelected} />
+          )}
+
+          {/* Detail Panel (GTA-style right overlay) */}
+          {selected && (
+            <DetailOverlay
+              business={selected}
+              onClose={() => setSelected(null)}
+              onVisit={() => { navigate(`/building/${selected.building_id || selected.id}`); }}
+              onOffer={() => setShowOffer(true)}
+              onBuy={() => toast.info("🏢 Direct purchase coming soon!", { description: "Use 'Make Offer' to negotiate." })}
+            />
+          )}
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="max-w-7xl mx-auto px-4 py-4">
-        <div className="flex flex-wrap items-center gap-3 mb-6">
-          <div className="relative flex-1 min-w-[200px] max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Buscar negócio ou fundador..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
+      {/* Offer Dialog */}
+      <Dialog open={showOffer} onOpenChange={setShowOffer}>
+        <DialogContent className="bg-[#111827] border-border/30">
+          <DialogHeader>
+            <DialogTitle>Make Offer — {selected?.name}</DialogTitle>
+            <DialogDescription>Send a proposal to {selected?.founder_name}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <div>
+              <label className="text-xs font-medium mb-1 block">Offer Amount ($)</label>
+              <Input type="number" placeholder="e.g. 500000" value={offerAmount} onChange={e => setOfferAmount(e.target.value)} className="bg-muted/10" />
+            </div>
+            <div>
+              <label className="text-xs font-medium mb-1 block">Message (optional)</label>
+              <Textarea placeholder="Describe your proposal..." value={offerMessage} onChange={e => setOfferMessage(e.target.value)} rows={3} className="bg-muted/10" />
+            </div>
+            <Button onClick={handleSendOffer} disabled={sending} className="w-full">
+              {sending ? "Sending..." : "Send Offer"}
+            </Button>
           </div>
-          <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger className="w-[160px]">
-              <Filter className="w-3.5 h-3.5 mr-1.5" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {CATEGORIES.map(c => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[180px]">
-              <SlidersHorizontal className="w-3.5 h-3.5 mr-1.5" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="mrr">Maior MRR</SelectItem>
-              <SelectItem value="growth">Maior Crescimento</SelectItem>
-              <SelectItem value="price">Maior Preço</SelectItem>
-              <SelectItem value="multiple">Maior Múltiplo</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map(biz => (
-            <button
-              key={biz.id}
-              onClick={() => setSelected(biz)}
-              className="group text-left bg-card/60 border border-border/40 rounded-2xl p-4 hover:border-primary/40 hover:bg-card/80 transition-all duration-200 hover:shadow-lg hover:shadow-primary/5"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-xl">{CATEGORY_ICONS[biz.category] || "🏢"}</span>
-                  <h3 className="font-display font-bold text-foreground truncate">{biz.name}</h3>
-                </div>
-                <Badge className={`text-[10px] border ${CATEGORY_COLORS[biz.category] || "bg-muted"}`}>
-                  {CATEGORIES.find(c => c.value === biz.category)?.label || biz.category}
-                </Badge>
-              </div>
-
-              {biz.description && (
-                <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{biz.description}</p>
-              )}
-
-              <div className="grid grid-cols-2 gap-2 mb-3">
-                <div className="bg-muted/20 rounded-lg px-2.5 py-1.5">
-                  <span className="text-[9px] text-muted-foreground block">MRR</span>
-                  <span className="text-sm font-bold text-emerald-400">{formatCurrency(biz.mrr)}</span>
-                </div>
-                <div className="bg-muted/20 rounded-lg px-2.5 py-1.5">
-                  <span className="text-[9px] text-muted-foreground block">Crescimento</span>
-                  <span className={`text-sm font-bold ${biz.growth_percent > 0 ? "text-emerald-400" : "text-red-400"}`}>
-                    {biz.growth_percent > 0 ? "+" : ""}{biz.growth_percent}%
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">👤 {biz.founder_name}</span>
-                {biz.sale_price && (
-                  <span className="text-sm font-bold text-foreground">{formatCurrency(biz.sale_price)}</span>
-                )}
-              </div>
-            </button>
-          ))}
-        </div>
-
-        {filtered.length === 0 && (
-          <div className="text-center py-16">
-            <Building2 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-            <p className="text-muted-foreground">Nenhum negócio encontrado com esses filtros.</p>
-          </div>
-        )}
-      </div>
-
-      <BusinessDetailPanel business={selected} isOpen={!!selected} onClose={() => setSelected(null)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-function StatPill({ icon: Icon, label, value }: { icon: typeof Building2; label: string; value: string }) {
+// ─── City Map View ──────────────────────────────────
+function CityMapView({ businesses, selected, hoveredId, onSelect, onHover }: {
+  businesses: (Business & { mapX: number; mapY: number })[];
+  selected: Business | null;
+  hoveredId: string | null;
+  onSelect: (b: Business) => void;
+  onHover: (id: string | null) => void;
+}) {
   return (
-    <div className="hidden md:flex items-center gap-2 bg-muted/20 rounded-full px-3 py-1.5">
-      <Icon className="w-3.5 h-3.5 text-muted-foreground" />
-      <span className="text-[10px] text-muted-foreground">{label}</span>
-      <span className="text-xs font-bold text-foreground">{value}</span>
+    <div className="w-full h-full relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0f1923 0%, #0a1628 40%, #0d1117 100%)" }}>
+      {/* Grid lines */}
+      <svg className="absolute inset-0 w-full h-full opacity-[0.06]" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+            <path d="M 60 0 L 0 0 0 60" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-primary" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+      </svg>
+
+      {/* Roads */}
+      <div className="absolute inset-0">
+        <div className="absolute left-[20%] top-0 bottom-0 w-[2px] bg-muted-foreground/10" />
+        <div className="absolute left-[50%] top-0 bottom-0 w-[2px] bg-muted-foreground/10" />
+        <div className="absolute left-[80%] top-0 bottom-0 w-[2px] bg-muted-foreground/10" />
+        <div className="absolute top-[25%] left-0 right-0 h-[2px] bg-muted-foreground/10" />
+        <div className="absolute top-[55%] left-0 right-0 h-[2px] bg-muted-foreground/10" />
+        <div className="absolute top-[80%] left-0 right-0 h-[2px] bg-muted-foreground/10" />
+      </div>
+
+      {/* District labels */}
+      <span className="absolute top-4 left-4 text-[10px] font-medium text-muted-foreground/30 uppercase tracking-widest">Tech District</span>
+      <span className="absolute top-4 right-4 text-[10px] font-medium text-muted-foreground/30 uppercase tracking-widest">Creative Quarter</span>
+      <span className="absolute bottom-4 left-4 text-[10px] font-medium text-muted-foreground/30 uppercase tracking-widest">Startup Valley</span>
+      <span className="absolute bottom-4 right-4 text-[10px] font-medium text-muted-foreground/30 uppercase tracking-widest">Commerce Hub</span>
+
+      {/* Business markers */}
+      {businesses.map(biz => {
+        const isSelected = selected?.id === biz.id;
+        const isHovered = hoveredId === biz.id;
+        const color = CAT_COLORS[biz.category] || "#6b7280";
+        const active = isSelected || isHovered;
+
+        return (
+          <button
+            key={biz.id}
+            onClick={() => onSelect(biz)}
+            onMouseEnter={() => onHover(biz.id)}
+            onMouseLeave={() => onHover(null)}
+            className="absolute transition-all duration-200 group"
+            style={{ left: `${biz.mapX}%`, top: `${biz.mapY}%`, transform: "translate(-50%, -50%)" }}
+          >
+            {/* Pulse ring */}
+            {active && (
+              <div className="absolute inset-0 -m-3 rounded-full animate-ping opacity-30" style={{ background: color }} />
+            )}
+            {/* Marker */}
+            <div
+              className={`relative w-8 h-8 rounded-lg flex items-center justify-center text-sm shadow-lg transition-transform duration-200 ${active ? "scale-125 z-10" : "scale-100"}`}
+              style={{
+                background: `linear-gradient(135deg, ${color}, ${color}dd)`,
+                boxShadow: active ? `0 0 20px ${color}60` : `0 2px 8px ${color}30`,
+              }}
+            >
+              {CATEGORIES.find(c => c.value === biz.category)?.icon || "🏢"}
+            </div>
+            {/* Label */}
+            <div className={`absolute top-full mt-1 left-1/2 -translate-x-1/2 whitespace-nowrap transition-opacity duration-150 ${active ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+              <div className="bg-[#111827]/95 backdrop-blur-sm border border-border/30 rounded-lg px-2.5 py-1.5 shadow-xl">
+                <p className="text-[10px] font-bold text-foreground">{biz.name}</p>
+                <p className="text-[9px] text-muted-foreground">{formatCurrency(biz.mrr)}/mo • {biz.sale_price ? formatCurrency(biz.sale_price) : "—"}</p>
+              </div>
+            </div>
+          </button>
+        );
+      })}
+
+      {/* Empty state */}
+      {businesses.length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <p className="text-muted-foreground/50 text-sm">No businesses in this category</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Grid View ──────────────────────────────────────
+function GridView({ businesses, onSelect }: { businesses: Business[]; onSelect: (b: Business) => void }) {
+  return (
+    <div className="w-full h-full overflow-y-auto p-4 bg-[#0a0e17]">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+        {businesses.map(biz => {
+          const color = CAT_COLORS[biz.category] || "#6b7280";
+          return (
+            <button key={biz.id} onClick={() => onSelect(biz)} className="text-left bg-[#111827]/80 border border-border/20 rounded-xl p-4 hover:border-primary/30 transition-all hover:shadow-lg hover:shadow-primary/5 group">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center text-lg" style={{ background: `${color}20` }}>
+                  {CATEGORIES.find(c => c.value === biz.category)?.icon || "🏢"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-bold truncate">{biz.name}</h3>
+                  <span className="text-[10px]" style={{ color }}>{CATEGORIES.find(c => c.value === biz.category)?.label}</span>
+                </div>
+                {biz.sale_price && <span className="text-sm font-bold">{formatCurrency(biz.sale_price)}</span>}
+              </div>
+              {biz.description && <p className="text-[11px] text-muted-foreground line-clamp-2 mb-3">{biz.description}</p>}
+              <div className="flex gap-2">
+                <MiniStat label="MRR" value={formatCurrency(biz.mrr)} color="#10b981" />
+                <MiniStat label="Growth" value={`${biz.growth_percent > 0 ? "+" : ""}${biz.growth_percent}%`} color={biz.growth_percent > 0 ? "#10b981" : "#ef4444"} />
+                <MiniStat label="Multiple" value={`${biz.revenue_multiple}x`} color="#f59e0b" />
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function MiniStat({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div className="flex-1 bg-muted/10 rounded-lg px-2 py-1.5 text-center">
+      <span className="text-[8px] text-muted-foreground block">{label}</span>
+      <span className="text-[11px] font-bold" style={{ color }}>{value}</span>
+    </div>
+  );
+}
+
+// ─── Detail Overlay (GTA-style) ─────────────────────
+function DetailOverlay({ business, onClose, onVisit, onOffer, onBuy }: {
+  business: Business;
+  onClose: () => void;
+  onVisit: () => void;
+  onOffer: () => void;
+  onBuy: () => void;
+}) {
+  const color = CAT_COLORS[business.category] || "#6b7280";
+  const catLabel = CATEGORIES.find(c => c.value === business.category)?.label || business.category;
+  const catIcon = CATEGORIES.find(c => c.value === business.category)?.icon || "🏢";
+
+  return (
+    <div className="absolute top-4 right-4 bottom-4 w-80 z-20 animate-in slide-in-from-right-4 duration-300">
+      <div className="h-full bg-[#111827]/95 backdrop-blur-xl border border-border/30 rounded-2xl flex flex-col overflow-hidden shadow-2xl shadow-black/40">
+        {/* Header with gradient accent */}
+        <div className="relative p-4 pb-3" style={{ borderBottom: `2px solid ${color}40` }}>
+          <div className="absolute inset-0 opacity-10" style={{ background: `linear-gradient(135deg, ${color}, transparent)` }} />
+          <button onClick={onClose} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-muted/20 transition-colors text-xs">✕</button>
+          <div className="relative">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-2xl">{catIcon}</span>
+              <div>
+                <h2 className="font-bold text-base leading-tight">{business.name}</h2>
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: `${color}20`, color }}>{catLabel}</span>
+              </div>
+            </div>
+            <p className="text-[10px] text-muted-foreground">Founded by {business.founder_name}</p>
+          </div>
+        </div>
+
+        {/* Metrics */}
+        <div className="p-4 space-y-3 flex-1 overflow-y-auto">
+          {business.description && (
+            <p className="text-[11px] text-muted-foreground leading-relaxed">{business.description}</p>
+          )}
+
+          <div className="grid grid-cols-2 gap-2">
+            <MetricBox icon={<DollarSign className="w-3.5 h-3.5 text-emerald-400" />} label="Monthly Revenue" value={formatCurrency(business.mrr)} />
+            <MetricBox icon={<TrendingUp className="w-3.5 h-3.5 text-blue-400" />} label="Growth" value={`${business.growth_percent > 0 ? "+" : ""}${business.growth_percent}%`} />
+            <MetricBox icon={<DollarSign className="w-3.5 h-3.5 text-amber-400" />} label="Annual Revenue" value={formatCurrency(business.mrr * 12)} />
+            <MetricBox icon={<Building2 className="w-3.5 h-3.5 text-purple-400" />} label="Revenue Multiple" value={`${business.revenue_multiple}x`} />
+          </div>
+
+          {/* Price tag */}
+          {business.sale_price && (
+            <div className="rounded-xl p-3 text-center" style={{ background: `${color}10`, border: `1px solid ${color}30` }}>
+              <span className="text-[10px] text-muted-foreground block mb-0.5">Asking Price</span>
+              <span className="text-xl font-bold">{formatCurrency(business.sale_price)}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Action buttons - GTA style */}
+        <div className="p-3 space-y-1.5 border-t border-border/20">
+          <Button onClick={onVisit} variant="outline" className="w-full h-9 text-xs justify-start gap-2 border-border/30 hover:bg-muted/20">
+            <ExternalLink className="w-3.5 h-3.5" /> Visit Office
+          </Button>
+          <Button onClick={onOffer} variant="outline" className="w-full h-9 text-xs justify-start gap-2 border-border/30 hover:bg-muted/20">
+            <Send className="w-3.5 h-3.5" /> Make Offer
+          </Button>
+          <Button onClick={onBuy} className="w-full h-9 text-xs justify-start gap-2" style={{ background: `linear-gradient(135deg, ${color}, ${color}cc)` }}>
+            <ShoppingCart className="w-3.5 h-3.5" /> Buy Business — {business.sale_price ? formatCurrency(business.sale_price) : "Contact"}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MetricBox({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="bg-muted/10 rounded-lg p-2.5">
+      <div className="flex items-center gap-1.5 mb-1">{icon}<span className="text-[9px] text-muted-foreground">{label}</span></div>
+      <span className="text-sm font-bold">{value}</span>
     </div>
   );
 }
