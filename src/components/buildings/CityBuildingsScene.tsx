@@ -138,6 +138,34 @@ export function CityBuildingsScene({ buildings, targetBuilding, onBuildingClick,
         
         <CityGround />
         
+        {/* Street lights */}
+        {[[-20,-20],[-20,20],[20,-20],[20,20],[-10,0],[10,0],[0,-10],[0,10]].map(([x,z],i) => (
+          <group key={`sl-${i}`} position={[x, 0, z]}>
+            <mesh position={[0, 1.1, 0]}>
+              <cylinderGeometry args={[0.02, 0.035, 2.2, 4]} />
+              <meshStandardMaterial color="#2A2A2A" metalness={0.7} />
+            </mesh>
+            <mesh position={[0, 2.25, 0]}>
+              <sphereGeometry args={[0.05, 6, 6]} />
+              <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={2.5} />
+            </mesh>
+          </group>
+        ))}
+        
+        {/* Trees */}
+        {[[-15,-15],[-15,15],[15,-15],[15,15],[-25,0],[25,0],[0,-25],[0,25],[-8,15],[8,-15]].map(([x,z],i) => (
+          <group key={`tree-${i}`} position={[x, 0, z]}>
+            <mesh position={[0, 0.4, 0]}>
+              <cylinderGeometry args={[0.06, 0.1, 0.8, 5]} />
+              <meshStandardMaterial color="#5A3A20" roughness={0.9} />
+            </mesh>
+            <mesh position={[0, 1, 0]}>
+              <sphereGeometry args={[0.7, 6, 5]} />
+              <meshStandardMaterial color={["#1A6B2A","#2D5A1E","#1B7A30","#3A7A2A"][i%4]} roughness={0.85} />
+            </mesh>
+          </group>
+        ))}
+        
         {buildings.map(b => (
           <Building3D
             key={b.id}
