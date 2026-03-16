@@ -10,6 +10,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { DISTRICTS, BUILDING_STYLES } from "@/types/building";
 import { AIReceptionistChat } from "@/components/building/AIReceptionistChat";
+import { BuildingSettings } from "@/components/building/BuildingSettings";
+import { AssistantAnalytics } from "@/components/building/AssistantAnalytics";
 import { AgentWorkspaceHub } from "@/components/workspace/AgentWorkspaceHub";
 import { InteractiveObjects } from "@/components/collaboration/InteractiveObjects";
 import { TeamAgents } from "@/components/collaboration/TeamAgents";
