@@ -83,6 +83,51 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_analytics: {
+        Row: {
+          agent_id: string
+          created_at: string
+          error_message: string | null
+          execution_time_ms: number | null
+          id: string
+          success: boolean | null
+          task_id: string | null
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          error_message?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          success?: boolean | null
+          task_id?: string | null
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          error_message?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          success?: boolean | null
+          task_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_analytics_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "external_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_analytics_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "external_agent_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_creations: {
         Row: {
           agent_id: string
@@ -124,6 +169,44 @@ export type Database = {
           title?: string
         }
         Relationships: []
+      }
+      agent_credentials: {
+        Row: {
+          agent_id: string
+          api_key_hash: string | null
+          created_at: string
+          id: string
+          provider_token_configured: boolean | null
+          scopes: Json | null
+          updated_at: string
+        }
+        Insert: {
+          agent_id: string
+          api_key_hash?: string | null
+          created_at?: string
+          id?: string
+          provider_token_configured?: boolean | null
+          scopes?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string
+          api_key_hash?: string | null
+          created_at?: string
+          id?: string
+          provider_token_configured?: boolean | null
+          scopes?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_credentials_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "external_agents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       agent_protocols: {
         Row: {
@@ -625,6 +708,180 @@ export type Database = {
         }
         Relationships: []
       }
+      external_agent_tasks: {
+        Row: {
+          agent_id: string
+          completed_at: string | null
+          created_at: string
+          error: string | null
+          execution_time_ms: number | null
+          id: string
+          payload: Json | null
+          result: Json | null
+          status: string
+          task_type: string
+          user_id: string
+        }
+        Insert: {
+          agent_id: string
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          payload?: Json | null
+          result?: Json | null
+          status?: string
+          task_type?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string
+          completed_at?: string | null
+          created_at?: string
+          error?: string | null
+          execution_time_ms?: number | null
+          id?: string
+          payload?: Json | null
+          result?: Json | null
+          status?: string
+          task_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "external_agent_tasks_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "external_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      external_agents: {
+        Row: {
+          agent_type: string
+          building_id: string | null
+          capabilities: Json | null
+          connected_at: string
+          id: string
+          last_heartbeat: string | null
+          metadata: Json | null
+          name: string
+          owner_user_id: string
+          provider: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          agent_type?: string
+          building_id?: string | null
+          capabilities?: Json | null
+          connected_at?: string
+          id?: string
+          last_heartbeat?: string | null
+          metadata?: Json | null
+          name: string
+          owner_user_id: string
+          provider?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          agent_type?: string
+          building_id?: string | null
+          capabilities?: Json | null
+          connected_at?: string
+          id?: string
+          last_heartbeat?: string | null
+          metadata?: Json | null
+          name?: string
+          owner_user_id?: string
+          provider?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      integration_logs: {
+        Row: {
+          created_at: string
+          event: string
+          id: string
+          integration_id: string | null
+          payload: Json | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event: string
+          id?: string
+          integration_id?: string | null
+          payload?: Json | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event?: string
+          id?: string
+          integration_id?: string | null
+          payload?: Json | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_logs_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "platform_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integration_webhooks: {
+        Row: {
+          created_at: string
+          endpoint: string
+          event_type: string
+          id: string
+          integration_id: string | null
+          is_active: boolean | null
+          secret: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          event_type?: string
+          id?: string
+          integration_id?: string | null
+          is_active?: boolean | null
+          secret?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          event_type?: string
+          id?: string
+          integration_id?: string | null
+          is_active?: boolean | null
+          secret?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_webhooks_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "platform_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marketplace_profiles: {
         Row: {
           availability: string | null
@@ -886,6 +1143,110 @@ export type Database = {
         }
         Relationships: []
       }
+      office_agents: {
+        Row: {
+          agent_id: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          office_id: string
+          role: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          office_id: string
+          role?: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          office_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "office_agents_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "external_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json | null
+          source: string
+          target_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          payload?: Json | null
+          source?: string
+          target_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json | null
+          source?: string
+          target_id?: string | null
+        }
+        Relationships: []
+      }
+      platform_integrations: {
+        Row: {
+          auth_type: string
+          category: string
+          config: Json | null
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          provider: string
+          status: string
+        }
+        Insert: {
+          auth_type?: string
+          category?: string
+          config?: Json | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          provider: string
+          status?: string
+        }
+        Update: {
+          auth_type?: string
+          category?: string
+          config?: Json | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          provider?: string
+          status?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -977,6 +1338,47 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "digital_businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_integrations: {
+        Row: {
+          access_token_configured: boolean | null
+          connected_at: string
+          id: string
+          integration_id: string
+          metadata: Json | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token_configured?: boolean | null
+          connected_at?: string
+          id?: string
+          integration_id: string
+          metadata?: Json | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token_configured?: boolean | null
+          connected_at?: string
+          id?: string
+          integration_id?: string
+          metadata?: Json | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_integrations_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "platform_integrations"
             referencedColumns: ["id"]
           },
         ]
