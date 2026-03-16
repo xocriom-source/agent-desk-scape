@@ -20,7 +20,7 @@ import previewCollaboration from "@/assets/preview-collaboration.jpg";
 import previewWorldmap from "@/assets/preview-worldmap.jpg";
 
 // ── Animated particles ──
-function FloatingParticles({ count = 40 }: { count?: number }) {
+function FloatingParticles({ count = 20 }: { count?: number }) {
   const particles = useMemo(() =>
     Array.from({ length: count }, (_, i) => ({
       x: Math.random() * 100,

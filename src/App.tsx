@@ -41,10 +41,10 @@ const queryClient = new QueryClient({
 
 function PageLoader() {
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: "#0a0e1a" }}>
+    <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center">
-        <div className="w-8 h-8 border-2 border-[#6b8fc4]/30 border-t-[#6b8fc4] rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-[10px] font-mono tracking-wider text-gray-500">LOADING...</p>
+        <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-[10px] font-mono tracking-wider text-muted-foreground">LOADING...</p>
       </div>
     </div>
   );
