@@ -25,6 +25,8 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const DigitalMarketplace = lazy(() => import("./pages/DigitalMarketplace"));
 const LiveCity = lazy(() => import("./pages/LiveCity"));
+const Features = lazy(() => import("./pages/Features"));
+const About = lazy(() => import("./pages/About"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -58,6 +60,8 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/features" element={<Features />} />
+              <Route path="/about" element={<About />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
               <Route path="/lobby" element={<ProtectedRoute><Lobby /></ProtectedRoute>} />
