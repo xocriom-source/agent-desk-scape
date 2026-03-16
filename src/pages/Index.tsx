@@ -97,6 +97,10 @@ const Index = () => {
     nearbyAgent,
     movePlayer,
     setPlayerDestination,
+    nearbyInteractable,
+    activeInteraction,
+    interactionMessage,
+    interact,
   } = useOfficeState(playerConfig.name);
 
   // Agent activity notifications
@@ -262,6 +266,29 @@ const Index = () => {
 
       {!editMode && <ActionBar onMove={movePlayer} />}
       {!editMode && <MiniMap player={player} agents={agents} rooms={rooms} />}
+
+      {/* Furniture interaction prompt */}
+      {!editMode && nearbyInteractable && !activeInteraction && (
+        <div className="absolute bottom-28 left-1/2 -translate-x-1/2 z-30 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <button
+            onClick={interact}
+            className="px-4 py-2 bg-primary/90 text-primary-foreground rounded-xl text-sm font-medium shadow-lg hover:bg-primary transition-colors flex items-center gap-2 backdrop-blur-sm border border-primary/30"
+          >
+            <span className="text-base">{nearbyInteractable.emoji}</span>
+            <span>{nearbyInteractable.label}</span>
+            <kbd className="ml-1 px-1.5 py-0.5 bg-primary-foreground/20 rounded text-[10px] font-mono">SPACE</kbd>
+          </button>
+        </div>
+      )}
+
+      {/* Active interaction feedback */}
+      {activeInteraction && interactionMessage && (
+        <div className="absolute bottom-28 left-1/2 -translate-x-1/2 z-30 animate-in fade-in zoom-in duration-200">
+          <div className="px-5 py-2.5 bg-accent/90 text-accent-foreground rounded-xl text-sm font-medium shadow-lg backdrop-blur-sm border border-accent/30">
+            {interactionMessage}
+          </div>
+        </div>
+      )}
 
       <CharacterCustomizer
         isOpen={showCustomizer}
