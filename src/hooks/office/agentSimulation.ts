@@ -94,15 +94,28 @@ export function useAgentSimulation(
   setAgents: React.Dispatch<React.SetStateAction<Agent[]>>
 ) {
   useEffect(() => {
+    // Stagger agent updates - only update 2-3 agents per tick instead of all at once
+    let tickIndex = 0;
     const interval = setInterval(() => {
-      setAgents((prev) =>
-        prev.map((agent) => {
-          if (Math.random() > 0.3) return agent;
+      const now = Date.now();
+      const currentTick = tickIndex++;
+
+      setAgents((prev) => {
+        let changed = false;
+        const next = prev.map((agent, i) => {
+          // Stagger: each agent updates every ~3 ticks (6s cycle), offset by index
+          if ((currentTick + i) % 3 !== 0) return agent;
+          if (Math.random() > 0.5) return agent;
 
           const { nx, ny } = moveAgent(agent, prev);
           const room = getRoomAt(nx, ny);
           const roomName = room?.name || "";
           const newStatus = getStatusForRoom(roomName);
+
+          // Skip update if nothing meaningful changed
+          if (nx === agent.x && ny === agent.y && newStatus === agent.status) return agent;
+
+          changed = true;
 
           const roomActivities = LOCATION_ACTIVITIES[roomName] || [
             `🔄 Ciclo de treinamento #${agent.trainingCycle + 1}`,
@@ -112,17 +125,20 @@ export function useAgentSimulation(
 
           const msg = roomActivities[Math.floor(Math.random() * roomActivities.length)];
           const newLog: AgentLog = {
-            id: `log-${agent.id}-${Date.now()}`,
-            timestamp: new Date(),
+            id: `log-${agent.id}-${now}`,
+            timestamp: new Date(now),
             message: msg,
             type: (["info", "success", "warning"] as const)[Math.floor(Math.random() * 3)],
           };
 
-          const updatedSkills = agent.skills.map((s) => ({
-            ...s,
-            xp: s.xp + Math.floor(Math.random() * 5),
-            level: Math.min(100, s.level + (Math.random() > 0.95 ? 1 : 0)),
-          }));
+          // Only recalculate skills every ~10 ticks to reduce object creation
+          const updatedSkills = currentTick % 10 === 0
+            ? agent.skills.map((s) => ({
+                ...s,
+                xp: s.xp + Math.floor(Math.random() * 5),
+                level: Math.min(100, s.level + (Math.random() > 0.95 ? 1 : 0)),
+              }))
+            : agent.skills;
 
           const repChange = Math.random() > 0.9 ? (Math.random() > 0.3 ? 1 : -1) : 0;
 
@@ -136,10 +152,10 @@ export function useAgentSimulation(
             const titles = TITLES_BY_TYPE[artType] || ["Criação Nova"];
             newArtifacts = [
               {
-                id: `art-${agent.id}-${Date.now()}`,
+                id: `art-${agent.id}-${now}`,
                 type: artType,
                 title: titles[Math.floor(Math.random() * titles.length)],
-                createdAt: new Date(),
+                createdAt: new Date(now),
                 reactions: Math.floor(Math.random() * 15),
               },
               ...agent.artifacts,
@@ -164,7 +180,7 @@ export function useAgentSimulation(
             x: nx, y: ny,
             status: newStatus,
             room: room?.name || "Corredor",
-            logs: [newLog, ...agent.logs].slice(0, 20),
+            logs: [newLog, ...agent.logs].slice(0, 15),
             skills: updatedSkills,
             reputation: Math.max(0, Math.min(100, agent.reputation + repChange)),
             artifacts: newArtifacts,
@@ -175,8 +191,11 @@ export function useAgentSimulation(
             trainingCycle: newCycle,
             isTraining: newStatus === "active" || newStatus === "thinking",
           };
-        })
-      );
+        });
+
+        // Return same reference if nothing changed (prevents React re-render)
+        return changed ? next : prev;
+      });
     }, 2000);
 
     return () => clearInterval(interval);
