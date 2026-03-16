@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft, Search, MapPin, List, Building2, DollarSign, TrendingUp,
   Send, ShoppingCart, ExternalLink, BarChart3, Tag, X, Users, Globe,
-  Calendar, Briefcase, Heart, SlidersHorizontal
+  Calendar, Briefcase, Heart, SlidersHorizontal, Plus
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import Map, { Marker, Popup, NavigationControl } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
+import Supercluster from "supercluster";
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls } from "@react-three/drei";
+import * as THREE from "three";
 
 // ─── Types ──────────────────────────────────────────
 interface Business {
@@ -103,6 +107,28 @@ const CATEGORY_FIELDS: Record<string, { key: string; label: string; format?: str
   ],
 };
 
+// ─── City coords for List Your Business ─────────────
+const CITY_COORDS: Record<string, { lat: number; lng: number; country: string; region: string }> = {
+  "São Paulo": { lat: -23.5505, lng: -46.6333, country: "BR", region: "South America" },
+  "Rio de Janeiro": { lat: -22.9068, lng: -43.1729, country: "BR", region: "South America" },
+  "New York": { lat: 40.7128, lng: -74.006, country: "US", region: "North America" },
+  "San Francisco": { lat: 37.7749, lng: -122.4194, country: "US", region: "North America" },
+  "Austin": { lat: 30.2672, lng: -97.7431, country: "US", region: "North America" },
+  "Toronto": { lat: 43.6532, lng: -79.3832, country: "CA", region: "North America" },
+  "Mexico City": { lat: 19.4326, lng: -99.1332, country: "MX", region: "North America" },
+  "London": { lat: 51.5074, lng: -0.1278, country: "UK", region: "Europe" },
+  "Lisbon": { lat: 38.7223, lng: -9.1393, country: "PT", region: "Europe" },
+  "Berlin": { lat: 52.52, lng: 13.405, country: "DE", region: "Europe" },
+  "Paris": { lat: 48.8566, lng: 2.3522, country: "FR", region: "Europe" },
+  "Tokyo": { lat: 35.6762, lng: 139.6503, country: "JP", region: "Asia" },
+  "Singapore": { lat: 1.3521, lng: 103.8198, country: "SG", region: "Asia" },
+  "Bangkok": { lat: 13.7563, lng: 100.5018, country: "TH", region: "Asia" },
+  "Seoul": { lat: 37.5665, lng: 126.978, country: "KR", region: "Asia" },
+  "Bangalore": { lat: 12.9716, lng: 77.5946, country: "IN", region: "Asia" },
+  "Sydney": { lat: -33.8688, lng: 151.2093, country: "AU", region: "Oceania" },
+  "Dubai": { lat: 25.2048, lng: 55.2708, country: "AE", region: "Middle East" },
+};
+
 function formatCurrency(n: number) {
   if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `$${(n / 1_000).toFixed(0)}k`;
@@ -167,6 +193,7 @@ export default function DigitalMarketplace() {
   const [popupBiz, setPopupBiz] = useState<Business | null>(null);
   const [viewMode, setViewMode] = useState<"map" | "list">("map");
   const [showOffer, setShowOffer] = useState(false);
+  const [showListBiz, setShowListBiz] = useState(false);
   const [offerAmount, setOfferAmount] = useState("");
   const [offerMessage, setOfferMessage] = useState("");
   const [sending, setSending] = useState(false);
@@ -249,7 +276,6 @@ export default function DigitalMarketplace() {
   const totalForSale = filtered.length;
   const totalValue = filtered.reduce((s, b) => s + (b.sale_price || 0), 0);
 
-  // Count businesses by region for stats
   const regionCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     filtered.forEach(b => {
@@ -267,11 +293,10 @@ export default function DigitalMarketplace() {
           <ArrowLeft className="w-3.5 h-3.5" />
         </Button>
         <Building2 className="w-4 h-4 text-green-400" />
-        <h1 className="font-bold text-xs tracking-tight hidden sm:block text-white">Dynasty 8 — Digital Business Marketplace</h1>
+        <h1 className="font-bold text-xs tracking-tight hidden sm:block text-white">The Good Realty — Global Business Marketplace</h1>
         <Badge variant="outline" className="text-[8px] border-green-500/30 text-green-300 gap-0.5 px-1.5 py-0">
           <Tag className="w-2 h-2" /> {totalForSale} PROPERTIES
         </Badge>
-        {/* Region badges */}
         <div className="hidden lg:flex items-center gap-1 ml-2">
           {Object.entries(regionCounts).slice(0, 4).map(([region, count]) => (
             <span key={region} className="text-[8px] bg-muted/20 text-muted-foreground px-1.5 py-0.5 rounded-full">
@@ -280,6 +305,9 @@ export default function DigitalMarketplace() {
           ))}
         </div>
         <div className="flex-1" />
+        <Button variant="ghost" size="sm" onClick={() => setShowListBiz(true)} className="h-6 text-[9px] text-green-300 hover:text-white gap-1 px-2">
+          <Plus className="w-3 h-3" /> List Business
+        </Button>
         <span className="text-[9px] text-green-300/70 font-mono hidden md:block">
           Total: {formatCurrency(totalValue)}
         </span>
@@ -409,7 +437,129 @@ export default function DigitalMarketplace() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* List Your Business Dialog */}
+      <ListBusinessDialog open={showListBiz} onOpenChange={setShowListBiz} onSuccess={(biz) => {
+        setBusinesses(prev => [biz, ...prev]);
+        toast.success("🎉 Business listed!", { description: `${biz.name} is now live on the marketplace.` });
+      }} />
     </div>
+  );
+}
+
+// ─── List Your Business Form ────────────────────────
+function ListBusinessDialog({ open, onOpenChange, onSuccess }: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  onSuccess: (b: Business) => void;
+}) {
+  const [name, setName] = useState("");
+  const [cat, setCat] = useState("saas");
+  const [desc, setDesc] = useState("");
+  const [mrr, setMrr] = useState("");
+  const [price, setPrice] = useState("");
+  const [city, setCity] = useState("São Paulo");
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!name || !mrr) { toast.error("Name and MRR are required"); return; }
+    setSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { toast.error("Log in to list a business."); setSaving(false); return; }
+      const coords = CITY_COORDS[city] || CITY_COORDS["São Paulo"];
+      const mrrNum = Number(mrr);
+      const priceNum = Number(price) || mrrNum * 36;
+      const { data, error } = await supabase.from("digital_businesses").insert({
+        name,
+        category: cat,
+        description: desc || null,
+        mrr: mrrNum,
+        sale_price: priceNum,
+        revenue_multiple: Number((priceNum / (mrrNum * 12)).toFixed(1)),
+        founder_name: user.email?.split("@")[0] || "Founder",
+        owner_id: user.id,
+        city,
+        country: coords.country,
+        region: coords.region,
+        latitude: coords.lat,
+        longitude: coords.lng,
+        status: "listed",
+      }).select().single();
+      if (error) throw error;
+      const biz: Business = {
+        ...(data as any),
+        lat: coords.lat,
+        lng: coords.lng,
+        buildingName: `${name} HQ`,
+        category_data: {},
+      };
+      onSuccess(biz);
+      onOpenChange(false);
+      setName(""); setDesc(""); setMrr(""); setPrice("");
+    } catch (e: any) {
+      toast.error("Error listing business", { description: e.message });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="bg-card border-border/30 max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2"><Plus className="w-4 h-4 text-green-400" /> List Your Business</DialogTitle>
+          <DialogDescription>Add your digital business to the global marketplace</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 pt-2">
+          <div>
+            <label className="text-xs font-medium mb-1 block">Business Name *</label>
+            <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. My SaaS App" className="bg-muted/10" />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs font-medium mb-1 block">Category</label>
+              <Select value={cat} onValueChange={setCat}>
+                <SelectTrigger className="bg-muted/10"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.filter(c => c.value !== "all").map(c => (
+                    <SelectItem key={c.value} value={c.value}>{c.icon} {c.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs font-medium mb-1 block">City</label>
+              <Select value={city} onValueChange={setCity}>
+                <SelectTrigger className="bg-muted/10"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.keys(CITY_COORDS).map(c => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs font-medium mb-1 block">Monthly Revenue (MRR) *</label>
+              <Input type="number" value={mrr} onChange={e => setMrr(e.target.value)} placeholder="e.g. 5000" className="bg-muted/10" />
+            </div>
+            <div>
+              <label className="text-xs font-medium mb-1 block">Sale Price ($)</label>
+              <Input type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="Auto: MRR × 36" className="bg-muted/10" />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-medium mb-1 block">Description</label>
+            <Textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Describe your business..." rows={3} className="bg-muted/10" />
+          </div>
+          <Button onClick={handleSubmit} disabled={saving} className="w-full bg-green-700 hover:bg-green-600 text-white">
+            {saving ? "Publishing..." : "🚀 List on Marketplace"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -469,7 +619,7 @@ function PropertyCard({ biz, isSelected, onSelect, onHover }: {
   );
 }
 
-// ─── World Map (Dynasty 8 / GTA style) ─────────────
+// ─── World Map with Clustering ──────────────────────
 function WorldMap({ businesses, selected, hoveredId, popupBiz, onSelect, onHover, onPopup }: {
   businesses: Business[];
   selected: Business | null;
@@ -479,29 +629,81 @@ function WorldMap({ businesses, selected, hoveredId, popupBiz, onSelect, onHover
   onHover: (id: string | null) => void;
   onPopup: (b: Business | null) => void;
 }) {
+  const [viewState, setViewState] = useState({
+    latitude: 20,
+    longitude: 0,
+    zoom: 2,
+  });
+
+  const superclusterRef = useRef<Supercluster | null>(null);
+
+  // Build GeoJSON points
+  const points = useMemo(() => 
+    businesses.map((biz, i) => ({
+      type: "Feature" as const,
+      properties: { index: i, cluster: false, id: biz.id },
+      geometry: { type: "Point" as const, coordinates: [biz.lng, biz.lat] },
+    })),
+  [businesses]);
+
+  // Cluster computation
+  const clusters = useMemo(() => {
+    const sc = new Supercluster({ radius: 60, maxZoom: 14 });
+    sc.load(points);
+    superclusterRef.current = sc;
+    const bounds: [number, number, number, number] = [-180, -85, 180, 85];
+    return sc.getClusters(bounds, Math.floor(viewState.zoom));
+  }, [points, viewState.zoom]);
+
   return (
     <Map
-      initialViewState={{
-        latitude: 20,
-        longitude: 0,
-        zoom: 2,
-      }}
+      {...viewState}
+      onMove={e => setViewState(e.viewState)}
       style={{ width: "100%", height: "100%" }}
       mapStyle={MAP_STYLE}
       attributionControl={false}
     >
       <NavigationControl position="top-right" showCompass={false} />
 
-      {businesses.map(biz => {
-        const isSelected = selected?.id === biz.id;
+      {clusters.map((cluster) => {
+        const [lng, lat] = cluster.geometry.coordinates;
+        const props = cluster.properties;
+
+        // Cluster marker
+        if (props.cluster) {
+          const count = props.point_count;
+          const size = 28 + Math.min(count, 50) * 0.5;
+          return (
+            <Marker key={`cluster-${props.cluster_id}`} latitude={lat} longitude={lng} anchor="center">
+              <div
+                onClick={() => {
+                  const sc = superclusterRef.current;
+                  if (sc) {
+                    const z = sc.getClusterExpansionZoom(props.cluster_id);
+                    setViewState({ latitude: lat, longitude: lng, zoom: z });
+                  }
+                }}
+                className="cursor-pointer flex items-center justify-center rounded-full bg-green-700 border-2 border-green-400 text-white font-bold shadow-lg hover:scale-110 transition-transform"
+                style={{ width: size, height: size, fontSize: Math.max(10, 14 - count * 0.1) }}
+              >
+                {count}
+              </div>
+            </Marker>
+          );
+        }
+
+        // Individual marker
+        const biz = businesses[props.index];
+        if (!biz) return null;
+        const isSelected2 = selected?.id === biz.id;
         const isHovered = hoveredId === biz.id;
-        const isActive = isSelected || isHovered;
+        const isActive = isSelected2 || isHovered;
 
         return (
           <Marker
             key={biz.id}
-            latitude={biz.lat}
-            longitude={biz.lng}
+            latitude={lat}
+            longitude={lng}
             anchor="bottom"
             onClick={e => { e.originalEvent.stopPropagation(); onSelect(biz); }}
           >
@@ -511,33 +713,18 @@ function WorldMap({ businesses, selected, hoveredId, popupBiz, onSelect, onHover
               className={`cursor-pointer transition-all duration-200 ${isActive ? "scale-125 z-30" : "z-10 hover:scale-110"}`}
               style={{ filter: isActive ? "drop-shadow(0 4px 8px rgba(0,0,0,0.4))" : "drop-shadow(0 2px 4px rgba(0,0,0,0.3))" }}
             >
-              {/* GTA-style map pin */}
-              <svg width="32" height="40" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                {/* Pin shape */}
-                <path
-                  d="M16 0C7.16 0 0 7.16 0 16C0 28 16 40 16 40C16 40 32 28 32 16C32 7.16 24.84 0 16 0Z"
-                  fill={isSelected ? "#D4A017" : isHovered ? "#4a9e4a" : "#2d7a2d"}
-                  stroke={isSelected ? "#FFD700" : "#1a5c1a"}
-                  strokeWidth="1.5"
-                />
-                {/* White circle bg */}
+              <svg width="32" height="40" viewBox="0 0 32 40" fill="none">
+                <path d="M16 0C7.16 0 0 7.16 0 16C0 28 16 40 16 40C16 40 32 28 32 16C32 7.16 24.84 0 16 0Z"
+                  fill={isSelected2 ? "#D4A017" : isHovered ? "#4a9e4a" : "#2d7a2d"}
+                  stroke={isSelected2 ? "#FFD700" : "#1a5c1a"} strokeWidth="1.5" />
                 <circle cx="16" cy="15" r="9" fill="white" />
-                {/* House icon */}
-                <path
-                  d="M16 8L9 14V22H13V17H19V22H23V14L16 8Z"
-                  fill={isSelected ? "#D4A017" : "#2d7a2d"}
-                />
+                <path d="M16 8L9 14V22H13V17H19V22H23V14L16 8Z"
+                  fill={isSelected2 ? "#D4A017" : "#2d7a2d"} />
               </svg>
-              {/* Price tag on selected/hovered */}
               {isActive && (
                 <div className="absolute -top-1 left-1/2 -translate-x-1/2 -translate-y-full">
-                  <div
-                    className="px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shadow-md"
-                    style={{
-                      background: isSelected ? "#D4A017" : "#2d7a2d",
-                      color: "#fff",
-                    }}
-                  >
+                  <div className="px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shadow-md"
+                    style={{ background: isSelected2 ? "#D4A017" : "#2d7a2d", color: "#fff" }}>
                     {biz.sale_price ? formatCurrency(biz.sale_price) : biz.name}
                   </div>
                 </div>
@@ -548,15 +735,7 @@ function WorldMap({ businesses, selected, hoveredId, popupBiz, onSelect, onHover
       })}
 
       {popupBiz && !selected && (
-        <Popup
-          latitude={popupBiz.lat}
-          longitude={popupBiz.lng}
-          closeButton={false}
-          closeOnClick={false}
-          anchor="bottom"
-          offset={45}
-          className="dynasty8-popup"
-        >
+        <Popup latitude={popupBiz.lat} longitude={popupBiz.lng} closeButton={false} closeOnClick={false} anchor="bottom" offset={45} className="dynasty8-popup">
           <div className="p-3 min-w-[220px] rounded-lg bg-white text-gray-900">
             <div className="flex items-center gap-2.5 mb-2">
               <div className="w-10 h-10 rounded bg-gradient-to-br from-green-100 to-green-50 flex items-center justify-center text-lg border border-green-200">🏢</div>
@@ -629,6 +808,56 @@ function MiniStat({ label, value, color }: { label: string; value: string; color
   );
 }
 
+// ─── Mini 3D Building Preview ───────────────────────
+function MiniBuilding3D({ color, style }: { color: string; style: string }) {
+  const col = new THREE.Color(color || "#3b82f6");
+  const h = style === "corporate" ? 3 : style === "startup" ? 2 : style === "tech" ? 2.5 : 2.8;
+  const w = style === "futuristic" ? 1.2 : 1.5;
+  return (
+    <group>
+      <mesh position={[0, h / 2, 0]} castShadow>
+        <boxGeometry args={[w, h, w]} />
+        <meshStandardMaterial color={col} roughness={0.5} metalness={0.3} />
+      </mesh>
+      {/* Roof */}
+      <mesh position={[0, h + 0.1, 0]}>
+        <boxGeometry args={[w + 0.2, 0.2, w + 0.2]} />
+        <meshStandardMaterial color={col} roughness={0.3} metalness={0.4} />
+      </mesh>
+      {/* Windows */}
+      {[0, 1, 2].map(floor => (
+        <group key={floor}>
+          {[-1, 1].map(side => (
+            <mesh key={side} position={[side * (w / 2 + 0.005), 0.6 + floor * 0.9, 0]}>
+              <planeGeometry args={[0.005, 0.3]} />
+              <meshStandardMaterial emissive={new THREE.Color("#FFE8A0")} emissiveIntensity={1.2} color="black" />
+            </mesh>
+          ))}
+        </group>
+      ))}
+      {/* Ground */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+        <planeGeometry args={[4, 4]} />
+        <meshStandardMaterial color="#1a1a2e" roughness={0.95} />
+      </mesh>
+    </group>
+  );
+}
+
+function Building3DPreview({ color, style }: { color: string; style: string }) {
+  return (
+    <div className="w-full h-32 rounded-lg overflow-hidden bg-gray-950 border border-border/20">
+      <Canvas camera={{ position: [3, 3, 3], fov: 40 }} gl={{ antialias: true }}>
+        <ambientLight intensity={0.4} />
+        <directionalLight position={[5, 8, 5]} intensity={0.8} />
+        <pointLight position={[-2, 4, 2]} intensity={0.3} color="#FFE8A0" />
+        <MiniBuilding3D color={color} style={style} />
+        <OrbitControls enableZoom={false} autoRotate autoRotateSpeed={2} maxPolarAngle={Math.PI / 2.2} />
+      </Canvas>
+    </div>
+  );
+}
+
 // ─── Detail Panel ───────────────────────────────────
 function DetailPanel({ business, onClose, onVisit, onOffer, onBuy }: {
   business: Business;
@@ -675,6 +904,12 @@ function DetailPanel({ business, onClose, onVisit, onOffer, onBuy }: {
           </div>
 
           {business.description && <p className="text-[11px] text-muted-foreground leading-relaxed">{business.description}</p>}
+
+          {/* 3D Building Preview */}
+          <div>
+            <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">🏗️ Building Preview</h3>
+            <Building3DPreview color={color} style={business.category === "saas" ? "tech" : business.category === "agency" ? "corporate" : "startup"} />
+          </div>
 
           {/* Location + Universal info */}
           <div className="flex flex-wrap items-center gap-1.5 text-[9px] text-muted-foreground/70">
