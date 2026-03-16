@@ -318,7 +318,7 @@ export default function Landing() {
   return (
     <>
       <AnimatePresence>
-        {loading && <LoadingScreen onComplete={() => setLoading(false)} />}
+        {loading && <LoadingScreen onComplete={handleLoadComplete} />}
       </AnimatePresence>
 
       <div className="min-h-screen bg-background text-foreground">
