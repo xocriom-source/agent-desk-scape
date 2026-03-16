@@ -125,6 +125,47 @@ export type Database = {
         }
         Relationships: []
       }
+      business_offers: {
+        Row: {
+          business_id: string
+          created_at: string
+          from_user_id: string
+          id: string
+          message: string | null
+          offer_amount: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          from_user_id: string
+          id?: string
+          message?: string | null
+          offer_amount: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          message?: string | null
+          offer_amount?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_offers_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "digital_businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_channels: {
         Row: {
           building_id: string | null
@@ -226,6 +267,60 @@ export type Database = {
           importance?: number | null
           metadata?: Json | null
           title?: string
+        }
+        Relationships: []
+      }
+      digital_businesses: {
+        Row: {
+          building_id: string | null
+          category: string
+          created_at: string
+          description: string | null
+          founder_name: string
+          growth_percent: number | null
+          id: string
+          mrr: number
+          name: string
+          owner_id: string
+          product_url: string | null
+          revenue_multiple: number | null
+          sale_price: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          building_id?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          founder_name?: string
+          growth_percent?: number | null
+          id?: string
+          mrr?: number
+          name: string
+          owner_id: string
+          product_url?: string | null
+          revenue_multiple?: number | null
+          sale_price?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          building_id?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          founder_name?: string
+          growth_percent?: number | null
+          id?: string
+          mrr?: number
+          name?: string
+          owner_id?: string
+          product_url?: string | null
+          revenue_multiple?: number | null
+          sale_price?: number | null
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
