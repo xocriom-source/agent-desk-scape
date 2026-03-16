@@ -1,9 +1,9 @@
-import { useMemo, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Building2, User, Globe, Link2,
-  Star, MapPin, Clock, Settings2, Eye, BarChart3, TrendingUp, Cpu,
+  MapPin, Clock, Settings2, Cpu,
   Users, Bot, MessageCircle, Brain, Monitor
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
