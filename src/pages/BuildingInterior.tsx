@@ -115,7 +115,7 @@ export default function BuildingInterior() {
   }
 
   // Determine building type from style or metadata
-  const buildingType = (building.metadata as any)?.building_type || building.style || "corporate";
+  const buildingType = metadata?.building_type || building.style || "corporate";
 
   // Build a compatible object for AIReceptionistChat
   const chatBuilding = {
@@ -128,8 +128,8 @@ export default function BuildingInterior() {
     height: building.height,
     primaryColor,
     secondaryColor,
-    bio: "",
-    links: [] as string[],
+    bio: metadata?.bio || "",
+    links: (metadata?.links || []) as string[],
     customizations: customizations as any,
     createdAt: building.created_at,
     coordinates: { x: 0, z: 0 },
