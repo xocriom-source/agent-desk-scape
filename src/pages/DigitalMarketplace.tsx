@@ -740,16 +740,18 @@ function DetailPanel({ business, onClose, onVisit, onOffer, onBuy }: {
         </div>
 
         {/* Actions */}
-        <div className="p-3 space-y-1.5 border-t border-border/20 shrink-0">
-          <Button onClick={onVisit} variant="outline" size="sm" className="w-full h-8 text-[10px] justify-start gap-2 border-border/30">
-            <ExternalLink className="w-3.5 h-3.5" /> VISIT BUILDING
+        <div className="p-3 space-y-1.5 border-t border-border/20 shrink-0 bg-gradient-to-t from-green-950/30 to-transparent">
+          <Button onClick={onVisit} size="sm" className="w-full h-9 text-[11px] justify-center gap-2 font-bold uppercase tracking-wider bg-green-700 hover:bg-green-600 text-white border-0">
+            <Building2 className="w-3.5 h-3.5" /> VISIT BUILDING IN 3D CITY
           </Button>
-          <Button onClick={onOffer} variant="outline" size="sm" className="w-full h-8 text-[10px] justify-start gap-2 border-border/30">
-            <Send className="w-3.5 h-3.5" /> MAKE OFFER
-          </Button>
-          <Button onClick={onBuy} size="sm" className="w-full h-8 text-[10px] justify-start gap-2 font-bold uppercase tracking-wider" style={{ background: `linear-gradient(135deg, ${color}, ${color}cc)` }}>
-            <ShoppingCart className="w-3.5 h-3.5" /> BUY — {business.sale_price ? formatCurrency(business.sale_price) : "Contact"}
-          </Button>
+          <div className="flex gap-1.5">
+            <Button onClick={onOffer} variant="outline" size="sm" className="flex-1 h-8 text-[10px] gap-1.5 border-green-700/40 text-green-400 hover:bg-green-900/30">
+              <Send className="w-3 h-3" /> MAKE OFFER
+            </Button>
+            <Button onClick={onBuy} size="sm" className="flex-1 h-8 text-[10px] gap-1.5 font-bold uppercase bg-amber-600 hover:bg-amber-500 text-black border-0">
+              <ShoppingCart className="w-3 h-3" /> BUY — {business.sale_price ? formatCurrency(business.sale_price) : "Contact"}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
