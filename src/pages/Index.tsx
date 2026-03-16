@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { OfficeScene } from "@/components/office/3d/OfficeScene";
@@ -27,38 +27,22 @@ import { DistrictInfo } from "@/components/office/DistrictInfo";
 import { CityEvents } from "@/components/office/CityEvents";
 import { CityChat } from "@/components/office/CityChat";
 import { useOfficeState } from "@/hooks/useOfficeState";
-import { ROOMS, setRooms, FURNITURE, setFurniture, type RoomDef, type FurnitureItem, DEFAULT_ROOMS, DEFAULT_FURNITURE } from "@/data/officeMap";
+import { usePanelState } from "@/hooks/office/usePanelState";
+import { ROOMS, setRooms, FURNITURE, setFurniture, getRoomAt, type RoomDef, type FurnitureItem, DEFAULT_ROOMS, DEFAULT_FURNITURE } from "@/data/officeMap";
+import { tileFromFloat } from "@/hooks/office/movementUtils";
 import type { Agent } from "@/types/agent";
 
 const Index = () => {
   const navigate = useNavigate();
-  const [showCustomizer, setShowCustomizer] = useState(false);
-  const [showRoomEditor, setShowRoomEditor] = useState(false);
+  const { openPanel, open, close, isOpen } = usePanelState();
   const [rooms, setLocalRooms] = useState<RoomDef[]>(() => [...DEFAULT_ROOMS]);
   const [furnitureItems, setLocalFurniture] = useState<FurnitureItem[]>(() => [...DEFAULT_FURNITURE]);
   const [editMode, setEditMode] = useState(false);
   const [profileAgent, setProfileAgent] = useState<Agent | null>(null);
   const [selectedFurnitureId, setSelectedFurnitureId] = useState<string | null>(null);
   const [hoveredFurnitureId, setHoveredFurnitureId] = useState<string | null>(null);
-  const [showFeed, setShowFeed] = useState(false);
-  const [showTasks, setShowTasks] = useState(false);
-  const [showMessaging, setShowMessaging] = useState(false);
-  const [showGallery, setShowGallery] = useState(false);
-  const [showStudios, setShowStudios] = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(false);
-  const [showMarketplace, setShowMarketplace] = useState(false);
-  const [showGovernance, setShowGovernance] = useState(false);
-  const [showMemory, setShowMemory] = useState(false);
-  const [showCommand, setShowCommand] = useState(false);
-  const [showArtifacts, setShowArtifacts] = useState(false);
-  const [showNPCs, setShowNPCs] = useState(false);
-  const [showObservation, setShowObservation] = useState(false);
-  const [showDistricts, setShowDistricts] = useState(false);
-  const [showEvents, setShowEvents] = useState(false);
-  const [showCityChat, setShowCityChat] = useState(false);
-  const [notifCounts, setNotifCounts] = useState({ feed: 3, tasks: 2, messages: 5, governance: 1, events: 2 });
+  const [notifCounts] = useState({ feed: 3, tasks: 2, messages: 5, governance: 1, events: 2 });
   const [playerConfig, setPlayerConfig] = useState<PlayerConfig>(() => {
-    // Load saved config from localStorage
     try {
       const saved = localStorage.getItem("playerConfig");
       if (saved) return JSON.parse(saved);
@@ -76,10 +60,10 @@ const Index = () => {
 
   useEffect(() => {
     const user = localStorage.getItem("agentoffice_user");
-    if (!user) { 
+    if (!user) {
       console.log("[AgentOffice] No user found, redirecting to landing");
-      navigate("/", { replace: true }); 
-      return; 
+      navigate("/", { replace: true });
+      return;
     }
     const parsed = JSON.parse(user);
     console.log("[AgentOffice] User loaded:", parsed.name);
@@ -103,6 +87,12 @@ const Index = () => {
     interact,
   } = useOfficeState(playerConfig.name);
 
+  // Current room detection for HUD
+  const currentRoom = useMemo(() => {
+    const pTile = tileFromFloat(player.x, player.y);
+    return getRoomAt(pTile.x, pTile.y);
+  }, [player.x, player.y]);
+
   // Agent activity notifications
   const lastArtifactCount = useRef(agents.reduce((sum, a) => sum + a.totalCreations, 0));
   const lastCollabCount = useRef(agents.reduce((sum, a) => sum + a.totalCollaborations, 0));
@@ -123,12 +113,13 @@ const Index = () => {
     if (newCollabs > lastCollabCount.current) {
       const collaber = agents.find(a => a.totalCollaborations > 0);
       if (collaber) {
-        toast(`🤝 ${collaber.name} iniciou uma colaboração`, {
-          description: `No ${collaber.room}`,
+        toast(`🤝 Nova colaboração detectada!`, {
+          description: `${collaber.name} na ${collaber.room}`,
           duration: 3000,
         });
       }
     }
+
     lastArtifactCount.current = newArtifacts;
     lastCollabCount.current = newCollabs;
   }, [agents]);
@@ -182,28 +173,28 @@ const Index = () => {
         agentCount={agents.length}
         activeCount={agents.filter((a) => a.status === "active").length}
         nearbyAgent={nearbyAgent}
-        onCustomize={() => setShowCustomizer(true)}
-        onRoomEditor={() => { setShowRoomEditor(true); setEditMode(true); }}
+        onCustomize={() => open("customizer")}
+        onRoomEditor={() => { open("roomEditor"); setEditMode(true); }}
         onLogout={() => {
           localStorage.removeItem("agentoffice_user");
           navigate("/");
         }}
-        onOpenFeed={() => setShowFeed(true)}
-        onOpenTasks={() => setShowTasks(true)}
-        onOpenMessaging={() => setShowMessaging(true)}
-        onOpenGallery={() => setShowGallery(true)}
-        onOpenStudios={() => setShowStudios(true)}
-        onOpenAnalytics={() => setShowAnalytics(true)}
-        onOpenMarketplace={() => setShowMarketplace(true)}
-        onOpenGovernance={() => setShowGovernance(true)}
-        onOpenMemory={() => setShowMemory(true)}
-        onOpenCommand={() => setShowCommand(true)}
-        onOpenArtifacts={() => setShowArtifacts(true)}
-        onOpenNPCs={() => setShowNPCs(true)}
-        onOpenObservation={() => setShowObservation(true)}
-        onOpenDistricts={() => setShowDistricts(true)}
-        onOpenEvents={() => setShowEvents(true)}
-        onOpenCityChat={() => setShowCityChat(true)}
+        onOpenFeed={() => open("feed")}
+        onOpenTasks={() => open("tasks")}
+        onOpenMessaging={() => open("messaging")}
+        onOpenGallery={() => open("gallery")}
+        onOpenStudios={() => open("studios")}
+        onOpenAnalytics={() => open("analytics")}
+        onOpenMarketplace={() => open("marketplace")}
+        onOpenGovernance={() => open("governance")}
+        onOpenMemory={() => open("memory")}
+        onOpenCommand={() => open("command")}
+        onOpenArtifacts={() => open("artifacts")}
+        onOpenNPCs={() => open("npcs")}
+        onOpenObservation={() => open("observation")}
+        onOpenDistricts={() => open("districts")}
+        onOpenEvents={() => open("events")}
+        onOpenCityChat={() => open("cityChat")}
         notifications={notifCounts}
       />
 
@@ -242,27 +233,36 @@ const Index = () => {
         </div>
       )}
 
+      {/* Current room indicator */}
+      {!editMode && currentRoom && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
+          <div className="px-3 py-1 glass-panel rounded-full text-xs font-medium text-foreground/80 shadow-sm animate-in fade-in duration-500">
+            📍 {currentRoom.name}
+          </div>
+        </div>
+      )}
+
       <ActivityLog logs={allLogs} isOpen={showActivityLog} onToggle={toggleActivityLog} />
       <AgentPanel agent={selectedAgent} onClose={() => setSelectedAgent(null)} onViewProfile={(a) => setProfileAgent(a)} />
       <ObserverCard agent={profileAgent} isOpen={!!profileAgent} onClose={() => setProfileAgent(null)} />
       
-      {/* New systems */}
-      <SocialFeed agents={agents} isOpen={showFeed} onClose={() => setShowFeed(false)} />
-      <TaskBoard agents={agents} isOpen={showTasks} onClose={() => setShowTasks(false)} />
-      <AgentMessaging agents={agents} isOpen={showMessaging} onClose={() => setShowMessaging(false)} />
-      <AgentGallery agents={agents} isOpen={showGallery} onClose={() => setShowGallery(false)} />
-      <CreativeStudios agents={agents} isOpen={showStudios} onClose={() => setShowStudios(false)} />
-      <AnalyticsDashboard agents={agents} isOpen={showAnalytics} onClose={() => setShowAnalytics(false)} />
-      <AgentMarketplace agents={agents} isOpen={showMarketplace} onClose={() => setShowMarketplace(false)} />
-      <AIGovernance agents={agents} isOpen={showGovernance} onClose={() => setShowGovernance(false)} />
-      <AgentMemory agents={agents} isOpen={showMemory} onClose={() => setShowMemory(false)} />
-      <CommandCenter agents={agents} isOpen={showCommand} onClose={() => setShowCommand(false)} />
-      <ArtifactExplorer agents={agents} isOpen={showArtifacts} onClose={() => setShowArtifacts(false)} />
-      <CityNPCs isOpen={showNPCs} onClose={() => setShowNPCs(false)} />
-      <ObservationLab agents={agents} isOpen={showObservation} onClose={() => setShowObservation(false)} />
-      <DistrictInfo isOpen={showDistricts} onClose={() => setShowDistricts(false)} />
-      <CityEvents agents={agents} isOpen={showEvents} onClose={() => setShowEvents(false)} />
-      <CityChat agents={agents} isOpen={showCityChat} onClose={() => setShowCityChat(false)} />
+      {/* Panels */}
+      <SocialFeed agents={agents} isOpen={isOpen("feed")} onClose={close} />
+      <TaskBoard agents={agents} isOpen={isOpen("tasks")} onClose={close} />
+      <AgentMessaging agents={agents} isOpen={isOpen("messaging")} onClose={close} />
+      <AgentGallery agents={agents} isOpen={isOpen("gallery")} onClose={close} />
+      <CreativeStudios agents={agents} isOpen={isOpen("studios")} onClose={close} />
+      <AnalyticsDashboard agents={agents} isOpen={isOpen("analytics")} onClose={close} />
+      <AgentMarketplace agents={agents} isOpen={isOpen("marketplace")} onClose={close} />
+      <AIGovernance agents={agents} isOpen={isOpen("governance")} onClose={close} />
+      <AgentMemory agents={agents} isOpen={isOpen("memory")} onClose={close} />
+      <CommandCenter agents={agents} isOpen={isOpen("command")} onClose={close} />
+      <ArtifactExplorer agents={agents} isOpen={isOpen("artifacts")} onClose={close} />
+      <CityNPCs isOpen={isOpen("npcs")} onClose={close} />
+      <ObservationLab agents={agents} isOpen={isOpen("observation")} onClose={close} />
+      <DistrictInfo isOpen={isOpen("districts")} onClose={close} />
+      <CityEvents agents={agents} isOpen={isOpen("events")} onClose={close} />
+      <CityChat agents={agents} isOpen={isOpen("cityChat")} onClose={close} />
 
       {!editMode && <ActionBar onMove={movePlayer} />}
       {!editMode && <MiniMap player={player} agents={agents} rooms={rooms} />}
@@ -291,15 +291,15 @@ const Index = () => {
       )}
 
       <CharacterCustomizer
-        isOpen={showCustomizer}
-        onClose={() => setShowCustomizer(false)}
+        isOpen={isOpen("customizer")}
+        onClose={close}
         onSave={handleSaveCharacter}
         initial={playerConfig}
       />
 
       <RoomEditor
-        isOpen={showRoomEditor}
-        onClose={() => { setShowRoomEditor(false); setEditMode(false); setSelectedFurnitureId(null); }}
+        isOpen={isOpen("roomEditor")}
+        onClose={() => { close(); setEditMode(false); setSelectedFurnitureId(null); }}
         rooms={rooms}
         onUpdateRooms={handleUpdateRooms}
         furniture={furnitureItems}
