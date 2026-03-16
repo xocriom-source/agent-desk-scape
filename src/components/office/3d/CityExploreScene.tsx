@@ -380,30 +380,303 @@ function CityGround() {
   );
 }
 
-// ── Street Lights ──
+// ── Street Lights (enhanced with variety) ──
 function StreetLights() {
   const positions = useMemo(() => {
-    const pts: [number, number][] = [];
+    const pts: { x: number; z: number; type: "tall" | "short" | "double" }[] = [];
+    // Along main roads
+    for (let v = -28; v <= 28; v += 6) {
+      if (Math.abs(v) < 5) continue;
+      pts.push({ x: 1.8, z: v, type: "tall" });
+      pts.push({ x: -1.8, z: v, type: "tall" });
+      pts.push({ x: v, z: 1.8, type: "tall" });
+      pts.push({ x: v, z: -1.8, type: "tall" });
+    }
+    // District corners
     for (let x = -24; x <= 24; x += 16) {
       for (let z = -24; z <= 24; z += 16) {
         if (Math.abs(x) < 6 && Math.abs(z) < 6) continue;
-        pts.push([x, z]);
+        pts.push({ x, z, type: "double" });
       }
+    }
+    // Short lights along ring roads
+    for (let v = -8; v <= 8; v += 4) {
+      pts.push({ x: v, z: -7.5, type: "short" });
+      pts.push({ x: v, z: 7.5, type: "short" });
+      pts.push({ x: -7.5, z: v, type: "short" });
+      pts.push({ x: 7.5, z: v, type: "short" });
     }
     return pts;
   }, []);
 
   return (
     <group>
-      {positions.map(([x, z], i) => (
-        <group key={i} position={[x, 0, z]}>
-          <mesh position={[0, 1, 0]}>
-            <cylinderGeometry args={[0.025, 0.04, 2, 4]} />
-            <meshStandardMaterial color="#333" metalness={0.6} />
+      {positions.map((p, i) => {
+        const h = p.type === "tall" ? 2.2 : p.type === "double" ? 2.5 : 1.6;
+        const glowSize = p.type === "double" ? 0.06 : 0.045;
+        const intensity = p.type === "double" ? 3 : 2;
+        return (
+          <group key={i} position={[p.x, 0, p.z]}>
+            {/* Pole */}
+            <mesh position={[0, h / 2, 0]}>
+              <cylinderGeometry args={[0.02, 0.035, h, 4]} />
+              <meshStandardMaterial color="#2A2A2A" metalness={0.7} roughness={0.3} />
+            </mesh>
+            {/* Light globe */}
+            <mesh position={[0, h + 0.03, 0]}>
+              <sphereGeometry args={[glowSize, 6, 6]} />
+              <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={intensity} />
+            </mesh>
+            {/* Double light has arm + second globe */}
+            {p.type === "double" && (
+              <>
+                <mesh position={[0.3, h - 0.1, 0]} rotation={[0, 0, Math.PI / 6]}>
+                  <cylinderGeometry args={[0.015, 0.015, 0.6, 3]} />
+                  <meshStandardMaterial color="#2A2A2A" metalness={0.7} />
+                </mesh>
+                <mesh position={[0.5, h + 0.05, 0]}>
+                  <sphereGeometry args={[0.04, 6, 6]} />
+                  <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={2.5} />
+                </mesh>
+              </>
+            )}
+            {/* Base plate */}
+            <mesh position={[0, 0.02, 0]}>
+              <cylinderGeometry args={[0.06, 0.07, 0.04, 6]} />
+              <meshStandardMaterial color="#1A1A1A" metalness={0.5} />
+            </mesh>
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
+// ── Landscaping: Trees, Bushes, Flower Beds, Park Benches ──
+function CityTree({ x, z, scale = 1, variant = 0 }: { x: number; z: number; scale?: number; variant?: number }) {
+  const trunkH = 0.6 * scale;
+  const crownColors = ["#1A6B2A", "#2D5A1E", "#1B7A30", "#3A7A2A"];
+  const crownColor = crownColors[variant % crownColors.length];
+  const crownSize = (0.5 + variant * 0.08) * scale;
+
+  return (
+    <group position={[x, 0, z]}>
+      {/* Trunk */}
+      <mesh position={[0, trunkH / 2, 0]}>
+        <cylinderGeometry args={[0.04 * scale, 0.07 * scale, trunkH, 5]} />
+        <meshStandardMaterial color="#5A3A20" roughness={0.9} />
+      </mesh>
+      {/* Crown layers */}
+      <mesh position={[0, trunkH + crownSize * 0.4, 0]}>
+        <sphereGeometry args={[crownSize, 6, 5]} />
+        <meshStandardMaterial color={crownColor} roughness={0.85} />
+      </mesh>
+      {variant % 2 === 0 && (
+        <mesh position={[crownSize * 0.3, trunkH + crownSize * 0.2, crownSize * 0.2]}>
+          <sphereGeometry args={[crownSize * 0.6, 5, 4]} />
+          <meshStandardMaterial color={crownColor} roughness={0.85} />
+        </mesh>
+      )}
+      {/* Shadow circle */}
+      <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[crownSize * 1.2, 6]} />
+        <meshBasicMaterial color="#000" transparent opacity={0.1} />
+      </mesh>
+    </group>
+  );
+}
+
+function Bush({ x, z, color = "#2A6A2A" }: { x: number; z: number; color?: string }) {
+  return (
+    <group position={[x, 0, z]}>
+      <mesh position={[0, 0.12, 0]}>
+        <sphereGeometry args={[0.18, 5, 4]} />
+        <meshStandardMaterial color={color} roughness={0.9} />
+      </mesh>
+      <mesh position={[0.1, 0.1, 0.08]}>
+        <sphereGeometry args={[0.12, 4, 3]} />
+        <meshStandardMaterial color={color} roughness={0.9} />
+      </mesh>
+    </group>
+  );
+}
+
+function FlowerBed({ x, z, w = 1.5, d = 0.5 }: { x: number; z: number; w?: number; d?: number }) {
+  const flowers = useMemo(() => {
+    const f: { ox: number; oz: number; color: string }[] = [];
+    const colors = ["#FF6B8A", "#FFB347", "#87CEEB", "#DDA0DD", "#FF69B4", "#FFA500"];
+    for (let i = 0; i < 8; i++) {
+      f.push({
+        ox: (Math.random() - 0.5) * w * 0.8,
+        oz: (Math.random() - 0.5) * d * 0.8,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+    return f;
+  }, [w, d]);
+
+  return (
+    <group position={[x, 0, z]}>
+      {/* Soil bed */}
+      <mesh position={[0, 0.03, 0]}>
+        <boxGeometry args={[w, 0.06, d]} />
+        <meshStandardMaterial color="#3A2A18" roughness={0.95} />
+      </mesh>
+      {/* Border */}
+      <mesh position={[0, 0.04, 0]}>
+        <boxGeometry args={[w + 0.06, 0.04, d + 0.06]} />
+        <meshStandardMaterial color="#6B6B6B" roughness={0.8} />
+      </mesh>
+      {/* Flowers */}
+      {flowers.map((f, i) => (
+        <group key={i} position={[f.ox, 0.08, f.oz]}>
+          <mesh position={[0, 0.03, 0]}>
+            <cylinderGeometry args={[0.005, 0.005, 0.06, 3]} />
+            <meshStandardMaterial color="#3A6A2A" />
           </mesh>
-          <mesh position={[0, 2.05, 0]}>
-            <sphereGeometry args={[0.05, 4, 4]} />
-            <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={2} />
+          <mesh position={[0, 0.07, 0]}>
+            <sphereGeometry args={[0.025, 4, 3]} />
+            <meshStandardMaterial color={f.color} emissive={f.color} emissiveIntensity={0.15} />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  );
+}
+
+function ParkBench({ x, z, rotation = 0 }: { x: number; z: number; rotation?: number }) {
+  return (
+    <group position={[x, 0, z]} rotation={[0, rotation, 0]}>
+      {/* Seat */}
+      <mesh position={[0, 0.22, 0]}>
+        <boxGeometry args={[0.6, 0.03, 0.22]} />
+        <meshStandardMaterial color="#8B6B3A" roughness={0.85} />
+      </mesh>
+      {/* Back */}
+      <mesh position={[0, 0.35, -0.09]}>
+        <boxGeometry args={[0.6, 0.2, 0.02]} />
+        <meshStandardMaterial color="#8B6B3A" roughness={0.85} />
+      </mesh>
+      {/* Legs */}
+      {[-0.25, 0.25].map((lx, i) => (
+        <mesh key={i} position={[lx, 0.11, 0]}>
+          <boxGeometry args={[0.03, 0.22, 0.18]} />
+          <meshStandardMaterial color="#333" metalness={0.5} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+function CityLandscaping() {
+  return (
+    <group>
+      {/* Trees along main roads */}
+      {[-20, -14, -8, 8, 14, 20].map((v, i) => (
+        <group key={`roadtrees-${i}`}>
+          <CityTree x={2.5} z={v} scale={0.9} variant={i} />
+          <CityTree x={-2.5} z={v} scale={0.85} variant={i + 1} />
+          <CityTree x={v} z={2.5} scale={0.9} variant={i + 2} />
+          <CityTree x={v} z={-2.5} scale={0.85} variant={i + 3} />
+        </group>
+      ))}
+
+      {/* Park area near Praça Central */}
+      <CityTree x={-5.5} z={-5.5} scale={1.1} variant={0} />
+      <CityTree x={5.5} z={-5.5} scale={1.0} variant={1} />
+      <CityTree x={-5.5} z={5.5} scale={1.0} variant={2} />
+      <CityTree x={5.5} z={5.5} scale={1.1} variant={3} />
+
+      {/* Bushes along sidewalks */}
+      {[-16, -10, 10, 16].map((v, i) => (
+        <group key={`bushes-${i}`}>
+          <Bush x={2.2} z={v + 1} />
+          <Bush x={-2.2} z={v - 1} color="#1A5A2A" />
+          <Bush x={v + 1} z={2.2} color="#2A7A3A" />
+          <Bush x={v - 1} z={-2.2} />
+        </group>
+      ))}
+
+      {/* Flower beds at district entrances */}
+      <FlowerBed x={-9} z={-7} w={1.2} d={0.4} />
+      <FlowerBed x={9} z={-7} w={1.2} d={0.4} />
+      <FlowerBed x={-9} z={7} w={1.2} d={0.4} />
+      <FlowerBed x={9} z={7} w={1.2} d={0.4} />
+
+      {/* Flower beds near plaza */}
+      <FlowerBed x={-3} z={-6} w={2} d={0.5} />
+      <FlowerBed x={3} z={6} w={2} d={0.5} />
+
+      {/* Park benches */}
+      <ParkBench x={-6} z={-4} rotation={Math.PI / 4} />
+      <ParkBench x={6} z={-4} rotation={-Math.PI / 4} />
+      <ParkBench x={-6} z={4} rotation={-Math.PI / 4} />
+      <ParkBench x={6} z={4} rotation={Math.PI / 4} />
+      <ParkBench x={3} z={-2.5} rotation={0} />
+      <ParkBench x={-3} z={2.5} rotation={Math.PI} />
+
+      {/* Green patches (grass areas) */}
+      {[
+        [-8, -10, 3, 2], [8, -10, 3, 2],
+        [-8, 10, 3, 2], [8, 10, 3, 2],
+        [-20, 2, 2, 3], [20, 2, 2, 3],
+      ].map(([gx, gz, gw, gd], i) => (
+        <mesh key={`grass-${i}`} position={[gx, 0.006, gz]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[gw, gd]} />
+          <meshStandardMaterial color="#1A4A1A" roughness={0.95} />
+        </mesh>
+      ))}
+
+      {/* Large trees in green patches */}
+      <CityTree x={-8} z={-10} scale={1.3} variant={0} />
+      <CityTree x={8} z={-10} scale={1.2} variant={1} />
+      <CityTree x={-8} z={10} scale={1.2} variant={2} />
+      <CityTree x={8} z={10} scale={1.3} variant={3} />
+      <CityTree x={-20} z={2} scale={1.1} variant={4} />
+      <CityTree x={20} z={2} scale={1.1} variant={5} />
+
+      {/* Hedge rows near buildings */}
+      {[-15, -9, 9, 15].map((hx, i) => (
+        <group key={`hedge-${i}`}>
+          {Array.from({ length: 4 }).map((_, j) => (
+            <Bush key={j} x={hx} z={-14 + j * 2.5} color="#1B5A20" />
+          ))}
+        </group>
+      ))}
+    </group>
+  );
+}
+
+// ── Neon Signs on buildings ──
+function BuildingNeonSigns() {
+  const signs = useMemo(() => [
+    { x: -18, z: -12, h: 2.8, text: "CAFÉ", color: "#FF6B9D" },
+    { x: 12, z: -12, h: 3.5, text: "TECH", color: "#00D4FF" },
+    { x: -18, z: 8, h: 2.5, text: "ART", color: "#FFD700" },
+    { x: 12, z: 8, h: 2.2, text: "SHOP", color: "#00FF88" },
+    { x: 0, z: -14, h: 3.5, text: "HUB", color: "#FF4444" },
+    { x: 0, z: 18, h: 2.5, text: "SOCIAL", color: "#AA66FF" },
+  ], []);
+
+  return (
+    <group>
+      {signs.map((s, i) => (
+        <group key={i} position={[s.x, s.h + 0.3, s.z]}>
+          {/* Neon glow bar */}
+          <mesh position={[0, 0, 0]}>
+            <boxGeometry args={[0.8, 0.15, 0.02]} />
+            <meshStandardMaterial
+              color={s.color}
+              emissive={s.color}
+              emissiveIntensity={2.5}
+              transparent
+              opacity={0.9}
+            />
+          </mesh>
+          {/* Mounting bracket */}
+          <mesh position={[0, 0.1, -0.02]}>
+            <boxGeometry args={[0.06, 0.12, 0.04]} />
+            <meshStandardMaterial color="#333" metalness={0.6} />
           </mesh>
         </group>
       ))}
