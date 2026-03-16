@@ -174,7 +174,7 @@ export default function Spaces() {
               placeholder="Pesquisar"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="pl-9 pr-4 py-2 bg-[#252640] border border-border/30 rounded-full text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 w-48"
+              className="pl-9 pr-4 py-2 bg-card border border-border/30 rounded-full text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 w-48"
             />
           </div>
         </div>
