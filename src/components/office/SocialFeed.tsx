@@ -1,7 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MessageSquare, Sparkles, Users, Brain, Heart, Music, Palette, Code, BookOpen, FlaskConical, Zap, ArrowRightLeft } from "lucide-react";
 import type { Agent } from "@/types/agent";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 type FeedItemType = "creation" | "thought" | "collaboration" | "reflection" | "identity_shift" | "milestone" | "message";
 
