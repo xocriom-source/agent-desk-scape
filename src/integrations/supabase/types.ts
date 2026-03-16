@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_feed: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_name: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          target_id: string | null
+          target_name: string | null
+          target_type: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_name?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          target_id?: string | null
+          target_name?: string | null
+          target_type?: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_name?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          target_id?: string | null
+          target_name?: string | null
+          target_type?: string
+        }
+        Relationships: []
+      }
       agent_activity_log: {
         Row: {
           action_type: string
@@ -124,6 +160,38 @@ export type Database = {
           to_agent?: string
         }
         Relationships: []
+      }
+      asset_views: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          source: string | null
+          viewer_id: string | null
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          source?: string | null
+          viewer_id?: string | null
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          source?: string | null
+          viewer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_views_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "digital_businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       business_offers: {
         Row: {
@@ -236,6 +304,113 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      city_buildings: {
+        Row: {
+          business_id: string | null
+          created_at: string
+          customizations: Json | null
+          district: string
+          floors: number
+          height: number
+          id: string
+          is_for_sale: boolean
+          metadata: Json | null
+          name: string
+          owner_id: string | null
+          position_x: number
+          position_z: number
+          primary_color: string | null
+          secondary_color: string | null
+          style: string
+          updated_at: string
+        }
+        Insert: {
+          business_id?: string | null
+          created_at?: string
+          customizations?: Json | null
+          district?: string
+          floors?: number
+          height?: number
+          id?: string
+          is_for_sale?: boolean
+          metadata?: Json | null
+          name: string
+          owner_id?: string | null
+          position_x?: number
+          position_z?: number
+          primary_color?: string | null
+          secondary_color?: string | null
+          style?: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string | null
+          created_at?: string
+          customizations?: Json | null
+          district?: string
+          floors?: number
+          height?: number
+          id?: string
+          is_for_sale?: boolean
+          metadata?: Json | null
+          name?: string
+          owner_id?: string | null
+          position_x?: number
+          position_z?: number
+          primary_color?: string | null
+          secondary_color?: string | null
+          style?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "city_buildings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "digital_businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      city_districts: {
+        Row: {
+          bounds_x_max: number | null
+          bounds_x_min: number | null
+          bounds_z_max: number | null
+          bounds_z_min: number | null
+          color: string | null
+          created_at: string
+          description: string | null
+          emoji: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          bounds_x_max?: number | null
+          bounds_x_min?: number | null
+          bounds_z_max?: number | null
+          bounds_z_min?: number | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          emoji?: string | null
+          id: string
+          name: string
+        }
+        Update: {
+          bounds_x_max?: number | null
+          bounds_x_min?: number | null
+          bounds_z_max?: number | null
+          bounds_z_min?: number | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          emoji?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
       }
       city_events: {
         Row: {
@@ -651,6 +826,39 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string | null
+          metadata: Json | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string | null
+          metadata?: Json | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string | null
+          metadata?: Json | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -716,6 +924,35 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      user_favorites: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_favorites_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "digital_businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_presence: {
         Row: {

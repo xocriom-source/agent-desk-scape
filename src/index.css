@@ -138,3 +138,17 @@
     display: none;
   }
 }
+
+/* MapLibre popup overrides for Zillow-style */
+.maplibregl-popup-content {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+}
+.maplibregl-popup-tip {
+  display: none !important;
+}
+.maplibregl-ctrl-attrib {
+  display: none !important;
+}
