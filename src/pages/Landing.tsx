@@ -389,7 +389,7 @@ export default function Landing() {
               transition={{ duration: 0.7, delay: 0.3 }}
               className="text-4xl sm:text-6xl lg:text-8xl font-display font-bold tracking-[0.15em] mb-6 text-primary"
             >
-              AGENT OFFICE
+              THE GOOD CITY
             </motion.h1>
 
             <motion.p
