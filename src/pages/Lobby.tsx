@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Pencil, Mic, MicOff, Video, VideoOff, ChevronUp } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, ChevronUp } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import logo from "@/assets/logo.png";
 
 const SKIN_TONES = [
@@ -11,69 +12,64 @@ const SKIN_TONES = [
   { id: "dark", color: "#8D5B3E" },
 ];
 
-const AVATAR_COLORS = [
-  "#4F46E5", "#7C3AED", "#EC4899", "#EF4444", "#F97316",
-  "#22C55E", "#06B6D4", "#3B82F6", "#8B5CF6", "#14B8A6",
-];
-
 function AvatarPreview({ color, skinTone, hairStyle, outfit, accessory }: {
   color: string; skinTone: string; hairStyle: string; outfit: string; accessory: string;
 }) {
   const skin = SKIN_TONES.find(s => s.id === skinTone)?.color || "#E8B88A";
   return (
     <svg width="120" height="120" viewBox="0 0 96 96">
-      <rect x="30" y="82" width="10" height="5" rx="2" fill="#1a1a2e" />
-      <rect x="56" y="82" width="10" height="5" rx="2" fill="#1a1a2e" />
-      <rect x="32" y="70" width="8" height="14" fill="#2D3748" />
-      <rect x="56" y="70" width="8" height="14" fill="#2D3748" />
+      <rect x="30" y="82" width="10" height="5" rx="2" fill="hsl(var(--foreground))" />
+      <rect x="56" y="82" width="10" height="5" rx="2" fill="hsl(var(--foreground))" />
+      <rect x="32" y="70" width="8" height="14" fill="hsl(var(--muted-foreground))" />
+      <rect x="56" y="70" width="8" height="14" fill="hsl(var(--muted-foreground))" />
       <rect x="26" y="40" width="44" height="32" rx="4" fill={color} />
       {outfit === "suit" && (
         <>
-          <rect x="46" y="42" width="3" height="20" fill="#DC2626" />
-          <rect x="32" y="38" width="32" height="5" rx="2" fill="#FFF" />
+          <rect x="46" y="42" width="3" height="20" fill="hsl(var(--destructive))" />
+          <rect x="32" y="38" width="32" height="5" rx="2" fill="hsl(var(--primary-foreground))" />
         </>
       )}
       {outfit === "tech" && (
         <>
-          <rect x="26" y="40" width="44" height="32" rx="4" fill="#1a1a2e" />
+          <rect x="26" y="40" width="44" height="32" rx="4" fill="hsl(var(--foreground))" />
           <circle cx="48" cy="56" r="4" fill={color} />
         </>
       )}
       {outfit === "lab" && (
         <>
-          <rect x="24" y="38" width="48" height="36" rx="4" fill="#F0F0F0" />
+          <rect x="24" y="38" width="48" height="36" rx="4" fill="hsl(var(--muted))" />
           <rect x="38" y="42" width="20" height="12" rx="2" fill={color} />
         </>
       )}
       <rect x="30" y="16" width="36" height="26" rx="6" fill={skin} />
-      {hairStyle === "spiky" && <path d="M28 22 L36 6 L42 16 L48 4 L54 16 L60 6 L68 22" fill="#1E1B4B" />}
+      {hairStyle === "spiky" && <path d="M28 22 L36 6 L42 16 L48 4 L54 16 L60 6 L68 22" fill="hsl(var(--foreground))" />}
       {hairStyle === "flat" && <rect x="28" y="10" width="40" height="14" rx="6" fill="#4A3728" />}
-      {hairStyle === "mohawk" && <rect x="42" y="2" width="12" height="20" rx="4" fill="#C62828" />}
+      {hairStyle === "mohawk" && <rect x="42" y="2" width="12" height="20" rx="4" fill="hsl(var(--destructive))" />}
       {hairStyle === "curly" && (
         <>
-          <circle cx="34" cy="14" r="6" fill="#1B5E20" />
-          <circle cx="42" cy="12" r="6" fill="#1B5E20" />
-          <circle cx="50" cy="12" r="6" fill="#1B5E20" />
-          <circle cx="58" cy="14" r="6" fill="#1B5E20" />
+          <circle cx="34" cy="14" r="6" fill="hsl(var(--accent))" />
+          <circle cx="42" cy="12" r="6" fill="hsl(var(--accent))" />
+          <circle cx="50" cy="12" r="6" fill="hsl(var(--accent))" />
+          <circle cx="58" cy="14" r="6" fill="hsl(var(--accent))" />
         </>
       )}
-      <rect x="36" y="26" width="6" height="6" rx="2" fill="#FFF" />
-      <rect x="54" y="26" width="6" height="6" rx="2" fill="#FFF" />
-      <rect x="38" y="28" width="3" height="3" rx="1" fill="#1a1a2e" />
-      <rect x="56" y="28" width="3" height="3" rx="1" fill="#1a1a2e" />
+      <rect x="36" y="26" width="6" height="6" rx="2" fill="hsl(var(--primary-foreground))" />
+      <rect x="54" y="26" width="6" height="6" rx="2" fill="hsl(var(--primary-foreground))" />
+      <rect x="38" y="28" width="3" height="3" rx="1" fill="hsl(var(--foreground))" />
+      <rect x="56" y="28" width="3" height="3" rx="1" fill="hsl(var(--foreground))" />
       <rect x="42" y="36" width="12" height="2" rx="1" fill={skin} opacity="0.6" />
       {accessory === "glasses" && (
         <>
-          <rect x="34" y="24" width="10" height="8" rx="2" fill="none" stroke="#333" strokeWidth="1.5" />
-          <rect x="52" y="24" width="10" height="8" rx="2" fill="none" stroke="#333" strokeWidth="1.5" />
-          <line x1="44" y1="28" x2="52" y2="28" stroke="#333" strokeWidth="1.5" />
+          <rect x="34" y="24" width="10" height="8" rx="2" fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth="1.5" />
+          <rect x="52" y="24" width="10" height="8" rx="2" fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth="1.5" />
+          <line x1="44" y1="28" x2="52" y2="28" stroke="hsl(var(--muted-foreground))" strokeWidth="1.5" />
         </>
       )}
       {accessory === "headphones" && (
         <>
-          <path d="M28 26 Q28 8 48 8 Q68 8 68 26" fill="none" stroke="#333" strokeWidth="3" />
-          <rect x="24" y="22" width="6" height="10" rx="2" fill="#333" />
-          <rect x="66" y="22" width="6" height="10" rx="2" fill="#333" />
+          <path d="M28 26 Q28 8 48 8 Q68 8 68 26" fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth="3" />
+          <rect x="24" y="22" width="6" height="10" rx="2" fill="hsl(var(--muted-foreground))" />
+          <rect x="66" y="22" width="6" height="10" rx="2" fill="hsl(var(--muted-foreground))" />
         </>
       )}
       <text x="48" y="8" textAnchor="middle" fontSize="14">👑</text>
@@ -83,21 +79,35 @@ function AvatarPreview({ color, skinTone, hairStyle, outfit, accessory }: {
 
 export default function Lobby() {
   const navigate = useNavigate();
-  const [name, setName] = useState(() => localStorage.getItem("playerName") || "");
+  const { profile } = useAuth();
+
+  // Derive name from auth profile, fall back to localStorage for backwards compat
+  const [name, setName] = useState(() => profile?.display_name || localStorage.getItem("playerName") || "");
   const [micOn, setMicOn] = useState(false);
   const [camOn, setCamOn] = useState(false);
   const [skipLobby, setSkipLobby] = useState(false);
 
-  // Load saved config
-  const [config] = useState(() => {
+  // Load saved config (visual only — no auth data)
+  const config = useMemo(() => {
     try {
       const saved = localStorage.getItem("playerConfig");
       if (saved) return JSON.parse(saved);
     } catch {}
     return { color: "#4F46E5", hairStyle: "spiky", outfitStyle: "suit", skinTone: "medium", accessory: "none" };
-  });
+  }, []);
 
-  const buildingName = localStorage.getItem("buildingName") || "Minha Cidade";
+  const buildingName = profile?.company_name || localStorage.getItem("buildingName") || "Minha Cidade";
+
+  // Memoize floating stars so they don't re-generate on every render
+  const stars = useMemo(() =>
+    Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: Math.random() > 0.7 ? "text-lg" : "text-xs",
+      delay: Math.random() * 4,
+    })),
+  []);
 
   const handleJoin = () => {
     if (name.trim()) {
@@ -109,24 +119,21 @@ export default function Lobby() {
     navigate("/office");
   };
 
-  // Skip if user previously checked "skip"
-  useEffect(() => {
+  // Skip if user previously checked "skip" — use useMemo to avoid useEffect flash
+  useMemo(() => {
     if (localStorage.getItem("skipLobby") === "1") {
-      navigate("/office", { replace: true });
+      // Will redirect on first render
     }
-  }, [navigate]);
+  }, []);
 
-  // Floating stars
-  const stars = Array.from({ length: 20 }, (_, i) => ({
-    id: i,
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    size: Math.random() > 0.7 ? "text-lg" : "text-xs",
-    delay: Math.random() * 4,
-  }));
+  // Redirect immediately if skip is set (safe in render since navigate is stable)
+  if (localStorage.getItem("skipLobby") === "1") {
+    navigate("/office", { replace: true });
+    return null;
+  }
 
   return (
-    <div className="min-h-screen bg-[#1A1B2E] relative overflow-hidden flex flex-col items-center justify-center">
+    <div className="min-h-screen bg-background relative overflow-hidden flex flex-col items-center justify-center">
       {/* Floating stars */}
       {stars.map(star => (
         <motion.span
@@ -134,7 +141,7 @@ export default function Lobby() {
           className={`absolute ${star.size} text-muted-foreground/30 pointer-events-none select-none`}
           style={{ left: `${star.x}%`, top: `${star.y}%` }}
           animate={{ opacity: [0.2, 0.8, 0.2], scale: [0.8, 1.2, 0.8] }}
-          transition={{ duration: 3 + Math.random() * 2, repeat: Infinity, delay: star.delay }}
+          transition={{ duration: 3 + star.delay * 0.5, repeat: Infinity, delay: star.delay }}
         >
           ✦
         </motion.span>
@@ -212,7 +219,7 @@ export default function Lobby() {
           <button
             onClick={handleJoin}
             disabled={!name.trim()}
-            className="w-56 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:bg-muted disabled:text-muted-foreground text-white font-bold text-base transition-all shadow-lg shadow-emerald-500/20 hover:shadow-emerald-400/30"
+            className="w-56 py-3 rounded-lg bg-accent hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground text-accent-foreground font-bold text-base transition-all shadow-lg shadow-accent/20 hover:shadow-accent/30"
           >
             Participar
           </button>
@@ -244,7 +251,7 @@ export default function Lobby() {
           className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all ${
             micOn
               ? "bg-card/60 text-foreground border border-border/50"
-              : "bg-destructive/80 text-white"
+              : "bg-destructive/80 text-destructive-foreground"
           }`}
         >
           {micOn ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
@@ -255,7 +262,7 @@ export default function Lobby() {
           className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all ${
             camOn
               ? "bg-card/60 text-foreground border border-border/50"
-              : "bg-destructive/80 text-white"
+              : "bg-destructive/80 text-destructive-foreground"
           }`}
         >
           {camOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
