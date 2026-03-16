@@ -251,10 +251,10 @@ function BuildingExterior({
 
       {/* Baseboard */}
       <mesh position={[cx, foundH + 0.03, northZ + 0.04]}>
-        <boxGeometry args={[bw, 0.06, 0.05]} /><meshStandardMaterial color="#6B5840" />
+        <boxGeometry args={[bw, 0.06, 0.05]} /><meshStandardMaterial color="#3A3A42" />
       </mesh>
       <mesh position={[westX + 0.04, foundH + 0.03, cz]}>
-        <boxGeometry args={[0.05, 0.06, bh]} /><meshStandardMaterial color="#6B5840" />
+        <boxGeometry args={[0.05, 0.06, bh]} /><meshStandardMaterial color="#3A3A42" />
       </mesh>
 
       {/* Windows */}
