@@ -204,14 +204,20 @@ function BuildingExterior({
         <meshStandardMaterial color={trimColor} />
       </mesh>
 
-      {/* Interior floor */}
+      {/* Interior floor - dark modern */}
       <mesh position={[cx, foundH + 0.001, cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow onPointerDown={handleFloorDown} onPointerUp={handleFloorUp}>
         <planeGeometry args={[bw, bh]} />
-        <meshStandardMaterial color="#9B7B55" roughness={0.85} />
+        <meshStandardMaterial color="#E8DDD0" roughness={0.9} />
       </mesh>
+      {/* Floor tile grid */}
       {Array.from({ length: Math.ceil(bw / 0.5) + 1 }).map((_, i) => (
         <mesh key={`vl${i}`} raycast={() => null} position={[cx - bw / 2 + i * 0.5, foundH + 0.002, cz]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[0.012, bh]} /><meshBasicMaterial color="#7A6040" />
+          <planeGeometry args={[0.008, bh]} /><meshBasicMaterial color="#D8CFC2" />
+        </mesh>
+      ))}
+      {Array.from({ length: Math.ceil(bh / 0.5) + 1 }).map((_, i) => (
+        <mesh key={`hl${i}`} raycast={() => null} position={[cx, foundH + 0.002, cz - bh / 2 + i * 0.5]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[bw, 0.008]} /><meshBasicMaterial color="#D8CFC2" />
         </mesh>
       ))}
 
