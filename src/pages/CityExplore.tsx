@@ -93,8 +93,12 @@ export default function CityExplore() {
 
   const userId = useMemo(() => {
     try {
-      const stored = localStorage.getItem("agentoffice_user");
-      return stored ? JSON.parse(stored).email || "" : "";
+      const stored = localStorage.getItem("sb-pamvmngaqtcruyipzrpr-auth-token");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return parsed?.user?.id || "";
+      }
+      return "";
     } catch { return ""; }
   }, []);
 

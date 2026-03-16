@@ -1,15 +1,17 @@
-import { useMemo, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Building2, User, Globe, Link2,
-  Star, MapPin, Clock, Settings2, Eye, BarChart3, TrendingUp, Cpu,
+  MapPin, Clock, Settings2, Cpu,
   Users, Bot, MessageCircle, Brain, Monitor
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { DISTRICTS, BUILDING_STYLES } from "@/types/building";
 import { AIReceptionistChat } from "@/components/building/AIReceptionistChat";
+import { BuildingSettings } from "@/components/building/BuildingSettings";
+import { AssistantAnalytics } from "@/components/building/AssistantAnalytics";
 import { AgentWorkspaceHub } from "@/components/workspace/AgentWorkspaceHub";
 import { InteractiveObjects } from "@/components/collaboration/InteractiveObjects";
 import { TeamAgents } from "@/components/collaboration/TeamAgents";
@@ -72,6 +74,13 @@ export default function BuildingInterior() {
     fetch();
   }, [id]);
 
+  const [metadata, setMetadata] = useState<Record<string, any>>(building?.metadata || {});
+
+  // Sync metadata when building loads
+  useEffect(() => {
+    if (building?.metadata) setMetadata(building.metadata);
+  }, [building?.metadata]);
+
   const isOwner = building?.owner_id === user?.id;
   const district = DISTRICTS.find(d => d.id === building?.district);
   const styleInfo = BUILDING_STYLES.find(s => s.id === building?.style);
@@ -79,11 +88,6 @@ export default function BuildingInterior() {
   const secondaryColor = building?.secondary_color || "#1e3a5f";
   const customizations = (building?.customizations || {}) as Record<string, boolean>;
 
-  const analytics = useMemo(() => ({
-    visitors: Math.floor(Math.random() * 200) + 20,
-    avgTime: `${Math.floor(Math.random() * 5) + 1}m ${Math.floor(Math.random() * 59)}s`,
-    interactions: Math.floor(Math.random() * 80) + 5,
-  }), [id]);
 
   if (loading) {
     return (
@@ -111,7 +115,7 @@ export default function BuildingInterior() {
   }
 
   // Determine building type from style or metadata
-  const buildingType = (building.metadata as any)?.building_type || building.style || "corporate";
+  const buildingType = metadata?.building_type || building.style || "corporate";
 
   // Build a compatible object for AIReceptionistChat
   const chatBuilding = {
@@ -124,8 +128,8 @@ export default function BuildingInterior() {
     height: building.height,
     primaryColor,
     secondaryColor,
-    bio: "",
-    links: [] as string[],
+    bio: metadata?.bio || "",
+    links: (metadata?.links || []) as string[],
     customizations: customizations as any,
     createdAt: building.created_at,
     coordinates: { x: 0, z: 0 },
@@ -218,15 +222,33 @@ export default function BuildingInterior() {
           >
             <AIReceptionistChat building={chatBuilding} buildingType={buildingType} />
 
-            <div className="bg-card border border-border rounded-2xl p-6">
-              <h2 className="text-lg font-display font-bold text-foreground mb-4 flex items-center gap-2">
-                <Globe className="w-5 h-5 text-primary" />
-                Portfólio & Links
-              </h2>
-              <div className="text-center py-6 text-muted-foreground text-sm">
-                {isOwner ? "Adicione links ao seu portfólio nas configurações" : "Nenhum link adicionado ainda"}
+            {/* Owner Settings */}
+            {isOwner && (
+              <BuildingSettings
+                buildingId={building.id}
+                metadata={metadata}
+                onUpdate={setMetadata}
+              />
+            )}
+
+            {/* Links */}
+            {(metadata?.links?.length > 0) && (
+              <div className="bg-card border border-border rounded-2xl p-6">
+                <h2 className="text-lg font-display font-bold text-foreground mb-4 flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-primary" />
+                  Portfólio & Links
+                </h2>
+                <div className="space-y-2">
+                  {(metadata.links as string[]).map((link, i) => (
+                    <a key={i} href={link} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted hover:bg-accent text-sm text-primary transition-colors">
+                      <Link2 className="w-3.5 h-3.5" />
+                      {link}
+                    </a>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </motion.div>
 
           {/* Sidebar */}
@@ -236,26 +258,8 @@ export default function BuildingInterior() {
             transition={{ delay: 0.2 }}
             className="space-y-4"
           >
-            <div className="bg-card border border-border rounded-2xl p-5">
-              <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-primary" />
-                Analytics
-              </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground text-xs flex items-center gap-1"><Eye className="w-3 h-3" /> Visitantes</span>
-                  <span className="text-foreground text-sm font-bold">{analytics.visitors}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground text-xs flex items-center gap-1"><Clock className="w-3 h-3" /> Tempo médio</span>
-                  <span className="text-foreground text-sm font-bold">{analytics.avgTime}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground text-xs flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Interações AI</span>
-                  <span className="text-foreground text-sm font-bold">{analytics.interactions}</span>
-                </div>
-              </div>
-            </div>
+            {/* Real Analytics */}
+            <AssistantAnalytics buildingId={building.id} />
 
             <div className="bg-card border border-border rounded-2xl p-5">
               <h3 className="text-sm font-bold text-foreground mb-3">Detalhes do Prédio</h3>
