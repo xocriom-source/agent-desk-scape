@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Search, Calendar, MoreVertical, Globe, Star, Trash2 } from "lucide-react";
-import logo from "@/assets/logo.png";
+import logoOriginal from "@/assets/logo-original.svg";
 
 interface SpaceData {
   id: string;
