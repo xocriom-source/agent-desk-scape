@@ -469,7 +469,7 @@ function PropertyCard({ biz, isSelected, onSelect, onHover }: {
   );
 }
 
-// ─── World Map ──────────────────────────────────────
+// ─── World Map (Dynasty 8 / GTA style) ─────────────
 function WorldMap({ businesses, selected, hoveredId, popupBiz, onSelect, onHover, onPopup }: {
   businesses: Business[];
   selected: Business | null;
@@ -493,8 +493,9 @@ function WorldMap({ businesses, selected, hoveredId, popupBiz, onSelect, onHover
       <NavigationControl position="top-right" showCompass={false} />
 
       {businesses.map(biz => {
-        const color = CAT_COLORS[biz.category] || "#6b7280";
-        const isActive = selected?.id === biz.id || hoveredId === biz.id;
+        const isSelected = selected?.id === biz.id;
+        const isHovered = hoveredId === biz.id;
+        const isActive = isSelected || isHovered;
 
         return (
           <Marker
@@ -507,24 +508,40 @@ function WorldMap({ businesses, selected, hoveredId, popupBiz, onSelect, onHover
             <div
               onMouseEnter={() => { onHover(biz.id); onPopup(biz); }}
               onMouseLeave={() => { onHover(null); onPopup(null); }}
-              className={`cursor-pointer transition-transform duration-200 ${isActive ? "scale-125 z-20" : "z-10 hover:scale-110"}`}
+              className={`cursor-pointer transition-all duration-200 ${isActive ? "scale-125 z-30" : "z-10 hover:scale-110"}`}
+              style={{ filter: isActive ? "drop-shadow(0 4px 8px rgba(0,0,0,0.4))" : "drop-shadow(0 2px 4px rgba(0,0,0,0.3))" }}
             >
-              <div
-                className="px-2 py-1 rounded-full text-[10px] font-bold shadow-lg whitespace-nowrap border"
-                style={{
-                  background: isActive ? color : "hsl(var(--card))",
-                  color: isActive ? "#fff" : "hsl(var(--foreground))",
-                  borderColor: isActive ? color : "hsl(var(--border) / 0.3)",
-                  boxShadow: isActive ? `0 4px 14px ${color}50` : "0 2px 6px rgba(0,0,0,0.3)",
-                }}
-              >
-                {biz.sale_price ? formatCurrency(biz.sale_price) : "🏢"}
-              </div>
-              <div className="w-0 h-0 mx-auto" style={{
-                borderLeft: "5px solid transparent",
-                borderRight: "5px solid transparent",
-                borderTop: `5px solid ${isActive ? color : "hsl(var(--card))"}`,
-              }} />
+              {/* GTA-style map pin */}
+              <svg width="32" height="40" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* Pin shape */}
+                <path
+                  d="M16 0C7.16 0 0 7.16 0 16C0 28 16 40 16 40C16 40 32 28 32 16C32 7.16 24.84 0 16 0Z"
+                  fill={isSelected ? "#D4A017" : isHovered ? "#4a9e4a" : "#2d7a2d"}
+                  stroke={isSelected ? "#FFD700" : "#1a5c1a"}
+                  strokeWidth="1.5"
+                />
+                {/* White circle bg */}
+                <circle cx="16" cy="15" r="9" fill="white" />
+                {/* House icon */}
+                <path
+                  d="M16 8L9 14V22H13V17H19V22H23V14L16 8Z"
+                  fill={isSelected ? "#D4A017" : "#2d7a2d"}
+                />
+              </svg>
+              {/* Price tag on selected/hovered */}
+              {isActive && (
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 -translate-y-full">
+                  <div
+                    className="px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shadow-md"
+                    style={{
+                      background: isSelected ? "#D4A017" : "#2d7a2d",
+                      color: "#fff",
+                    }}
+                  >
+                    {biz.sale_price ? formatCurrency(biz.sale_price) : biz.name}
+                  </div>
+                </div>
+              )}
             </div>
           </Marker>
         );
@@ -537,26 +554,25 @@ function WorldMap({ businesses, selected, hoveredId, popupBiz, onSelect, onHover
           closeButton={false}
           closeOnClick={false}
           anchor="bottom"
-          offset={35}
-          className="zillow-popup"
+          offset={45}
+          className="dynasty8-popup"
         >
-          <div className="p-2.5 min-w-[200px] rounded-lg" style={{ background: "hsl(var(--card))" }}>
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-xl">🏢</span>
-              <div>
-                <p className="text-[11px] font-bold text-foreground">{popupBiz.name}</p>
-                <p className="text-[9px] text-muted-foreground">{popupBiz.buildingName}</p>
+          <div className="p-3 min-w-[220px] rounded-lg bg-white text-gray-900">
+            <div className="flex items-center gap-2.5 mb-2">
+              <div className="w-10 h-10 rounded bg-gradient-to-br from-green-100 to-green-50 flex items-center justify-center text-lg border border-green-200">🏢</div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-gray-900 truncate">{popupBiz.name}</p>
+                <p className="text-[9px] text-gray-500">{popupBiz.buildingName}</p>
               </div>
             </div>
             {popupBiz.city && (
-              <p className="text-[9px] text-muted-foreground/70 flex items-center gap-1 mb-1">
-                <MapPin className="w-2.5 h-2.5" />{popupBiz.city}, {popupBiz.country}
+              <p className="text-[9px] text-gray-500 flex items-center gap-1 mb-1.5">
+                <MapPin className="w-2.5 h-2.5 text-green-600" />{popupBiz.city}, {popupBiz.country}
               </p>
             )}
-            <div className="flex items-center gap-2 text-[9px]">
-              <span className="text-emerald-400 font-semibold">MRR {formatCurrency(popupBiz.mrr)}</span>
-              <span className="text-muted-foreground/30">·</span>
-              <span className="font-bold text-foreground">{popupBiz.sale_price ? formatCurrency(popupBiz.sale_price) : "—"}</span>
+            <div className="flex items-center justify-between pt-1.5 border-t border-gray-100">
+              <span className="text-[10px] text-gray-500">MRR <span className="font-bold text-green-600">{formatCurrency(popupBiz.mrr)}</span></span>
+              <span className="text-sm font-black text-gray-900">{popupBiz.sale_price ? formatCurrency(popupBiz.sale_price) : "—"}</span>
             </div>
           </div>
         </Popup>
