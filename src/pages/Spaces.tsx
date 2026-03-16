@@ -149,7 +149,7 @@ export default function Spaces() {
       {/* Filters */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <div className="flex items-center justify-end gap-4 mb-8">
-          <div className="flex bg-[#252640] rounded-full p-1">
+          <div className="flex bg-card rounded-full p-1">
             <button
               onClick={() => setFilter("recent")}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
