@@ -680,7 +680,6 @@ export function OfficeScene({
           gl.toneMappingExposure = 1.4;
           gl.shadowMap.type = THREE.BasicShadowMap; // Cheaper shadow type
         }}
-        frameloop="demand"
         dpr={[1, 1.5]}
       >
         <color attach="background" args={[dn.bgColor]} />
