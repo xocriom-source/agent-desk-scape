@@ -77,6 +77,7 @@ const App = () => (
               <Route path="/ecosystem" element={<ProtectedRoute><EcosystemHub /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
               <Route path="/marketplace/businesses" element={<ProtectedRoute><DigitalMarketplace /></ProtectedRoute>} />
+              <Route path="/integrations" element={<ProtectedRoute><IntegrationHub /></ProtectedRoute>} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
