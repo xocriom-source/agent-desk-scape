@@ -125,9 +125,9 @@ function BuildingExterior({
   const foundH = 0.35;
   const wallH = 1.3;
   const wallT = 0.2;
-  const brickColor = "#8B5E3C";
-  const brickDark = "#6B4226";
-  const trimColor = "#D4C4A8";
+  const brickColor = "#5A5A64";
+  const brickDark = "#48484F";
+  const trimColor = "#6E6E78";
   const windowGlassLit = "#FFE4A8";
   const windowGlassDark = "#1A1A2A";
 
