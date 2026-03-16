@@ -154,7 +154,7 @@ const DEMO_BUSINESSES: Business[] = [
   { id: "d18", name: "TravelStack", category: "saas", description: "Travel agency management SaaS.", mrr: 36000, growth_percent: 11, sale_price: 1400000, revenue_multiple: 3.2, founder_name: "Ahmed Hassan", status: "listed", building_id: "b18", owner_id: "", product_url: null, buildingName: "Travel Hub", country: "AE", city: "Dubai", region: "Middle East", team_size: 10, business_model: "subscription", category_data: { arr: 432000, subscribers: 340, churn: 4.5, ltv: 9800 }, lat: 25.2048, lng: 55.2708 },
 ];
 
-const MAP_STYLE = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
+const MAP_STYLE = "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json";
 
 // ─── Main Component ─────────────────────────────────
 export default function DigitalMarketplace() {
@@ -262,14 +262,14 @@ export default function DigitalMarketplace() {
   return (
     <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
       {/* ─── Top Bar ─── */}
-      <header className="h-11 border-b border-border/30 bg-card/90 backdrop-blur-xl flex items-center px-3 gap-2 shrink-0 z-30">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-muted-foreground hover:text-foreground h-7 w-7">
+      <header className="h-11 border-b border-green-800/40 bg-gradient-to-r from-green-900/95 to-green-800/90 backdrop-blur-xl flex items-center px-3 gap-2 shrink-0 z-30">
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-green-300 hover:text-white h-7 w-7">
           <ArrowLeft className="w-3.5 h-3.5" />
         </Button>
-        <Globe className="w-4 h-4 text-primary" />
-        <h1 className="font-bold text-xs tracking-tight hidden sm:block">Global Digital Business Marketplace</h1>
-        <Badge variant="outline" className="text-[8px] border-amber-500/30 text-amber-400 gap-0.5 px-1.5 py-0">
-          <Tag className="w-2 h-2" /> {totalForSale} FOR SALE
+        <Building2 className="w-4 h-4 text-green-400" />
+        <h1 className="font-bold text-xs tracking-tight hidden sm:block text-white">Dynasty 8 — Digital Business Marketplace</h1>
+        <Badge variant="outline" className="text-[8px] border-green-500/30 text-green-300 gap-0.5 px-1.5 py-0">
+          <Tag className="w-2 h-2" /> {totalForSale} PROPERTIES
         </Badge>
         {/* Region badges */}
         <div className="hidden lg:flex items-center gap-1 ml-2">
@@ -280,8 +280,8 @@ export default function DigitalMarketplace() {
           ))}
         </div>
         <div className="flex-1" />
-        <span className="text-[9px] text-muted-foreground font-mono hidden md:block">
-          {formatCurrency(totalValue)} total value
+        <span className="text-[9px] text-green-300/70 font-mono hidden md:block">
+          Total: {formatCurrency(totalValue)}
         </span>
         <div className="flex items-center gap-0.5 bg-muted/20 rounded-lg p-0.5">
           <button onClick={() => setViewMode("map")} className={`px-2 py-0.5 rounded text-[9px] font-medium transition-colors ${viewMode === "map" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
@@ -469,7 +469,7 @@ function PropertyCard({ biz, isSelected, onSelect, onHover }: {
   );
 }
 
-// ─── World Map ──────────────────────────────────────
+// ─── World Map (Dynasty 8 / GTA style) ─────────────
 function WorldMap({ businesses, selected, hoveredId, popupBiz, onSelect, onHover, onPopup }: {
   businesses: Business[];
   selected: Business | null;
@@ -493,8 +493,9 @@ function WorldMap({ businesses, selected, hoveredId, popupBiz, onSelect, onHover
       <NavigationControl position="top-right" showCompass={false} />
 
       {businesses.map(biz => {
-        const color = CAT_COLORS[biz.category] || "#6b7280";
-        const isActive = selected?.id === biz.id || hoveredId === biz.id;
+        const isSelected = selected?.id === biz.id;
+        const isHovered = hoveredId === biz.id;
+        const isActive = isSelected || isHovered;
 
         return (
           <Marker
@@ -507,24 +508,40 @@ function WorldMap({ businesses, selected, hoveredId, popupBiz, onSelect, onHover
             <div
               onMouseEnter={() => { onHover(biz.id); onPopup(biz); }}
               onMouseLeave={() => { onHover(null); onPopup(null); }}
-              className={`cursor-pointer transition-transform duration-200 ${isActive ? "scale-125 z-20" : "z-10 hover:scale-110"}`}
+              className={`cursor-pointer transition-all duration-200 ${isActive ? "scale-125 z-30" : "z-10 hover:scale-110"}`}
+              style={{ filter: isActive ? "drop-shadow(0 4px 8px rgba(0,0,0,0.4))" : "drop-shadow(0 2px 4px rgba(0,0,0,0.3))" }}
             >
-              <div
-                className="px-2 py-1 rounded-full text-[10px] font-bold shadow-lg whitespace-nowrap border"
-                style={{
-                  background: isActive ? color : "hsl(var(--card))",
-                  color: isActive ? "#fff" : "hsl(var(--foreground))",
-                  borderColor: isActive ? color : "hsl(var(--border) / 0.3)",
-                  boxShadow: isActive ? `0 4px 14px ${color}50` : "0 2px 6px rgba(0,0,0,0.3)",
-                }}
-              >
-                {biz.sale_price ? formatCurrency(biz.sale_price) : "🏢"}
-              </div>
-              <div className="w-0 h-0 mx-auto" style={{
-                borderLeft: "5px solid transparent",
-                borderRight: "5px solid transparent",
-                borderTop: `5px solid ${isActive ? color : "hsl(var(--card))"}`,
-              }} />
+              {/* GTA-style map pin */}
+              <svg width="32" height="40" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* Pin shape */}
+                <path
+                  d="M16 0C7.16 0 0 7.16 0 16C0 28 16 40 16 40C16 40 32 28 32 16C32 7.16 24.84 0 16 0Z"
+                  fill={isSelected ? "#D4A017" : isHovered ? "#4a9e4a" : "#2d7a2d"}
+                  stroke={isSelected ? "#FFD700" : "#1a5c1a"}
+                  strokeWidth="1.5"
+                />
+                {/* White circle bg */}
+                <circle cx="16" cy="15" r="9" fill="white" />
+                {/* House icon */}
+                <path
+                  d="M16 8L9 14V22H13V17H19V22H23V14L16 8Z"
+                  fill={isSelected ? "#D4A017" : "#2d7a2d"}
+                />
+              </svg>
+              {/* Price tag on selected/hovered */}
+              {isActive && (
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 -translate-y-full">
+                  <div
+                    className="px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap shadow-md"
+                    style={{
+                      background: isSelected ? "#D4A017" : "#2d7a2d",
+                      color: "#fff",
+                    }}
+                  >
+                    {biz.sale_price ? formatCurrency(biz.sale_price) : biz.name}
+                  </div>
+                </div>
+              )}
             </div>
           </Marker>
         );
@@ -537,26 +554,25 @@ function WorldMap({ businesses, selected, hoveredId, popupBiz, onSelect, onHover
           closeButton={false}
           closeOnClick={false}
           anchor="bottom"
-          offset={35}
-          className="zillow-popup"
+          offset={45}
+          className="dynasty8-popup"
         >
-          <div className="p-2.5 min-w-[200px] rounded-lg" style={{ background: "hsl(var(--card))" }}>
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-xl">🏢</span>
-              <div>
-                <p className="text-[11px] font-bold text-foreground">{popupBiz.name}</p>
-                <p className="text-[9px] text-muted-foreground">{popupBiz.buildingName}</p>
+          <div className="p-3 min-w-[220px] rounded-lg bg-white text-gray-900">
+            <div className="flex items-center gap-2.5 mb-2">
+              <div className="w-10 h-10 rounded bg-gradient-to-br from-green-100 to-green-50 flex items-center justify-center text-lg border border-green-200">🏢</div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-gray-900 truncate">{popupBiz.name}</p>
+                <p className="text-[9px] text-gray-500">{popupBiz.buildingName}</p>
               </div>
             </div>
             {popupBiz.city && (
-              <p className="text-[9px] text-muted-foreground/70 flex items-center gap-1 mb-1">
-                <MapPin className="w-2.5 h-2.5" />{popupBiz.city}, {popupBiz.country}
+              <p className="text-[9px] text-gray-500 flex items-center gap-1 mb-1.5">
+                <MapPin className="w-2.5 h-2.5 text-green-600" />{popupBiz.city}, {popupBiz.country}
               </p>
             )}
-            <div className="flex items-center gap-2 text-[9px]">
-              <span className="text-emerald-400 font-semibold">MRR {formatCurrency(popupBiz.mrr)}</span>
-              <span className="text-muted-foreground/30">·</span>
-              <span className="font-bold text-foreground">{popupBiz.sale_price ? formatCurrency(popupBiz.sale_price) : "—"}</span>
+            <div className="flex items-center justify-between pt-1.5 border-t border-gray-100">
+              <span className="text-[10px] text-gray-500">MRR <span className="font-bold text-green-600">{formatCurrency(popupBiz.mrr)}</span></span>
+              <span className="text-sm font-black text-gray-900">{popupBiz.sale_price ? formatCurrency(popupBiz.sale_price) : "—"}</span>
             </div>
           </div>
         </Popup>
@@ -724,16 +740,18 @@ function DetailPanel({ business, onClose, onVisit, onOffer, onBuy }: {
         </div>
 
         {/* Actions */}
-        <div className="p-3 space-y-1.5 border-t border-border/20 shrink-0">
-          <Button onClick={onVisit} variant="outline" size="sm" className="w-full h-8 text-[10px] justify-start gap-2 border-border/30">
-            <ExternalLink className="w-3.5 h-3.5" /> VISIT BUILDING
+        <div className="p-3 space-y-1.5 border-t border-border/20 shrink-0 bg-gradient-to-t from-green-950/30 to-transparent">
+          <Button onClick={onVisit} size="sm" className="w-full h-9 text-[11px] justify-center gap-2 font-bold uppercase tracking-wider bg-green-700 hover:bg-green-600 text-white border-0">
+            <Building2 className="w-3.5 h-3.5" /> VISIT BUILDING IN 3D CITY
           </Button>
-          <Button onClick={onOffer} variant="outline" size="sm" className="w-full h-8 text-[10px] justify-start gap-2 border-border/30">
-            <Send className="w-3.5 h-3.5" /> MAKE OFFER
-          </Button>
-          <Button onClick={onBuy} size="sm" className="w-full h-8 text-[10px] justify-start gap-2 font-bold uppercase tracking-wider" style={{ background: `linear-gradient(135deg, ${color}, ${color}cc)` }}>
-            <ShoppingCart className="w-3.5 h-3.5" /> BUY — {business.sale_price ? formatCurrency(business.sale_price) : "Contact"}
-          </Button>
+          <div className="flex gap-1.5">
+            <Button onClick={onOffer} variant="outline" size="sm" className="flex-1 h-8 text-[10px] gap-1.5 border-green-700/40 text-green-400 hover:bg-green-900/30">
+              <Send className="w-3 h-3" /> MAKE OFFER
+            </Button>
+            <Button onClick={onBuy} size="sm" className="flex-1 h-8 text-[10px] gap-1.5 font-bold uppercase bg-amber-600 hover:bg-amber-500 text-black border-0">
+              <ShoppingCart className="w-3 h-3" /> BUY — {business.sale_price ? formatCurrency(business.sale_price) : "Contact"}
+            </Button>
+          </div>
         </div>
       </div>
     </div>
