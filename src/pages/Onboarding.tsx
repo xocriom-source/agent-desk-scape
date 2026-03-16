@@ -5,6 +5,7 @@ import {
   Building2, Home, Landmark, Briefcase, ArrowRight,
   ArrowLeft, Globe, Check, Search, MapPin
 } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import logoOriginal from "@/assets/logo-original.svg";
@@ -135,85 +136,100 @@ export default function Onboarding() {
     if (!building || !user) return;
 
     setSaving(true);
-    const spaceName = buildingName || building.name;
+    const spaceName = buildingName.trim() || building.name;
     const city = selectedCity || CITIES[0];
-    const colors = STYLE_COLORS[selectedBuilding || "corporate"];
+    const buildingType = selectedBuilding || "corporate";
+    const colors = STYLE_COLORS[buildingType];
+
+    const buildingPayload = {
+      name: spaceName,
+      owner_id: user.id,
+      style: buildingType,
+      district: "central",
+      floors: building.defaultFloors,
+      height: building.defaultHeight,
+      position_x: Math.round((Math.random() * 180 - 90) * 100) / 100,
+      position_z: Math.round((Math.random() * 180 - 90) * 100) / 100,
+      primary_color: colors.primary,
+      secondary_color: colors.secondary,
+      city: city.name,
+      country: city.country,
+      region: city.region,
+      latitude: city.lat,
+      longitude: city.lng,
+      metadata: { created_via: "onboarding", created_at_flow: true },
+    };
 
     try {
+      let savedBuildingId: string | null = null;
+
       if (isNewSpace) {
-        // CREATE a new building
-        await supabase.from("city_buildings").insert({
-          name: spaceName,
-          owner_id: user.id,
-          style: selectedBuilding || "corporate",
-          district: "central",
-          floors: building.defaultFloors,
-          height: building.defaultHeight,
-          position_x: Math.round((Math.random() * 180 - 90) * 100) / 100,
-          position_z: Math.round((Math.random() * 180 - 90) * 100) / 100,
-          primary_color: colors.primary,
-          secondary_color: colors.secondary,
-          city: city.name,
-          country: city.country,
-          region: city.region,
-          latitude: city.lat,
-          longitude: city.lng,
-          metadata: { created_via: "onboarding", created_at_flow: true },
-        });
+        const { data: createdBuilding, error: createError } = await supabase
+          .from("city_buildings")
+          .insert(buildingPayload)
+          .select("id, name, city")
+          .single();
+
+        if (createError) throw createError;
+        savedBuildingId = createdBuilding.id;
       } else {
-        // UPDATE the auto-created building (first-time onboarding)
-        await supabase
+        const { data: existingBuildings, error: existingError } = await supabase
           .from("city_buildings")
-          .update({
-            name: spaceName,
-            style: selectedBuilding || "corporate",
-            floors: building.defaultFloors,
-            height: building.defaultHeight,
-            primary_color: colors.primary,
-            secondary_color: colors.secondary,
-            city: city.name,
-            country: city.country,
-            region: city.region,
-            latitude: city.lat,
-            longitude: city.lng,
-          })
+          .select("id")
           .eq("owner_id", user.id)
-          .is("city", null)
-          .order("created_at", { ascending: true })
+          .order("created_at", { ascending: false })
           .limit(1);
 
-        // Fallback: if no row matched (city wasn't null), update the most recent
-        await supabase
-          .from("city_buildings")
-          .update({
-            name: spaceName,
-            style: selectedBuilding || "corporate",
-            floors: building.defaultFloors,
-            height: building.defaultHeight,
-            primary_color: colors.primary,
-            secondary_color: colors.secondary,
-            city: city.name,
-            country: city.country,
-            region: city.region,
-            latitude: city.lat,
-            longitude: city.lng,
-          })
-          .eq("owner_id", user.id)
-          .eq("name", user.user_metadata?.display_name + "'s HQ")
-          .limit(1);
+        if (existingError) throw existingError;
 
-        await updateProfile({ company_name: spaceName, city: city.name });
+        if (existingBuildings && existingBuildings.length > 0) {
+          const { data: updatedBuilding, error: updateError } = await supabase
+            .from("city_buildings")
+            .update(buildingPayload)
+            .eq("id", existingBuildings[0].id)
+            .eq("owner_id", user.id)
+            .select("id, name, city")
+            .single();
+
+          if (updateError) throw updateError;
+          savedBuildingId = updatedBuilding.id;
+        } else {
+          const { data: createdBuilding, error: createError } = await supabase
+            .from("city_buildings")
+            .insert(buildingPayload)
+            .select("id, name, city")
+            .single();
+
+          if (createError) throw createError;
+          savedBuildingId = createdBuilding.id;
+        }
+
+        try {
+          await updateProfile({ company_name: spaceName, city: city.name });
+        } catch {
+          // Non-blocking profile sync
+        }
       }
-    } catch {
-      // Non-blocking
+
+      if (!savedBuildingId) {
+        throw new Error("Space não retornou um ID válido.");
+      }
+
+      localStorage.setItem("currentSpaceId", savedBuildingId);
+      localStorage.setItem("buildingName", spaceName);
+      localStorage.setItem("buildingType", buildingType);
+
+      toast.success(isNewSpace ? "Espaço criado com sucesso" : "Espaço configurado com sucesso", {
+        description: `${spaceName} • ${city.name}`,
+      });
+
+      navigate("/lobby");
+    } catch (error) {
+      const description = error instanceof Error ? error.message : "Não foi possível salvar seu espaço.";
+      toast.error("Erro ao salvar espaço", { description });
+    } finally {
+      setSaving(false);
     }
-
-    // Legacy localStorage
-    localStorage.setItem("buildingName", spaceName);
-    localStorage.setItem("buildingType", selectedBuilding || "corporate");
-
-    setSaving(false);
-    navigate("/spaces");
   };
 
   return (

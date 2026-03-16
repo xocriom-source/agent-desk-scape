@@ -96,7 +96,7 @@ export default function Lobby() {
     return { color: "#4F46E5", hairStyle: "spiky", outfitStyle: "suit", skinTone: "medium", accessory: "none" };
   }, []);
 
-  const buildingName = profile?.company_name || localStorage.getItem("buildingName") || "Minha Cidade";
+  const buildingName = localStorage.getItem("buildingName") || profile?.company_name || "Minha Cidade";
 
   // Memoize floating stars so they don't re-generate on every render
   const stars = useMemo(() =>
