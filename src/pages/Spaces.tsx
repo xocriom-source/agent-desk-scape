@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
 import { Plus, Search, Calendar, MoreVertical, Globe, Star, Trash2 } from "lucide-react";
 import logo from "@/assets/logo.png";
 
