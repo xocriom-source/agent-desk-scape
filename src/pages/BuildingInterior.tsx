@@ -222,15 +222,33 @@ export default function BuildingInterior() {
           >
             <AIReceptionistChat building={chatBuilding} buildingType={buildingType} />
 
-            <div className="bg-card border border-border rounded-2xl p-6">
-              <h2 className="text-lg font-display font-bold text-foreground mb-4 flex items-center gap-2">
-                <Globe className="w-5 h-5 text-primary" />
-                Portfólio & Links
-              </h2>
-              <div className="text-center py-6 text-muted-foreground text-sm">
-                {isOwner ? "Adicione links ao seu portfólio nas configurações" : "Nenhum link adicionado ainda"}
+            {/* Owner Settings */}
+            {isOwner && (
+              <BuildingSettings
+                buildingId={building.id}
+                metadata={metadata}
+                onUpdate={setMetadata}
+              />
+            )}
+
+            {/* Links */}
+            {(metadata?.links?.length > 0) && (
+              <div className="bg-card border border-border rounded-2xl p-6">
+                <h2 className="text-lg font-display font-bold text-foreground mb-4 flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-primary" />
+                  Portfólio & Links
+                </h2>
+                <div className="space-y-2">
+                  {(metadata.links as string[]).map((link, i) => (
+                    <a key={i} href={link} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted hover:bg-accent text-sm text-primary transition-colors">
+                      <Link2 className="w-3.5 h-3.5" />
+                      {link}
+                    </a>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </motion.div>
 
           {/* Sidebar */}
