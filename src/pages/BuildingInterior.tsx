@@ -110,6 +110,9 @@ export default function BuildingInterior() {
     );
   }
 
+  // Determine building type from style or metadata
+  const buildingType = (building.metadata as any)?.building_type || building.style || "corporate";
+
   // Build a compatible object for AIReceptionistChat
   const chatBuilding = {
     id: building.id,
