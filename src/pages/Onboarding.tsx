@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Building2, Home, Landmark, Briefcase, ArrowRight,
-  ArrowLeft, Users2, Zap, Star, Globe, Check
+  ArrowLeft, Globe, Check
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import logo from "@/assets/logo.png";
 
 const BUILDING_OPTIONS = [
@@ -16,7 +17,9 @@ const BUILDING_OPTIONS = [
     floors: "5-20 andares",
     agents: "Até 20 agentes",
     bestFor: "Operações, gestão de projetos, análise de dados",
-    color: "hsl(239 84% 67%)",
+    color: "hsl(var(--primary))",
+    colorBg: "hsl(var(--primary) / 0.15)",
+    colorLight: "hsl(var(--primary) / 0.08)",
     features: ["Salas de reunião", "Área de gestão", "Dashboard integrado"],
   },
   {
@@ -28,6 +31,8 @@ const BUILDING_OPTIONS = [
     agents: "Até 6 agentes",
     bestFor: "Arte, música, escrita criativa, design",
     color: "hsl(330 80% 60%)",
+    colorBg: "hsl(330 80% 60% / 0.15)",
+    colorLight: "hsl(330 80% 60% / 0.08)",
     features: ["Estúdio de música", "Ateliê de arte", "Área de inspiração"],
   },
   {
@@ -38,7 +43,9 @@ const BUILDING_OPTIONS = [
     floors: "3-10 andares",
     agents: "Até 12 agentes",
     bestFor: "Pesquisa, AI, ciência de dados, experimentação",
-    color: "hsl(160 84% 39%)",
+    color: "hsl(var(--accent))",
+    colorBg: "hsl(var(--accent) / 0.15)",
+    colorLight: "hsl(var(--accent) / 0.08)",
     features: ["Lab de IA", "Sala de análise", "Biblioteca digital"],
   },
   {
@@ -50,30 +57,43 @@ const BUILDING_OPTIONS = [
     agents: "Até 15 agentes",
     bestFor: "Networking, vendas, marketing, parcerias",
     color: "hsl(45 80% 50%)",
+    colorBg: "hsl(45 80% 50% / 0.15)",
+    colorLight: "hsl(45 80% 50% / 0.08)",
     features: ["Marketplace integrado", "Sala de pitch", "Área de networking"],
   },
 ];
 
 export default function Onboarding() {
   const navigate = useNavigate();
+  const { updateProfile } = useAuth();
   const [step, setStep] = useState<1 | 2>(1);
   const [selectedBuilding, setSelectedBuilding] = useState<string | null>(null);
   const [buildingName, setBuildingName] = useState("");
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     const building = BUILDING_OPTIONS.find(b => b.id === selectedBuilding);
     if (!building) return;
 
     const spaceName = buildingName || building.name;
-    const userData = localStorage.getItem("agentoffice_user");
-    if (userData) {
-      const parsed = JSON.parse(userData);
-      parsed.building = { type: selectedBuilding, name: spaceName };
-      parsed.onboarded = true;
-      localStorage.setItem("agentoffice_user", JSON.stringify(parsed));
+
+    // Persist building choice to profile in the database
+    try {
+      await updateProfile({ company_name: spaceName });
+    } catch {
+      // Non-blocking — localStorage fallback below
     }
 
-    // Create a new space entry for the Spaces page
+    // Also keep localStorage for components that still read it
+    const userData = localStorage.getItem("agentoffice_user");
+    if (userData) {
+      try {
+        const parsed = JSON.parse(userData);
+        parsed.building = { type: selectedBuilding, name: spaceName };
+        parsed.onboarded = true;
+        localStorage.setItem("agentoffice_user", JSON.stringify(parsed));
+      } catch {}
+    }
+
     const newSpace = {
       id: "space-" + Date.now(),
       name: spaceName,
@@ -81,7 +101,7 @@ export default function Onboarding() {
       type: selectedBuilding,
       agents: Math.floor(Math.random() * 8) + 3,
       lastVisit: "agora",
-      color: building.color.startsWith("hsl") ? "#4F46E5" : building.color,
+      color: "#4F46E5",
       emoji: "🏢",
     };
     localStorage.setItem("pendingNewSpace", JSON.stringify(newSpace));
@@ -92,7 +112,7 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
       <div className="w-full max-w-4xl">
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-8">
@@ -102,15 +122,15 @@ export default function Onboarding() {
 
         {/* Progress */}
         <div className="flex items-center justify-center gap-2 mb-8">
-          <div className={`w-8 h-1 rounded-full transition-colors ${step >= 1 ? "bg-primary" : "bg-gray-700"}`} />
-          <div className={`w-8 h-1 rounded-full transition-colors ${step >= 2 ? "bg-primary" : "bg-gray-700"}`} />
+          <div className={`w-8 h-1 rounded-full transition-colors ${step >= 1 ? "bg-primary" : "bg-muted"}`} />
+          <div className={`w-8 h-1 rounded-full transition-colors ${step >= 2 ? "bg-primary" : "bg-muted"}`} />
         </div>
 
         {step === 1 && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <div className="text-center mb-8">
               <h1 className="text-3xl font-display font-bold mb-2">Escolha o tipo do seu prédio</h1>
-              <p className="text-gray-400">Cada tipo tem vantagens únicas. Você pode mudar depois.</p>
+              <p className="text-muted-foreground">Cada tipo tem vantagens únicas. Você pode mudar depois.</p>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4 mb-8">
@@ -121,32 +141,32 @@ export default function Onboarding() {
                   className={`rounded-2xl p-5 border-2 cursor-pointer transition-all ${
                     selectedBuilding === b.id
                       ? "border-primary bg-primary/5"
-                      : "border-gray-800 bg-gray-900/50 hover:border-gray-600"
+                      : "border-border bg-card/50 hover:border-muted-foreground/30"
                   }`}
                 >
                   <div className="flex items-start gap-3 mb-3">
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${b.color}20` }}>
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: b.colorBg }}>
                       <b.icon className="w-5 h-5" style={{ color: b.color }} />
                     </div>
                     <div>
-                      <h3 className="font-display font-semibold text-white">{b.name}</h3>
-                      <p className="text-xs text-gray-400 leading-relaxed mt-1">{b.desc}</p>
+                      <h3 className="font-display font-semibold text-foreground">{b.name}</h3>
+                      <p className="text-xs text-muted-foreground leading-relaxed mt-1">{b.desc}</p>
                     </div>
                     {selectedBuilding === b.id && (
                       <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center shrink-0">
-                        <Check className="w-3.5 h-3.5 text-white" />
+                        <Check className="w-3.5 h-3.5 text-primary-foreground" />
                       </div>
                     )}
                   </div>
 
                   <div className="flex gap-2 text-[10px] mb-3">
-                    <span className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded-md">{b.floors}</span>
-                    <span className="bg-gray-800 text-gray-300 px-2 py-0.5 rounded-md">{b.agents}</span>
+                    <span className="bg-muted text-muted-foreground px-2 py-0.5 rounded-md">{b.floors}</span>
+                    <span className="bg-muted text-muted-foreground px-2 py-0.5 rounded-md">{b.agents}</span>
                   </div>
 
                   <div className="flex flex-wrap gap-1.5">
                     {b.features.map(f => (
-                      <span key={f} className="text-[9px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: `${b.color}15`, color: b.color }}>
+                      <span key={f} className="text-[9px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: b.colorLight, color: b.color }}>
                         {f}
                       </span>
                     ))}
@@ -159,7 +179,7 @@ export default function Onboarding() {
               <button
                 onClick={() => selectedBuilding && setStep(2)}
                 disabled={!selectedBuilding}
-                className="flex items-center gap-2 bg-primary text-white px-8 py-3 rounded-xl font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
+                className="flex items-center gap-2 bg-primary text-primary-foreground px-8 py-3 rounded-xl font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
               >
                 Continuar
                 <ArrowRight className="w-4 h-4" />
@@ -172,21 +192,21 @@ export default function Onboarding() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <div className="text-center mb-8">
               <h1 className="text-3xl font-display font-bold mb-2">Dê um nome ao seu prédio</h1>
-              <p className="text-gray-400">Este será o nome visível para outros jogadores na cidade.</p>
+              <p className="text-muted-foreground">Este será o nome visível para outros jogadores na cidade.</p>
             </div>
 
             <div className="max-w-md mx-auto mb-8">
               {(() => {
                 const b = BUILDING_OPTIONS.find(x => x.id === selectedBuilding)!;
                 return (
-                  <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 mb-6">
+                  <div className="bg-card border border-border rounded-2xl p-6 mb-6">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${b.color}20` }}>
+                      <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: b.colorBg }}>
                         <b.icon className="w-6 h-6" style={{ color: b.color }} />
                       </div>
                       <div>
-                        <h3 className="font-display font-semibold text-white">{b.name}</h3>
-                        <p className="text-xs text-gray-500">{b.bestFor}</p>
+                        <h3 className="font-display font-semibold text-foreground">{b.name}</h3>
+                        <p className="text-xs text-muted-foreground">{b.bestFor}</p>
                       </div>
                     </div>
 
@@ -195,7 +215,7 @@ export default function Onboarding() {
                       placeholder="Ex: MeuNegócio HQ, Creative Labs..."
                       value={buildingName}
                       onChange={e => setBuildingName(e.target.value)}
-                      className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-primary text-sm"
+                      className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 text-sm transition-all"
                       autoFocus
                     />
                   </div>
@@ -205,14 +225,14 @@ export default function Onboarding() {
               <div className="flex justify-between">
                 <button
                   onClick={() => setStep(1)}
-                  className="flex items-center gap-2 text-gray-400 hover:text-white px-4 py-2 rounded-xl transition-colors"
+                  className="flex items-center gap-2 text-muted-foreground hover:text-foreground px-4 py-2 rounded-xl transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   Voltar
                 </button>
                 <button
                   onClick={handleFinish}
-                  className="flex items-center gap-2 bg-primary text-white px-8 py-3 rounded-xl font-medium hover:bg-primary/90 transition-colors"
+                  className="flex items-center gap-2 bg-primary text-primary-foreground px-8 py-3 rounded-xl font-medium hover:bg-primary/90 transition-colors"
                 >
                   <Globe className="w-4 h-4" />
                   Escolher cidade
