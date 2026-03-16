@@ -94,7 +94,7 @@ export default function Spaces() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-6">
-              <img src={logo} alt="Logo" className="w-9 h-9" />
+              <img src={logoOriginal} alt="Logo" className="w-9 h-9" />
               <button className="flex items-center gap-2 text-muted-foreground hover:text-foreground text-sm transition-colors">
                 <Calendar className="w-4 h-4" />
                 Eventos
