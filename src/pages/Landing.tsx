@@ -325,8 +325,8 @@ export default function Landing() {
         {/* ── Navbar ── */}
         <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 sm:px-6 py-3 bg-background/80 backdrop-blur-xl border-b border-primary/10">
           <div className="flex items-center gap-3">
-            <img src={logo} alt="Agent Office" className="w-7 h-7" />
-            <span className="font-display font-bold text-sm tracking-wider text-primary hidden sm:inline">AGENT OFFICE</span>
+            <img src={logo} alt="The Good City" className="w-7 h-7" />
+            <span className="font-display font-bold text-sm tracking-wider text-primary hidden sm:inline">THE GOOD CITY</span>
           </div>
 
           <div className="hidden md:flex items-center gap-6">
