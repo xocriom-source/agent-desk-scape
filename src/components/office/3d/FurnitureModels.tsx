@@ -48,6 +48,20 @@ const FURNITURE_LABELS: Record<string, string> = {
   pingpong: "Ping Pong",
   dartboard: "Dardos",
   rug: "Tapete",
+  // New items
+  round_table: "Mesa redonda",
+  reception_desk: "Recepção",
+  coffee_bar: "Bar de café",
+  treadmill: "Esteira",
+  dumbbell_rack: "Halteres",
+  punching_bag: "Saco de pancada",
+  yoga_mat: "Tapete de yoga",
+  kanban_board: "Kanban",
+  neon_sign: "Letreiro neon",
+  aquarium: "Aquário",
+  standing_desk: "Mesa em pé",
+  couch_l: "Sofá L",
+  meeting_chair: "Cadeira reunião",
 };
 
 // Color palettes for furniture
