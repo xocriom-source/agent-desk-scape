@@ -116,7 +116,7 @@ export function CinematicIntro({ cityName, cityFlag, playerName, onComplete }: C
                 className="text-4xl sm:text-5xl font-mono font-bold tracking-[0.25em] mb-6"
                 style={{ color: mainColor }}
               >
-                AGENT OFFICE
+                THE GOOD CITY
               </h1>
               <p className="text-xs font-mono tracking-[0.3em] uppercase mb-6" style={{ color: darkColor }}>
                 FETCHING BUILDINGS...

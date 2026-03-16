@@ -167,7 +167,7 @@ function LoadingScreen({ onComplete }: { onComplete: () => void }) {
           animate={{ opacity: 1, y: 0 }}
           className="text-4xl sm:text-6xl font-display font-bold tracking-[0.2em] mb-6 text-primary"
         >
-          AGENT OFFICE
+          THE GOOD CITY
         </motion.h1>
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
           className="text-xs font-mono tracking-[0.3em] uppercase mb-6 text-muted-foreground"
@@ -325,8 +325,8 @@ export default function Landing() {
         {/* ── Navbar ── */}
         <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 sm:px-6 py-3 bg-background/80 backdrop-blur-xl border-b border-primary/10">
           <div className="flex items-center gap-3">
-            <img src={logo} alt="Agent Office" className="w-7 h-7" />
-            <span className="font-display font-bold text-sm tracking-wider text-primary hidden sm:inline">AGENT OFFICE</span>
+            <img src={logo} alt="The Good City" className="w-7 h-7" />
+            <span className="font-display font-bold text-sm tracking-wider text-primary hidden sm:inline">THE GOOD CITY</span>
           </div>
 
           <div className="hidden md:flex items-center gap-6">
@@ -389,7 +389,7 @@ export default function Landing() {
               transition={{ duration: 0.7, delay: 0.3 }}
               className="text-4xl sm:text-6xl lg:text-8xl font-display font-bold tracking-[0.15em] mb-6 text-primary"
             >
-              AGENT OFFICE
+              THE GOOD CITY
             </motion.h1>
 
             <motion.p
@@ -689,10 +689,10 @@ export default function Landing() {
         <footer className="border-t border-primary/10 py-10 px-4 sm:px-6">
           <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
-              <img src={logo} alt="Agent Office" className="w-6 h-6" />
-              <span className="font-display font-bold text-sm tracking-wider text-primary">AGENT OFFICE</span>
+              <img src={logo} alt="The Good City" className="w-6 h-6" />
+              <span className="font-display font-bold text-sm tracking-wider text-primary">THE GOOD CITY</span>
             </div>
-            <p className="text-[10px] font-mono text-muted-foreground">© 2026 AGENT OFFICE. ALL RIGHTS RESERVED.</p>
+            <p className="text-[10px] font-mono text-muted-foreground">© 2026 THE GOOD CITY. ALL RIGHTS RESERVED.</p>
             <div className="flex gap-6">
               {["TWITTER", "DISCORD", "GITHUB"].map(l => (
                 <a key={l} href="#" className="text-[10px] font-mono tracking-wider text-muted-foreground hover:text-primary transition-colors">{l}</a>
