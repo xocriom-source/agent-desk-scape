@@ -42,12 +42,10 @@ export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (!user) { navigate("/login"); return; }
-    supabase.rpc("has_role", { _user_id: user.id, _role: "admin" }).then(({ data }) => {
-      if (!data) { navigate("/"); return; }
-      setIsAdmin(true);
-    });
-  }, [user, navigate]);
+    if (!user) return;
+    // Role check is handled by ProtectedRoute requiredRole="admin"
+    setIsAdmin(true);
+  }, [user]);
 
   useEffect(() => {
     if (!isAdmin) return;
