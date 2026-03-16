@@ -280,8 +280,8 @@ export default function DigitalMarketplace() {
           ))}
         </div>
         <div className="flex-1" />
-        <span className="text-[9px] text-muted-foreground font-mono hidden md:block">
-          {formatCurrency(totalValue)} total value
+        <span className="text-[9px] text-green-300/70 font-mono hidden md:block">
+          Total: {formatCurrency(totalValue)}
         </span>
         <div className="flex items-center gap-0.5 bg-muted/20 rounded-lg p-0.5">
           <button onClick={() => setViewMode("map")} className={`px-2 py-0.5 rounded text-[9px] font-medium transition-colors ${viewMode === "map" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
