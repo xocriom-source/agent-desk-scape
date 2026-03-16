@@ -273,53 +273,77 @@ export type Database = {
       digital_businesses: {
         Row: {
           building_id: string | null
+          business_model: string | null
           category: string
+          category_data: Json | null
+          country: string | null
           created_at: string
           description: string | null
+          founded_at: string | null
           founder_name: string
           growth_percent: number | null
+          growth_rate: number | null
           id: string
+          logo_url: string | null
           mrr: number
           name: string
           owner_id: string
           product_url: string | null
+          profit: number | null
           revenue_multiple: number | null
           sale_price: number | null
           status: string
+          team_size: number | null
           updated_at: string
         }
         Insert: {
           building_id?: string | null
+          business_model?: string | null
           category?: string
+          category_data?: Json | null
+          country?: string | null
           created_at?: string
           description?: string | null
+          founded_at?: string | null
           founder_name?: string
           growth_percent?: number | null
+          growth_rate?: number | null
           id?: string
+          logo_url?: string | null
           mrr?: number
           name: string
           owner_id: string
           product_url?: string | null
+          profit?: number | null
           revenue_multiple?: number | null
           sale_price?: number | null
           status?: string
+          team_size?: number | null
           updated_at?: string
         }
         Update: {
           building_id?: string | null
+          business_model?: string | null
           category?: string
+          category_data?: Json | null
+          country?: string | null
           created_at?: string
           description?: string | null
+          founded_at?: string | null
           founder_name?: string
           growth_percent?: number | null
+          growth_rate?: number | null
           id?: string
+          logo_url?: string | null
           mrr?: number
           name?: string
           owner_id?: string
           product_url?: string | null
+          profit?: number | null
           revenue_multiple?: number | null
           sale_price?: number | null
           status?: string
+          team_size?: number | null
           updated_at?: string
         }
         Relationships: []
