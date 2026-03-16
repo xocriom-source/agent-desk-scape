@@ -385,7 +385,23 @@ function useWalkAnimation(
   });
 }
 
-// ── Agent 3D (memoized, Html only on hover) ──
+// ── Shared geometries (created once, reused by all agents) ──
+const SHARED_GEO = {
+  body: new THREE.BoxGeometry(0.22, 0.28, 0.14),
+  head: new THREE.BoxGeometry(0.18, 0.18, 0.16),
+  face: new THREE.BoxGeometry(0.14, 0.08, 0.01),
+  eye: new THREE.BoxGeometry(0.035, 0.035, 0.01),
+  arm: new THREE.BoxGeometry(0.05, 0.18, 0.07),
+  leg: new THREE.BoxGeometry(0.07, 0.12, 0.09),
+  antenna: new THREE.CylinderGeometry(0.008, 0.008, 0.1, 4),
+  antennaTip: new THREE.SphereGeometry(0.025, 6, 6),
+  shadow: new THREE.CircleGeometry(0.14, 8),
+  ring: new THREE.RingGeometry(0.2, 0.26, 16),
+};
+const FACE_MAT = new THREE.MeshStandardMaterial({ color: "#1a1a2e" });
+const SHADOW_MAT = new THREE.MeshBasicMaterial({ color: "#000", transparent: true, opacity: 0.12 });
+
+// ── Agent 3D (memoized, shared geometries) ──
 const Agent3D = memo(function Agent3D({ agent, selected, onClick }: { agent: Agent; selected?: boolean; onClick: () => void }) {
   const ref = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
@@ -399,24 +415,31 @@ const Agent3D = memo(function Agent3D({ agent, selected, onClick }: { agent: Age
 
   const statusColor = STATUS_COLORS[agent.status] || "#999";
 
+  // Cache materials per agent color to avoid re-creation
+  const bodyMat = useMemo(() => new THREE.MeshStandardMaterial({ color: agent.color }), [agent.color]);
+  const statusMat = useMemo(() => new THREE.MeshStandardMaterial({ color: statusColor, emissive: statusColor, emissiveIntensity: 1.2 }), [statusColor]);
+  const statusTipMat = useMemo(() => new THREE.MeshStandardMaterial({ color: statusColor, emissive: statusColor, emissiveIntensity: 1.8 }), [statusColor]);
+
   return (
     <group ref={ref} onClick={(e) => { e.stopPropagation(); onClick(); }} onPointerOver={() => { setHovered(true); document.body.style.cursor = "pointer"; }} onPointerOut={() => { setHovered(false); document.body.style.cursor = "default"; }}>
-      <mesh position={[0, 0.25, 0]} castShadow><boxGeometry args={[0.22, 0.28, 0.14]} /><meshStandardMaterial color={agent.color} /></mesh>
-      <mesh position={[0, 0.47, 0]} castShadow><boxGeometry args={[0.18, 0.18, 0.16]} /><meshStandardMaterial color={agent.color} /></mesh>
-      <mesh position={[0, 0.47, 0.081]}><boxGeometry args={[0.14, 0.08, 0.01]} /><meshStandardMaterial color="#1a1a2e" /></mesh>
+      <mesh position={[0, 0.25, 0]} castShadow geometry={SHARED_GEO.body} material={bodyMat} />
+      <mesh position={[0, 0.47, 0]} castShadow geometry={SHARED_GEO.head} material={bodyMat} />
+      <mesh position={[0, 0.47, 0.081]} geometry={SHARED_GEO.face} material={FACE_MAT} />
       {[-0.035, 0.035].map((ox, i) => (
-        <mesh key={i} position={[ox, 0.48, 0.09]}><boxGeometry args={[0.035, 0.035, 0.01]} /><meshStandardMaterial color={statusColor} emissive={statusColor} emissiveIntensity={1.2} /></mesh>
+        <mesh key={i} position={[ox, 0.48, 0.09]} geometry={SHARED_GEO.eye} material={statusMat} />
       ))}
-      <mesh ref={leftArm} position={[-0.14, 0.24, 0]}><boxGeometry args={[0.05, 0.18, 0.07]} /><meshStandardMaterial color={agent.color} /></mesh>
-      <mesh ref={rightArm} position={[0.14, 0.24, 0]}><boxGeometry args={[0.05, 0.18, 0.07]} /><meshStandardMaterial color={agent.color} /></mesh>
-      <mesh position={[0, 0.61, 0]}><cylinderGeometry args={[0.008, 0.008, 0.1, 4]} /><meshStandardMaterial color={agent.color} /></mesh>
-      <mesh position={[0, 0.67, 0]}><sphereGeometry args={[0.025, 6, 6]} /><meshStandardMaterial color={statusColor} emissive={statusColor} emissiveIntensity={1.8} /></mesh>
-      <mesh ref={leftLeg} position={[-0.055, 0.06, 0]}><boxGeometry args={[0.07, 0.12, 0.09]} /><meshStandardMaterial color={agent.color} /></mesh>
-      <mesh ref={rightLeg} position={[0.055, 0.06, 0]}><boxGeometry args={[0.07, 0.12, 0.09]} /><meshStandardMaterial color={agent.color} /></mesh>
-      <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.14, 8]} /><meshBasicMaterial color="#000" transparent opacity={0.12} /></mesh>
+      <mesh ref={leftArm} position={[-0.14, 0.24, 0]} geometry={SHARED_GEO.arm} material={bodyMat} />
+      <mesh ref={rightArm} position={[0.14, 0.24, 0]} geometry={SHARED_GEO.arm} material={bodyMat} />
+      <mesh position={[0, 0.61, 0]} geometry={SHARED_GEO.antenna} material={bodyMat} />
+      <mesh position={[0, 0.67, 0]} geometry={SHARED_GEO.antennaTip} material={statusTipMat} />
+      <mesh ref={leftLeg} position={[-0.055, 0.06, 0]} geometry={SHARED_GEO.leg} material={bodyMat} />
+      <mesh ref={rightLeg} position={[0.055, 0.06, 0]} geometry={SHARED_GEO.leg} material={bodyMat} />
+      <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]} geometry={SHARED_GEO.shadow} material={SHADOW_MAT} />
       {(selected || hovered) && (
         <>
-          <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[0.2, 0.26, 16]} /><meshBasicMaterial color={selected ? "#6366F1" : "#90CAF9"} transparent opacity={0.7} /></mesh>
+          <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]} geometry={SHARED_GEO.ring}>
+            <meshBasicMaterial color={selected ? "#6366F1" : "#90CAF9"} transparent opacity={0.7} />
+          </mesh>
           <Html position={[0, 0.82, 0]} center>
             <div className="flex items-center gap-1 px-2 py-0.5 bg-[rgba(20,20,30,0.9)] rounded-full whitespace-nowrap pointer-events-none select-none">
               <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: statusColor }} />
@@ -425,7 +448,6 @@ const Agent3D = memo(function Agent3D({ agent, selected, onClick }: { agent: Age
           </Html>
         </>
       )}
-      {/* Always-visible minimal name (no Html, just a small indicator sphere for non-hovered) */}
     </group>
   );
 }, (prev, next) => {
