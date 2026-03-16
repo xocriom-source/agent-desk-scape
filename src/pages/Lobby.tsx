@@ -143,7 +143,7 @@ export default function Lobby() {
       {/* Logo top-left */}
       <div className="absolute top-4 left-6 flex items-center gap-2">
         <img src={logo} alt="Logo" className="w-8 h-8" />
-        <span className="text-foreground/80 font-bold text-sm">AgentCity</span>
+        <span className="text-primary font-bold text-sm tracking-wider font-mono">THE GOOD CITY</span>
       </div>
 
       {/* Title */}
