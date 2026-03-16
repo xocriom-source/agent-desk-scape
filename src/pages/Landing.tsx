@@ -167,7 +167,7 @@ function LoadingScreen({ onComplete }: { onComplete: () => void }) {
           animate={{ opacity: 1, y: 0 }}
           className="text-4xl sm:text-6xl font-display font-bold tracking-[0.2em] mb-6 text-primary"
         >
-          AGENT OFFICE
+          THE GOOD CITY
         </motion.h1>
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
           className="text-xs font-mono tracking-[0.3em] uppercase mb-6 text-muted-foreground"
