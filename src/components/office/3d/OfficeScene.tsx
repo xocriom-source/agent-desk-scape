@@ -125,9 +125,9 @@ function BuildingExterior({
   const foundH = 0.35;
   const wallH = 1.3;
   const wallT = 0.2;
-  const brickColor = "#8B5E3C";
-  const brickDark = "#6B4226";
-  const trimColor = "#D4C4A8";
+  const brickColor = "#5A5A64";
+  const brickDark = "#48484F";
+  const trimColor = "#6E6E78";
   const windowGlassLit = "#FFE4A8";
   const windowGlassDark = "#1A1A2A";
 
@@ -191,27 +191,33 @@ function BuildingExterior({
       {/* Sidewalk around building */}
       <mesh position={[cx, -0.008, cz]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[bw + 4, bh + 4]} />
-        <meshStandardMaterial color="#888880" />
+        <meshStandardMaterial color="#555560" />
       </mesh>
 
       {/* Foundation */}
       <mesh position={[cx, foundH / 2, cz]}>
         <boxGeometry args={[bw + wallT * 2 + 0.1, foundH, bh + wallT * 2 + 0.1]} />
-        <meshStandardMaterial color="#555048" roughness={0.95} />
+        <meshStandardMaterial color="#3A3A42" roughness={0.95} />
       </mesh>
       <mesh position={[cx, foundH + 0.02, cz]}>
         <boxGeometry args={[bw + wallT * 2 + 0.2, 0.04, bh + wallT * 2 + 0.2]} />
-        <meshStandardMaterial color={trimColor} />
+        <meshStandardMaterial color="#505058" />
       </mesh>
 
-      {/* Interior floor */}
+      {/* Interior floor - dark modern */}
       <mesh position={[cx, foundH + 0.001, cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow onPointerDown={handleFloorDown} onPointerUp={handleFloorUp}>
         <planeGeometry args={[bw, bh]} />
-        <meshStandardMaterial color="#9B7B55" roughness={0.85} />
+        <meshStandardMaterial color="#E8DDD0" roughness={0.9} />
       </mesh>
+      {/* Floor tile grid */}
       {Array.from({ length: Math.ceil(bw / 0.5) + 1 }).map((_, i) => (
         <mesh key={`vl${i}`} raycast={() => null} position={[cx - bw / 2 + i * 0.5, foundH + 0.002, cz]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[0.012, bh]} /><meshBasicMaterial color="#7A6040" />
+          <planeGeometry args={[0.008, bh]} /><meshBasicMaterial color="#D8CFC2" />
+        </mesh>
+      ))}
+      {Array.from({ length: Math.ceil(bh / 0.5) + 1 }).map((_, i) => (
+        <mesh key={`hl${i}`} raycast={() => null} position={[cx, foundH + 0.002, cz - bh / 2 + i * 0.5]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[bw, 0.008]} /><meshBasicMaterial color="#D8CFC2" />
         </mesh>
       ))}
 
@@ -245,64 +251,110 @@ function BuildingExterior({
 
       {/* Baseboard */}
       <mesh position={[cx, foundH + 0.03, northZ + 0.04]}>
-        <boxGeometry args={[bw, 0.06, 0.05]} /><meshStandardMaterial color="#6B5840" />
+        <boxGeometry args={[bw, 0.06, 0.05]} /><meshStandardMaterial color="#3A3A42" />
       </mesh>
       <mesh position={[westX + 0.04, foundH + 0.03, cz]}>
-        <boxGeometry args={[0.05, 0.06, bh]} /><meshStandardMaterial color="#6B5840" />
+        <boxGeometry args={[0.05, 0.06, bh]} /><meshStandardMaterial color="#3A3A42" />
       </mesh>
 
       {/* Windows */}
       {makeWindows('x', northZ - wallT - 0.001, cx - bw / 2, bw, winY, nWinX)}
       {makeWindows('z', westX - wallT - 0.001, cz - bh / 2, bh, winY, nWinZ)}
 
-      {/* Interior lights */}
-      {[0, 1, 2, 3, 4, 5].map((i) => {
-        const col = i % 3;
-        const row = Math.floor(i / 3);
-        const bulbColors = ["#FFB347", "#FF6B6B", "#4ECDC4", "#FFE66D", "#FF6BB5", "#6BCB77"];
-        const bc = bulbColors[i];
-        const lx = cx - bw * 0.3 + col * (bw * 0.3);
-        const lz = cz - bh * 0.2 + row * (bh * 0.4);
-        return (
-          <group key={`cl${i}`}>
-            <mesh position={[lx, foundH + wallH - 0.1, lz]}>
-              <cylinderGeometry args={[0.004, 0.004, 0.18, 4]} />
-              <meshBasicMaterial color="#333" />
-            </mesh>
-            <mesh position={[lx, foundH + wallH - 0.22, lz]}>
-              <sphereGeometry args={[0.04, 6, 6]} />
-              <meshStandardMaterial color={bc} emissive={bc} emissiveIntensity={1.2} />
-            </mesh>
-          </group>
-        );
-      })}
-      <pointLight position={[cx - bw * 0.2, foundH + wallH - 0.3, cz]} intensity={0.3} distance={6} color="#FFD090" />
-      <pointLight position={[cx + bw * 0.2, foundH + wallH - 0.3, cz]} intensity={0.3} distance={6} color="#FFD090" />
+      {/* ── Ceiling hanging lights (OHMO.AI style) ── */}
+      {(() => {
+        const cols = Math.max(2, Math.floor(bw / 2));
+        const rows = Math.max(2, Math.floor(bh / 2.5));
+        const lights: JSX.Element[] = [];
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const lx = cx - bw * 0.38 + c * (bw * 0.76 / Math.max(1, cols - 1));
+            const lz = cz - bh * 0.35 + r * (bh * 0.7 / Math.max(1, rows - 1));
+            const ly = foundH + wallH;
+            lights.push(
+              <group key={`ceil-${r}-${c}`}>
+                {/* Wire */}
+                <mesh position={[lx, ly - 0.08, lz]}>
+                  <cylinderGeometry args={[0.003, 0.003, 0.16, 4]} />
+                  <meshBasicMaterial color="#444" />
+                </mesh>
+                {/* Lamp shade (cone) */}
+                <mesh position={[lx, ly - 0.18, lz]}>
+                  <cylinderGeometry args={[0.02, 0.06, 0.05, 8]} />
+                  <meshStandardMaterial color="#2A2A30" metalness={0.5} roughness={0.3} />
+                </mesh>
+                {/* Bulb */}
+                <mesh position={[lx, ly - 0.22, lz]}>
+                  <sphereGeometry args={[0.025, 8, 8]} />
+                  <meshStandardMaterial color="#FFF5E0" emissive="#FFD080" emissiveIntensity={2.0} />
+                </mesh>
+              </group>
+            );
+          }
+        }
+        return lights;
+      })()}
+      {/* Main warm interior point lights */}
+      <pointLight position={[cx - bw * 0.25, foundH + wallH - 0.25, cz - bh * 0.2]} intensity={0.5} distance={8} color="#FFD090" />
+      <pointLight position={[cx + bw * 0.25, foundH + wallH - 0.25, cz + bh * 0.2]} intensity={0.5} distance={8} color="#FFD090" />
+      <pointLight position={[cx, foundH + wallH - 0.25, cz]} intensity={0.4} distance={8} color="#FFF0D0" />
 
-      {/* String lights */}
-      {Array.from({ length: 10 }).map((_, i) => {
-        const t = i / 9;
-        const lx = cx - bw * 0.42 + t * bw * 0.84;
-        const ly = foundH + wallH - 0.06;
-        const lz = northZ + wallT * 0.6;
-        const sag = Math.sin(t * Math.PI) * 0.1;
-        const colors = ["#FF6B6B", "#4ECDC4", "#FFE66D", "#FF6BB5", "#6BCB77"];
-        return (
-          <mesh key={`sl${i}`} position={[lx, ly - sag, lz]}>
-            <sphereGeometry args={[0.02, 6, 6]} />
-            <meshStandardMaterial color={colors[i % 5]} emissive={colors[i % 5]} emissiveIntensity={1.5} />
+      {/* ── Floor lamps (standing lamps in corners) ── */}
+      {[
+        [cx - bw * 0.42, foundH, cz - bh * 0.42],
+        [cx + bw * 0.42, foundH, cz - bh * 0.42],
+        [cx - bw * 0.42, foundH, cz + bh * 0.42],
+        [cx + bw * 0.42, foundH, cz + bh * 0.42],
+      ].map((pos, i) => (
+        <group key={`flamp-${i}`}>
+          {/* Base */}
+          <mesh position={[pos[0], pos[1] + 0.02, pos[2]]}>
+            <cylinderGeometry args={[0.04, 0.05, 0.04, 8]} />
+            <meshStandardMaterial color="#333" metalness={0.6} />
           </mesh>
-        );
-      })}
+          {/* Pole */}
+          <mesh position={[pos[0], pos[1] + 0.45, pos[2]]}>
+            <cylinderGeometry args={[0.012, 0.012, 0.85, 6]} />
+            <meshStandardMaterial color="#444" metalness={0.5} />
+          </mesh>
+          {/* Shade */}
+          <mesh position={[pos[0], pos[1] + 0.88, pos[2]]}>
+            <cylinderGeometry args={[0.04, 0.08, 0.08, 8]} />
+            <meshStandardMaterial color="#E8DDD0" />
+          </mesh>
+          {/* Bulb glow */}
+          <mesh position={[pos[0], pos[1] + 0.86, pos[2]]}>
+            <sphereGeometry args={[0.03, 8, 8]} />
+            <meshStandardMaterial color="#FFFAE0" emissive="#FFD060" emissiveIntensity={1.5} />
+          </mesh>
+        </group>
+      ))}
 
-      {/* Neon sign */}
+      {/* ── Wall-mounted screens (meeting room displays) ── */}
+      {[
+        [cx - bw * 0.3, foundH + wallH * 0.45, northZ + wallT * 0.6],
+        [cx + bw * 0.3, foundH + wallH * 0.45, northZ + wallT * 0.6],
+      ].map((pos, i) => (
+        <group key={`wallscreen-${i}`}>
+          <mesh position={pos as [number, number, number]}>
+            <boxGeometry args={[0.5, 0.3, 0.02]} />
+            <meshStandardMaterial color="#111" />
+          </mesh>
+          <mesh position={[pos[0], pos[1], pos[2] + 0.011]}>
+            <boxGeometry args={[0.44, 0.26, 0.005]} />
+            <meshStandardMaterial color="#1A3A5A" emissive="#2A5A8A" emissiveIntensity={0.4} />
+          </mesh>
+        </group>
+      ))}
+
+      {/* ── Neon company sign on back wall ── */}
       <mesh position={[cx, foundH + wallH * 0.7, northZ + wallT * 0.6]}>
         <boxGeometry args={[1.4, 0.35, 0.02]} />
         <meshStandardMaterial color="#1A1A1A" />
       </mesh>
       <mesh position={[cx, foundH + wallH * 0.7, northZ + wallT * 0.62]}>
         <boxGeometry args={[1.3, 0.28, 0.01]} />
-        <meshStandardMaterial color="#FF6B00" emissive="#FF6B00" emissiveIntensity={1.8} transparent opacity={0.9} />
+        <meshStandardMaterial color="#00CED1" emissive="#00CED1" emissiveIntensity={1.5} transparent opacity={0.9} />
       </mesh>
 
       {/* Building label */}
