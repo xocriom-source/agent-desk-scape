@@ -54,6 +54,7 @@ const TYPE_EMOJIS: Record<string, string> = {
 
 export default function Spaces() {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [spaces, setSpaces] = useState<SpaceData[]>(loadSpaces);
   const [filter, setFilter] = useState<"recent" | "created">("recent");
   const [search, setSearch] = useState("");
