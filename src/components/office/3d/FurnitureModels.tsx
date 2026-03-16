@@ -192,6 +192,32 @@ function FurnitureGeometry({ type }: { type: string }) {
       return <Dartboard />;
     case "rug":
       return <Rug />;
+    case "round_table":
+      return <RoundTable />;
+    case "reception_desk":
+      return <ReceptionDesk />;
+    case "coffee_bar":
+      return <CoffeeBar />;
+    case "treadmill":
+      return <Treadmill />;
+    case "dumbbell_rack":
+      return <DumbbellRack />;
+    case "punching_bag":
+      return <PunchingBag />;
+    case "yoga_mat":
+      return <YogaMat />;
+    case "kanban_board":
+      return <KanbanBoard />;
+    case "neon_sign":
+      return <NeonSign />;
+    case "aquarium":
+      return <Aquarium />;
+    case "standing_desk":
+      return <StandingDesk />;
+    case "couch_l":
+      return <CouchL />;
+    case "meeting_chair":
+      return <MeetingChair />;
     default:
       return <GenericBox />;
   }
