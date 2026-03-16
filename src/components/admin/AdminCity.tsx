@@ -29,7 +29,11 @@ export function AdminCity({ counts }: AdminCityProps) {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    const interval = setInterval(load, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const getUserName = (userId: string) => profiles.find(p => p.id === userId)?.display_name || userId.slice(0, 8);
   const activeBuildings = [...new Set(presence.map(p => p.building_id).filter(Boolean))];
