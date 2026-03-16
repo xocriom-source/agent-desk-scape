@@ -25,6 +25,8 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const DigitalMarketplace = lazy(() => import("./pages/DigitalMarketplace"));
 const LiveCity = lazy(() => import("./pages/LiveCity"));
+const Features = lazy(() => import("./pages/Features"));
+const About = lazy(() => import("./pages/About"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
