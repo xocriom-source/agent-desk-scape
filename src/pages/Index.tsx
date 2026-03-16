@@ -242,23 +242,23 @@ const Index = () => {
       <AgentPanel agent={selectedAgent} onClose={() => setSelectedAgent(null)} onViewProfile={(a) => setProfileAgent(a)} />
       <ObserverCard agent={profileAgent} isOpen={!!profileAgent} onClose={() => setProfileAgent(null)} />
       
-      {/* Panels */}
-      <SocialFeed agents={agents} isOpen={isOpen("feed")} onClose={close} />
-      <TaskBoard agents={agents} isOpen={isOpen("tasks")} onClose={close} />
-      <AgentMessaging agents={agents} isOpen={isOpen("messaging")} onClose={close} />
-      <AgentGallery agents={agents} isOpen={isOpen("gallery")} onClose={close} />
-      <CreativeStudios agents={agents} isOpen={isOpen("studios")} onClose={close} />
-      <AnalyticsDashboard agents={agents} isOpen={isOpen("analytics")} onClose={close} />
-      <AgentMarketplace agents={agents} isOpen={isOpen("marketplace")} onClose={close} />
-      <AIGovernance agents={agents} isOpen={isOpen("governance")} onClose={close} />
-      <AgentMemory agents={agents} isOpen={isOpen("memory")} onClose={close} />
-      <CommandCenter agents={agents} isOpen={isOpen("command")} onClose={close} />
-      <ArtifactExplorer agents={agents} isOpen={isOpen("artifacts")} onClose={close} />
-      <CityNPCs isOpen={isOpen("npcs")} onClose={close} />
-      <ObservationLab agents={agents} isOpen={isOpen("observation")} onClose={close} />
-      <DistrictInfo isOpen={isOpen("districts")} onClose={close} />
-      <CityEvents agents={agents} isOpen={isOpen("events")} onClose={close} />
-      <CityChat agents={agents} isOpen={isOpen("cityChat")} onClose={close} />
+      {/* Panels - conditionally rendered to save memory */}
+      {isOpen("feed") && <SocialFeed agents={agents} isOpen onClose={close} />}
+      {isOpen("tasks") && <TaskBoard agents={agents} isOpen onClose={close} />}
+      {isOpen("messaging") && <AgentMessaging agents={agents} isOpen onClose={close} />}
+      {isOpen("gallery") && <AgentGallery agents={agents} isOpen onClose={close} />}
+      {isOpen("studios") && <CreativeStudios agents={agents} isOpen onClose={close} />}
+      {isOpen("analytics") && <AnalyticsDashboard agents={agents} isOpen onClose={close} />}
+      {isOpen("marketplace") && <AgentMarketplace agents={agents} isOpen onClose={close} />}
+      {isOpen("governance") && <AIGovernance agents={agents} isOpen onClose={close} />}
+      {isOpen("memory") && <AgentMemory agents={agents} isOpen onClose={close} />}
+      {isOpen("command") && <CommandCenter agents={agents} isOpen onClose={close} />}
+      {isOpen("artifacts") && <ArtifactExplorer agents={agents} isOpen onClose={close} />}
+      {isOpen("npcs") && <CityNPCs isOpen onClose={close} />}
+      {isOpen("observation") && <ObservationLab agents={agents} isOpen onClose={close} />}
+      {isOpen("districts") && <DistrictInfo isOpen onClose={close} />}
+      {isOpen("events") && <CityEvents agents={agents} isOpen onClose={close} />}
+      {isOpen("cityChat") && <CityChat agents={agents} isOpen onClose={close} />}
 
       {!editMode && <ActionBar onMove={movePlayer} />}
       {!editMode && <MiniMap player={player} agents={agents} rooms={rooms} />}

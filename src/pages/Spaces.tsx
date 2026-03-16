@@ -76,13 +76,7 @@ export default function Spaces() {
     }
   }, []);
 
-  const userName = (() => {
-    try {
-      const u = localStorage.getItem("agentoffice_user");
-      if (u) return JSON.parse(u).name || "Usuário";
-    } catch {}
-    return "Usuário";
-  })();
+  const userName = profile?.display_name || "Usuário";
 
   const handleEnterSpace = (space: SpaceData) => {
     localStorage.setItem("buildingName", space.name);
