@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Search, Calendar, MoreVertical, Globe, Star, Trash2 } from "lucide-react";
-import logo from "@/assets/logo.png";
+import logoOriginal from "@/assets/logo-original.svg";
 
 interface SpaceData {
   id: string;
@@ -50,19 +50,17 @@ export default function Spaces() {
         .eq("owner_id", user!.id)
         .order("created_at", { ascending: false });
 
-      if (data && data.length > 0) {
-        const mapped: SpaceData[] = data.map(b => ({
-          id: b.id,
-          name: b.name,
-          city: b.city || "São Paulo",
-          type: b.style || "corporate",
-          agents: Math.floor(Math.random() * 12) + 1,
-          lastVisit: new Date(b.created_at).toLocaleDateString("pt-BR"),
-          color: b.primary_color || TYPE_COLORS[b.style || "corporate"] || "#3b82f6",
-          emoji: TYPE_EMOJIS[b.style || "corporate"] || "🏢",
-        }));
-        setSpaces(mapped);
-      }
+      const mapped: SpaceData[] = (data || []).map(b => ({
+        id: b.id,
+        name: b.name,
+        city: b.city || "São Paulo",
+        type: b.style || "corporate",
+        agents: Math.floor(Math.random() * 12) + 1,
+        lastVisit: new Date(b.created_at).toLocaleDateString("pt-BR"),
+        color: b.primary_color || TYPE_COLORS[b.style || "corporate"] || "#3b82f6",
+        emoji: TYPE_EMOJIS[b.style || "corporate"] || "🏢",
+      }));
+      setSpaces(mapped);
       setLoading(false);
     }
     fetchSpaces();
@@ -94,7 +92,7 @@ export default function Spaces() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-6">
-              <img src={logo} alt="Logo" className="w-9 h-9" />
+              <img src={logoOriginal} alt="Logo" className="w-9 h-9" />
               <button className="flex items-center gap-2 text-muted-foreground hover:text-foreground text-sm transition-colors">
                 <Calendar className="w-4 h-4" />
                 Eventos
@@ -116,7 +114,7 @@ export default function Spaces() {
                 Português
               </button>
               <button
-                onClick={() => navigate("/onboarding")}
+                onClick={() => navigate("/onboarding?mode=new")}
                 className="flex items-center gap-2 border border-primary text-primary hover:bg-primary/10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
               >
                 <Plus className="w-4 h-4" />
@@ -251,7 +249,7 @@ export default function Spaces() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: filteredSpaces.length * 0.08 }}
-                onClick={() => navigate("/onboarding")}
+                onClick={() => navigate("/onboarding?mode=new")}
                 className="cursor-pointer group"
               >
                 <div className="rounded-xl border-2 border-dashed border-border/40 hover:border-primary/50 transition-all aspect-[4/3] flex flex-col items-center justify-center gap-3 bg-card/50 hover:bg-card/80">
