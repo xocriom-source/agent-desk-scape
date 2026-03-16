@@ -20,6 +20,7 @@ import BuildingInterior from "./pages/BuildingInterior.tsx";
 import EcosystemHub from "./pages/EcosystemHub.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
+import DigitalMarketplace from "./pages/DigitalMarketplace.tsx";
 
 const queryClient = new QueryClient();
 
