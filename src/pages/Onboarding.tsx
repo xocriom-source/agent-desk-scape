@@ -5,6 +5,7 @@ import {
   Building2, Home, Landmark, Briefcase, ArrowRight,
   ArrowLeft, Globe, Check, Search, MapPin
 } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import logoOriginal from "@/assets/logo-original.svg";
