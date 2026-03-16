@@ -214,7 +214,7 @@ export default function Spaces() {
 
                 {/* Online badge */}
                 <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-black/60 rounded-full px-2 py-0.5">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
                   <span className="text-[10px] text-white font-medium">{space.agents}</span>
                 </div>
 
