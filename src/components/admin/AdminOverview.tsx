@@ -141,12 +141,13 @@ export function AdminOverview({ counts, onNavigate }: AdminOverviewProps) {
         <h2 className="text-sm font-mono font-bold text-foreground mb-4">AÇÕES RÁPIDAS</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { label: "Gerenciar Usuários", desc: "Visualizar e suspender contas", icon: Users },
-            { label: "Controlar Agentes", desc: "Pausar e remover agentes", icon: Bot },
-            { label: "Ver Logs", desc: "Acompanhar atividade do sistema", icon: FileText },
-            { label: "Moderação", desc: "Revisar conteúdo da plataforma", icon: Clock },
+            { label: "Gerenciar Usuários", desc: "Visualizar e suspender contas", icon: Users, tab: "users" },
+            { label: "Controlar Agentes", desc: "Pausar e remover agentes", icon: Bot, tab: "agents" },
+            { label: "Ver Logs", desc: "Acompanhar atividade do sistema", icon: FileText, tab: "logs" },
+            { label: "Moderação", desc: "Revisar conteúdo da plataforma", icon: Clock, tab: "moderation" },
           ].map(q => (
-            <button key={q.label} className="text-left p-4 rounded-xl border border-primary/10 hover:border-primary/30 bg-primary/[0.03] hover:bg-primary/[0.06] transition-all group">
+            <button key={q.label} onClick={() => onNavigate?.(q.tab)}
+              className="text-left p-4 rounded-xl border border-primary/10 hover:border-primary/30 bg-primary/[0.03] hover:bg-primary/[0.06] transition-all group">
               <q.icon className="w-4 h-4 text-primary mb-2" />
               <p className="text-xs font-mono font-bold text-foreground">{q.label}</p>
               <p className="text-[9px] font-mono text-muted-foreground mt-0.5">{q.desc}</p>

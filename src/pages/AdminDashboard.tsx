@@ -92,7 +92,7 @@ export default function AdminDashboard() {
 
       <main className="flex-1 overflow-y-auto">
         <div className="p-6 max-w-6xl">
-          {tab === "overview" && <AdminOverview counts={counts} />}
+          {tab === "overview" && <AdminOverview counts={counts} onNavigate={(t: Tab) => setTab(t)} />}
           {tab === "users" && <AdminUsers />}
           {tab === "agents" && <AdminAgents />}
           {tab === "workflows" && <AdminWorkflows />}
