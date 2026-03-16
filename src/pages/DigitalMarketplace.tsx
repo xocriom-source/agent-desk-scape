@@ -268,8 +268,8 @@ export default function DigitalMarketplace() {
         </Button>
         <Building2 className="w-4 h-4 text-green-400" />
         <h1 className="font-bold text-xs tracking-tight hidden sm:block text-white">Dynasty 8 — Digital Business Marketplace</h1>
-        <Badge variant="outline" className="text-[8px] border-amber-500/30 text-amber-400 gap-0.5 px-1.5 py-0">
-          <Tag className="w-2 h-2" /> {totalForSale} FOR SALE
+        <Badge variant="outline" className="text-[8px] border-green-500/30 text-green-300 gap-0.5 px-1.5 py-0">
+          <Tag className="w-2 h-2" /> {totalForSale} PROPERTIES
         </Badge>
         {/* Region badges */}
         <div className="hidden lg:flex items-center gap-1 ml-2">
