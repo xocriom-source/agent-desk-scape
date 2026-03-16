@@ -74,6 +74,13 @@ export default function BuildingInterior() {
     fetch();
   }, [id]);
 
+  const [metadata, setMetadata] = useState<Record<string, any>>(building?.metadata || {});
+
+  // Sync metadata when building loads
+  useEffect(() => {
+    if (building?.metadata) setMetadata(building.metadata);
+  }, [building?.metadata]);
+
   const isOwner = building?.owner_id === user?.id;
   const district = DISTRICTS.find(d => d.id === building?.district);
   const styleInfo = BUILDING_STYLES.find(s => s.id === building?.style);
