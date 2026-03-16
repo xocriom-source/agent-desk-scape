@@ -70,13 +70,22 @@ export function usePlayerMovement(
 
   // Keyboard input
   useEffect(() => {
+    const keyMap: Record<string, string> = {
+      w: "ArrowUp", W: "ArrowUp", ArrowUp: "ArrowUp",
+      s: "ArrowDown", S: "ArrowDown", ArrowDown: "ArrowDown",
+      a: "ArrowLeft", A: "ArrowLeft", ArrowLeft: "ArrowLeft",
+      d: "ArrowRight", D: "ArrowRight", ArrowRight: "ArrowRight",
+    };
     const handleKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
       if (chatOpen || tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (e.target as HTMLElement)?.isContentEditable) return;
-      const moveKeys = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
-      if (moveKeys.includes(e.key)) { e.preventDefault(); keysDown.current.add(e.key); }
+      const mapped = keyMap[e.key];
+      if (mapped) { e.preventDefault(); keysDown.current.add(mapped); }
     };
-    const handleKeyUp = (e: KeyboardEvent) => { keysDown.current.delete(e.key); };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      const mapped = keyMap[e.key];
+      if (mapped) keysDown.current.delete(mapped);
+    };
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
     return () => { window.removeEventListener("keydown", handleKeyDown); window.removeEventListener("keyup", handleKeyUp); };
