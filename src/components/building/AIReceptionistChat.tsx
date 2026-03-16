@@ -8,11 +8,25 @@ type Msg = { role: "user" | "assistant"; content: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-receptionist`;
 
+// Map building style to business type for specialized AI
+const STYLE_TO_TYPE: Record<string, string> = {
+  corporate: "corporate",
+  startup: "ai_startup",
+  creative: "agency",
+  industrial: "ecommerce",
+  residential: "content",
+  futuristic: "saas",
+  classic: "newsletter",
+  minimal: "marketplace",
+  eco: "crypto",
+};
+
 interface AIReceptionistChatProps {
   building: CityBuilding;
+  buildingType?: string;
 }
 
-export function AIReceptionistChat({ building }: AIReceptionistChatProps) {
+export function AIReceptionistChat({ building, buildingType }: AIReceptionistChatProps) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -21,6 +35,7 @@ export function AIReceptionistChat({ building }: AIReceptionistChatProps) {
 
   const district = DISTRICTS.find(d => d.id === building.district);
   const styleInfo = BUILDING_STYLES.find(s => s.id === building.style);
+  const resolvedType = buildingType || STYLE_TO_TYPE[building.style] || "corporate";
 
   const scrollToBottom = useCallback(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -75,6 +90,7 @@ export function AIReceptionistChat({ building }: AIReceptionistChatProps) {
           links: building.links,
           style: styleInfo?.name,
           district: district?.name,
+          buildingType: resolvedType,
         }),
       });
 
@@ -130,18 +146,18 @@ export function AIReceptionistChat({ building }: AIReceptionistChatProps) {
   };
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden flex flex-col" style={{ height: "420px" }}>
+    <div className="bg-card border border-border rounded-2xl overflow-hidden flex flex-col" style={{ height: "420px" }}>
       {/* Header */}
-      <div className="px-5 py-3 border-b border-gray-800 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: building.primaryColor + "30" }}>
-          <Bot className="w-4 h-4" style={{ color: building.primaryColor }} />
+      <div className="px-5 py-3 border-b border-border flex items-center gap-3">
+        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-primary/20">
+          <Bot className="w-4 h-4 text-primary" />
         </div>
         <div>
-          <div className="text-sm font-bold text-white flex items-center gap-1.5">
+          <div className="text-sm font-bold text-foreground flex items-center gap-1.5">
             AI Recepcionista
             <Sparkles className="w-3 h-3 text-amber-400" />
           </div>
-          <div className="text-[10px] text-gray-500">{building.name}</div>
+          <div className="text-[10px] text-muted-foreground">{building.name} • {resolvedType}</div>
         </div>
         <div className="ml-auto flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -152,22 +168,22 @@ export function AIReceptionistChat({ building }: AIReceptionistChatProps) {
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-hide">
         {messages.length === 0 && !isLoading && (
-          <div className="text-center text-gray-600 text-xs py-8">
-            <Bot className="w-8 h-8 mx-auto mb-2 text-gray-700" />
+          <div className="text-center text-muted-foreground text-xs py-8">
+            <Bot className="w-8 h-8 mx-auto mb-2 opacity-30" />
             Conectando ao recepcionista...
           </div>
         )}
         {messages.map((msg, i) => (
           <div key={i} className={`flex gap-2 ${msg.role === "user" ? "justify-end" : ""}`}>
             {msg.role === "assistant" && (
-              <div className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center mt-0.5" style={{ backgroundColor: building.primaryColor + "20" }}>
-                <Bot className="w-3 h-3" style={{ color: building.primaryColor }} />
+              <div className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center mt-0.5 bg-primary/20">
+                <Bot className="w-3 h-3 text-primary" />
               </div>
             )}
             <div className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${
               msg.role === "user"
-                ? "bg-primary/20 text-white"
-                : "bg-gray-800 text-gray-200"
+                ? "bg-primary/20 text-foreground"
+                : "bg-muted text-foreground"
             }`}>
               {msg.role === "assistant" ? (
                 <div className="prose prose-sm prose-invert max-w-none [&_p]:mb-1 [&_p]:mt-0 [&_p:last-child]:mb-0">
@@ -184,14 +200,14 @@ export function AIReceptionistChat({ building }: AIReceptionistChatProps) {
         ))}
         {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
           <div className="flex gap-2">
-            <div className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center" style={{ backgroundColor: building.primaryColor + "20" }}>
-              <Bot className="w-3 h-3 agent-thinking" style={{ color: building.primaryColor }} />
+            <div className="w-6 h-6 rounded-full shrink-0 flex items-center justify-center bg-primary/20">
+              <Bot className="w-3 h-3 text-primary" />
             </div>
-            <div className="bg-gray-800 rounded-xl px-3 py-2">
+            <div className="bg-muted rounded-xl px-3 py-2">
               <div className="flex gap-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: "0ms" }} />
-                <div className="w-1.5 h-1.5 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: "150ms" }} />
-                <div className="w-1.5 h-1.5 rounded-full bg-gray-500 animate-bounce" style={{ animationDelay: "300ms" }} />
+                <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "0ms" }} />
+                <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "150ms" }} />
+                <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "300ms" }} />
               </div>
             </div>
           </div>
@@ -206,7 +222,7 @@ export function AIReceptionistChat({ building }: AIReceptionistChatProps) {
               key={q}
               onClick={() => sendMessage(q)}
               disabled={isLoading}
-              className="text-[10px] px-2.5 py-1 rounded-lg bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors disabled:opacity-50"
+              className="text-[10px] px-2.5 py-1 rounded-lg bg-muted text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-50"
             >
               {q}
             </button>
@@ -223,12 +239,12 @@ export function AIReceptionistChat({ building }: AIReceptionistChatProps) {
             onChange={e => setInput(e.target.value)}
             placeholder="Pergunte algo ao recepcionista..."
             disabled={isLoading}
-            className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-primary/50 disabled:opacity-50"
+            className="flex-1 bg-muted border border-border rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
           />
           <button
             type="submit"
             disabled={!input.trim() || isLoading}
-            className="p-2 rounded-xl bg-primary text-white disabled:opacity-30 hover:bg-primary/80 transition-colors"
+            className="p-2 rounded-xl bg-primary text-primary-foreground disabled:opacity-30 hover:bg-primary/80 transition-colors"
           >
             <Send className="w-4 h-4" />
           </button>

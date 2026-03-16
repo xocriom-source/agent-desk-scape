@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,15 +11,39 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { messages, buildingName, ownerName, bio, links, style, district } = await req.json();
+    const { messages, buildingName, ownerName, bio, links, style, district, buildingType } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    // Try to fetch specialized assistant prompt from DB
+    let specializedPrompt = "";
+    if (buildingType) {
+      try {
+        const supabase = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_ANON_KEY")!
+        );
+        const { data: assistant } = await supabase
+          .from("building_ai_assistants")
+          .select("name, system_prompt")
+          .eq("building_type", buildingType)
+          .eq("status", "active")
+          .single();
+
+        if (assistant) {
+          specializedPrompt = `\n\nESPECIALIZAÇÃO DO ASSISTENTE (${assistant.name}):\n${assistant.system_prompt}`;
+        }
+      } catch {
+        // fallback to generic
+      }
+    }
 
     const systemPrompt = `Você é o AI Recepcionista do escritório "${buildingName}", que pertence a ${ownerName}.
 
 Sobre o escritório:
 - Estilo: ${style || "Corporativo"}
 - Distrito: ${district || "Central"}
+- Tipo de negócio: ${buildingType || "geral"}
 - Bio: ${bio || "Sem bio definida"}
 - Links: ${links?.length ? links.join(", ") : "Nenhum link"}
 
@@ -34,7 +59,7 @@ Regras:
 - Seja conciso (máximo 3-4 frases por resposta)
 - Use emojis com moderação
 - Se não souber algo sobre o dono, diga que pode descobrir
-- Nunca invente informações sobre o dono que não foram fornecidas`;
+- Nunca invente informações sobre o dono que não foram fornecidas${specializedPrompt}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
