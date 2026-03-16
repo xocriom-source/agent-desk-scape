@@ -116,7 +116,7 @@ export default function Spaces() {
                 Português
               </button>
               <button
-                onClick={() => navigate("/onboarding")}
+                onClick={() => navigate("/onboarding?mode=new")}
                 className="flex items-center gap-2 border border-primary text-primary hover:bg-primary/10 px-4 py-1.5 rounded-full text-sm font-medium transition-colors"
               >
                 <Plus className="w-4 h-4" />
