@@ -48,6 +48,9 @@ export const DEFAULT_ROOMS: RoomDef[] = [
   { id: "server", name: "🖥️ Server Room", x: 50, y: 1, w: 8, h: 7, floorColor: "#706058", wallColor: "#3A2E28", carpetColor: "#5A4E48" },
   { id: "game", name: "🎮 Game Room", x: 50, y: 12, w: 8, h: 7, floorColor: "#8A7050", wallColor: "#4A3520", carpetColor: "#705840" },
   { id: "zen", name: "🧘 Zen Garden", x: 50, y: 22, w: 8, h: 7, floorColor: "#7A7048", wallColor: "#3A3520", carpetColor: "#5A5530" },
+  // ── NEW ROOMS ──
+  { id: "gym", name: "🏋️ Gym", x: 50, y: 32, w: 8, h: 7, floorColor: "#3A3A3A", wallColor: "#2A2A2A", carpetColor: "#4A4A4A" },
+  { id: "reception", name: "🏨 Recepção", x: 12, y: 24, w: 8, h: 6, floorColor: "#C8B898", wallColor: "#6B6050", carpetColor: "#B0A080" },
 ];
 
 export let ROOMS = [...DEFAULT_ROOMS];
@@ -242,6 +245,29 @@ export const DEFAULT_FURNITURE: FurnitureItem[] = [
   { id: "zn4", type: "water", x: 53, y: 23, emoji: "⛲", roomId: "zen" },
   { id: "zn5", type: "sofa", x: 51, y: 26, emoji: "🧘", roomId: "zen" },
   { id: "zn6", type: "sofa", x: 55, y: 26, emoji: "🧘", roomId: "zen" },
+  // ── Gym ──
+  { id: "gy1", type: "treadmill", x: 51, y: 33, emoji: "🏃", roomId: "gym" },
+  { id: "gy2", type: "treadmill", x: 53, y: 33, emoji: "🏃", roomId: "gym" },
+  { id: "gy3", type: "dumbbell_rack", x: 55, y: 33, emoji: "🏋️", roomId: "gym" },
+  { id: "gy4", type: "punching_bag", x: 56, y: 35, emoji: "🥊", roomId: "gym" },
+  { id: "gy5", type: "yoga_mat", x: 52, y: 36, emoji: "🧘", roomId: "gym" },
+  { id: "gy6", type: "yoga_mat", x: 54, y: 36, emoji: "🧘", roomId: "gym" },
+  { id: "gy7", type: "water", x: 51, y: 37, emoji: "🚰", roomId: "gym" },
+
+  // ── Recepção ──
+  { id: "rc1", type: "reception_desk", x: 14, y: 25, emoji: "🏨", roomId: "reception" },
+  { id: "rc2", type: "couch_l", x: 17, y: 27, emoji: "🛋️", roomId: "reception" },
+  { id: "rc3", type: "aquarium", x: 18, y: 24, emoji: "🐟", roomId: "reception" },
+  { id: "rc4", type: "plant_large", x: 12, y: 24, emoji: "🌳", roomId: "reception" },
+  { id: "rc5", type: "neon_sign", x: 15, y: 24, emoji: "✨", roomId: "reception" },
+
+  // ── Extra items in existing rooms ──
+  { id: "ex1", type: "kanban_board", x: 12, y: 2, emoji: "📌", roomId: "work1" },
+  { id: "ex2", type: "coffee_bar", x: 16, y: 34, emoji: "🍵", roomId: "cafe" },
+  { id: "ex3", type: "round_table", x: 21, y: 3, emoji: "⭕", roomId: "meeting1" },
+  { id: "ex4", type: "standing_desk", x: 10, y: 5, emoji: "🧍", roomId: "work1" },
+  { id: "ex5", type: "meeting_chair", x: 22, y: 3, emoji: "💺", roomId: "meeting1" },
+  { id: "ex6", type: "meeting_chair", x: 20, y: 4, emoji: "💺", roomId: "meeting1" },
 ];
 
 export let FURNITURE = [...DEFAULT_FURNITURE];

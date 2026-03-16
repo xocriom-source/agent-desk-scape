@@ -39,6 +39,10 @@ const FURNITURE_CATALOG: { category: string; icon: React.ReactNode; items: { typ
       { type: "chair", emoji: "🪑", label: "Cadeira" },
       { type: "table", emoji: "📋", label: "Mesa simples" },
       { type: "desk_large", emoji: "💼", label: "Mesa grande" },
+      { type: "round_table", emoji: "⭕", label: "Mesa redonda" },
+      { type: "standing_desk", emoji: "🧍", label: "Mesa em pé" },
+      { type: "meeting_chair", emoji: "💺", label: "Cadeira reunião" },
+      { type: "reception_desk", emoji: "🏨", label: "Recepção" },
     ],
   },
   {
@@ -51,6 +55,7 @@ const FURNITURE_CATALOG: { category: string; icon: React.ReactNode; items: { typ
       { type: "server", emoji: "🖧", label: "Servidor" },
       { type: "phone", emoji: "📞", label: "Telefone" },
       { type: "laptop", emoji: "💻", label: "Laptop" },
+      { type: "neon_sign", emoji: "✨", label: "Letreiro neon" },
     ],
   },
   {
@@ -58,6 +63,7 @@ const FURNITURE_CATALOG: { category: string; icon: React.ReactNode; items: { typ
     icon: <Sofa className="w-4 h-4" />,
     items: [
       { type: "sofa", emoji: "🛋️", label: "Sofá" },
+      { type: "couch_l", emoji: "🔲", label: "Sofá L" },
       { type: "beanbag", emoji: "🫧", label: "Pufe" },
       { type: "rug", emoji: "🟫", label: "Tapete" },
     ],
@@ -70,10 +76,12 @@ const FURNITURE_CATALOG: { category: string; icon: React.ReactNode; items: { typ
       { type: "plant_large", emoji: "🪴", label: "Planta grande" },
       { type: "bookshelf", emoji: "📚", label: "Estante" },
       { type: "whiteboard", emoji: "📋", label: "Quadro branco" },
+      { type: "kanban_board", emoji: "📌", label: "Kanban Board" },
       { type: "painting", emoji: "🖼️", label: "Quadro" },
       { type: "lamp", emoji: "💡", label: "Luminária" },
       { type: "clock", emoji: "🕐", label: "Relógio" },
       { type: "trophy", emoji: "🏆", label: "Troféu" },
+      { type: "aquarium", emoji: "🐟", label: "Aquário" },
     ],
   },
   {
@@ -81,10 +89,21 @@ const FURNITURE_CATALOG: { category: string; icon: React.ReactNode; items: { typ
     icon: <Coffee className="w-4 h-4" />,
     items: [
       { type: "coffee", emoji: "☕", label: "Cafeteira" },
+      { type: "coffee_bar", emoji: "🍵", label: "Bar de café" },
       { type: "vending", emoji: "🥤", label: "Vending Machine" },
       { type: "water", emoji: "🚰", label: "Bebedouro" },
       { type: "microwave", emoji: "📦", label: "Microondas" },
       { type: "fridge", emoji: "🧊", label: "Geladeira" },
+    ],
+  },
+  {
+    category: "Fitness & Bem-estar",
+    icon: <Armchair className="w-4 h-4" />,
+    items: [
+      { type: "treadmill", emoji: "🏃", label: "Esteira" },
+      { type: "dumbbell_rack", emoji: "🏋️", label: "Halteres" },
+      { type: "punching_bag", emoji: "🥊", label: "Saco de pancada" },
+      { type: "yoga_mat", emoji: "🧘", label: "Tapete de yoga" },
     ],
   },
   {
