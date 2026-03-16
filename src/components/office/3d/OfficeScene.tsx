@@ -191,17 +191,17 @@ function BuildingExterior({
       {/* Sidewalk around building */}
       <mesh position={[cx, -0.008, cz]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[bw + 4, bh + 4]} />
-        <meshStandardMaterial color="#888880" />
+        <meshStandardMaterial color="#555560" />
       </mesh>
 
       {/* Foundation */}
       <mesh position={[cx, foundH / 2, cz]}>
         <boxGeometry args={[bw + wallT * 2 + 0.1, foundH, bh + wallT * 2 + 0.1]} />
-        <meshStandardMaterial color="#555048" roughness={0.95} />
+        <meshStandardMaterial color="#3A3A42" roughness={0.95} />
       </mesh>
       <mesh position={[cx, foundH + 0.02, cz]}>
         <boxGeometry args={[bw + wallT * 2 + 0.2, 0.04, bh + wallT * 2 + 0.2]} />
-        <meshStandardMaterial color={trimColor} />
+        <meshStandardMaterial color="#505058" />
       </mesh>
 
       {/* Interior floor - dark modern */}
