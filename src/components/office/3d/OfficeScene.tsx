@@ -1,10 +1,9 @@
-import { useRef, useState, useMemo } from "react";
-import { Canvas, useFrame, useLoader, type ThreeEvent } from "@react-three/fiber";
+import { useRef, useState, useMemo, memo, useCallback } from "react";
+import { Canvas, useFrame, type ThreeEvent } from "@react-three/fiber";
 import { OrbitControls, Html, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import type { Agent, Player } from "@/types/agent";
 import type { RoomDef, FurnitureItem } from "@/data/officeMap";
-import playerApeImg from "@/assets/player-ape.webp";
 import { FurnitureModel } from "./FurnitureModels";
 import { useDayNight } from "@/hooks/useDayNight";
 
@@ -12,98 +11,69 @@ const STATUS_COLORS: Record<string, string> = {
   active: "#10B981", idle: "#F59E0B", thinking: "#6366F1", busy: "#EF4444",
 };
 
-const S = 0.5; // tile to world scale
+const S = 0.5;
 
-// ── Distant skyline building with glowing windows ──
-function SkylineBuilding({ position, width, height, color }: { position: [number, number, number]; width: number; height: number; color: string }) {
-  const windows = useMemo(() => {
-    const rows = Math.floor(height / 0.5);
-    const cols = Math.max(2, Math.floor(width / 0.5));
-    const data: { r: number; c: number; lit: boolean }[] = [];
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        data.push({ r, c, lit: Math.random() > 0.4 });
-      }
-    }
-    return { rows, cols, data };
-  }, [height, width]);
-
+// ── Distant skyline building (simplified - no individual windows) ──
+const SkylineBuilding = memo(function SkylineBuilding({ position, width, height, color }: { position: [number, number, number]; width: number; height: number; color: string }) {
   return (
     <group>
       <mesh position={[position[0], height / 2, position[2]]}>
         <boxGeometry args={[width, height, width * 0.6]} />
         <meshStandardMaterial color={color} roughness={0.95} />
       </mesh>
-      {/* Rooftop accent */}
+      {/* Rooftop */}
       <mesh position={[position[0], height + 0.03, position[2]]}>
         <boxGeometry args={[width + 0.06, 0.06, width * 0.6 + 0.06]} />
         <meshStandardMaterial color="#222" />
       </mesh>
-      {/* Windows on front face */}
-      {windows.data.map((w, i) => (
-        <mesh key={i} position={[
-          position[0] - width / 2 + 0.25 + w.c * (width / (windows.cols + 0.5)),
-          0.3 + w.r * 0.5,
-          position[2] + width * 0.3 + 0.01,
-        ]}>
-          <boxGeometry args={[0.15, 0.2, 0.01]} />
-          <meshStandardMaterial
-            color={w.lit ? "#FFE4A8" : "#0A0A14"}
-            emissive={w.lit ? "#FFD060" : "#000"}
-            emissiveIntensity={w.lit ? 0.6 : 0}
-          />
-        </mesh>
-      ))}
+      {/* Single glowing window strip instead of individual windows */}
+      <mesh position={[position[0], height * 0.4, position[2] + width * 0.3 + 0.01]}>
+        <planeGeometry args={[width * 0.8, height * 0.6]} />
+        <meshStandardMaterial color="#FFE4A8" emissive="#FFD060" emissiveIntensity={0.3} transparent opacity={0.4} />
+      </mesh>
     </group>
   );
-}
+});
 
-// ── Exterior Ground with subtle grid pattern ──
-function ExteriorGround({ cx, cz }: { cx: number; cz: number }) {
+// ── Exterior Ground (simplified - fewer road meshes) ──
+const ExteriorGround = memo(function ExteriorGround({ cx, cz }: { cx: number; cz: number }) {
   return (
     <group>
       <mesh position={[cx, -0.02, cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[80, 80]} />
         <meshStandardMaterial color="#141820" />
       </mesh>
-      {/* Roads/paths */}
-      {[-20, -10, 0, 10, 20].map(off => (
-        <mesh key={`rh-${off}`} position={[cx, -0.015, cz + off]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[70, 0.8]} />
-          <meshStandardMaterial color="#1E222A" />
-        </mesh>
-      ))}
-      {[-20, -10, 0, 10, 20].map(off => (
-        <mesh key={`rv-${off}`} position={[cx + off, -0.015, cz]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[0.8, 70]} />
-          <meshStandardMaterial color="#1E222A" />
-        </mesh>
-      ))}
+      {/* Simplified roads - just 2 cross roads */}
+      <mesh position={[cx, -0.015, cz]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[70, 0.8]} />
+        <meshStandardMaterial color="#1E222A" />
+      </mesh>
+      <mesh position={[cx, -0.015, cz]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[0.8, 70]} />
+        <meshStandardMaterial color="#1E222A" />
+      </mesh>
     </group>
   );
-}
+});
 
-// ── Street lamp ──
-function StreetLamp({ position }: { position: [number, number, number] }) {
+// ── Street lamp (NO pointLight - emissive only) ──
+const StreetLamp = memo(function StreetLamp({ position }: { position: [number, number, number] }) {
   return (
     <group position={position}>
       <mesh position={[0, 0.8, 0]}>
-        <cylinderGeometry args={[0.02, 0.03, 1.6, 6]} />
+        <cylinderGeometry args={[0.02, 0.03, 1.6, 4]} />
         <meshStandardMaterial color="#333" metalness={0.6} />
       </mesh>
       <mesh position={[0, 1.65, 0]}>
-        <sphereGeometry args={[0.06, 8, 8]} />
-        <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={1.5} />
+        <sphereGeometry args={[0.06, 6, 6]} />
+        <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={2.5} />
       </mesh>
-      <pointLight position={[0, 1.6, 0]} intensity={0.3} distance={4} color="#FFD060" />
     </group>
   );
-}
+});
 
-
-
-// ── Building with exterior (user's building - Sims-style cutaway) ──
-function BuildingExterior({
+// ── Building Exterior ──
+const BuildingExterior = memo(function BuildingExterior({
   rooms,
   onFloorClick,
   clickEnabled,
@@ -128,17 +98,15 @@ function BuildingExterior({
   const brickColor = "#5A5A64";
   const brickDark = "#48484F";
   const trimColor = "#6E6E78";
-  const windowGlassLit = "#FFE4A8";
-  const windowGlassDark = "#1A1A2A";
 
   const downRef = useRef<{ x: number; y: number; t: number; button: number } | null>(null);
 
-  const handleFloorDown = (e: ThreeEvent<PointerEvent>) => {
+  const handleFloorDown = useCallback((e: ThreeEvent<PointerEvent>) => {
     if (!clickEnabled) return;
     downRef.current = { x: e.nativeEvent.clientX, y: e.nativeEvent.clientY, t: performance.now(), button: e.nativeEvent.button };
-  };
+  }, [clickEnabled]);
 
-  const handleFloorUp = (e: ThreeEvent<PointerEvent>) => {
+  const handleFloorUp = useCallback((e: ThreeEvent<PointerEvent>) => {
     if (!clickEnabled) return;
     const down = downRef.current;
     downRef.current = null;
@@ -148,47 +116,50 @@ function BuildingExterior({
     const tx = Math.floor(e.point.x / S + 0.5);
     const ty = Math.floor(e.point.z / S + 0.5);
     onFloorClick?.(tx, ty);
-  };
+  }, [clickEnabled, onFloorClick]);
 
   const northZ = cz - bh / 2;
   const southZ = cz + bh / 2;
   const westX = cx - bw / 2;
   const eastX = cx + bw / 2;
 
-  const extWindowStates = useMemo(() => {
-    const states: Record<string, boolean[]> = {};
-    const genKey = (axis: string, fixedPos: number, count: number) => {
-      const key = `${axis}-${fixedPos.toFixed(2)}`;
-      if (!states[key]) states[key] = Array.from({ length: count }, () => Math.random() > 0.3);
-      return states[key];
-    };
-    return genKey;
-  }, []);
-
-  const makeWindows = (axis: 'x' | 'z', fixedPos: number, wallStart: number, wallSpan: number, y: number, count: number) => {
-    const spacing = wallSpan / (count + 1);
-    const litStates = extWindowStates(axis, fixedPos, count);
-    return Array.from({ length: count }).map((_, i) => {
-      const offset = wallStart + spacing * (i + 1);
-      const lit = litStates[i];
-      const pos: [number, number, number] = axis === 'x' ? [offset, y, fixedPos] : [fixedPos, y, offset];
-      const size: [number, number, number] = axis === 'x' ? [0.28, 0.32, 0.03] : [0.03, 0.32, 0.28];
-      return (
-        <mesh key={`w${axis}${i}-${fixedPos}`} position={pos}>
-          <boxGeometry args={size} />
-          <meshStandardMaterial color={lit ? windowGlassLit : windowGlassDark} emissive={lit ? "#FFD060" : "#000"} emissiveIntensity={lit ? 0.3 : 0} />
-        </mesh>
-      );
-    });
-  };
-
-  const nWinX = Math.floor(bw / 1.2);
-  const nWinZ = Math.floor(bh / 1.2);
+  // Simplified windows - use strips instead of individual meshes
   const winY = foundH + wallH * 0.5;
+
+  // Ceiling lights: emissive bulbs only, NO pointLights in the grid
+  const ceilingLights = useMemo(() => {
+    const cols = Math.max(2, Math.floor(bw / 2));
+    const rows = Math.max(2, Math.floor(bh / 2.5));
+    const lights: JSX.Element[] = [];
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const lx = cx - bw * 0.42 + c * (bw * 0.84 / Math.max(1, cols - 1));
+        const lz = cz - bh * 0.40 + r * (bh * 0.80 / Math.max(1, rows - 1));
+        const ly = foundH + wallH;
+        lights.push(
+          <group key={`ceil-${r}-${c}`}>
+            <mesh position={[lx, ly - 0.06, lz]}>
+              <cylinderGeometry args={[0.003, 0.003, 0.12, 3]} />
+              <meshBasicMaterial color="#555" />
+            </mesh>
+            <mesh position={[lx, ly - 0.14, lz]}>
+              <cylinderGeometry args={[0.015, 0.055, 0.04, 6]} />
+              <meshStandardMaterial color="#2A2A30" metalness={0.5} roughness={0.3} />
+            </mesh>
+            <mesh position={[lx, ly - 0.18, lz]}>
+              <sphereGeometry args={[0.02, 6, 6]} />
+              <meshStandardMaterial color="#FFFAE0" emissive="#FFE090" emissiveIntensity={4.0} />
+            </mesh>
+          </group>
+        );
+      }
+    }
+    return lights;
+  }, [bw, bh, cx, cz, foundH, wallH]);
 
   return (
     <group>
-      {/* Sidewalk around building */}
+      {/* Sidewalk */}
       <mesh position={[cx, -0.008, cz]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[bw + 4, bh + 4]} />
         <meshStandardMaterial color="#555560" />
@@ -199,29 +170,14 @@ function BuildingExterior({
         <boxGeometry args={[bw + wallT * 2 + 0.1, foundH, bh + wallT * 2 + 0.1]} />
         <meshStandardMaterial color="#3A3A42" roughness={0.95} />
       </mesh>
-      <mesh position={[cx, foundH + 0.02, cz]}>
-        <boxGeometry args={[bw + wallT * 2 + 0.2, 0.04, bh + wallT * 2 + 0.2]} />
-        <meshStandardMaterial color="#505058" />
-      </mesh>
 
-      {/* Interior floor - dark modern */}
+      {/* Interior floor */}
       <mesh position={[cx, foundH + 0.001, cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow onPointerDown={handleFloorDown} onPointerUp={handleFloorUp}>
         <planeGeometry args={[bw, bh]} />
         <meshStandardMaterial color="#E8DDD0" roughness={0.9} />
       </mesh>
-      {/* Floor tile grid */}
-      {Array.from({ length: Math.ceil(bw / 0.5) + 1 }).map((_, i) => (
-        <mesh key={`vl${i}`} raycast={() => null} position={[cx - bw / 2 + i * 0.5, foundH + 0.002, cz]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[0.008, bh]} /><meshBasicMaterial color="#D8CFC2" />
-        </mesh>
-      ))}
-      {Array.from({ length: Math.ceil(bh / 0.5) + 1 }).map((_, i) => (
-        <mesh key={`hl${i}`} raycast={() => null} position={[cx, foundH + 0.002, cz - bh / 2 + i * 0.5]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[bw, 0.008]} /><meshBasicMaterial color="#D8CFC2" />
-        </mesh>
-      ))}
 
-      {/* Walls (LOW - never block agents) */}
+      {/* Walls (simplified - removed some redundant meshes) */}
       <mesh position={[cx, foundH + wallH * 0.25, northZ - wallT / 2]}>
         <boxGeometry args={[bw + wallT * 2, wallH * 0.5, wallT]} />
         <meshStandardMaterial color={brickColor} roughness={0.95} transparent opacity={0.7} />
@@ -249,63 +205,23 @@ function BuildingExterior({
         <meshStandardMaterial color={trimColor} />
       </mesh>
 
-      {/* Baseboard */}
-      <mesh position={[cx, foundH + 0.03, northZ + 0.04]}>
-        <boxGeometry args={[bw, 0.06, 0.05]} /><meshStandardMaterial color="#3A3A42" />
+      {/* Window strips instead of individual windows */}
+      <mesh position={[cx, winY, northZ - wallT - 0.001]}>
+        <planeGeometry args={[bw * 0.85, 0.32]} />
+        <meshStandardMaterial color="#FFE4A8" emissive="#FFD060" emissiveIntensity={0.3} transparent opacity={0.5} />
       </mesh>
-      <mesh position={[westX + 0.04, foundH + 0.03, cz]}>
-        <boxGeometry args={[0.05, 0.06, bh]} /><meshStandardMaterial color="#3A3A42" />
+      <mesh position={[westX - wallT - 0.001, winY, cz]} rotation={[0, Math.PI / 2, 0]}>
+        <planeGeometry args={[bh * 0.85, 0.32]} />
+        <meshStandardMaterial color="#FFE4A8" emissive="#FFD060" emissiveIntensity={0.3} transparent opacity={0.5} />
       </mesh>
 
-      {/* Windows */}
-      {makeWindows('x', northZ - wallT - 0.001, cx - bw / 2, bw, winY, nWinX)}
-      {makeWindows('z', westX - wallT - 0.001, cz - bh / 2, bh, winY, nWinZ)}
+      {/* Ceiling lights (emissive only, no pointLights) */}
+      {ceilingLights}
 
-      {/* ── Ceiling hanging lights (OHMO.AI style) ── */}
-      {(() => {
-        const cols = Math.max(3, Math.floor(bw / 1.5));
-        const rows = Math.max(3, Math.floor(bh / 2));
-        const lights: JSX.Element[] = [];
-        for (let r = 0; r < rows; r++) {
-          for (let c = 0; c < cols; c++) {
-            const lx = cx - bw * 0.42 + c * (bw * 0.84 / Math.max(1, cols - 1));
-            const lz = cz - bh * 0.40 + r * (bh * 0.80 / Math.max(1, rows - 1));
-            const ly = foundH + wallH;
-            lights.push(
-              <group key={`ceil-${r}-${c}`}>
-                {/* Wire */}
-                <mesh position={[lx, ly - 0.06, lz]}>
-                  <cylinderGeometry args={[0.003, 0.003, 0.12, 4]} />
-                  <meshBasicMaterial color="#555" />
-                </mesh>
-                {/* Lamp shade (cone) */}
-                <mesh position={[lx, ly - 0.14, lz]}>
-                  <cylinderGeometry args={[0.015, 0.055, 0.04, 8]} />
-                  <meshStandardMaterial color="#2A2A30" metalness={0.5} roughness={0.3} />
-                </mesh>
-                {/* Bulb - bright */}
-                <mesh position={[lx, ly - 0.18, lz]}>
-                  <sphereGeometry args={[0.02, 8, 8]} />
-                  <meshStandardMaterial color="#FFFAE0" emissive="#FFE090" emissiveIntensity={3.0} />
-                </mesh>
-                {/* Each ceiling light emits actual light */}
-                <pointLight position={[lx, ly - 0.2, lz]} intensity={0.6} distance={5} color="#FFF0D0" decay={2} />
-              </group>
-            );
-          }
-        }
-        return lights;
-      })()}
+      {/* Only 1 central fill pointLight for the interior */}
+      <pointLight position={[cx, foundH + wallH - 0.1, cz]} intensity={1.2} distance={Math.max(bw, bh) * 1.2} color="#FFF5E8" decay={2} />
 
-      {/* ── STRONG interior ambient fill lights (override day/night darkness) ── */}
-      <ambientLight intensity={0.5} color="#FFF8F0" />
-      <pointLight position={[cx, foundH + wallH - 0.1, cz]} intensity={1.5} distance={Math.max(bw, bh) * 1.2} color="#FFF5E8" decay={1.5} />
-      <pointLight position={[cx - bw * 0.3, foundH + wallH * 0.6, cz - bh * 0.3]} intensity={0.8} distance={10} color="#FFE8C0" />
-      <pointLight position={[cx + bw * 0.3, foundH + wallH * 0.6, cz + bh * 0.3]} intensity={0.8} distance={10} color="#FFE8C0" />
-      <pointLight position={[cx - bw * 0.3, foundH + wallH * 0.6, cz + bh * 0.3]} intensity={0.6} distance={8} color="#FFF0D0" />
-      <pointLight position={[cx + bw * 0.3, foundH + wallH * 0.6, cz - bh * 0.3]} intensity={0.6} distance={8} color="#FFF0D0" />
-
-      {/* ── Floor lamps (standing lamps in corners) ── */}
+      {/* Floor lamps - emissive only, no pointLights */}
       {[
         [cx - bw * 0.42, foundH, cz - bh * 0.42],
         [cx + bw * 0.42, foundH, cz - bh * 0.42],
@@ -313,30 +229,26 @@ function BuildingExterior({
         [cx + bw * 0.42, foundH, cz + bh * 0.42],
       ].map((pos, i) => (
         <group key={`flamp-${i}`}>
-          {/* Base */}
           <mesh position={[pos[0], pos[1] + 0.02, pos[2]]}>
-            <cylinderGeometry args={[0.04, 0.05, 0.04, 8]} />
+            <cylinderGeometry args={[0.04, 0.05, 0.04, 6]} />
             <meshStandardMaterial color="#333" metalness={0.6} />
           </mesh>
-          {/* Pole */}
           <mesh position={[pos[0], pos[1] + 0.45, pos[2]]}>
-            <cylinderGeometry args={[0.012, 0.012, 0.85, 6]} />
+            <cylinderGeometry args={[0.012, 0.012, 0.85, 4]} />
             <meshStandardMaterial color="#444" metalness={0.5} />
           </mesh>
-          {/* Shade */}
           <mesh position={[pos[0], pos[1] + 0.88, pos[2]]}>
-            <cylinderGeometry args={[0.04, 0.08, 0.08, 8]} />
+            <cylinderGeometry args={[0.04, 0.08, 0.08, 6]} />
             <meshStandardMaterial color="#E8DDD0" />
           </mesh>
-          {/* Bulb glow */}
           <mesh position={[pos[0], pos[1] + 0.86, pos[2]]}>
-            <sphereGeometry args={[0.03, 8, 8]} />
-            <meshStandardMaterial color="#FFFAE0" emissive="#FFD060" emissiveIntensity={1.5} />
+            <sphereGeometry args={[0.03, 6, 6]} />
+            <meshStandardMaterial color="#FFFAE0" emissive="#FFD060" emissiveIntensity={2.0} />
           </mesh>
         </group>
       ))}
 
-      {/* ── Wall-mounted screens (meeting room displays) ── */}
+      {/* Wall screens */}
       {[
         [cx - bw * 0.3, foundH + wallH * 0.45, northZ + wallT * 0.6],
         [cx + bw * 0.3, foundH + wallH * 0.45, northZ + wallT * 0.6],
@@ -353,7 +265,7 @@ function BuildingExterior({
         </group>
       ))}
 
-      {/* ── Neon company sign on back wall ── */}
+      {/* Neon sign */}
       <mesh position={[cx, foundH + wallH * 0.7, northZ + wallT * 0.6]}>
         <boxGeometry args={[1.4, 0.35, 0.02]} />
         <meshStandardMaterial color="#1A1A1A" />
@@ -371,10 +283,10 @@ function BuildingExterior({
       </Html>
     </group>
   );
-}
+});
 
-// ── Room 3D ──
-function Room3D({ room, onFloorClick, clickEnabled }: { room: RoomDef; onFloorClick?: (x: number, y: number) => void; clickEnabled?: boolean }) {
+// ── Room 3D (memoized) ──
+const Room3D = memo(function Room3D({ room, onFloorClick, clickEnabled }: { room: RoomDef; onFloorClick?: (x: number, y: number) => void; clickEnabled?: boolean }) {
   const w = room.w * S;
   const h = room.h * S;
   const x = room.x * S + w / 2;
@@ -384,11 +296,11 @@ function Room3D({ room, onFloorClick, clickEnabled }: { room: RoomDef; onFloorCl
   const baseH = 0.03;
 
   const downRef = useRef<{ x: number; y: number; t: number; button: number } | null>(null);
-  const handleDown = (e: ThreeEvent<PointerEvent>) => {
+  const handleDown = useCallback((e: ThreeEvent<PointerEvent>) => {
     if (!clickEnabled) return;
     downRef.current = { x: e.nativeEvent.clientX, y: e.nativeEvent.clientY, t: performance.now(), button: e.nativeEvent.button };
-  };
-  const handleUp = (e: ThreeEvent<PointerEvent>) => {
+  }, [clickEnabled]);
+  const handleUp = useCallback((e: ThreeEvent<PointerEvent>) => {
     if (!clickEnabled) return;
     const down = downRef.current;
     downRef.current = null;
@@ -398,7 +310,7 @@ function Room3D({ room, onFloorClick, clickEnabled }: { room: RoomDef; onFloorCl
     const tx = Math.floor(e.point.x / S + 0.5);
     const ty = Math.floor(e.point.z / S + 0.5);
     onFloorClick?.(tx, ty);
-  };
+  }, [clickEnabled, onFloorClick]);
 
   return (
     <group position={[x, 0, z]}>
@@ -412,13 +324,11 @@ function Room3D({ room, onFloorClick, clickEnabled }: { room: RoomDef; onFloorCl
           <meshStandardMaterial color={room.carpetColor} />
         </mesh>
       )}
-      {/* Floor borders */}
+      {/* Simplified walls - just baseboards + low walls */}
       <mesh position={[0, baseH / 2, -h / 2 + wallT / 2]}><boxGeometry args={[w, baseH, wallT]} /><meshStandardMaterial color={room.wallColor} /></mesh>
       <mesh position={[-w / 2 + wallT / 2, baseH / 2, 0]}><boxGeometry args={[wallT, baseH, h]} /><meshStandardMaterial color={room.wallColor} /></mesh>
-      {/* Ultra-low walls */}
       <mesh position={[0, wallH * 0.5, -h / 2]}><boxGeometry args={[w + wallT, wallH, wallT]} /><meshStandardMaterial color={room.wallColor} transparent opacity={0.6} /></mesh>
       <mesh position={[-w / 2, wallH * 0.5, 0]}><boxGeometry args={[wallT, wallH, h + wallT]} /><meshStandardMaterial color={room.wallColor} transparent opacity={0.6} /></mesh>
-      {/* Front + right strips */}
       <mesh position={[0, baseH / 2, h / 2 - wallT / 2]}><boxGeometry args={[w, baseH, wallT]} /><meshStandardMaterial color={room.wallColor} opacity={0.5} transparent /></mesh>
       <mesh position={[w / 2 - wallT / 2, baseH / 2, 0]}><boxGeometry args={[wallT, baseH, h]} /><meshStandardMaterial color={room.wallColor} opacity={0.5} transparent /></mesh>
       {/* Label */}
@@ -429,9 +339,9 @@ function Room3D({ room, onFloorClick, clickEnabled }: { room: RoomDef; onFloorCl
       </Html>
     </group>
   );
-}
+});
 
-// ── Walk animation hook ──
+// ── Walk animation hook (reused by agents + player) ──
 function useWalkAnimation(
   ref: React.RefObject<THREE.Group | null>,
   leftLeg: React.RefObject<THREE.Mesh | null>,
@@ -443,21 +353,23 @@ function useWalkAnimation(
   prevPos: React.MutableRefObject<{ x: number; z: number }>,
   lerpSpeed = 0.15
 ) {
-  useFrame(() => {
+  useFrame((_, delta) => {
     if (!ref.current) return;
-    smoothPos.current.x += (targetX - smoothPos.current.x) * lerpSpeed;
-    smoothPos.current.z += (targetZ - smoothPos.current.z) * lerpSpeed;
+    const dt = Math.min(delta, 0.05);
+    const factor = 1 - Math.exp(-lerpSpeed * 60 * dt);
+    smoothPos.current.x += (targetX - smoothPos.current.x) * factor;
+    smoothPos.current.z += (targetZ - smoothPos.current.z) * factor;
     const dx = Math.abs(targetX - smoothPos.current.x);
     const dz = Math.abs(targetZ - smoothPos.current.z);
     const moving = dx > 0.005 || dz > 0.005;
-    ref.current.position.set(smoothPos.current.x, 0.01, smoothPos.current.z);
-    if (moving) ref.current.position.y = 0.01 + Math.abs(Math.sin(Date.now() * 0.015)) * 0.025;
-    else ref.current.position.y = 0.01 + Math.abs(Math.sin(Date.now() * 0.003)) * 0.008;
-    const swing = moving ? Math.sin(Date.now() * 0.016) * 0.5 : 0;
-    if (leftLeg.current) leftLeg.current.rotation.x = moving ? swing : leftLeg.current.rotation.x * 0.85;
-    if (rightLeg.current) rightLeg.current.rotation.x = moving ? -swing : rightLeg.current.rotation.x * 0.85;
-    if (leftArm.current) leftArm.current.rotation.x = moving ? -swing * 0.5 : leftArm.current.rotation.x * 0.85;
-    if (rightArm.current) rightArm.current.rotation.x = moving ? swing * 0.5 : rightArm.current.rotation.x * 0.85;
+    const t = Date.now();
+    ref.current.position.set(smoothPos.current.x, moving ? 0.01 + Math.abs(Math.sin(t * 0.015)) * 0.025 : 0.01 + Math.abs(Math.sin(t * 0.003)) * 0.008, smoothPos.current.z);
+    const swing = moving ? Math.sin(t * 0.016) * 0.5 : 0;
+    const dampFactor = 1 - Math.exp(-8 * dt);
+    if (leftLeg.current) leftLeg.current.rotation.x += ((moving ? swing : 0) - leftLeg.current.rotation.x) * dampFactor;
+    if (rightLeg.current) rightLeg.current.rotation.x += ((moving ? -swing : 0) - rightLeg.current.rotation.x) * dampFactor;
+    if (leftArm.current) leftArm.current.rotation.x += ((moving ? -swing * 0.5 : 0) - leftArm.current.rotation.x) * dampFactor;
+    if (rightArm.current) rightArm.current.rotation.x += ((moving ? swing * 0.5 : 0) - rightArm.current.rotation.x) * dampFactor;
     if (targetX !== prevPos.current.x || targetZ !== prevPos.current.z) {
       const dirX = targetX - prevPos.current.x;
       const dirZ = targetZ - prevPos.current.z;
@@ -473,8 +385,8 @@ function useWalkAnimation(
   });
 }
 
-// ── Agent 3D ──
-function Agent3D({ agent, selected, onClick }: { agent: Agent; selected?: boolean; onClick: () => void }) {
+// ── Agent 3D (memoized, Html only on hover) ──
+const Agent3D = memo(function Agent3D({ agent, selected, onClick }: { agent: Agent; selected?: boolean; onClick: () => void }) {
   const ref = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
   const smoothPos = useRef(new THREE.Vector3(agent.x * S, 0, agent.y * S));
@@ -485,43 +397,51 @@ function Agent3D({ agent, selected, onClick }: { agent: Agent; selected?: boolea
   const rightArm = useRef<THREE.Mesh>(null);
   useWalkAnimation(ref, leftLeg, rightLeg, leftArm, rightArm, agent.x * S, agent.y * S, smoothPos, prevPos, 0.1);
 
+  const statusColor = STATUS_COLORS[agent.status] || "#999";
+
   return (
     <group ref={ref} onClick={(e) => { e.stopPropagation(); onClick(); }} onPointerOver={() => { setHovered(true); document.body.style.cursor = "pointer"; }} onPointerOut={() => { setHovered(false); document.body.style.cursor = "default"; }}>
       <mesh position={[0, 0.25, 0]} castShadow><boxGeometry args={[0.22, 0.28, 0.14]} /><meshStandardMaterial color={agent.color} /></mesh>
       <mesh position={[0, 0.47, 0]} castShadow><boxGeometry args={[0.18, 0.18, 0.16]} /><meshStandardMaterial color={agent.color} /></mesh>
       <mesh position={[0, 0.47, 0.081]}><boxGeometry args={[0.14, 0.08, 0.01]} /><meshStandardMaterial color="#1a1a2e" /></mesh>
       {[-0.035, 0.035].map((ox, i) => (
-        <mesh key={i} position={[ox, 0.48, 0.09]}><boxGeometry args={[0.035, 0.035, 0.01]} /><meshStandardMaterial color={agent.status === "thinking" ? "#6366F1" : "#00FF88"} emissive={agent.status === "thinking" ? "#6366F1" : "#00FF88"} emissiveIntensity={1.2} /></mesh>
+        <mesh key={i} position={[ox, 0.48, 0.09]}><boxGeometry args={[0.035, 0.035, 0.01]} /><meshStandardMaterial color={statusColor} emissive={statusColor} emissiveIntensity={1.2} /></mesh>
       ))}
       <mesh ref={leftArm} position={[-0.14, 0.24, 0]}><boxGeometry args={[0.05, 0.18, 0.07]} /><meshStandardMaterial color={agent.color} /></mesh>
       <mesh ref={rightArm} position={[0.14, 0.24, 0]}><boxGeometry args={[0.05, 0.18, 0.07]} /><meshStandardMaterial color={agent.color} /></mesh>
-      <mesh position={[0, 0.61, 0]}><cylinderGeometry args={[0.008, 0.008, 0.1, 6]} /><meshStandardMaterial color={agent.color} /></mesh>
-      <mesh position={[0, 0.67, 0]}><sphereGeometry args={[0.025, 8, 8]} /><meshStandardMaterial color={STATUS_COLORS[agent.status]} emissive={STATUS_COLORS[agent.status]} emissiveIntensity={1.8} /></mesh>
+      <mesh position={[0, 0.61, 0]}><cylinderGeometry args={[0.008, 0.008, 0.1, 4]} /><meshStandardMaterial color={agent.color} /></mesh>
+      <mesh position={[0, 0.67, 0]}><sphereGeometry args={[0.025, 6, 6]} /><meshStandardMaterial color={statusColor} emissive={statusColor} emissiveIntensity={1.8} /></mesh>
       <mesh ref={leftLeg} position={[-0.055, 0.06, 0]}><boxGeometry args={[0.07, 0.12, 0.09]} /><meshStandardMaterial color={agent.color} /></mesh>
       <mesh ref={rightLeg} position={[0.055, 0.06, 0]}><boxGeometry args={[0.07, 0.12, 0.09]} /><meshStandardMaterial color={agent.color} /></mesh>
-      <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.14, 16]} /><meshBasicMaterial color="#000" transparent opacity={0.12} /></mesh>
+      <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.14, 8]} /><meshBasicMaterial color="#000" transparent opacity={0.12} /></mesh>
       {(selected || hovered) && (
-        <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[0.2, 0.26, 32]} /><meshBasicMaterial color={selected ? "#6366F1" : "#90CAF9"} transparent opacity={0.7} /></mesh>
+        <>
+          <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[0.2, 0.26, 16]} /><meshBasicMaterial color={selected ? "#6366F1" : "#90CAF9"} transparent opacity={0.7} /></mesh>
+          <Html position={[0, 0.82, 0]} center>
+            <div className="flex items-center gap-1 px-2 py-0.5 bg-[rgba(20,20,30,0.9)] rounded-full whitespace-nowrap pointer-events-none select-none">
+              <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: statusColor }} />
+              <span className="text-[9px] text-white font-bold">{agent.name}</span>
+            </div>
+          </Html>
+        </>
       )}
-      <Html position={[0, 0.82, 0]} center>
-        <div className="flex items-center gap-1 px-2 py-0.5 bg-[rgba(20,20,30,0.9)] rounded-full whitespace-nowrap pointer-events-none select-none">
-          <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[agent.status] }} />
-          <span className="text-[9px] text-white font-bold">{agent.name}</span>
-        </div>
-      </Html>
+      {/* Always-visible minimal name (no Html, just a small indicator sphere for non-hovered) */}
     </group>
   );
-}
+}, (prev, next) => {
+  return prev.agent.x === next.agent.x && prev.agent.y === next.agent.y && prev.agent.status === next.agent.status && prev.agent.color === next.agent.color && prev.selected === next.selected;
+});
 
-// ── Walking dust ──
+// ── Walking dust (instanced - already optimized) ──
 function WalkingDust({ player }: { player: Player }) {
   const particles = useRef<THREE.InstancedMesh>(null);
   const dataRef = useRef<{ positions: Float32Array; velocities: Float32Array; lifetimes: Float32Array; spawnTimer: number }>({
-    positions: new Float32Array(30 * 3), velocities: new Float32Array(30 * 3), lifetimes: new Float32Array(30).fill(-1), spawnTimer: 0,
+    positions: new Float32Array(20 * 3), velocities: new Float32Array(20 * 3), lifetimes: new Float32Array(20).fill(-1), spawnTimer: 0,
   });
   const prevPos = useRef({ x: player.x, y: player.y });
   const dummy = useRef(new THREE.Object3D());
   const color = useRef(new THREE.Color("#C8B898"));
+  const COUNT = 20;
 
   useFrame((_, delta) => {
     if (!particles.current) return;
@@ -531,9 +451,9 @@ function WalkingDust({ player }: { player: Player }) {
     prevPos.current = { x: player.x, y: player.y };
     if (speed > 0.01) {
       d.spawnTimer += dt;
-      if (d.spawnTimer > 0.06) {
+      if (d.spawnTimer > 0.08) {
         d.spawnTimer = 0;
-        for (let i = 0; i < 30; i++) {
+        for (let i = 0; i < COUNT; i++) {
           if (d.lifetimes[i] <= 0) {
             d.positions[i * 3] = player.x * S + (Math.random() - 0.5) * 0.08;
             d.positions[i * 3 + 1] = 0.02;
@@ -547,7 +467,7 @@ function WalkingDust({ player }: { player: Player }) {
         }
       }
     }
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < COUNT; i++) {
       if (d.lifetimes[i] > 0) {
         d.lifetimes[i] -= dt;
         d.positions[i * 3] += d.velocities[i * 3] * dt;
@@ -569,8 +489,8 @@ function WalkingDust({ player }: { player: Player }) {
   });
 
   return (
-    <instancedMesh ref={particles} args={[undefined, undefined, 30]}>
-      <sphereGeometry args={[1, 6, 6]} />
+    <instancedMesh ref={particles} args={[undefined, undefined, COUNT]}>
+      <sphereGeometry args={[1, 4, 4]} />
       <meshBasicMaterial color={color.current} transparent opacity={0.5} />
     </instancedMesh>
   );
@@ -609,15 +529,14 @@ function Player3D({ player, config }: { player: Player; config?: { color: string
     const speed = Math.hypot(player.x - prevPos.current.x, player.y - prevPos.current.y);
     const moving = speed > 0.001;
     prevPos.current = { x: player.x, y: player.y };
-    ref.current.position.set(smoothPos.current.x, 0.01, smoothPos.current.z);
-    if (moving) ref.current.position.y = 0.01 + Math.abs(Math.sin(Date.now() * 0.015)) * 0.025;
-    else ref.current.position.y = 0.01 + Math.abs(Math.sin(Date.now() * 0.003)) * 0.008;
+    const t = Date.now();
+    ref.current.position.set(smoothPos.current.x, moving ? 0.01 + Math.abs(Math.sin(t * 0.015)) * 0.025 : 0.01 + Math.abs(Math.sin(t * 0.003)) * 0.008, smoothPos.current.z);
     let diff = player.angle - smoothAngle.current;
     while (diff > Math.PI) diff -= Math.PI * 2;
     while (diff < -Math.PI) diff += Math.PI * 2;
     smoothAngle.current += diff * rotFactor;
     ref.current.rotation.y = smoothAngle.current;
-    const swing = moving ? Math.sin(Date.now() * 0.016) * 0.5 : 0;
+    const swing = moving ? Math.sin(t * 0.016) * 0.5 : 0;
     const dampFactor = 1 - Math.exp(-8 * dt);
     if (leftLeg.current) leftLeg.current.rotation.x += ((moving ? swing : 0) - leftLeg.current.rotation.x) * dampFactor;
     if (rightLeg.current) rightLeg.current.rotation.x += ((moving ? -swing : 0) - rightLeg.current.rotation.x) * dampFactor;
@@ -632,7 +551,7 @@ function Player3D({ player, config }: { player: Player; config?: { color: string
       <mesh ref={leftLeg} position={[-0.055, 0.1, 0]}><boxGeometry args={[0.07, 0.12, 0.08]} /><meshStandardMaterial color={shortsColor} /></mesh>
       <mesh ref={rightLeg} position={[0.055, 0.1, 0]}><boxGeometry args={[0.07, 0.12, 0.08]} /><meshStandardMaterial color={shortsColor} /></mesh>
       <mesh position={[0, 0.27, 0]} castShadow><boxGeometry args={[0.26, 0.24, 0.15]} /><meshStandardMaterial color={shirtBase} /></mesh>
-      {[[-0.06, 0.30, 0.076], [0.04, 0.24, 0.076], [-0.02, 0.20, 0.076], [0.08, 0.32, 0.076], [-0.08, 0.22, 0.076], [0.06, 0.26, 0.076]].map((pos, i) => (
+      {[[-0.06, 0.30, 0.076], [0.04, 0.24, 0.076], [-0.02, 0.20, 0.076]].map((pos, i) => (
         <mesh key={`pat${i}`} position={pos as [number, number, number]}><boxGeometry args={[0.04, 0.04, 0.005]} /><meshStandardMaterial color={i % 2 === 0 ? shirtPattern : "#FFD700"} /></mesh>
       ))}
       <mesh ref={leftArm} position={[-0.165, 0.26, 0]}><boxGeometry args={[0.06, 0.2, 0.08]} /><meshStandardMaterial color={bodyColor} /></mesh>
@@ -656,7 +575,7 @@ function Player3D({ player, config }: { player: Player; config?: { color: string
       {/* Mouth */}
       <mesh position={[0, 0.44, 0.101]}><boxGeometry args={[0.08, 0.015, 0.01]} /><meshStandardMaterial color={mouthColor} /></mesh>
       {/* Shadow */}
-      <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.16, 16]} /><meshBasicMaterial color="#000" transparent opacity={0.18} /></mesh>
+      <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.16, 8]} /><meshBasicMaterial color="#000" transparent opacity={0.18} /></mesh>
       <Html position={[0, 0.95, 0]} center><span className="text-sm select-none pointer-events-none">👑</span></Html>
       <Html position={[0, 1.05, 0]} center>
         <div className="flex items-center gap-1 px-2 py-0.5 rounded-full whitespace-nowrap pointer-events-none select-none" style={{ backgroundColor: shirtBase }}>
@@ -713,7 +632,6 @@ export function OfficeScene({
   const controlsRef = useRef<any>(null);
   const dn = useDayNight();
 
-  // Compute building center
   const buildingCenter = useMemo(() => {
     const pad = 1.5;
     const minX = Math.min(...rooms.map(r => r.x)) - pad;
@@ -723,81 +641,65 @@ export function OfficeScene({
     return { x: ((minX + maxX) / 2) * S, z: ((minY + maxY) / 2) * S };
   }, [rooms]);
 
-  // Distant skyline buildings with more variety
   const skylineBuildings = useMemo(() => {
     const cx = buildingCenter.x;
     const cz = buildingCenter.z;
     const far = 28;
     return [
-      // North
       { pos: [cx - 12, 0, cz - far] as [number, number, number], w: 2.5, h: 5, color: "#3A3A4A" },
-      { pos: [cx - 7, 0, cz - far - 2] as [number, number, number], w: 1.8, h: 3.5, color: "#4A4A5A" },
       { pos: [cx - 2, 0, cz - far] as [number, number, number], w: 3, h: 6, color: "#3A4A5A" },
-      { pos: [cx + 4, 0, cz - far - 1] as [number, number, number], w: 2, h: 4, color: "#4A5A6A" },
       { pos: [cx + 10, 0, cz - far] as [number, number, number], w: 2.2, h: 5.5, color: "#3A3A5A" },
-      { pos: [cx + 15, 0, cz - far - 2] as [number, number, number], w: 1.5, h: 3, color: "#5A4A5A" },
-      // East
-      { pos: [cx + far, 0, cz - 10] as [number, number, number], w: 2, h: 4, color: "#4A4A5A" },
-      { pos: [cx + far + 2, 0, cz - 3] as [number, number, number], w: 2.5, h: 5.5, color: "#3A4A4A" },
+      { pos: [cx + far, 0, cz - 3] as [number, number, number], w: 2.5, h: 5.5, color: "#3A4A4A" },
       { pos: [cx + far, 0, cz + 4] as [number, number, number], w: 1.8, h: 3.5, color: "#5A4A4A" },
-      { pos: [cx + far + 1, 0, cz + 10] as [number, number, number], w: 2, h: 4.5, color: "#4A5A5A" },
-      // South
-      { pos: [cx - 10, 0, cz + far] as [number, number, number], w: 2.2, h: 4, color: "#4A5A4A" },
-      { pos: [cx - 3, 0, cz + far + 2] as [number, number, number], w: 3, h: 5, color: "#3A5A5A" },
-      { pos: [cx + 5, 0, cz + far] as [number, number, number], w: 1.8, h: 3.5, color: "#5A5A4A" },
-      { pos: [cx + 12, 0, cz + far + 1] as [number, number, number], w: 2.5, h: 6, color: "#4A4A5A" },
-      // West
-      { pos: [cx - far, 0, cz - 8] as [number, number, number], w: 2, h: 3.5, color: "#4A4A4A" },
-      { pos: [cx - far - 2, 0, cz] as [number, number, number], w: 2.5, h: 5, color: "#3A5A4A" },
-      { pos: [cx - far, 0, cz + 8] as [number, number, number], w: 1.8, h: 4, color: "#5A5A5A" },
+      { pos: [cx - 3, 0, cz + far] as [number, number, number], w: 3, h: 5, color: "#3A5A5A" },
+      { pos: [cx + 12, 0, cz + far] as [number, number, number], w: 2.5, h: 6, color: "#4A4A5A" },
+      { pos: [cx - far, 0, cz] as [number, number, number], w: 2.5, h: 5, color: "#3A5A4A" },
     ];
   }, [buildingCenter]);
 
-  // Street lamp positions around the building
   const streetLamps = useMemo(() => {
     const cx = buildingCenter.x;
     const cz = buildingCenter.z;
     return [
       [cx - 8, 0, cz - 8], [cx + 8, 0, cz - 8],
       [cx - 8, 0, cz + 8], [cx + 8, 0, cz + 8],
-      [cx - 14, 0, cz], [cx + 14, 0, cz],
-      [cx, 0, cz - 14], [cx, 0, cz + 14],
     ] as [number, number, number][];
   }, [buildingCenter]);
+
+  const handleMapClick = useCallback((x: number, y: number) => onMapClick?.(x, y), [onMapClick]);
 
   return (
     <div className="absolute inset-0">
       <Canvas
         shadows
         style={{ touchAction: "none" }}
-        camera={{ position: [14, 12, 14], fov: 35, near: 0.1, far: 200 }}
-        gl={{ antialias: true }}
+        camera={{ position: [14, 12, 14], fov: 35, near: 0.5, far: 120 }}
+        gl={{ antialias: true, powerPreference: "high-performance" }}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = 1.4; // Fixed bright exposure for interior
+          gl.toneMappingExposure = 1.4;
+          gl.shadowMap.type = THREE.BasicShadowMap; // Cheaper shadow type
         }}
+        dpr={[1, 1.5]}
       >
-        {/* Sky/background follows day-night, but interior lighting is FIXED */}
         <color attach="background" args={[dn.bgColor]} />
-        <fog attach="fog" args={[dn.fogColor, dn.fogNear, dn.fogFar]} />
+        <fog attach="fog" args={[dn.fogColor, 20, 80]} />
 
-        {/* FIXED bright ambient for interior - never changes */}
+        {/* Fixed bright ambient */}
         <ambientLight intensity={0.9} color="#FFF8F0" />
-        {/* Main directional "office ceiling" light - always strong */}
-        <directionalLight position={[5, 20, 8]} intensity={1.2} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-far={60} shadow-camera-left={-30} shadow-camera-right={30} shadow-camera-top={30} shadow-camera-bottom={-30} color="#FFF5E8" />
-        <directionalLight position={[-8, 15, -6]} intensity={0.4} color="#E8F0FF" />
-        {/* Hemisphere: bright sky + warm ground, fixed */}
-        <hemisphereLight args={["#C8DEFF", "#8B7355", 0.5]} />
+        {/* Single directional with small shadow map */}
+        <directionalLight position={[5, 20, 8]} intensity={1.2} castShadow shadow-mapSize-width={512} shadow-mapSize-height={512} shadow-camera-far={40} shadow-camera-left={-20} shadow-camera-right={20} shadow-camera-top={20} shadow-camera-bottom={-20} color="#FFF5E8" />
+        <directionalLight position={[-8, 15, -6]} intensity={0.4} color="#E8F0FF" castShadow={false} />
+        <hemisphereLight args={["#C8DEFF", "#8B7355", 0.4]} />
 
-        {dn.showStars && <Stars />}
+        {dn.showStars && <Stars count={500} radius={60} />}
 
         <OrbitControls
           ref={controlsRef}
           enableDamping dampingFactor={0.08}
           enablePan enableZoom enableRotate
-          minDistance={3} maxDistance={30}
+          minDistance={3} maxDistance={25}
           minPolarAngle={Math.PI / 6} maxPolarAngle={Math.PI / 2.6}
-          minAzimuthAngle={-Math.PI} maxAzimuthAngle={Math.PI}
           zoomSpeed={0.9} rotateSpeed={0.7} panSpeed={0.75}
           mouseButtons={{ LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN }}
           touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
@@ -806,26 +708,20 @@ export function OfficeScene({
         <ControlsUpdater controlsRef={controlsRef} />
         <CameraTarget player={player} controlsRef={controlsRef} />
 
-        {/* ── Ground around building ── */}
         <ExteriorGround cx={buildingCenter.x} cz={buildingCenter.z} />
+        <BuildingExterior rooms={rooms} clickEnabled={!editMode} onFloorClick={handleMapClick} />
 
-        {/* ── User's Building ── */}
-        <BuildingExterior rooms={rooms} clickEnabled={!editMode} onFloorClick={(x, y) => onMapClick?.(x, y)} />
-
-        {/* ── Distant Skyline ── */}
         {skylineBuildings.map((b, i) => (
           <SkylineBuilding key={`sky-${i}`} position={b.pos} width={b.w} height={b.h} color={b.color} />
         ))}
 
-        {/* ── Street Lamps ── */}
         {streetLamps.map((pos, i) => (
           <StreetLamp key={`lamp-${i}`} position={pos} />
         ))}
 
-        {/* ── Interior objects at building height ── */}
         <group position={[0, 0.35, 0]}>
           {rooms.map((room) => (
-            <Room3D key={room.id} room={room} clickEnabled={!editMode} onFloorClick={(x, y) => onMapClick?.(x, y)} />
+            <Room3D key={room.id} room={room} clickEnabled={!editMode} onFloorClick={handleMapClick} />
           ))}
           {furniture.map(f => (
             <FurnitureModel
