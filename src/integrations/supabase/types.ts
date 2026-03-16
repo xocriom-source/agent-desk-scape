@@ -276,6 +276,42 @@ export type Database = {
           },
         ]
       }
+      building_ai_assistants: {
+        Row: {
+          building_type: string
+          created_at: string
+          icon: string | null
+          id: string
+          model_provider: string
+          name: string
+          role: string
+          status: string
+          system_prompt: string
+        }
+        Insert: {
+          building_type: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          model_provider?: string
+          name: string
+          role?: string
+          status?: string
+          system_prompt: string
+        }
+        Update: {
+          building_type?: string
+          created_at?: string
+          icon?: string | null
+          id?: string
+          model_provider?: string
+          name?: string
+          role?: string
+          status?: string
+          system_prompt?: string
+        }
+        Relationships: []
+      }
       business_offers: {
         Row: {
           business_id: string
