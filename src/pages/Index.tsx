@@ -28,12 +28,14 @@ import { CityEvents } from "@/components/office/CityEvents";
 import { CityChat } from "@/components/office/CityChat";
 import { useOfficeState } from "@/hooks/useOfficeState";
 import { usePanelState } from "@/hooks/office/usePanelState";
+import { useAuth } from "@/contexts/AuthContext";
 import { ROOMS, setRooms, FURNITURE, setFurniture, getRoomAt, type RoomDef, type FurnitureItem, DEFAULT_ROOMS, DEFAULT_FURNITURE } from "@/data/officeMap";
 import { tileFromFloat } from "@/hooks/office/movementUtils";
 import type { Agent } from "@/types/agent";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { profile, signOut } = useAuth();
   const { openPanel, open, close, isOpen } = usePanelState();
   const [rooms, setLocalRooms] = useState<RoomDef[]>(() => [...DEFAULT_ROOMS]);
   const [furnitureItems, setLocalFurniture] = useState<FurnitureItem[]>(() => [...DEFAULT_FURNITURE]);
@@ -47,9 +49,8 @@ const Index = () => {
       const saved = localStorage.getItem("playerConfig");
       if (saved) return JSON.parse(saved);
     } catch {}
-    const lobbyName = localStorage.getItem("playerName");
     return {
-      name: lobbyName || "Chefe",
+      name: profile?.display_name || "Chefe",
       color: "#4F46E5",
       hairStyle: "spiky",
       outfitStyle: "suit",
@@ -58,17 +59,12 @@ const Index = () => {
     };
   });
 
+  // Sync player name with auth profile (no localStorage auth check needed - ProtectedRoute handles it)
   useEffect(() => {
-    const user = localStorage.getItem("agentoffice_user");
-    if (!user) {
-      console.log("[AgentOffice] No user found, redirecting to landing");
-      navigate("/", { replace: true });
-      return;
+    if (profile?.display_name) {
+      setPlayerConfig((prev) => ({ ...prev, name: profile.display_name || prev.name }));
     }
-    const parsed = JSON.parse(user);
-    console.log("[AgentOffice] User loaded:", parsed.name);
-    setPlayerConfig((prev) => ({ ...prev, name: parsed.name || "Chefe" }));
-  }, [navigate]);
+  }, [profile?.display_name]);
 
   const {
     agents,
