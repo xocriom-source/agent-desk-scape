@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, Suspense } from "react";
+import { useMemo, useState, useCallback, Suspense, useReducer } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Building2, Users2, Trophy, Megaphone, Plane, Search, ShoppingBag, MessageCircle, Target, Car, Award, Briefcase, Dna, Users, Zap, Bot, Globe, Monitor, Video, Hash, Eye, BarChart3, Calendar, Gamepad2, Link2 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -34,15 +34,39 @@ import { TeamEngagement } from "@/components/workspace/TeamEngagement";
 import type { TransportType } from "@/types/building";
 import logo from "@/assets/logo.png";
 
+// Panel state reducer — replaces 20+ useState calls
+type PanelName = "leaderboard" | "ranking" | "ads" | "vehicleShop" | "chat" | "missions" | "marketplace" |
+  "proximity" | "objects" | "status" | "teleport" | "personalAgent" | "teamAgents" | "publicSpaces" |
+  "messenger" | "training" | "meeting" | "teamChat" | "focusMode" | "analytics" | "events" |
+  "screenShare" | "integrations" | "engagement";
+
+type PanelAction = { type: "toggle"; panel: PanelName } | { type: "open"; panel: PanelName } | { type: "close"; panel: PanelName };
+type PanelState = Record<PanelName, boolean>;
+
+const initialPanels: PanelState = {
+  leaderboard: false, ranking: false, ads: false, vehicleShop: false, chat: false,
+  missions: false, marketplace: false, proximity: false, objects: false, status: false,
+  teleport: false, personalAgent: false, teamAgents: false, publicSpaces: false,
+  messenger: false, training: false, meeting: false, teamChat: false, focusMode: false,
+  analytics: false, events: false, screenShare: false, integrations: false, engagement: false,
+};
+
+function panelReducer(state: PanelState, action: PanelAction): PanelState {
+  switch (action.type) {
+    case "toggle": return { ...state, [action.panel]: !state[action.panel] };
+    case "open": return { ...state, [action.panel]: true };
+    case "close": return { ...state, [action.panel]: false };
+    default: return state;
+  }
+}
+
 export default function CityExplore() {
   const navigate = useNavigate();
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
-  const [showRanking, setShowRanking] = useState(false);
-  const [showAds, setShowAds] = useState(false);
-  const [showVehicleShop, setShowVehicleShop] = useState(false);
-  const [showChat, setShowChat] = useState(false);
-  const [showMissions, setShowMissions] = useState(false);
-  const [showMarketplace, setShowMarketplace] = useState(false);
+  const [panels, dispatch] = useReducer(panelReducer, initialPanels);
+  const open = useCallback((p: PanelName) => dispatch({ type: "open", panel: p }), []);
+  const close = useCallback((p: PanelName) => dispatch({ type: "close", panel: p }), []);
+  const toggle = useCallback((p: PanelName) => dispatch({ type: "toggle", panel: p }), []);
+
   const [flyMode, setFlyMode] = useState(false);
   const [inVehicle, setInVehicle] = useState(false);
   const [currentVehicle, setCurrentVehicle] = useState<TransportType>("car");
@@ -50,43 +74,28 @@ export default function CityExplore() {
   const [playerPos, setPlayerPos] = useState<[number, number, number]>([0, 0, 5]);
   const [showIntro, setShowIntro] = useState(true);
   const [cityReady, setCityReady] = useState(false);
-
-  // Collaboration states
-  const [showProximity, setShowProximity] = useState(false);
-  const [showObjects, setShowObjects] = useState(false);
-  const [showStatus, setShowStatus] = useState(false);
-  const [showTeleport, setShowTeleport] = useState(false);
-  const [showPersonalAgent, setShowPersonalAgent] = useState(false);
-  const [showTeamAgents, setShowTeamAgents] = useState(false);
-  const [showPublicSpaces, setShowPublicSpaces] = useState(false);
-  const [showMessenger, setShowMessenger] = useState(false);
-  const [showTraining, setShowTraining] = useState(false);
   const [userStatus, setUserStatus] = useState<UserStatus>("available");
-
-  // Workspace states
-  const [showMeeting, setShowMeeting] = useState(false);
-  const [showTeamChat, setShowTeamChat] = useState(false);
-  const [showFocusMode, setShowFocusMode] = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(false);
-  const [showEvents, setShowEvents] = useState(false);
-  const [showScreenShare, setShowScreenShare] = useState(false);
-  const [showIntegrations, setShowIntegrations] = useState(false);
-  const [showEngagement, setShowEngagement] = useState(false);
   const [focusMode, setFocusMode] = useState<FocusModeType>("normal");
 
   const userName = useMemo(() => {
-    const stored = localStorage.getItem("agentoffice_user");
-    return stored ? JSON.parse(stored).name || "Chefe" : "Chefe";
+    try {
+      const stored = localStorage.getItem("agentoffice_user");
+      return stored ? JSON.parse(stored).name || "Chefe" : "Chefe";
+    } catch { return "Chefe"; }
   }, []);
 
   const cityData = useMemo(() => {
-    const stored = localStorage.getItem("agentoffice_city");
-    return stored ? JSON.parse(stored) : { name: "São Paulo", flag: "🇧🇷" };
+    try {
+      const stored = localStorage.getItem("agentoffice_city");
+      return stored ? JSON.parse(stored) : { name: "São Paulo", flag: "🇧🇷" };
+    } catch { return { name: "São Paulo", flag: "🇧🇷" }; }
   }, []);
 
   const userId = useMemo(() => {
-    const stored = localStorage.getItem("agentoffice_user");
-    return stored ? JSON.parse(stored).email || "" : "";
+    try {
+      const stored = localStorage.getItem("agentoffice_user");
+      return stored ? JSON.parse(stored).email || "" : "";
+    } catch { return ""; }
   }, []);
 
   const { visibleBuildings, userBuilding } = useCityBuildings(userId);
