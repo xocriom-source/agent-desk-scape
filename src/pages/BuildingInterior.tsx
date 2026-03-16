@@ -258,26 +258,8 @@ export default function BuildingInterior() {
             transition={{ delay: 0.2 }}
             className="space-y-4"
           >
-            <div className="bg-card border border-border rounded-2xl p-5">
-              <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-primary" />
-                Analytics
-              </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground text-xs flex items-center gap-1"><Eye className="w-3 h-3" /> Visitantes</span>
-                  <span className="text-foreground text-sm font-bold">{analytics.visitors}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground text-xs flex items-center gap-1"><Clock className="w-3 h-3" /> Tempo médio</span>
-                  <span className="text-foreground text-sm font-bold">{analytics.avgTime}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground text-xs flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Interações AI</span>
-                  <span className="text-foreground text-sm font-bold">{analytics.interactions}</span>
-                </div>
-              </div>
-            </div>
+            {/* Real Analytics */}
+            <AssistantAnalytics buildingId={building.id} />
 
             <div className="bg-card border border-border rounded-2xl p-5">
               <h3 className="text-sm font-bold text-foreground mb-3">Detalhes do Prédio</h3>
