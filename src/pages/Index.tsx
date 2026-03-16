@@ -97,6 +97,10 @@ const Index = () => {
     nearbyAgent,
     movePlayer,
     setPlayerDestination,
+    nearbyInteractable,
+    activeInteraction,
+    interactionMessage,
+    interact,
   } = useOfficeState(playerConfig.name);
 
   // Agent activity notifications
