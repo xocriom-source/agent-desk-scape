@@ -117,13 +117,17 @@ export default function CityView() {
   const [selectedBuilding, setSelectedBuilding] = useState<BuildingData | null>(null);
 
   const cityData = useMemo(() => {
-    const stored = localStorage.getItem("agentoffice_city");
-    return stored ? JSON.parse(stored) : { name: "São Paulo", country: "Brasil", flag: "🇧🇷" };
+    try {
+      const stored = localStorage.getItem("agentoffice_city");
+      return stored ? JSON.parse(stored) : { name: "São Paulo", country: "Brasil", flag: "🇧🇷" };
+    } catch { return { name: "São Paulo", country: "Brasil", flag: "🇧🇷" }; }
   }, []);
 
   const userName = useMemo(() => {
-    const stored = localStorage.getItem("agentoffice_user");
-    return stored ? JSON.parse(stored).name || "Chefe" : "Chefe";
+    try {
+      const stored = localStorage.getItem("agentoffice_user");
+      return stored ? JSON.parse(stored).name || "Chefe" : "Chefe";
+    } catch { return "Chefe"; }
   }, []);
 
   const buildings = useMemo(() => generateBuildings(userName), [userName]);
