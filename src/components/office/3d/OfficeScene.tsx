@@ -263,41 +263,47 @@ function BuildingExterior({
 
       {/* ── Ceiling hanging lights (OHMO.AI style) ── */}
       {(() => {
-        const cols = Math.max(2, Math.floor(bw / 2));
-        const rows = Math.max(2, Math.floor(bh / 2.5));
+        const cols = Math.max(3, Math.floor(bw / 1.5));
+        const rows = Math.max(3, Math.floor(bh / 2));
         const lights: JSX.Element[] = [];
         for (let r = 0; r < rows; r++) {
           for (let c = 0; c < cols; c++) {
-            const lx = cx - bw * 0.38 + c * (bw * 0.76 / Math.max(1, cols - 1));
-            const lz = cz - bh * 0.35 + r * (bh * 0.7 / Math.max(1, rows - 1));
+            const lx = cx - bw * 0.42 + c * (bw * 0.84 / Math.max(1, cols - 1));
+            const lz = cz - bh * 0.40 + r * (bh * 0.80 / Math.max(1, rows - 1));
             const ly = foundH + wallH;
             lights.push(
               <group key={`ceil-${r}-${c}`}>
                 {/* Wire */}
-                <mesh position={[lx, ly - 0.08, lz]}>
-                  <cylinderGeometry args={[0.003, 0.003, 0.16, 4]} />
-                  <meshBasicMaterial color="#444" />
+                <mesh position={[lx, ly - 0.06, lz]}>
+                  <cylinderGeometry args={[0.003, 0.003, 0.12, 4]} />
+                  <meshBasicMaterial color="#555" />
                 </mesh>
                 {/* Lamp shade (cone) */}
-                <mesh position={[lx, ly - 0.18, lz]}>
-                  <cylinderGeometry args={[0.02, 0.06, 0.05, 8]} />
+                <mesh position={[lx, ly - 0.14, lz]}>
+                  <cylinderGeometry args={[0.015, 0.055, 0.04, 8]} />
                   <meshStandardMaterial color="#2A2A30" metalness={0.5} roughness={0.3} />
                 </mesh>
-                {/* Bulb */}
-                <mesh position={[lx, ly - 0.22, lz]}>
-                  <sphereGeometry args={[0.025, 8, 8]} />
-                  <meshStandardMaterial color="#FFF5E0" emissive="#FFD080" emissiveIntensity={2.0} />
+                {/* Bulb - bright */}
+                <mesh position={[lx, ly - 0.18, lz]}>
+                  <sphereGeometry args={[0.02, 8, 8]} />
+                  <meshStandardMaterial color="#FFFAE0" emissive="#FFE090" emissiveIntensity={3.0} />
                 </mesh>
+                {/* Each ceiling light emits actual light */}
+                <pointLight position={[lx, ly - 0.2, lz]} intensity={0.6} distance={5} color="#FFF0D0" decay={2} />
               </group>
             );
           }
         }
         return lights;
       })()}
-      {/* Main warm interior point lights */}
-      <pointLight position={[cx - bw * 0.25, foundH + wallH - 0.25, cz - bh * 0.2]} intensity={0.5} distance={8} color="#FFD090" />
-      <pointLight position={[cx + bw * 0.25, foundH + wallH - 0.25, cz + bh * 0.2]} intensity={0.5} distance={8} color="#FFD090" />
-      <pointLight position={[cx, foundH + wallH - 0.25, cz]} intensity={0.4} distance={8} color="#FFF0D0" />
+
+      {/* ── STRONG interior ambient fill lights (override day/night darkness) ── */}
+      <ambientLight intensity={0.5} color="#FFF8F0" />
+      <pointLight position={[cx, foundH + wallH - 0.1, cz]} intensity={1.5} distance={Math.max(bw, bh) * 1.2} color="#FFF5E8" decay={1.5} />
+      <pointLight position={[cx - bw * 0.3, foundH + wallH * 0.6, cz - bh * 0.3]} intensity={0.8} distance={10} color="#FFE8C0" />
+      <pointLight position={[cx + bw * 0.3, foundH + wallH * 0.6, cz + bh * 0.3]} intensity={0.8} distance={10} color="#FFE8C0" />
+      <pointLight position={[cx - bw * 0.3, foundH + wallH * 0.6, cz + bh * 0.3]} intensity={0.6} distance={8} color="#FFF0D0" />
+      <pointLight position={[cx + bw * 0.3, foundH + wallH * 0.6, cz - bh * 0.3]} intensity={0.6} distance={8} color="#FFF0D0" />
 
       {/* ── Floor lamps (standing lamps in corners) ── */}
       {[
