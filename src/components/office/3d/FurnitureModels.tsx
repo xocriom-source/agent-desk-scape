@@ -885,6 +885,441 @@ function Rug() {
   );
 }
 
+// ── NEW DETAILED FURNITURE ──
+
+function RoundTable() {
+  return (
+    <group>
+      <mesh position={[0, 0.36, 0]}>
+        <cylinderGeometry args={[0.45, 0.45, 0.04, 24]} />
+        <meshStandardMaterial color={WOOD} />
+      </mesh>
+      <mesh position={[0, 0.17, 0]}>
+        <cylinderGeometry args={[0.04, 0.04, 0.34, 8]} />
+        <meshStandardMaterial color={WOOD_DARK} />
+      </mesh>
+      <mesh position={[0, 0.01, 0]}>
+        <cylinderGeometry args={[0.25, 0.25, 0.02, 16]} />
+        <meshStandardMaterial color={WOOD_DARK} />
+      </mesh>
+    </group>
+  );
+}
+
+function ReceptionDesk() {
+  return (
+    <group>
+      {/* Main counter */}
+      <mesh position={[0, 0.5, 0]}>
+        <boxGeometry args={[1.4, 0.08, 0.5]} />
+        <meshStandardMaterial color={WOOD} />
+      </mesh>
+      {/* Front panel */}
+      <mesh position={[0, 0.25, -0.22]}>
+        <boxGeometry args={[1.4, 0.5, 0.06]} />
+        <meshStandardMaterial color={WOOD_DARK} />
+      </mesh>
+      {/* Side panels */}
+      <mesh position={[-0.67, 0.25, 0]}>
+        <boxGeometry args={[0.06, 0.5, 0.5]} />
+        <meshStandardMaterial color={WOOD_DARK} />
+      </mesh>
+      <mesh position={[0.67, 0.25, 0]}>
+        <boxGeometry args={[0.06, 0.5, 0.5]} />
+        <meshStandardMaterial color={WOOD_DARK} />
+      </mesh>
+      {/* Monitor on desk */}
+      <mesh position={[0.3, 0.7, -0.05]}>
+        <boxGeometry args={[0.3, 0.2, 0.02]} />
+        <meshStandardMaterial color={SCREEN_OFF} />
+      </mesh>
+      <mesh position={[0.3, 0.7, -0.04]}>
+        <boxGeometry args={[0.26, 0.17, 0.01]} />
+        <meshStandardMaterial color={SCREEN_ON} emissive={SCREEN_ON} emissiveIntensity={0.4} />
+      </mesh>
+      {/* Sign on front */}
+      <mesh position={[0, 0.35, -0.26]}>
+        <boxGeometry args={[0.5, 0.12, 0.01]} />
+        <meshStandardMaterial color="#00CED1" emissive="#00CED1" emissiveIntensity={1.2} />
+      </mesh>
+    </group>
+  );
+}
+
+function CoffeeBar() {
+  return (
+    <group>
+      {/* Counter */}
+      <mesh position={[0, 0.45, 0]}>
+        <boxGeometry args={[1.2, 0.06, 0.45]} />
+        <meshStandardMaterial color="#5D4037" />
+      </mesh>
+      {/* Base cabinet */}
+      <mesh position={[0, 0.2, 0]}>
+        <boxGeometry args={[1.2, 0.4, 0.45]} />
+        <meshStandardMaterial color="#3E2723" />
+      </mesh>
+      {/* Coffee machine */}
+      <mesh position={[-0.35, 0.6, 0]}>
+        <boxGeometry args={[0.2, 0.28, 0.18]} />
+        <meshStandardMaterial color="#212121" />
+      </mesh>
+      <mesh position={[-0.35, 0.5, 0.05]}>
+        <cylinderGeometry args={[0.03, 0.025, 0.06, 8]} />
+        <meshStandardMaterial color="white" />
+      </mesh>
+      {/* Cups row */}
+      {[0, 0.08, 0.16].map((ox, i) => (
+        <mesh key={i} position={[0.1 + ox, 0.52, 0.05]}>
+          <cylinderGeometry args={[0.025, 0.02, 0.06, 8]} />
+          <meshStandardMaterial color={["white", "#FFE0B2", "#BBDEFB"][i]} />
+        </mesh>
+      ))}
+      {/* Menu board above */}
+      <mesh position={[0, 0.85, -0.18]}>
+        <boxGeometry args={[0.6, 0.25, 0.02]} />
+        <meshStandardMaterial color="#1A1A1A" />
+      </mesh>
+      <mesh position={[0, 0.85, -0.17]}>
+        <boxGeometry args={[0.54, 0.2, 0.01]} />
+        <meshStandardMaterial color="#FFC107" emissive="#FFC107" emissiveIntensity={0.3} />
+      </mesh>
+    </group>
+  );
+}
+
+function Treadmill() {
+  return (
+    <group>
+      {/* Base/belt */}
+      <mesh position={[0, 0.08, 0]}>
+        <boxGeometry args={[0.35, 0.08, 0.9]} />
+        <meshStandardMaterial color={METAL_DARK} />
+      </mesh>
+      <mesh position={[0, 0.13, 0]}>
+        <boxGeometry args={[0.3, 0.02, 0.8]} />
+        <meshStandardMaterial color="#333" />
+      </mesh>
+      {/* Uprights */}
+      <mesh position={[-0.14, 0.5, -0.35]}>
+        <cylinderGeometry args={[0.015, 0.015, 0.8, 6]} />
+        <meshStandardMaterial color={METAL} />
+      </mesh>
+      <mesh position={[0.14, 0.5, -0.35]}>
+        <cylinderGeometry args={[0.015, 0.015, 0.8, 6]} />
+        <meshStandardMaterial color={METAL} />
+      </mesh>
+      {/* Display */}
+      <mesh position={[0, 0.88, -0.35]}>
+        <boxGeometry args={[0.18, 0.1, 0.03]} />
+        <meshStandardMaterial color={SCREEN_OFF} />
+      </mesh>
+      <mesh position={[0, 0.88, -0.34]}>
+        <boxGeometry args={[0.14, 0.07, 0.01]} />
+        <meshStandardMaterial color="#4CAF50" emissive="#4CAF50" emissiveIntensity={0.5} />
+      </mesh>
+      {/* Handles */}
+      <mesh position={[-0.14, 0.9, -0.3]}>
+        <boxGeometry args={[0.02, 0.02, 0.12]} />
+        <meshStandardMaterial color={METAL} />
+      </mesh>
+      <mesh position={[0.14, 0.9, -0.3]}>
+        <boxGeometry args={[0.02, 0.02, 0.12]} />
+        <meshStandardMaterial color={METAL} />
+      </mesh>
+    </group>
+  );
+}
+
+function DumbbellRack() {
+  return (
+    <group>
+      {/* Rack frame */}
+      <mesh position={[0, 0.35, 0]}>
+        <boxGeometry args={[0.6, 0.7, 0.2]} />
+        <meshStandardMaterial color={METAL_DARK} />
+      </mesh>
+      {/* Shelves */}
+      {[0.15, 0.35, 0.55].map((y, row) => (
+        <group key={row}>
+          <mesh position={[0, y, 0.05]}>
+            <boxGeometry args={[0.55, 0.02, 0.18]} />
+            <meshStandardMaterial color={METAL} />
+          </mesh>
+          {/* Dumbbells */}
+          {[-0.15, 0, 0.15].map((ox, i) => (
+            <mesh key={i} position={[ox, y + 0.05, 0.05]} rotation={[0, 0, Math.PI / 2]}>
+              <cylinderGeometry args={[0.03, 0.03, 0.08, 8]} />
+              <meshStandardMaterial color={["#F44336", "#2196F3", "#FF9800"][row]} />
+            </mesh>
+          ))}
+        </group>
+      ))}
+    </group>
+  );
+}
+
+function PunchingBag() {
+  return (
+    <group>
+      {/* Chain */}
+      <mesh position={[0, 0.95, 0]}>
+        <cylinderGeometry args={[0.008, 0.008, 0.2, 4]} />
+        <meshStandardMaterial color={METAL} metalness={0.8} />
+      </mesh>
+      {/* Bag */}
+      <mesh position={[0, 0.55, 0]}>
+        <cylinderGeometry args={[0.12, 0.1, 0.6, 12]} />
+        <meshStandardMaterial color="#C62828" roughness={0.8} />
+      </mesh>
+      {/* Bottom cap */}
+      <mesh position={[0, 0.25, 0]}>
+        <sphereGeometry args={[0.1, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color="#B71C1C" roughness={0.8} />
+      </mesh>
+    </group>
+  );
+}
+
+function YogaMat() {
+  return (
+    <group>
+      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[0.4, 1.0]} />
+        <meshStandardMaterial color="#7B1FA2" transparent opacity={0.7} />
+      </mesh>
+      <mesh position={[0, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[0.36, 0.96]} />
+        <meshStandardMaterial color="#9C27B0" transparent opacity={0.5} />
+      </mesh>
+    </group>
+  );
+}
+
+function KanbanBoard() {
+  return (
+    <group>
+      {/* Board */}
+      <mesh position={[0, 0.7, 0]}>
+        <boxGeometry args={[1.0, 0.6, 0.03]} />
+        <meshStandardMaterial color="#263238" />
+      </mesh>
+      {/* Frame */}
+      <mesh position={[0, 0.7, -0.02]}>
+        <boxGeometry args={[1.04, 0.64, 0.02]} />
+        <meshStandardMaterial color={METAL} />
+      </mesh>
+      {/* Column dividers */}
+      {[-0.33, 0.33].map((ox, i) => (
+        <mesh key={i} position={[ox, 0.7, 0.016]}>
+          <boxGeometry args={[0.005, 0.55, 0.005]} />
+          <meshStandardMaterial color="#546E7A" />
+        </mesh>
+      ))}
+      {/* Header labels */}
+      {[
+        { x: -0.5, color: "#F44336" },
+        { x: 0, color: "#FFC107" },
+        { x: 0.5, color: "#4CAF50" },
+      ].map((col, i) => (
+        <mesh key={i} position={[col.x, 0.95, 0.02]}>
+          <boxGeometry args={[0.28, 0.06, 0.005]} />
+          <meshStandardMaterial color={col.color} emissive={col.color} emissiveIntensity={0.3} />
+        </mesh>
+      ))}
+      {/* Sticky notes */}
+      {[
+        [-0.5, 0.82], [-0.5, 0.7], [-0.5, 0.58],
+        [0, 0.82], [0, 0.7],
+        [0.5, 0.82],
+      ].map(([x, y], i) => (
+        <mesh key={`note-${i}`} position={[x, y, 0.018]}>
+          <boxGeometry args={[0.12, 0.08, 0.003]} />
+          <meshStandardMaterial color={["#FFEB3B", "#81D4FA", "#A5D6A7", "#FFCC80", "#CE93D8", "#EF9A9A"][i]} />
+        </mesh>
+      ))}
+      {/* Stand legs */}
+      <mesh position={[-0.4, 0.35, 0]}>
+        <boxGeometry args={[0.03, 0.7, 0.03]} />
+        <meshStandardMaterial color={METAL} />
+      </mesh>
+      <mesh position={[0.4, 0.35, 0]}>
+        <boxGeometry args={[0.03, 0.7, 0.03]} />
+        <meshStandardMaterial color={METAL} />
+      </mesh>
+    </group>
+  );
+}
+
+function NeonSign() {
+  return (
+    <group>
+      {/* Backing plate */}
+      <mesh position={[0, 0.7, 0]}>
+        <boxGeometry args={[0.6, 0.2, 0.02]} />
+        <meshStandardMaterial color="#1A1A1A" />
+      </mesh>
+      {/* Neon tube */}
+      <mesh position={[0, 0.7, 0.015]}>
+        <boxGeometry args={[0.5, 0.12, 0.01]} />
+        <meshStandardMaterial color="#FF1493" emissive="#FF1493" emissiveIntensity={2.0} transparent opacity={0.9} />
+      </mesh>
+      <pointLight position={[0, 0.7, 0.1]} intensity={0.4} distance={3} color="#FF1493" />
+    </group>
+  );
+}
+
+function Aquarium() {
+  return (
+    <group>
+      {/* Stand */}
+      <mesh position={[0, 0.2, 0]}>
+        <boxGeometry args={[0.6, 0.4, 0.3]} />
+        <meshStandardMaterial color={WOOD_DARK} />
+      </mesh>
+      {/* Tank (glass) */}
+      <mesh position={[0, 0.55, 0]}>
+        <boxGeometry args={[0.56, 0.3, 0.26]} />
+        <meshStandardMaterial color="#81D4FA" transparent opacity={0.35} />
+      </mesh>
+      {/* Water */}
+      <mesh position={[0, 0.52, 0]}>
+        <boxGeometry args={[0.52, 0.22, 0.22]} />
+        <meshStandardMaterial color="#29B6F6" transparent opacity={0.4} />
+      </mesh>
+      {/* Sand */}
+      <mesh position={[0, 0.42, 0]}>
+        <boxGeometry args={[0.52, 0.03, 0.22]} />
+        <meshStandardMaterial color="#FFE082" />
+      </mesh>
+      {/* Plant */}
+      <mesh position={[0.15, 0.52, 0]}>
+        <boxGeometry args={[0.04, 0.15, 0.04]} />
+        <meshStandardMaterial color="#4CAF50" />
+      </mesh>
+      {/* Fish-ish blobs */}
+      <mesh position={[-0.1, 0.55, 0.02]}>
+        <sphereGeometry args={[0.02, 6, 6]} />
+        <meshStandardMaterial color="#FF5722" emissive="#FF5722" emissiveIntensity={0.5} />
+      </mesh>
+      <mesh position={[0.05, 0.58, -0.04]}>
+        <sphereGeometry args={[0.015, 6, 6]} />
+        <meshStandardMaterial color="#FFD600" emissive="#FFD600" emissiveIntensity={0.4} />
+      </mesh>
+      {/* Light on top */}
+      <mesh position={[0, 0.72, 0]}>
+        <boxGeometry args={[0.5, 0.03, 0.24]} />
+        <meshStandardMaterial color={METAL_DARK} />
+      </mesh>
+      <pointLight position={[0, 0.7, 0]} intensity={0.2} distance={2} color="#81D4FA" />
+    </group>
+  );
+}
+
+function StandingDesk() {
+  return (
+    <group>
+      {/* Desktop */}
+      <mesh position={[0, 0.65, 0]}>
+        <boxGeometry args={[0.8, 0.03, 0.5]} />
+        <meshStandardMaterial color={WOOD_LIGHT} />
+      </mesh>
+      {/* Legs (telescopic) */}
+      {[[-0.35, 0], [0.35, 0]].map(([lx, lz], i) => (
+        <group key={i}>
+          <mesh position={[lx, 0.33, lz - 0.18]}>
+            <boxGeometry args={[0.04, 0.66, 0.04]} />
+            <meshStandardMaterial color={METAL} />
+          </mesh>
+          <mesh position={[lx, 0.33, lz + 0.18]}>
+            <boxGeometry args={[0.04, 0.66, 0.04]} />
+            <meshStandardMaterial color={METAL} />
+          </mesh>
+        </group>
+      ))}
+      {/* Monitor */}
+      <mesh position={[0, 0.85, -0.12]}>
+        <boxGeometry args={[0.35, 0.22, 0.02]} />
+        <meshStandardMaterial color={SCREEN_OFF} />
+      </mesh>
+      <mesh position={[0, 0.85, -0.11]}>
+        <boxGeometry args={[0.3, 0.18, 0.01]} />
+        <meshStandardMaterial color={SCREEN_ON} emissive={SCREEN_ON} emissiveIntensity={0.4} />
+      </mesh>
+      {/* Keyboard */}
+      <mesh position={[0, 0.67, 0.08]}>
+        <boxGeometry args={[0.22, 0.008, 0.07]} />
+        <meshStandardMaterial color={METAL_DARK} />
+      </mesh>
+    </group>
+  );
+}
+
+function CouchL() {
+  return (
+    <group>
+      {/* Long section */}
+      <mesh position={[0, 0.15, 0]}>
+        <boxGeometry args={[1.0, 0.2, 0.45]} />
+        <meshStandardMaterial color={FABRIC_BLUE} />
+      </mesh>
+      <mesh position={[0, 0.35, -0.18]}>
+        <boxGeometry args={[1.0, 0.25, 0.1]} />
+        <meshStandardMaterial color={FABRIC_BLUE} />
+      </mesh>
+      {/* L extension */}
+      <mesh position={[0.55, 0.15, 0.3]}>
+        <boxGeometry args={[0.4, 0.2, 0.45]} />
+        <meshStandardMaterial color={FABRIC_BLUE} />
+      </mesh>
+      <mesh position={[0.72, 0.35, 0.3]}>
+        <boxGeometry args={[0.08, 0.25, 0.45]} />
+        <meshStandardMaterial color={FABRIC_BLUE} />
+      </mesh>
+      {/* Cushions */}
+      {[-0.25, 0.1, 0.45].map((ox, i) => (
+        <mesh key={i} position={[ox, 0.27, 0.03]}>
+          <boxGeometry args={[0.28, 0.05, 0.32]} />
+          <meshStandardMaterial color="#5C6BC0" />
+        </mesh>
+      ))}
+      {/* Throw pillows */}
+      <mesh position={[-0.38, 0.32, -0.1]}>
+        <boxGeometry args={[0.12, 0.12, 0.08]} />
+        <meshStandardMaterial color="#FF7043" />
+      </mesh>
+      <mesh position={[0.55, 0.32, 0.45]}>
+        <boxGeometry args={[0.1, 0.1, 0.08]} />
+        <meshStandardMaterial color="#66BB6A" />
+      </mesh>
+    </group>
+  );
+}
+
+function MeetingChair() {
+  return (
+    <group>
+      {/* Seat - padded */}
+      <mesh position={[0, 0.28, 0]}>
+        <boxGeometry args={[0.22, 0.04, 0.22]} />
+        <meshStandardMaterial color={FABRIC_BLUE} />
+      </mesh>
+      {/* Backrest - padded */}
+      <mesh position={[0, 0.45, -0.1]}>
+        <boxGeometry args={[0.22, 0.28, 0.03]} />
+        <meshStandardMaterial color={FABRIC_BLUE} />
+      </mesh>
+      {/* Chrome legs */}
+      {[[-0.08, -0.12], [0.08, -0.12], [-0.08, 0.08], [0.08, 0.08]].map(([lx, lz], i) => (
+        <mesh key={i} position={[lx, 0.13, lz]}>
+          <cylinderGeometry args={[0.01, 0.01, 0.26, 6]} />
+          <meshStandardMaterial color="#B0BEC5" metalness={0.8} roughness={0.2} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function GenericBox() {
   return (
     <mesh position={[0, 0.15, 0]}>
