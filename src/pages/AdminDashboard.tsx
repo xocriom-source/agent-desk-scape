@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Users, Bot, Workflow, FileText, Activity, Settings, BarChart3, Shield,
-  ChevronLeft, Globe, AlertTriangle
+  ChevronLeft, Globe, AlertTriangle, Menu, X
 } from "lucide-react";
 
 import { AdminOverview } from "@/components/admin/AdminOverview";
@@ -39,6 +39,7 @@ export default function AdminDashboard() {
   const [tab, setTab] = useState<Tab>("overview");
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [counts, setCounts] = useState<any>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!user) { navigate("/login"); return; }
@@ -53,7 +54,18 @@ export default function AdminDashboard() {
     supabase.rpc("admin_get_counts").then(({ data }) => {
       if (data) setCounts(data);
     });
+    const interval = setInterval(() => {
+      supabase.rpc("admin_get_counts").then(({ data }) => {
+        if (data) setCounts(data);
+      });
+    }, 60000);
+    return () => clearInterval(interval);
   }, [isAdmin]);
+
+  const handleTabChange = (t: Tab) => {
+    setTab(t);
+    setSidebarOpen(false);
+  };
 
   if (isAdmin === null) return (
     <div className="min-h-screen bg-background flex items-center justify-center">
@@ -66,7 +78,24 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
-      <aside className="w-56 border-r border-primary/10 flex flex-col bg-background/50 shrink-0">
+      {/* Mobile header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-primary/10 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Shield className="w-4 h-4 text-primary" />
+          <span className="font-display font-bold text-xs tracking-wider text-primary">ADMIN</span>
+        </div>
+        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1.5 rounded-lg hover:bg-primary/10 text-muted-foreground">
+          {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+      </div>
+
+      {/* Overlay */}
+      {sidebarOpen && <div className="lg:hidden fixed inset-0 bg-black/40 z-40" onClick={() => setSidebarOpen(false)} />}
+
+      {/* Sidebar */}
+      <aside className={`fixed lg:static z-50 top-0 left-0 h-full w-56 border-r border-primary/10 flex flex-col bg-background shrink-0 transition-transform duration-200 ${
+        sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+      }`}>
         <div className="px-4 py-5 border-b border-primary/10">
           <button onClick={() => navigate("/")} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-3">
             <ChevronLeft className="w-4 h-4" />
@@ -79,20 +108,29 @@ export default function AdminDashboard() {
         </div>
         <nav className="flex-1 py-3 overflow-y-auto">
           {TABS.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
+            <button key={t.id} onClick={() => handleTabChange(t.id)}
               className={`w-full flex items-center gap-3 px-4 py-2.5 text-xs font-mono tracking-wider transition-colors ${
-                tab === t.id ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-primary/5 hover:text-foreground"
+                tab === t.id ? "bg-primary/10 text-primary border-r-2 border-primary" : "text-muted-foreground hover:bg-primary/5 hover:text-foreground"
               }`}>
               <t.icon className="w-4 h-4" />
               {t.label.toUpperCase()}
             </button>
           ))}
         </nav>
+        {/* Sidebar footer with counts */}
+        {counts && (
+          <div className="px-4 py-3 border-t border-primary/10">
+            <div className="flex items-center justify-between text-[9px] font-mono text-muted-foreground">
+              <span>{counts.presence || 0} online</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            </div>
+          </div>
+        )}
       </aside>
 
-      <main className="flex-1 overflow-y-auto">
-        <div className="p-6 max-w-6xl">
-          {tab === "overview" && <AdminOverview counts={counts} onNavigate={(t: Tab) => setTab(t)} />}
+      <main className="flex-1 overflow-y-auto lg:pt-0 pt-14">
+        <div className="p-4 lg:p-6 max-w-6xl">
+          {tab === "overview" && <AdminOverview counts={counts} onNavigate={(t: string) => setTab(t as Tab)} />}
           {tab === "users" && <AdminUsers />}
           {tab === "agents" && <AdminAgents />}
           {tab === "workflows" && <AdminWorkflows />}
