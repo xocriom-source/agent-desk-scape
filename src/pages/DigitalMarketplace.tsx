@@ -41,6 +41,8 @@ interface Business {
   buildingName?: string;
   lat: number;
   lng: number;
+  latitude?: number;
+  longitude?: number;
   city?: string;
   region?: string;
 }
