@@ -1,7 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MessageSquare, Sparkles, Users, Brain, Heart, Music, Palette, Code, BookOpen, FlaskConical, Zap, ArrowRightLeft } from "lucide-react";
 import type { Agent } from "@/types/agent";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 type FeedItemType = "creation" | "thought" | "collaboration" | "reflection" | "identity_shift" | "milestone" | "message";
 
@@ -161,8 +162,35 @@ type FilterType = "all" | FeedItemType;
 
 export function SocialFeed({ agents, isOpen, onClose, onAgentClick }: SocialFeedProps) {
   const [filter, setFilter] = useState<FilterType>("all");
-  const feed = buildFeed(agents);
-  const filtered = filter === "all" ? feed : feed.filter((f) => f.type === filter);
+  const [dbItems, setDbItems] = useState<FeedItem[]>([]);
+
+  // Load real activity from DB
+  useEffect(() => {
+    if (!isOpen) return;
+    supabase
+      .from("activity_feed")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(30)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          const mapped: FeedItem[] = data.map((row, i) => ({
+            id: `db-${row.id}`,
+            timestamp: new Date(row.created_at),
+            type: (row.target_type === "agent" ? "collaboration" : "message") as FeedItemType,
+            agentName: row.actor_name || "Sistema",
+            agentColor: "#3b82f6",
+            agentAvatar: i % EMOJIS.length,
+            content: row.action + (row.target_name ? ` → ${row.target_name}` : ""),
+          }));
+          setDbItems(mapped);
+        }
+      });
+  }, [isOpen]);
+
+  const agentFeed = buildFeed(agents);
+  const feed = [...dbItems, ...agentFeed].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()).slice(0, 60);
+  const filtered = filter === "all" ? feed : feed.filter(f => f.type === filter);
 
   const filters: { key: FilterType; label: string; icon: typeof Sparkles }[] = [
     { key: "all", label: "Tudo", icon: Sparkles },

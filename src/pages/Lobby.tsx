@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Mic, MicOff, Video, VideoOff, ChevronUp } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import logo from "@/assets/logo.png";
+import logoOriginal from "@/assets/logo-original.svg";
 
 const SKIN_TONES = [
   { id: "light", color: "#FDDCB5" },
@@ -149,7 +149,7 @@ export default function Lobby() {
 
       {/* Logo top-left */}
       <div className="absolute top-4 left-6 flex items-center gap-2">
-        <img src={logo} alt="Logo" className="w-8 h-8" />
+        <img src={logoOriginal} alt="Logo" className="w-8 h-8" />
         <span className="text-primary font-bold text-sm tracking-wider font-mono">THE GOOD CITY</span>
       </div>
 
