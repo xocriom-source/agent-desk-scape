@@ -88,11 +88,6 @@ export default function BuildingInterior() {
   const secondaryColor = building?.secondary_color || "#1e3a5f";
   const customizations = (building?.customizations || {}) as Record<string, boolean>;
 
-  const analytics = useMemo(() => ({
-    visitors: Math.floor(Math.random() * 200) + 20,
-    avgTime: `${Math.floor(Math.random() * 5) + 1}m ${Math.floor(Math.random() * 59)}s`,
-    interactions: Math.floor(Math.random() * 80) + 5,
-  }), [id]);
 
   if (loading) {
     return (
