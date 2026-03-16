@@ -50,19 +50,17 @@ export default function Spaces() {
         .eq("owner_id", user!.id)
         .order("created_at", { ascending: false });
 
-      if (data && data.length > 0) {
-        const mapped: SpaceData[] = data.map(b => ({
-          id: b.id,
-          name: b.name,
-          city: b.city || "São Paulo",
-          type: b.style || "corporate",
-          agents: Math.floor(Math.random() * 12) + 1,
-          lastVisit: new Date(b.created_at).toLocaleDateString("pt-BR"),
-          color: b.primary_color || TYPE_COLORS[b.style || "corporate"] || "#3b82f6",
-          emoji: TYPE_EMOJIS[b.style || "corporate"] || "🏢",
-        }));
-        setSpaces(mapped);
-      }
+      const mapped: SpaceData[] = (data || []).map(b => ({
+        id: b.id,
+        name: b.name,
+        city: b.city || "São Paulo",
+        type: b.style || "corporate",
+        agents: Math.floor(Math.random() * 12) + 1,
+        lastVisit: new Date(b.created_at).toLocaleDateString("pt-BR"),
+        color: b.primary_color || TYPE_COLORS[b.style || "corporate"] || "#3b82f6",
+        emoji: TYPE_EMOJIS[b.style || "corporate"] || "🏢",
+      }));
+      setSpaces(mapped);
       setLoading(false);
     }
     fetchSpaces();
