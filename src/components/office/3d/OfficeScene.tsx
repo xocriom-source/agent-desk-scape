@@ -774,16 +774,20 @@ export function OfficeScene({
         gl={{ antialias: true }}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = dn.exposure;
+          gl.toneMappingExposure = 1.4; // Fixed bright exposure for interior
         }}
       >
+        {/* Sky/background follows day-night, but interior lighting is FIXED */}
         <color attach="background" args={[dn.bgColor]} />
         <fog attach="fog" args={[dn.fogColor, dn.fogNear, dn.fogFar]} />
 
-        <ambientLight intensity={dn.ambientIntensity} color={dn.ambientColor} />
-        <directionalLight position={dn.sunPosition} intensity={dn.sunIntensity} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-far={60} shadow-camera-left={-30} shadow-camera-right={30} shadow-camera-top={30} shadow-camera-bottom={-30} color={dn.sunColor} />
-        <directionalLight position={[-8, 15, -6]} intensity={0.15} color="#8899CC" />
-        <hemisphereLight args={[dn.skyColor, dn.groundColor, dn.hemiIntensity]} />
+        {/* FIXED bright ambient for interior - never changes */}
+        <ambientLight intensity={0.9} color="#FFF8F0" />
+        {/* Main directional "office ceiling" light - always strong */}
+        <directionalLight position={[5, 20, 8]} intensity={1.2} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-far={60} shadow-camera-left={-30} shadow-camera-right={30} shadow-camera-top={30} shadow-camera-bottom={-30} color="#FFF5E8" />
+        <directionalLight position={[-8, 15, -6]} intensity={0.4} color="#E8F0FF" />
+        {/* Hemisphere: bright sky + warm ground, fixed */}
+        <hemisphereLight args={["#C8DEFF", "#8B7355", 0.5]} />
 
         {dn.showStars && <Stars />}
 
