@@ -216,7 +216,7 @@ export default function BuildingInterior() {
             transition={{ delay: 0.1 }}
             className="lg:col-span-2 space-y-6"
           >
-            <AIReceptionistChat building={chatBuilding} />
+            <AIReceptionistChat building={chatBuilding} buildingType={buildingType} />
 
             <div className="bg-card border border-border rounded-2xl p-6">
               <h2 className="text-lg font-display font-bold text-foreground mb-4 flex items-center gap-2">
