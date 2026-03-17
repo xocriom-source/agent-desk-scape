@@ -362,7 +362,7 @@ export default function Onboarding() {
                   <ArrowLeft className="w-4 h-4" /> Voltar
                 </button>
                 <button
-                  onClick={() => setStep(3)}
+                  onClick={() => { awardXP(1); setStep(3); }}}
                   className="flex items-center gap-2 bg-primary text-primary-foreground px-8 py-3 rounded-xl font-medium hover:bg-primary/90 transition-colors"
                 >
                   <Globe className="w-4 h-4" /> Escolher cidade <ArrowRight className="w-4 h-4" />
