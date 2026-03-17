@@ -1121,7 +1121,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
       <Canvas
         shadows
         style={{ touchAction: "none", width: "100%", height: "100%", display: "block" }}
-        camera={{ position: [12, 18, 22], fov: 40, near: 0.5, far: 150 }}
+        camera={{ position: [12, 18, 22], fov: 40, near: 0.5, far: 500 }}
         gl={{ antialias: false, powerPreference: "high-performance" }}
         dpr={[1, 1.5]}
         onCreated={({ gl }) => {
