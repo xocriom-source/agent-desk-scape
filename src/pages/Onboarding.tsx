@@ -232,8 +232,9 @@ export default function Onboarding() {
       localStorage.setItem("buildingName", spaceName);
       localStorage.setItem("buildingType", buildingType);
 
+      awardXP(2);
       toast.success(isNewSpace ? "Espaço criado com sucesso" : "Espaço configurado com sucesso", {
-        description: `${spaceName} • ${city.name}`,
+        description: `${spaceName} • ${city.name} • +${STEP_XP[2]} XP`,
       });
 
       navigate("/lobby");
