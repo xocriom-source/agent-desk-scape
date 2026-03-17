@@ -41,7 +41,7 @@ export const PLAN_DETAILS = {
 };
 
 export function useSubscription() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [state, setState] = useState<SubscriptionState>({
     subscribed: false,
     planId: "explorer",
@@ -78,9 +78,14 @@ export function useSubscription() {
     return () => clearInterval(interval);
   }, [checkSubscription]);
 
-  const getPlanLimits = () => PLAN_LIMITS[state.planId] || PLAN_LIMITS.explorer;
+  // Admins get unlimited everything (God Mode)
+  const getPlanLimits = () => {
+    if (isAdmin) return { maxBuildings: -1, maxAgents: -1, maxCities: -1 };
+    return PLAN_LIMITS[state.planId] || PLAN_LIMITS.explorer;
+  };
 
   const hasFeature = (feature: string) => {
+    if (isAdmin) return true;
     const plan = PLAN_DETAILS[state.planId as keyof typeof PLAN_DETAILS];
     if (!plan) return false;
     if (state.planId === "mogul") return true;
@@ -90,5 +95,5 @@ export function useSubscription() {
     return ["basic_receptionist", "public_chat", "daily_missions"].includes(feature);
   };
 
-  return { ...state, checkSubscription, getPlanLimits, hasFeature };
+  return { ...state, isAdmin, checkSubscription, getPlanLimits, hasFeature };
 }
