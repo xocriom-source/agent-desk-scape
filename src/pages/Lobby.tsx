@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Mic, MicOff, Video, VideoOff, ChevronUp } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { PlanBadge } from "@/components/plan/PlanBadge";
 import logoOriginal from "@/assets/logo-original.svg";
 
 const SKIN_TONES = [
@@ -151,6 +152,9 @@ export default function Lobby() {
       <div className="absolute top-4 left-6 flex items-center gap-2">
         <img src={logoOriginal} alt="Logo" className="w-8 h-8" />
         <span className="text-primary font-bold text-sm tracking-wider font-mono">THE GOOD CITY</span>
+      </div>
+      <div className="absolute top-4 right-6">
+        <PlanBadge />
       </div>
 
       {/* Title */}

@@ -1,96 +1,58 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Check, Zap, Crown, TrendingUp, Building2, ArrowLeft } from "lucide-react";
+import { Check, Zap, Crown, Rocket, Building2, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription, PLAN_DETAILS } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const PLANS = [
   {
-    id: "free",
-    name: "Free",
-    price: "R$ 0",
+    id: "explorer",
+    name: "Explorer",
+    price: "$0",
     period: "/mês",
     description: "Para explorar a plataforma",
     icon: Building2,
     color: "from-muted to-muted/50",
-    features: [
-      "1 prédio na cidade",
-      "Assistente IA básico",
-      "Marketplace (visualizar)",
-      "Chat da cidade",
-    ],
+    features: PLAN_DETAILS.explorer.features,
     cta: "Plano Atual",
-    disabled: true,
+    priceId: PLAN_DETAILS.explorer.priceId,
+    isFree: true,
   },
   {
-    id: "pro",
-    name: "Pro",
-    price: "R$ 97",
+    id: "business",
+    name: "Business",
+    price: "$49",
     period: "/mês",
     description: "Para empreendedores ativos",
     icon: Zap,
     color: "from-primary to-primary/70",
     popular: true,
-    features: [
-      "Prédios ilimitados",
-      "Assistente IA avançado",
-      "Analytics completo",
-      "Marketplace (comprar/vender)",
-      "Agentes de IA (5 inclusos)",
-      "Destaque de ativos",
-      "Suporte prioritário",
-    ],
-    cta: "Assinar Pro",
-    priceId: "price_pro_monthly",
+    features: PLAN_DETAILS.business.features,
+    cta: "Assinar Business",
+    priceId: PLAN_DETAILS.business.priceId,
   },
   {
-    id: "investor",
-    name: "Investor",
-    price: "R$ 297",
+    id: "mogul",
+    name: "Mogul",
+    price: "$199",
     period: "/mês",
-    description: "Para investidores e deal-makers",
-    icon: TrendingUp,
-    color: "from-amber-500 to-amber-600",
-    features: [
-      "Tudo do Pro",
-      "Dados financeiros avançados",
-      "Due diligence automatizada",
-      "Acesso antecipado a deals",
-      "API completa",
-      "Agentes IA ilimitados",
-      "Dashboard de portfólio",
-    ],
-    cta: "Assinar Investor",
-    priceId: "price_investor_monthly",
-  },
-  {
-    id: "premium_seller",
-    name: "Premium Seller",
-    price: "R$ 497",
-    period: "/mês",
-    description: "Para vender com máxima visibilidade",
+    description: "Para líderes e investidores",
     icon: Crown,
-    color: "from-violet-500 to-violet-600",
-    features: [
-      "Tudo do Investor",
-      "Taxa de comissão reduzida (2%)",
-      "Listagens em destaque permanente",
-      "Selo verificado",
-      "Concierge dedicado",
-      "Relatórios personalizados",
-      "White-label para clientes",
-    ],
-    cta: "Assinar Premium",
-    priceId: "price_premium_monthly",
+    color: "from-amber-500 to-amber-600",
+    features: PLAN_DETAILS.mogul.features,
+    cta: "Assinar Mogul",
+    priceId: PLAN_DETAILS.mogul.priceId,
   },
 ];
 
 export default function Pricing() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { planId, loading: subLoading } = useSubscription();
   const [loading, setLoading] = useState<string | null>(null);
 
   const handleSubscribe = async (plan: typeof PLANS[0]) => {
@@ -98,7 +60,7 @@ export default function Pricing() {
       navigate("/login");
       return;
     }
-    if (!plan.priceId) return;
+    if (plan.isFree || plan.id === planId) return;
 
     setLoading(plan.id);
     try {
@@ -114,11 +76,7 @@ export default function Pricing() {
 
       if (error) throw error;
       if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        toast.info("💡 Configure os Price IDs no Stripe Dashboard para ativar assinaturas reais.", {
-          description: "Os planos serão ativados quando os produtos forem criados no Stripe.",
-        });
+        window.open(data.url, "_blank");
       }
     } catch (err: any) {
       toast.error("Erro ao iniciar checkout", { description: err.message });
@@ -127,38 +85,48 @@ export default function Pricing() {
     }
   };
 
+  const isCurrentPlan = (id: string) => id === planId;
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <div className="border-b border-border/50 bg-background/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-4">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <h1 className="font-display font-bold text-xl text-foreground">Planos & Preços</h1>
+          {!subLoading && planId && (
+            <Badge variant="outline" className="ml-auto">
+              Plano atual: {PLANS.find(p => p.id === planId)?.name || "Explorer"}
+            </Badge>
+          )}
         </div>
       </div>
 
-      {/* Hero */}
-      <div className="max-w-7xl mx-auto px-4 py-12 text-center">
+      <div className="max-w-6xl mx-auto px-4 py-12 text-center">
         <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground mb-3">
           Escale seu negócio digital
         </h2>
         <p className="text-muted-foreground max-w-lg mx-auto">
-          Escolha o plano ideal para sua jornada na cidade digital. Upgrade ou downgrade a qualquer momento.
+          Escolha o plano ideal para sua jornada na cidade digital.
         </p>
       </div>
 
-      {/* Plans Grid */}
-      <div className="max-w-7xl mx-auto px-4 pb-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="max-w-6xl mx-auto px-4 pb-16 grid grid-cols-1 md:grid-cols-3 gap-6">
         {PLANS.map((plan) => {
           const Icon = plan.icon;
+          const current = isCurrentPlan(plan.id);
           return (
             <div
               key={plan.id}
-              className={`relative rounded-2xl border ${plan.popular ? "border-primary shadow-lg shadow-primary/10" : "border-border/50"} bg-card p-6 flex flex-col`}
+              className={`relative rounded-2xl border ${current ? "border-primary ring-2 ring-primary/20" : plan.popular ? "border-primary shadow-lg shadow-primary/10" : "border-border/50"} bg-card p-6 flex flex-col`}
             >
-              {plan.popular && (
+              {current && (
+                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-white">
+                  ✓ Seu Plano
+                </Badge>
+              )}
+              {!current && plan.popular && (
                 <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
                   Mais Popular
                 </Badge>
@@ -187,11 +155,13 @@ export default function Pricing() {
 
               <Button
                 className="w-full"
-                variant={plan.popular ? "default" : "outline"}
-                disabled={plan.disabled || loading === plan.id}
+                variant={current ? "outline" : plan.popular ? "default" : "outline"}
+                disabled={current || plan.isFree || loading === plan.id}
                 onClick={() => handleSubscribe(plan)}
               >
-                {loading === plan.id ? "Processando..." : plan.cta}
+                {loading === plan.id ? (
+                  <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Processando...</>
+                ) : current ? "✓ Plano Atual" : plan.cta}
               </Button>
             </div>
           );
