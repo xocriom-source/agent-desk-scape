@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useMemo } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Sky, Text, Environment } from "@react-three/drei";
+import { OrbitControls, Sky, Text, Environment, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import { Building3D } from "./Building3D";
 import { useDayNight } from "@/hooks/useDayNight";
