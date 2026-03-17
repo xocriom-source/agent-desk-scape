@@ -35,6 +35,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ROOMS, setRooms, FURNITURE, setFurniture, getRoomAt, type RoomDef, type FurnitureItem, DEFAULT_ROOMS, DEFAULT_FURNITURE } from "@/data/officeMap";
 import { tileFromFloat } from "@/hooks/office/movementUtils";
 import type { Agent } from "@/types/agent";
+import { useAgentHeartbeat } from "@/hooks/useAgentHeartbeat";
 
 const Index = () => {
   const navigate = useNavigate();
