@@ -1,8 +1,10 @@
 import { useSubscription } from "./useSubscription";
+import { useAuth } from "@/contexts/AuthContext";
 
 /**
  * Feature gates mapped to minimum plan required.
  * "explorer" = free tier, "business" = $49/mo, "mogul" = $199/mo
+ * Admins bypass ALL gates automatically (God Mode).
  */
 const FEATURE_PLAN_MAP: Record<string, string> = {
   // Explorer (free)
@@ -42,35 +44,43 @@ export interface FeatureGateResult {
   requiredPlan: string;
   currentPlan: string;
   loading: boolean;
+  isAdmin: boolean;
 }
 
 export function useFeatureGate(featureKey: string): FeatureGateResult {
   const { planId, loading } = useSubscription();
+  const { isAdmin } = useAuth();
 
   const requiredPlan = FEATURE_PLAN_MAP[featureKey] || "mogul";
   const currentTier = PLAN_TIER[planId] ?? 0;
   const requiredTier = PLAN_TIER[requiredPlan] ?? 0;
 
   return {
-    allowed: currentTier >= requiredTier,
+    allowed: isAdmin || currentTier >= requiredTier,
     requiredPlan,
-    currentPlan: planId,
+    currentPlan: isAdmin ? "admin" : planId,
     loading,
+    isAdmin,
   };
 }
 
 export function useMultiFeatureGate(featureKeys: string[]) {
   const { planId, loading } = useSubscription();
+  const { isAdmin } = useAuth();
   const currentTier = PLAN_TIER[planId] ?? 0;
 
   const results: Record<string, boolean> = {};
   for (const key of featureKeys) {
-    const requiredPlan = FEATURE_PLAN_MAP[key] || "mogul";
-    const requiredTier = PLAN_TIER[requiredPlan] ?? 0;
-    results[key] = currentTier >= requiredTier;
+    if (isAdmin) {
+      results[key] = true;
+    } else {
+      const requiredPlan = FEATURE_PLAN_MAP[key] || "mogul";
+      const requiredTier = PLAN_TIER[requiredPlan] ?? 0;
+      results[key] = currentTier >= requiredTier;
+    }
   }
 
-  return { gates: results, planId, loading };
+  return { gates: results, planId: isAdmin ? "admin" : planId, loading, isAdmin };
 }
 
 export { FEATURE_PLAN_MAP, PLAN_TIER };
