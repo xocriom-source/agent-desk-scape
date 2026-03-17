@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import logoOriginal from "@/assets/logo-original.svg";
+import { OnboardingStepIndicator, STEP_XP } from "@/components/onboarding/OnboardingStepIndicator";
+import { XPRewardPopup } from "@/components/onboarding/XPRewardPopup";
 
 const BUILDING_OPTIONS = [
   {
@@ -124,6 +126,17 @@ export default function Onboarding() {
   const [selectedCity, setSelectedCity] = useState<typeof CITIES[0] | null>(null);
   const [citySearch, setCitySearch] = useState("");
   const [saving, setSaving] = useState(false);
+  const [earnedXP, setEarnedXP] = useState(0);
+  const [showXPPopup, setShowXPPopup] = useState(false);
+  const [popupXP, setPopupXP] = useState(0);
+
+  const awardXP = useCallback((stepIndex: number) => {
+    const xp = STEP_XP[stepIndex] || 0;
+    setPopupXP(xp);
+    setShowXPPopup(true);
+    setEarnedXP(prev => prev + xp);
+    setTimeout(() => setShowXPPopup(false), 1500);
+  }, []);
 
   const filteredCities = useMemo(() => {
     if (!citySearch) return CITIES;
@@ -219,8 +232,9 @@ export default function Onboarding() {
       localStorage.setItem("buildingName", spaceName);
       localStorage.setItem("buildingType", buildingType);
 
+      awardXP(2);
       toast.success(isNewSpace ? "Espaço criado com sucesso" : "Espaço configurado com sucesso", {
-        description: `${spaceName} • ${city.name}`,
+        description: `${spaceName} • ${city.name} • +${STEP_XP[2]} XP`,
       });
 
       navigate("/lobby");
@@ -241,12 +255,9 @@ export default function Onboarding() {
           <span className="font-display font-bold text-xl text-primary">THE GOOD CITY</span>
         </div>
 
-        {/* Progress */}
-        <div className="flex items-center justify-center gap-2 mb-8">
-          {[1, 2, 3].map(s => (
-            <div key={s} className={`w-8 h-1 rounded-full transition-colors ${step >= s ? "bg-primary" : "bg-muted"}`} />
-          ))}
-        </div>
+        {/* Gamified Progress */}
+        <OnboardingStepIndicator currentStep={step} totalXP={earnedXP} />
+        <XPRewardPopup xp={popupXP} show={showXPPopup} />
 
         {/* Step 1: Building Type */}
         {step === 1 && (
@@ -300,7 +311,7 @@ export default function Onboarding() {
 
             <div className="flex justify-center">
               <button
-                onClick={() => selectedBuilding && setStep(2)}
+                onClick={() => { if (selectedBuilding) { awardXP(0); setStep(2); } }}
                 disabled={!selectedBuilding}
                 className="flex items-center gap-2 bg-primary text-primary-foreground px-8 py-3 rounded-xl font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
               >
@@ -352,7 +363,7 @@ export default function Onboarding() {
                   <ArrowLeft className="w-4 h-4" /> Voltar
                 </button>
                 <button
-                  onClick={() => setStep(3)}
+                  onClick={() => { awardXP(1); setStep(3); }}
                   className="flex items-center gap-2 bg-primary text-primary-foreground px-8 py-3 rounded-xl font-medium hover:bg-primary/90 transition-colors"
                 >
                   <Globe className="w-4 h-4" /> Escolher cidade <ArrowRight className="w-4 h-4" />
