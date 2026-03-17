@@ -337,10 +337,55 @@ function CityNPC({ startX, startZ, color, aabbs }: { startX: number; startZ: num
 function CityGround() {
   return (
     <group>
+      {/* Inner city ground */}
       <mesh position={[0, -0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[80, 80]} />
         <meshStandardMaterial color="#1A1E24" />
       </mesh>
+      {/* Infinite landscape rings - progressively darker/greener to simulate horizon */}
+      <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[40, 80, 32]} />
+        <meshStandardMaterial color="#151A14" roughness={0.95} />
+      </mesh>
+      <mesh position={[0, -0.08, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[80, 160, 32]} />
+        <meshStandardMaterial color="#111610" roughness={0.98} />
+      </mesh>
+      <mesh position={[0, -0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[160, 400, 32]} />
+        <meshStandardMaterial color="#0D120C" roughness={1} />
+      </mesh>
+      {/* Distant hills silhouette */}
+      {Array.from({ length: 12 }).map((_, i) => {
+        const angle = (i / 12) * Math.PI * 2;
+        const dist = 60 + Math.sin(i * 2.7) * 15;
+        const hh = 3 + Math.sin(i * 1.3) * 2;
+        const ww = 20 + Math.sin(i * 0.7) * 8;
+        return (
+          <mesh key={`hill-${i}`} position={[Math.cos(angle) * dist, hh / 2 - 0.5, Math.sin(angle) * dist]}>
+            <sphereGeometry args={[ww, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <meshStandardMaterial color="#0A0F0A" roughness={1} />
+          </mesh>
+        );
+      })}
+      {/* Scattered distant trees on outer ring */}
+      {Array.from({ length: 40 }).map((_, i) => {
+        const angle = (i / 40) * Math.PI * 2 + Math.sin(i * 3.1) * 0.15;
+        const dist = 42 + Math.sin(i * 2.3) * 8;
+        const sc = 0.6 + Math.sin(i * 1.7) * 0.3;
+        return (
+          <group key={`dtree-${i}`} position={[Math.cos(angle) * dist, 0, Math.sin(angle) * dist]}>
+            <mesh position={[0, 0.4 * sc, 0]}>
+              <cylinderGeometry args={[0.04 * sc, 0.06 * sc, 0.8 * sc, 4]} />
+              <meshStandardMaterial color="#3A2A18" roughness={0.95} />
+            </mesh>
+            <mesh position={[0, (0.8 + 0.35) * sc, 0]}>
+              <sphereGeometry args={[0.5 * sc, 5, 4]} />
+              <meshStandardMaterial color={["#0D3D12", "#153D10", "#0A3A15", "#1A4A18"][i % 4]} roughness={0.9} />
+            </mesh>
+          </group>
+        );
+      })}
       {/* Main cross roads */}
       <mesh position={[0, -0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[2, 60]} />
