@@ -35,10 +35,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ROOMS, setRooms, FURNITURE, setFurniture, getRoomAt, type RoomDef, type FurnitureItem, DEFAULT_ROOMS, DEFAULT_FURNITURE } from "@/data/officeMap";
 import { tileFromFloat } from "@/hooks/office/movementUtils";
 import type { Agent } from "@/types/agent";
+import { useAgentHeartbeat } from "@/hooks/useAgentHeartbeat";
 
 const Index = () => {
   const navigate = useNavigate();
   const { profile, signOut } = useAuth();
+  useAgentHeartbeat(true);
   const { openPanel, open, close, isOpen } = usePanelState();
   const [rooms, setLocalRooms] = useState<RoomDef[]>(() => [...DEFAULT_ROOMS]);
   const [furnitureItems, setLocalFurniture] = useState<FurnitureItem[]>(() => [...DEFAULT_FURNITURE]);

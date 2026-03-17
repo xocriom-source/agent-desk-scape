@@ -17,3 +17,9 @@ verify_jwt = false
 
 [functions.check-subscription]
 verify_jwt = false
+
+[functions.agent-heartbeat]
+verify_jwt = false
+
+[functions.agent-chat]
+verify_jwt = false

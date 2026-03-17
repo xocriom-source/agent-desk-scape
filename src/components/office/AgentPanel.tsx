@@ -1,7 +1,9 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Zap, Clock, ListTodo, Terminal, Send, MessageCircle, Eye, Brain, Star, Target } from "lucide-react";
 import type { Agent } from "@/types/agent";
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-chat`;
 
 const statusLabels: Record<string, string> = {
   active: "Ativo", idle: "Ocioso", thinking: "Pensando...", busy: "Ocupado",
@@ -20,21 +22,105 @@ interface AgentPanelProps {
   onViewProfile?: (agent: Agent) => void;
 }
 
+type Msg = { role: "user" | "assistant"; content: string };
+
 export function AgentPanel({ agent, onClose, onViewProfile }: AgentPanelProps) {
   const [chatMessage, setChatMessage] = useState("");
-  const [chatHistory, setChatHistory] = useState<{ from: string; text: string }[]>([]);
+  const [chatHistory, setChatHistory] = useState<Msg[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const sendMessage = () => {
-    if (!chatMessage.trim() || !agent) return;
-    setChatHistory((prev) => [
-      ...prev,
-      { from: "you", text: chatMessage },
-      {
-        from: agent.name,
-        text: `${agent.currentThought || "Estou processando..."} Como posso ajudar com sua missão?`,
-      },
-    ]);
+  // Reset chat when agent changes
+  useEffect(() => {
+    setChatHistory([]);
     setChatMessage("");
+  }, [agent?.id]);
+
+  const scrollToBottom = useCallback(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, []);
+
+  useEffect(() => { scrollToBottom(); }, [chatHistory, scrollToBottom]);
+
+  const sendMessage = async () => {
+    if (!chatMessage.trim() || !agent || isLoading) return;
+    const userMsg: Msg = { role: "user", content: chatMessage };
+    const allMessages = [...chatHistory, userMsg];
+    setChatHistory(prev => [...prev, userMsg]);
+    setChatMessage("");
+    setIsLoading(true);
+
+    let assistantSoFar = "";
+
+    const upsertAssistant = (chunk: string) => {
+      assistantSoFar += chunk;
+      setChatHistory(prev => {
+        const last = prev[prev.length - 1];
+        if (last?.role === "assistant") {
+          return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: assistantSoFar } : m));
+        }
+        return [...prev, { role: "assistant", content: assistantSoFar }];
+      });
+    };
+
+    try {
+      const resp = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          messages: allMessages,
+          agent_id: agent.id,
+          agent_name: agent.name,
+          agent_type: agent.identity,
+          agent_soul: agent.soul,
+          agent_mission: agent.mission,
+          agent_room: agent.room,
+        }),
+      });
+
+      if (!resp.ok || !resp.body) {
+        upsertAssistant("Desculpe, estou temporariamente indisponível. Tente novamente em breve.");
+        setIsLoading(false);
+        return;
+      }
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let textBuffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (line.startsWith(":") || line.trim() === "") continue;
+          if (!line.startsWith("data: ")) continue;
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === "[DONE]") break;
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content;
+            if (content) upsertAssistant(content);
+          } catch {
+            textBuffer = line + "\n" + textBuffer;
+            break;
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Agent chat error:", e);
+      upsertAssistant("Erro de conexão. Tente novamente.");
+    }
+
+    setIsLoading(false);
   };
 
   return (
@@ -127,24 +213,35 @@ export function AgentPanel({ agent, onClose, onViewProfile }: AgentPanelProps) {
               <p className="text-[10px] text-muted-foreground line-clamp-2">{agent.mission}</p>
             </div>
 
-            {/* Chat */}
+            {/* Chat - Now with REAL AI */}
             <div className="flex-1 flex flex-col min-h-0">
               <div className="flex items-center gap-2 px-4 py-2 border-b border-border/10">
                 <MessageCircle className="w-3.5 h-3.5 text-primary" />
                 <span className="text-[11px] font-display font-semibold text-foreground">Chat</span>
+                <span className="text-[9px] bg-accent/20 text-accent px-1.5 py-0.5 rounded-full ml-auto">IA Real</span>
               </div>
-              <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
+              <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
                 {chatHistory.length === 0 && (
                   <p className="text-[10px] text-muted-foreground text-center py-4">
-                    Envie uma mensagem para interagir com {agent.name}
+                    Converse com {agent.name} — respostas geradas por IA em tempo real ✨
                   </p>
                 )}
                 {chatHistory.map((msg, i) => (
-                  <div key={i} className={`text-[11px] px-3 py-2 rounded-xl max-w-[90%] ${msg.from === "you" ? "bg-primary/20 text-foreground ml-auto" : "bg-muted/50 text-foreground"}`}>
-                    <span className="font-semibold text-[10px] block mb-0.5">{msg.from === "you" ? "Você" : msg.from}</span>
-                    {msg.text}
+                  <div key={i} className={`text-[11px] px-3 py-2 rounded-xl max-w-[90%] ${msg.role === "user" ? "bg-primary/20 text-foreground ml-auto" : "bg-muted/50 text-foreground"}`}>
+                    <span className="font-semibold text-[10px] block mb-0.5">{msg.role === "user" ? "Você" : agent.name}</span>
+                    {msg.content}
                   </div>
                 ))}
+                {isLoading && chatHistory[chatHistory.length - 1]?.role !== "assistant" && (
+                  <div className="text-[11px] px-3 py-2 rounded-xl bg-muted/50 max-w-[90%]">
+                    <span className="font-semibold text-[10px] block mb-0.5">{agent.name}</span>
+                    <div className="flex gap-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="px-3 py-2 border-t border-border/10 flex gap-2">
                 <input
@@ -153,9 +250,10 @@ export function AgentPanel({ agent, onClose, onViewProfile }: AgentPanelProps) {
                   onChange={(e) => setChatMessage(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                   placeholder={`Mensagem para ${agent.name}...`}
-                  className="flex-1 text-xs bg-muted/30 rounded-xl px-3 py-2 text-foreground placeholder:text-muted-foreground border-0 outline-none focus:ring-1 focus:ring-primary/30"
+                  disabled={isLoading}
+                  className="flex-1 text-xs bg-muted/30 rounded-xl px-3 py-2 text-foreground placeholder:text-muted-foreground border-0 outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50"
                 />
-                <button onClick={sendMessage} className="p-2 bg-primary/20 hover:bg-primary/30 rounded-xl transition-colors">
+                <button onClick={sendMessage} disabled={isLoading || !chatMessage.trim()} className="p-2 bg-primary/20 hover:bg-primary/30 rounded-xl transition-colors disabled:opacity-30">
                   <Send className="w-3.5 h-3.5 text-primary" />
                 </button>
               </div>

@@ -7,6 +7,7 @@ import {
   CREATION_EVENTS,
   REFLECTION_QUOTES,
 } from "@/data/agentPersonalities";
+import { supabase } from "@/integrations/supabase/client";
 
 const ROOM_PREFERENCES: Record<string, string[]> = {
   researcher: ["📚 Library", "🧪 AI Experiment Lab", "💻 Coding Lab"],
@@ -90,11 +91,45 @@ function getStatusForRoom(roomName: string): Agent["status"] {
   return (["active", "thinking", "idle", "busy"] as const)[Math.floor(Math.random() * 4)];
 }
 
+// Persist important actions to DB (debounced)
+let dbWriteQueue: Array<{ type: string; data: any }> = [];
+let dbWriteTimer: ReturnType<typeof setTimeout> | null = null;
+
+function queueDbWrite(type: string, data: any) {
+  dbWriteQueue.push({ type, data });
+  if (!dbWriteTimer) {
+    dbWriteTimer = setTimeout(flushDbWrites, 5000); // batch every 5s
+  }
+}
+
+async function flushDbWrites() {
+  dbWriteTimer = null;
+  const queue = [...dbWriteQueue];
+  dbWriteQueue = [];
+  
+  const activityLogs = queue.filter(q => q.type === "activity").map(q => q.data);
+  const creations = queue.filter(q => q.type === "creation").map(q => q.data);
+  const feedItems = queue.filter(q => q.type === "feed").map(q => q.data);
+
+  try {
+    if (activityLogs.length > 0) {
+      await supabase.from("agent_activity_log").insert(activityLogs);
+    }
+    if (creations.length > 0) {
+      await supabase.from("agent_creations").insert(creations);
+    }
+    if (feedItems.length > 0) {
+      await supabase.from("activity_feed").insert(feedItems);
+    }
+  } catch (err) {
+    console.error("DB write error:", err);
+  }
+}
+
 export function useAgentSimulation(
   setAgents: React.Dispatch<React.SetStateAction<Agent[]>>
 ) {
   useEffect(() => {
-    // Stagger agent updates - only update 2-3 agents per tick instead of all at once
     let tickIndex = 0;
     const interval = setInterval(() => {
       const now = Date.now();
@@ -103,7 +138,6 @@ export function useAgentSimulation(
       setAgents((prev) => {
         let changed = false;
         const next = prev.map((agent, i) => {
-          // Stagger: each agent updates every ~3 ticks (6s cycle), offset by index
           if ((currentTick + i) % 3 !== 0) return agent;
           if (Math.random() > 0.5) return agent;
 
@@ -112,7 +146,6 @@ export function useAgentSimulation(
           const roomName = room?.name || "";
           const newStatus = getStatusForRoom(roomName);
 
-          // Skip update if nothing meaningful changed
           if (nx === agent.x && ny === agent.y && newStatus === agent.status) return agent;
 
           changed = true;
@@ -131,7 +164,6 @@ export function useAgentSimulation(
             type: (["info", "success", "warning"] as const)[Math.floor(Math.random() * 3)],
           };
 
-          // Only recalculate skills every ~10 ticks to reduce object creation
           const updatedSkills = currentTick % 10 === 0
             ? agent.skills.map((s) => ({
                 ...s,
@@ -150,17 +182,48 @@ export function useAgentSimulation(
           if (Math.random() > artifactChance) {
             const artType = ARTIFACT_TYPE_BY_ROOM[roomName] || (["music", "art", "text", "code", "research"] as const)[Math.floor(Math.random() * 5)];
             const titles = TITLES_BY_TYPE[artType] || ["Criação Nova"];
-            newArtifacts = [
-              {
-                id: `art-${agent.id}-${now}`,
-                type: artType,
-                title: titles[Math.floor(Math.random() * titles.length)],
-                createdAt: new Date(now),
-                reactions: Math.floor(Math.random() * 15),
-              },
-              ...agent.artifacts,
-            ].slice(0, 12);
+            const title = titles[Math.floor(Math.random() * titles.length)];
+            
+            const newArtifact = {
+              id: `art-${agent.id}-${now}`,
+              type: artType,
+              title,
+              createdAt: new Date(now),
+              reactions: Math.floor(Math.random() * 15),
+            };
+            
+            newArtifacts = [newArtifact, ...agent.artifacts].slice(0, 12);
             newCreations++;
+
+            // Persist creation to DB
+            queueDbWrite("creation", {
+              agent_id: agent.id,
+              agent_name: agent.name,
+              creation_type: artType,
+              title,
+              content: `Criado por ${agent.name} no ${roomName}`,
+              tags: [artType, agent.identity],
+            });
+
+            // Post to activity feed
+            queueDbWrite("feed", {
+              actor_name: agent.name,
+              action: `criou "${title}"`,
+              target_type: "artifact",
+              target_name: title,
+              metadata: { type: artType, room: roomName },
+            });
+          }
+
+          // Persist activity log periodically (every ~10 ticks per agent)
+          if (currentTick % 10 === 0) {
+            queueDbWrite("activity", {
+              agent_id: agent.id,
+              agent_name: agent.name,
+              action_type: "heartbeat",
+              description: msg,
+              metadata: { room: roomName, status: newStatus },
+            });
           }
 
           const newThought = Math.random() > 0.6
@@ -193,11 +256,17 @@ export function useAgentSimulation(
           };
         });
 
-        // Return same reference if nothing changed (prevents React re-render)
         return changed ? next : prev;
       });
     }, 2000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      // Flush remaining writes on cleanup
+      if (dbWriteTimer) {
+        clearTimeout(dbWriteTimer);
+        flushDbWrites();
+      }
+    };
   }, [setAgents]);
 }
