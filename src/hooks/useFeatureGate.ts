@@ -1,8 +1,10 @@
 import { useSubscription } from "./useSubscription";
+import { useAuth } from "@/contexts/AuthContext";
 
 /**
  * Feature gates mapped to minimum plan required.
  * "explorer" = free tier, "business" = $49/mo, "mogul" = $199/mo
+ * Admins bypass ALL gates automatically (God Mode).
  */
 const FEATURE_PLAN_MAP: Record<string, string> = {
   // Explorer (free)
@@ -42,20 +44,23 @@ export interface FeatureGateResult {
   requiredPlan: string;
   currentPlan: string;
   loading: boolean;
+  isAdmin: boolean;
 }
 
 export function useFeatureGate(featureKey: string): FeatureGateResult {
   const { planId, loading } = useSubscription();
+  const { isAdmin } = useAuth();
 
   const requiredPlan = FEATURE_PLAN_MAP[featureKey] || "mogul";
   const currentTier = PLAN_TIER[planId] ?? 0;
   const requiredTier = PLAN_TIER[requiredPlan] ?? 0;
 
   return {
-    allowed: currentTier >= requiredTier,
+    allowed: isAdmin || currentTier >= requiredTier,
     requiredPlan,
-    currentPlan: planId,
+    currentPlan: isAdmin ? "admin" : planId,
     loading,
+    isAdmin,
   };
 }
 
