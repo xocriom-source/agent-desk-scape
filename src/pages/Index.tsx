@@ -249,9 +249,9 @@ const Index = () => {
       {isOpen("messaging") && <AgentMessaging agents={agents} isOpen onClose={close} />}
       {isOpen("gallery") && <AgentGallery agents={agents} isOpen onClose={close} />}
       {isOpen("studios") && <CreativeStudios agents={agents} isOpen onClose={close} />}
-      {isOpen("analytics") && <AnalyticsDashboard agents={agents} isOpen onClose={close} />}
-      {isOpen("marketplace") && <AgentMarketplace agents={agents} isOpen onClose={close} />}
-      {isOpen("governance") && <AIGovernance agents={agents} isOpen onClose={close} />}
+      {isOpen("analytics") && <FeatureGate feature="analytics"><AnalyticsDashboard agents={agents} isOpen onClose={close} /></FeatureGate>}
+      {isOpen("marketplace") && <FeatureGate feature="marketplace"><AgentMarketplace agents={agents} isOpen onClose={close} /></FeatureGate>}
+      {isOpen("governance") && <FeatureGate feature="custom_ai"><AIGovernance agents={agents} isOpen onClose={close} /></FeatureGate>}
       {isOpen("memory") && <AgentMemory agents={agents} isOpen onClose={close} />}
       {isOpen("command") && <CommandCenter agents={agents} isOpen onClose={close} />}
       {isOpen("artifacts") && <ArtifactExplorer agents={agents} isOpen onClose={close} />}
