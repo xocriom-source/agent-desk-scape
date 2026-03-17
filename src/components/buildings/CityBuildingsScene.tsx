@@ -107,6 +107,7 @@ function CityGround() {
 
 function Lighting() {
   const dn = useDayNight();
+  const lightMult = dn.isNight ? 1 : dn.isSunset ? 0.6 : dn.isSunrise ? 0.4 : 0;
   return (
     <>
       <ambientLight intensity={dn.ambientIntensity} color={dn.ambientColor} />
@@ -118,6 +119,28 @@ function Lighting() {
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
       />
+      <hemisphereLight args={[dn.skyColor, dn.groundColor, dn.hemiIntensity]} />
+      {/* Moon */}
+      {dn.isNight && (
+        <group position={[-25, 35, -20]}>
+          <mesh>
+            <sphereGeometry args={[2.5, 16, 16]} />
+            <meshBasicMaterial color="#E8E8F0" />
+          </mesh>
+          <mesh>
+            <sphereGeometry args={[4, 16, 16]} />
+            <meshBasicMaterial color="#8899CC" transparent opacity={0.08} />
+          </mesh>
+          <directionalLight intensity={0.25} color="#8899CC" />
+        </group>
+      )}
+      {dn.showStars && <Stars radius={100} depth={50} count={1500} factor={4} saturation={0.3} fade speed={0.5} />}
+      {/* Street light point lights - key intersections */}
+      {[[-20,-20],[-20,20],[20,-20],[20,20],[0,-10],[0,10],[-10,0],[10,0]].map(([x,z],i) => (
+        lightMult > 0 ? (
+          <pointLight key={`pl-${i}`} position={[x, 2.5, z]} color="#FFD060" intensity={lightMult * 3} distance={10} decay={2} />
+        ) : null
+      ))}
     </>
   );
 }
