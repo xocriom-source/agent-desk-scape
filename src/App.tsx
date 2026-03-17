@@ -80,6 +80,8 @@ const App = () => (
               <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
               <Route path="/marketplace/businesses" element={<ProtectedRoute><DigitalMarketplace /></ProtectedRoute>} />
               <Route path="/integrations" element={<ProtectedRoute><IntegrationHub /></ProtectedRoute>} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/financial" element={<ProtectedRoute><FinancialDashboard /></ProtectedRoute>} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
