@@ -66,16 +66,21 @@ export function useFeatureGate(featureKey: string): FeatureGateResult {
 
 export function useMultiFeatureGate(featureKeys: string[]) {
   const { planId, loading } = useSubscription();
+  const { isAdmin } = useAuth();
   const currentTier = PLAN_TIER[planId] ?? 0;
 
   const results: Record<string, boolean> = {};
   for (const key of featureKeys) {
-    const requiredPlan = FEATURE_PLAN_MAP[key] || "mogul";
-    const requiredTier = PLAN_TIER[requiredPlan] ?? 0;
-    results[key] = currentTier >= requiredTier;
+    if (isAdmin) {
+      results[key] = true;
+    } else {
+      const requiredPlan = FEATURE_PLAN_MAP[key] || "mogul";
+      const requiredTier = PLAN_TIER[requiredPlan] ?? 0;
+      results[key] = currentTier >= requiredTier;
+    }
   }
 
-  return { gates: results, planId, loading };
+  return { gates: results, planId: isAdmin ? "admin" : planId, loading, isAdmin };
 }
 
 export { FEATURE_PLAN_MAP, PLAN_TIER };
