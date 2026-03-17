@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import logoOriginal from "@/assets/logo-original.svg";
+import { OnboardingStepIndicator, STEP_XP } from "@/components/onboarding/OnboardingStepIndicator";
+import { XPRewardPopup } from "@/components/onboarding/XPRewardPopup";
 
 const BUILDING_OPTIONS = [
   {
