@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { FeatureGate } from "@/components/plan/FeatureGate";
+import { TutorialOverlay } from "@/components/tutorial/TutorialOverlay";
+import { OFFICE_TUTORIAL_STEPS } from "@/components/tutorial/tutorialSteps";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { OfficeScene } from "@/components/office/3d/OfficeScene";
