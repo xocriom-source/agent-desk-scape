@@ -34,18 +34,11 @@ const TABS: { id: Tab; label: string; icon: any }[] = [
 ];
 
 export default function AdminDashboard() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("overview");
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [counts, setCounts] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  useEffect(() => {
-    if (!user) return;
-    // Role check is handled by ProtectedRoute requiredRole="admin"
-    setIsAdmin(true);
-  }, [user]);
 
   useEffect(() => {
     if (!isAdmin) return;
