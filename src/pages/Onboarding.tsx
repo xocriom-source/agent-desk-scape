@@ -310,7 +310,7 @@ export default function Onboarding() {
 
             <div className="flex justify-center">
               <button
-                onClick={() => selectedBuilding && setStep(2)}
+                onClick={() => { if (selectedBuilding) { awardXP(0); setStep(2); } }}
                 disabled={!selectedBuilding}
                 className="flex items-center gap-2 bg-primary text-primary-foreground px-8 py-3 rounded-xl font-medium disabled:opacity-40 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
               >
