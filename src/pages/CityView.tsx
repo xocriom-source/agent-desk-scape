@@ -1,6 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { TutorialOverlay } from "@/components/tutorial/TutorialOverlay";
+import { CITY_TUTORIAL_STEPS } from "@/components/tutorial/tutorialSteps";
 import {
   Building2, Users2, ArrowLeft, Search, Eye, ArrowRight,
   Crown, Star, Home, Landmark, Briefcase, Globe,
