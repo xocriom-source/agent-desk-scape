@@ -1131,7 +1131,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         }}
       >
         <color attach="background" args={[dn.bgColor]} />
-        <fog attach="fog" args={[dn.fogColor, 25, 70]} />
+        <fog attach="fog" args={[dn.fogColor, 25, 120]} />
 
         <ambientLight intensity={dn.ambientIntensity} color={dn.ambientColor} />
         <directionalLight
