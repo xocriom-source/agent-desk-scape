@@ -40,6 +40,7 @@ import { useAgentHeartbeat } from "@/hooks/useAgentHeartbeat";
 const Index = () => {
   const navigate = useNavigate();
   const { profile, signOut } = useAuth();
+  useAgentHeartbeat(true);
   const { openPanel, open, close, isOpen } = usePanelState();
   const [rooms, setLocalRooms] = useState<RoomDef[]>(() => [...DEFAULT_ROOMS]);
   const [furnitureItems, setLocalFurniture] = useState<FurnitureItem[]>(() => [...DEFAULT_FURNITURE]);
