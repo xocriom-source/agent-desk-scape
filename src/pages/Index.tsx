@@ -168,6 +168,7 @@ const Index = () => {
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-canvas select-none">
+      <TutorialOverlay steps={OFFICE_TUTORIAL_STEPS} storageKey="tutorial_office_seen" />
       <TopBar
         agentCount={agents.length}
         activeCount={agents.filter((a) => a.status === "active").length}
