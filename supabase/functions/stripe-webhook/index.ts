@@ -120,9 +120,24 @@ Deno.serve(async (req) => {
 
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
+        // Get user from subscription
+        const { data: subRecord } = await supabase.from("subscriptions")
+          .select("user_id")
+          .eq("stripe_subscription_id", sub.id)
+          .single();
+        
         await supabase.from("subscriptions")
-          .update({ status: "cancelled", plan: "free" })
+          .update({ status: "cancelled", plan: "explorer" })
           .eq("stripe_subscription_id", sub.id);
+
+        // Revert to explorer plan
+        if (subRecord?.user_id) {
+          await supabase.from("user_plans").update({
+            plan_id: "explorer",
+            status: "active",
+            updated_at: new Date().toISOString(),
+          }).eq("user_id", subRecord.user_id);
+        }
         break;
       }
     }
