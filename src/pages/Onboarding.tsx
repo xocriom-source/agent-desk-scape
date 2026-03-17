@@ -126,6 +126,17 @@ export default function Onboarding() {
   const [selectedCity, setSelectedCity] = useState<typeof CITIES[0] | null>(null);
   const [citySearch, setCitySearch] = useState("");
   const [saving, setSaving] = useState(false);
+  const [earnedXP, setEarnedXP] = useState(0);
+  const [showXPPopup, setShowXPPopup] = useState(false);
+  const [popupXP, setPopupXP] = useState(0);
+
+  const awardXP = useCallback((stepIndex: number) => {
+    const xp = STEP_XP[stepIndex] || 0;
+    setPopupXP(xp);
+    setShowXPPopup(true);
+    setEarnedXP(prev => prev + xp);
+    setTimeout(() => setShowXPPopup(false), 1500);
+  }, []);
 
   const filteredCities = useMemo(() => {
     if (!citySearch) return CITIES;
