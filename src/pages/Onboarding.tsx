@@ -254,12 +254,9 @@ export default function Onboarding() {
           <span className="font-display font-bold text-xl text-primary">THE GOOD CITY</span>
         </div>
 
-        {/* Progress */}
-        <div className="flex items-center justify-center gap-2 mb-8">
-          {[1, 2, 3].map(s => (
-            <div key={s} className={`w-8 h-1 rounded-full transition-colors ${step >= s ? "bg-primary" : "bg-muted"}`} />
-          ))}
-        </div>
+        {/* Gamified Progress */}
+        <OnboardingStepIndicator currentStep={step} totalXP={earnedXP} />
+        <XPRewardPopup xp={popupXP} show={showXPPopup} />
 
         {/* Step 1: Building Type */}
         {step === 1 && (
