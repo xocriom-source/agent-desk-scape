@@ -244,6 +244,63 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_usage: {
+        Row: {
+          agent_id: string | null
+          billing_period: string | null
+          cost: number
+          created_at: string
+          id: string
+          tokens_used: number
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          billing_period?: string | null
+          cost?: number
+          created_at?: string
+          id?: string
+          tokens_used?: number
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          billing_period?: string | null
+          cost?: number
+          created_at?: string
+          id?: string
+          tokens_used?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      api_usage: {
+        Row: {
+          cost: number
+          created_at: string
+          endpoint: string
+          id: string
+          requests: number
+          user_id: string
+        }
+        Insert: {
+          cost?: number
+          created_at?: string
+          endpoint: string
+          id?: string
+          requests?: number
+          user_id: string
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          endpoint?: string
+          id?: string
+          requests?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       asset_views: {
         Row: {
           business_id: string
@@ -311,6 +368,50 @@ export type Database = {
           system_prompt?: string
         }
         Relationships: []
+      }
+      building_transactions: {
+        Row: {
+          building_id: string
+          buyer_id: string
+          created_at: string
+          id: string
+          payment_id: string | null
+          price: number
+          seller_id: string | null
+          status: string
+          transaction_type: string
+        }
+        Insert: {
+          building_id: string
+          buyer_id: string
+          created_at?: string
+          id?: string
+          payment_id?: string | null
+          price: number
+          seller_id?: string | null
+          status?: string
+          transaction_type?: string
+        }
+        Update: {
+          building_id?: string
+          buyer_id?: string
+          created_at?: string
+          id?: string
+          payment_id?: string | null
+          price?: number
+          seller_id?: string | null
+          status?: string
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "building_transactions_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       business_offers: {
         Row: {
@@ -744,6 +845,56 @@ export type Database = {
         }
         Relationships: []
       }
+      escrows: {
+        Row: {
+          amount: number
+          buyer_id: string
+          created_at: string
+          currency: string
+          deal_id: string
+          id: string
+          payment_id: string | null
+          released_at: string | null
+          seller_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          buyer_id: string
+          created_at?: string
+          currency?: string
+          deal_id: string
+          id?: string
+          payment_id?: string | null
+          released_at?: string | null
+          seller_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          buyer_id?: string
+          created_at?: string
+          currency?: string
+          deal_id?: string
+          id?: string
+          payment_id?: string | null
+          released_at?: string | null
+          seller_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "escrows_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       external_agent_tasks: {
         Row: {
           agent_id: string
@@ -836,6 +987,110 @@ export type Database = {
           provider?: string
           status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      featured_assets: {
+        Row: {
+          asset_id: string
+          created_at: string
+          end_date: string
+          id: string
+          payment_id: string | null
+          priority: number | null
+          start_date: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          asset_id: string
+          created_at?: string
+          end_date: string
+          id?: string
+          payment_id?: string | null
+          priority?: number | null
+          start_date?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          asset_id?: string
+          created_at?: string
+          end_date?: string
+          id?: string
+          payment_id?: string | null
+          priority?: number | null
+          start_date?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "featured_assets_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fee_config: {
+        Row: {
+          category: string
+          id: string
+          max_fee: number | null
+          min_fee: number | null
+          percentage: number
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          id?: string
+          max_fee?: number | null
+          min_fee?: number | null
+          percentage?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          id?: string
+          max_fee?: number | null
+          min_fee?: number | null
+          percentage?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      financial_logs: {
+        Row: {
+          amount: number | null
+          created_at: string
+          currency: string | null
+          description: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          description?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1214,6 +1469,54 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          amount: number
+          asset_id: string | null
+          asset_type: string | null
+          created_at: string
+          currency: string
+          id: string
+          metadata: Json | null
+          payment_method: string | null
+          status: string
+          stripe_checkout_session: string | null
+          stripe_payment_intent: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          asset_id?: string | null
+          asset_type?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          payment_method?: string | null
+          status?: string
+          stripe_checkout_session?: string | null
+          stripe_payment_intent?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          asset_id?: string | null
+          asset_type?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          metadata?: Json | null
+          payment_method?: string | null
+          status?: string
+          stripe_checkout_session?: string | null
+          stripe_payment_intent?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       platform_events: {
         Row: {
           actor_id: string | null
@@ -1243,6 +1546,44 @@ export type Database = {
           target_id?: string | null
         }
         Relationships: []
+      }
+      platform_fees: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          deal_id: string | null
+          id: string
+          payment_id: string | null
+          percentage: number
+        }
+        Insert: {
+          amount?: number
+          category?: string
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          payment_id?: string | null
+          percentage?: number
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          payment_id?: string | null
+          percentage?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_fees_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       platform_integrations: {
         Row: {
@@ -1316,6 +1657,78 @@ export type Database = {
           id?: string
           status?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      stripe_accounts: {
+        Row: {
+          charges_enabled: boolean | null
+          created_at: string
+          id: string
+          onboarding_status: string
+          payouts_enabled: boolean | null
+          stripe_account_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          charges_enabled?: boolean | null
+          created_at?: string
+          id?: string
+          onboarding_status?: string
+          payouts_enabled?: boolean | null
+          stripe_account_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          charges_enabled?: boolean | null
+          created_at?: string
+          id?: string
+          onboarding_status?: string
+          payouts_enabled?: boolean | null
+          stripe_account_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          plan: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
