@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
           .eq("stripe_checkout_session", session.id);
 
         if (session.mode === "subscription") {
-          const plan = session.metadata?.plan || "pro";
+          const plan = session.metadata?.plan || "business";
           await supabase.from("subscriptions").upsert({
             user_id: userId,
             plan,
@@ -51,6 +51,17 @@ Deno.serve(async (req) => {
             stripe_customer_id: session.customer as string,
             current_period_start: new Date().toISOString(),
           }, { onConflict: "user_id" });
+
+          // Sync user_plans table
+          if (userId) {
+            await supabase.from("user_plans").upsert({
+              user_id: userId,
+              plan_id: plan,
+              status: "active",
+              activated_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }, { onConflict: "user_id" });
+          }
         } else if (assetId) {
           // Create escrow for asset purchase
           const amount = (session.amount_total || 0) / 100;
