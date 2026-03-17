@@ -28,6 +28,8 @@ const LiveCity = lazy(() => import("./pages/LiveCity"));
 const Features = lazy(() => import("./pages/Features"));
 const About = lazy(() => import("./pages/About"));
 const IntegrationHub = lazy(() => import("./pages/IntegrationHub"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const FinancialDashboard = lazy(() => import("./pages/FinancialDashboard"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
