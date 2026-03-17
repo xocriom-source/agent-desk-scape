@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { PageFeatureGate } from "@/components/plan/PageFeatureGate";
 
 // Lazy-loaded pages for smaller initial bundle
 const Landing = lazy(() => import("./pages/Landing"));
@@ -76,12 +77,12 @@ const App = () => (
               <Route path="/office" element={<ProtectedRoute><Office /></ProtectedRoute>} />
               <Route path="/find-building" element={<ProtectedRoute><FindMyBuilding /></ProtectedRoute>} />
               <Route path="/building/:id" element={<ProtectedRoute><BuildingInterior /></ProtectedRoute>} />
-              <Route path="/ecosystem" element={<ProtectedRoute><EcosystemHub /></ProtectedRoute>} />
+              <Route path="/ecosystem" element={<ProtectedRoute><PageFeatureGate feature="analytics"><EcosystemHub /></PageFeatureGate></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
-              <Route path="/marketplace/businesses" element={<ProtectedRoute><DigitalMarketplace /></ProtectedRoute>} />
-              <Route path="/integrations" element={<ProtectedRoute><IntegrationHub /></ProtectedRoute>} />
+              <Route path="/marketplace/businesses" element={<ProtectedRoute><PageFeatureGate feature="marketplace"><DigitalMarketplace /></PageFeatureGate></ProtectedRoute>} />
+              <Route path="/integrations" element={<ProtectedRoute><PageFeatureGate feature="integrations"><IntegrationHub /></PageFeatureGate></ProtectedRoute>} />
               <Route path="/pricing" element={<Pricing />} />
-              <Route path="/financial" element={<ProtectedRoute><FinancialDashboard /></ProtectedRoute>} />
+              <Route path="/financial" element={<ProtectedRoute><PageFeatureGate feature="analytics"><FinancialDashboard /></PageFeatureGate></ProtectedRoute>} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
