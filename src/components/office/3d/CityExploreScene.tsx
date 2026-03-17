@@ -1149,7 +1149,37 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         />
         <hemisphereLight args={[dn.skyColor, dn.groundColor, dn.hemiIntensity]} />
 
-        {dn.showStars && <Stars radius={60} depth={30} count={800} factor={3} saturation={0.2} fade speed={0.5} />}
+        {/* Moon */}
+        {dn.isNight && (
+          <group position={[-20, 30, -15]}>
+            <mesh>
+              <sphereGeometry args={[2, 16, 16]} />
+              <meshBasicMaterial color="#E8E8F0" />
+            </mesh>
+            {/* Moon glow */}
+            <mesh>
+              <sphereGeometry args={[3, 16, 16]} />
+              <meshBasicMaterial color="#8899CC" transparent opacity={0.08} />
+            </mesh>
+            {/* Moonlight - directional from moon position */}
+            <directionalLight
+              position={[0, 0, 0]}
+              target-position={[0, 0, 0]}
+              intensity={0.3}
+              color="#8899CC"
+            />
+          </group>
+        )}
+        {dn.isSunset && (
+          <group position={[-20, 25, -15]}>
+            <mesh>
+              <sphereGeometry args={[1.5, 12, 12]} />
+              <meshBasicMaterial color="#D8D8E8" transparent opacity={dn.starOpacity * 0.8} />
+            </mesh>
+          </group>
+        )}
+
+        {dn.showStars && <Stars radius={100} depth={50} count={1500} factor={4} saturation={0.3} fade speed={0.5} />}
 
         {/* Ground mode controls */}
         {!flyMode && (
