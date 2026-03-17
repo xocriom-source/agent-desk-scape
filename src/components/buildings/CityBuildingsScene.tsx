@@ -59,6 +59,27 @@ function CityGround() {
         <planeGeometry args={[200, 200]} />
         <meshStandardMaterial color="hsl(220, 15%, 18%)" roughness={0.95} />
       </mesh>
+      {/* Infinite landscape rings */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 0]}>
+        <ringGeometry args={[100, 250, 32]} />
+        <meshStandardMaterial color="hsl(220, 12%, 12%)" roughness={0.98} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.06, 0]}>
+        <ringGeometry args={[250, 600, 32]} />
+        <meshStandardMaterial color="hsl(220, 10%, 8%)" roughness={1} />
+      </mesh>
+      {/* Distant hill silhouettes */}
+      {Array.from({ length: 16 }).map((_, i) => {
+        const angle = (i / 16) * Math.PI * 2;
+        const dist = 110 + Math.sin(i * 2.1) * 20;
+        const hh = 6 + Math.sin(i * 1.5) * 3;
+        return (
+          <mesh key={`hill-${i}`} position={[Math.cos(angle) * dist, hh / 2 - 1, Math.sin(angle) * dist]}>
+            <sphereGeometry args={[30, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <meshStandardMaterial color="hsl(220, 10%, 7%)" roughness={1} />
+          </mesh>
+        );
+      })}
       {/* Grid lines */}
       <gridHelper args={[200, 40, "hsl(220, 20%, 25%)", "hsl(220, 15%, 22%)"]} position={[0, 0.01, 0]} />
 
