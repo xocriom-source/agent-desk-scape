@@ -76,7 +76,8 @@ export default function CityView() {
     async function fetchBuildings() {
       const { data } = await supabase
         .from("city_buildings")
-        .select("id, name, owner_id, style, floors, height, position_x, position_z, primary_color");
+        .select("id, name, owner_id, style, floors, height, position_x, position_z, primary_color")
+        .not("owner_id", "is", null);
 
       if (data) {
         const gridSize = 10;
