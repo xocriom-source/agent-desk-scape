@@ -164,28 +164,85 @@ export function SocialFeed({ agents, isOpen, onClose, onAgentClick }: SocialFeed
   const [filter, setFilter] = useState<FilterType>("all");
   const [dbItems, setDbItems] = useState<FeedItem[]>([]);
 
-  // Load real activity from DB
+  // Load real activity from DB + real agent creations
   useEffect(() => {
     if (!isOpen) return;
-    supabase
+
+    // Load activity feed
+    const loadFeed = supabase
       .from("activity_feed")
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(30)
-      .then(({ data }) => {
-        if (data && data.length > 0) {
-          const mapped: FeedItem[] = data.map((row, i) => ({
-            id: `db-${row.id}`,
+      .limit(30);
+
+    // Load real agent creations
+    const loadCreations = supabase
+      .from("agent_creations")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    // Load agent activity logs
+    const loadLogs = supabase
+      .from("agent_activity_log")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    Promise.all([loadFeed, loadCreations, loadLogs]).then(([feedRes, creationsRes, logsRes]) => {
+      const items: FeedItem[] = [];
+
+      // Activity feed items
+      if (feedRes.data) {
+        for (const row of feedRes.data) {
+          const meta = (row.metadata as any) || {};
+          items.push({
+            id: `db-feed-${row.id}`,
             timestamp: new Date(row.created_at),
-            type: (row.target_type === "agent" ? "collaboration" : "message") as FeedItemType,
+            type: (meta.type ? "creation" : row.target_type === "agent" ? "collaboration" : "message") as FeedItemType,
             agentName: row.actor_name || "Sistema",
             agentColor: "#3b82f6",
-            agentAvatar: i % EMOJIS.length,
+            agentAvatar: row.actor_name?.charCodeAt(0) % EMOJIS.length || 0,
             content: row.action + (row.target_name ? ` → ${row.target_name}` : ""),
-          }));
-          setDbItems(mapped);
+          });
         }
-      });
+      }
+
+      // Real agent creations
+      if (creationsRes.data) {
+        for (const c of creationsRes.data) {
+          items.push({
+            id: `db-creation-${c.id}`,
+            timestamp: new Date(c.created_at),
+            type: "creation",
+            agentName: c.agent_name,
+            agentColor: "#6366f1",
+            agentAvatar: c.agent_name.charCodeAt(0) % EMOJIS.length,
+            content: `${ARTIFACT_EMOJI[c.creation_type] || "📄"} ${c.title}`,
+            extra: c.content ? c.content.slice(0, 80) : undefined,
+          });
+        }
+      }
+
+      // Activity logs as thoughts/heartbeats
+      if (logsRes.data) {
+        for (const log of logsRes.data) {
+          const meta = (log.metadata as any) || {};
+          items.push({
+            id: `db-log-${log.id}`,
+            timestamp: new Date(log.created_at),
+            type: log.action_type === "creation" ? "creation" : "thought" as FeedItemType,
+            agentName: log.agent_name,
+            agentColor: "#10b981",
+            agentAvatar: log.agent_name.charCodeAt(0) % EMOJIS.length,
+            content: log.description,
+            extra: meta.room ? `📍 ${meta.room}` : undefined,
+          });
+        }
+      }
+
+      setDbItems(items);
+    });
   }, [isOpen]);
 
   const agentFeed = buildFeed(agents);
