@@ -337,10 +337,55 @@ function CityNPC({ startX, startZ, color, aabbs }: { startX: number; startZ: num
 function CityGround() {
   return (
     <group>
+      {/* Inner city ground */}
       <mesh position={[0, -0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[80, 80]} />
         <meshStandardMaterial color="#1A1E24" />
       </mesh>
+      {/* Infinite landscape rings - progressively darker/greener to simulate horizon */}
+      <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[40, 80, 32]} />
+        <meshStandardMaterial color="#151A14" roughness={0.95} />
+      </mesh>
+      <mesh position={[0, -0.08, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[80, 160, 32]} />
+        <meshStandardMaterial color="#111610" roughness={0.98} />
+      </mesh>
+      <mesh position={[0, -0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[160, 400, 32]} />
+        <meshStandardMaterial color="#0D120C" roughness={1} />
+      </mesh>
+      {/* Distant hills silhouette */}
+      {Array.from({ length: 12 }).map((_, i) => {
+        const angle = (i / 12) * Math.PI * 2;
+        const dist = 60 + Math.sin(i * 2.7) * 15;
+        const hh = 3 + Math.sin(i * 1.3) * 2;
+        const ww = 20 + Math.sin(i * 0.7) * 8;
+        return (
+          <mesh key={`hill-${i}`} position={[Math.cos(angle) * dist, hh / 2 - 0.5, Math.sin(angle) * dist]}>
+            <sphereGeometry args={[ww, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <meshStandardMaterial color="#0A0F0A" roughness={1} />
+          </mesh>
+        );
+      })}
+      {/* Scattered distant trees on outer ring */}
+      {Array.from({ length: 40 }).map((_, i) => {
+        const angle = (i / 40) * Math.PI * 2 + Math.sin(i * 3.1) * 0.15;
+        const dist = 42 + Math.sin(i * 2.3) * 8;
+        const sc = 0.6 + Math.sin(i * 1.7) * 0.3;
+        return (
+          <group key={`dtree-${i}`} position={[Math.cos(angle) * dist, 0, Math.sin(angle) * dist]}>
+            <mesh position={[0, 0.4 * sc, 0]}>
+              <cylinderGeometry args={[0.04 * sc, 0.06 * sc, 0.8 * sc, 4]} />
+              <meshStandardMaterial color="#3A2A18" roughness={0.95} />
+            </mesh>
+            <mesh position={[0, (0.8 + 0.35) * sc, 0]}>
+              <sphereGeometry args={[0.5 * sc, 5, 4]} />
+              <meshStandardMaterial color={["#0D3D12", "#153D10", "#0A3A15", "#1A4A18"][i % 4]} roughness={0.9} />
+            </mesh>
+          </group>
+        );
+      })}
       {/* Main cross roads */}
       <mesh position={[0, -0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[2, 60]} />
@@ -380,11 +425,13 @@ function CityGround() {
   );
 }
 
-// ── Street Lights (enhanced with variety) ──
+// ── Street Lights with REAL point lights ──
 function StreetLights() {
+  const dn = useDayNight();
+  const lightIntensityMultiplier = dn.isNight ? 1 : dn.isSunset ? 0.6 : dn.isSunrise ? 0.4 : 0;
+
   const positions = useMemo(() => {
     const pts: { x: number; z: number; type: "tall" | "short" | "double" }[] = [];
-    // Along main roads
     for (let v = -28; v <= 28; v += 6) {
       if (Math.abs(v) < 5) continue;
       pts.push({ x: 1.8, z: v, type: "tall" });
@@ -392,14 +439,12 @@ function StreetLights() {
       pts.push({ x: v, z: 1.8, type: "tall" });
       pts.push({ x: v, z: -1.8, type: "tall" });
     }
-    // District corners
     for (let x = -24; x <= 24; x += 16) {
       for (let z = -24; z <= 24; z += 16) {
         if (Math.abs(x) < 6 && Math.abs(z) < 6) continue;
         pts.push({ x, z, type: "double" });
       }
     }
-    // Short lights along ring roads
     for (let v = -8; v <= 8; v += 4) {
       pts.push({ x: v, z: -7.5, type: "short" });
       pts.push({ x: v, z: 7.5, type: "short" });
@@ -409,25 +454,44 @@ function StreetLights() {
     return pts;
   }, []);
 
+  // Only add real pointLights on a subset to keep perf (every 3rd light)
+  const litIndices = useMemo(() => {
+    const s = new Set<number>();
+    for (let i = 0; i < positions.length; i += 3) s.add(i);
+    return s;
+  }, [positions]);
+
   return (
     <group>
       {positions.map((p, i) => {
         const h = p.type === "tall" ? 2.2 : p.type === "double" ? 2.5 : 1.6;
         const glowSize = p.type === "double" ? 0.06 : 0.045;
-        const intensity = p.type === "double" ? 3 : 2;
+        const emissiveI = p.type === "double" ? 3 : 2;
+        const hasRealLight = litIndices.has(i) && lightIntensityMultiplier > 0;
         return (
           <group key={i} position={[p.x, 0, p.z]}>
-            {/* Pole */}
             <mesh position={[0, h / 2, 0]}>
               <cylinderGeometry args={[0.02, 0.035, h, 4]} />
               <meshStandardMaterial color="#2A2A2A" metalness={0.7} roughness={0.3} />
             </mesh>
-            {/* Light globe */}
             <mesh position={[0, h + 0.03, 0]}>
               <sphereGeometry args={[glowSize, 6, 6]} />
-              <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={intensity} />
+              <meshStandardMaterial
+                color="#FFE8A0"
+                emissive="#FFD060"
+                emissiveIntensity={emissiveI + lightIntensityMultiplier * 2}
+              />
             </mesh>
-            {/* Double light has arm + second globe */}
+            {/* Real point light that illuminates surroundings */}
+            {hasRealLight && (
+              <pointLight
+                position={[0, h + 0.1, 0]}
+                color="#FFD060"
+                intensity={lightIntensityMultiplier * 4}
+                distance={8}
+                decay={2}
+              />
+            )}
             {p.type === "double" && (
               <>
                 <mesh position={[0.3, h - 0.1, 0]} rotation={[0, 0, Math.PI / 6]}>
@@ -436,11 +500,10 @@ function StreetLights() {
                 </mesh>
                 <mesh position={[0.5, h + 0.05, 0]}>
                   <sphereGeometry args={[0.04, 6, 6]} />
-                  <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={2.5} />
+                  <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={2.5 + lightIntensityMultiplier * 2} />
                 </mesh>
               </>
             )}
-            {/* Base plate */}
             <mesh position={[0, 0.02, 0]}>
               <cylinderGeometry args={[0.06, 0.07, 0.04, 6]} />
               <meshStandardMaterial color="#1A1A1A" metalness={0.5} />
@@ -1058,7 +1121,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
       <Canvas
         shadows
         style={{ touchAction: "none", width: "100%", height: "100%", display: "block" }}
-        camera={{ position: [12, 18, 22], fov: 40, near: 0.5, far: 150 }}
+        camera={{ position: [12, 18, 22], fov: 40, near: 0.5, far: 500 }}
         gl={{ antialias: false, powerPreference: "high-performance" }}
         dpr={[1, 1.5]}
         onCreated={({ gl }) => {
@@ -1068,7 +1131,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         }}
       >
         <color attach="background" args={[dn.bgColor]} />
-        <fog attach="fog" args={[dn.fogColor, 25, 70]} />
+        <fog attach="fog" args={[dn.fogColor, 25, 120]} />
 
         <ambientLight intensity={dn.ambientIntensity} color={dn.ambientColor} />
         <directionalLight
@@ -1086,7 +1149,37 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         />
         <hemisphereLight args={[dn.skyColor, dn.groundColor, dn.hemiIntensity]} />
 
-        {dn.showStars && <Stars radius={60} depth={30} count={800} factor={3} saturation={0.2} fade speed={0.5} />}
+        {/* Moon */}
+        {dn.isNight && (
+          <group position={[-20, 30, -15]}>
+            <mesh>
+              <sphereGeometry args={[2, 16, 16]} />
+              <meshBasicMaterial color="#E8E8F0" />
+            </mesh>
+            {/* Moon glow */}
+            <mesh>
+              <sphereGeometry args={[3, 16, 16]} />
+              <meshBasicMaterial color="#8899CC" transparent opacity={0.08} />
+            </mesh>
+            {/* Moonlight - directional from moon position */}
+            <directionalLight
+              position={[0, 0, 0]}
+              target-position={[0, 0, 0]}
+              intensity={0.3}
+              color="#8899CC"
+            />
+          </group>
+        )}
+        {dn.isSunset && (
+          <group position={[-20, 25, -15]}>
+            <mesh>
+              <sphereGeometry args={[1.5, 12, 12]} />
+              <meshBasicMaterial color="#D8D8E8" transparent opacity={dn.starOpacity * 0.8} />
+            </mesh>
+          </group>
+        )}
+
+        {dn.showStars && <Stars radius={100} depth={50} count={1500} factor={4} saturation={0.3} fade speed={0.5} />}
 
         {/* Ground mode controls */}
         {!flyMode && (

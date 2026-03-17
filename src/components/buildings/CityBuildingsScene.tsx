@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useMemo } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Sky, Text, Environment } from "@react-three/drei";
+import { OrbitControls, Sky, Text, Environment, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import { Building3D } from "./Building3D";
 import { useDayNight } from "@/hooks/useDayNight";
@@ -59,6 +59,27 @@ function CityGround() {
         <planeGeometry args={[200, 200]} />
         <meshStandardMaterial color="hsl(220, 15%, 18%)" roughness={0.95} />
       </mesh>
+      {/* Infinite landscape rings */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 0]}>
+        <ringGeometry args={[100, 250, 32]} />
+        <meshStandardMaterial color="hsl(220, 12%, 12%)" roughness={0.98} />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.06, 0]}>
+        <ringGeometry args={[250, 600, 32]} />
+        <meshStandardMaterial color="hsl(220, 10%, 8%)" roughness={1} />
+      </mesh>
+      {/* Distant hill silhouettes */}
+      {Array.from({ length: 16 }).map((_, i) => {
+        const angle = (i / 16) * Math.PI * 2;
+        const dist = 110 + Math.sin(i * 2.1) * 20;
+        const hh = 6 + Math.sin(i * 1.5) * 3;
+        return (
+          <mesh key={`hill-${i}`} position={[Math.cos(angle) * dist, hh / 2 - 1, Math.sin(angle) * dist]}>
+            <sphereGeometry args={[30, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <meshStandardMaterial color="hsl(220, 10%, 7%)" roughness={1} />
+          </mesh>
+        );
+      })}
       {/* Grid lines */}
       <gridHelper args={[200, 40, "hsl(220, 20%, 25%)", "hsl(220, 15%, 22%)"]} position={[0, 0.01, 0]} />
 
@@ -107,6 +128,7 @@ function CityGround() {
 
 function Lighting() {
   const dn = useDayNight();
+  const lightMult = dn.isNight ? 1 : dn.isSunset ? 0.6 : dn.isSunrise ? 0.4 : 0;
   return (
     <>
       <ambientLight intensity={dn.ambientIntensity} color={dn.ambientColor} />
@@ -118,6 +140,28 @@ function Lighting() {
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
       />
+      <hemisphereLight args={[dn.skyColor, dn.groundColor, dn.hemiIntensity]} />
+      {/* Moon */}
+      {dn.isNight && (
+        <group position={[-25, 35, -20]}>
+          <mesh>
+            <sphereGeometry args={[2.5, 16, 16]} />
+            <meshBasicMaterial color="#E8E8F0" />
+          </mesh>
+          <mesh>
+            <sphereGeometry args={[4, 16, 16]} />
+            <meshBasicMaterial color="#8899CC" transparent opacity={0.08} />
+          </mesh>
+          <directionalLight intensity={0.25} color="#8899CC" />
+        </group>
+      )}
+      {dn.showStars && <Stars radius={100} depth={50} count={1500} factor={4} saturation={0.3} fade speed={0.5} />}
+      {/* Street light point lights - key intersections */}
+      {[[-20,-20],[-20,20],[20,-20],[20,20],[0,-10],[0,10],[-10,0],[10,0]].map(([x,z],i) => (
+        lightMult > 0 ? (
+          <pointLight key={`pl-${i}`} position={[x, 2.5, z]} color="#FFD060" intensity={lightMult * 3} distance={10} decay={2} />
+        ) : null
+      ))}
     </>
   );
 }
