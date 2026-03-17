@@ -153,6 +153,9 @@ export default function Lobby() {
         <img src={logoOriginal} alt="Logo" className="w-8 h-8" />
         <span className="text-primary font-bold text-sm tracking-wider font-mono">THE GOOD CITY</span>
       </div>
+      <div className="absolute top-4 right-6">
+        <PlanBadge />
+      </div>
 
       {/* Title */}
       <motion.div
