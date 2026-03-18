@@ -341,12 +341,30 @@ const CityGround = memo(function CityGround() {
         <meshStandardMaterial color="hsl(220, 10%, 6%)" roughness={1} />
       </mesh>
 
-      {/* Zone ground tints (subtle color coding) */}
+      {/* ═══ AI DISTRICT GROUND — teal/cyan tinted ═══ */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.003, -28]}>
+        <planeGeometry args={[120, 50]} />
+        <meshStandardMaterial color="hsl(180, 12%, 14%)" roughness={0.95} />
+      </mesh>
+      {/* AI glow border line */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.008, -5]}>
+        <planeGeometry args={[120, 0.3]} />
+        <meshStandardMaterial color="#00E890" emissive="#00E890" emissiveIntensity={0.4} transparent opacity={0.5} />
+      </mesh>
+
+      {/* ═══ HUMAN DISTRICT GROUND — warm tinted ═══ */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.003, 22]}>
+        <planeGeometry args={[120, 50]} />
+        <meshStandardMaterial color="hsl(25, 8%, 16%)" roughness={0.95} />
+      </mesh>
+
+      {/* Zone ground tints */}
       {CITY_ZONES.filter(z => z.type !== "park" && z.type !== "plaza").map(zone => {
         const zoneColors: Record<string, string> = {
           commercial: "hsl(220, 20%, 18%)",
           skyline: "hsl(230, 18%, 15%)",
           residential: "hsl(30, 10%, 18%)",
+          ai: "hsl(170, 15%, 13%)",
         };
         return (
           <mesh key={zone.id} rotation={[-Math.PI / 2, 0, 0]} position={[zone.center.x, 0.005, zone.center.z]}>
@@ -377,9 +395,33 @@ const CityGround = memo(function CityGround() {
         );
       })}
 
-      {/* District labels */}
+      {/* ═══ DISTRICT SECTION LABELS ═══ */}
+      <Text
+        position={[0, 0.12, 45]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        fontSize={2.5}
+        color="#E8A580"
+        anchorX="center"
+        fillOpacity={0.25}
+        font={undefined}
+      >
+        🏠 HUMAN DISTRICT
+      </Text>
+      <Text
+        position={[0, 0.12, -48]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        fontSize={2.5}
+        color="#40C88A"
+        anchorX="center"
+        fillOpacity={0.25}
+        font={undefined}
+      >
+        🤖 AI DISTRICT
+      </Text>
+
+      {/* Individual district labels */}
       {DISTRICTS.map(d => {
-        const zone = CITY_ZONES.find(z => z.district === d.id && z.type !== "park");
+        const zone = CITY_ZONES.find(z => z.district === d.id && z.type !== "park" && z.type !== "plaza");
         if (!zone) return null;
         return (
           <Text
