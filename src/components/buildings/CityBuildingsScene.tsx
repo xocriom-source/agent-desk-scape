@@ -6,7 +6,7 @@ import { Building3D } from "./Building3D";
 import { VoxelCar, StreetLamp, Bench, TrashCan, Hydrant, PottedPlant, CafeTable, Dumpster, ParkingMeter } from "./VoxelProps";
 import { preloadBuildingModels } from "./GLBBuildingModel";
 import { useDayNight } from "@/hooks/useDayNight";
-import { generateCityLayout, CITY_STREETS, CITY_ZONES, getZoneGlow, isInAIDistrict } from "@/systems/city/CityLayoutGenerator";
+import { generateCityLayout, CITY_STREETS, CITY_ZONES, getZoneGlow } from "@/systems/city/CityLayoutGenerator";
 import type { CityBuilding } from "@/types/building";
 import { DISTRICTS } from "@/types/building";
 
