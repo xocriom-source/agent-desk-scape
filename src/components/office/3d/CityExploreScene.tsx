@@ -1052,7 +1052,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
   const dn = useDayNight();
 
   // ── LoD system ──
-  const buildingDefs = useMemo(() => CITY_BUILDINGS.map(b => ({ x: b.x, z: b.z, w: b.w, d: b.d, h: b.h, color: b.color })), []);
+  const buildingDefs = useMemo(() => CITY_BUILDINGS.map(b => ({ x: b.x, z: b.z, w: b.w, d: b.d, h: b.h, color: b.color, rot: b.rot, mirror: b.mirror, forceClass: (b as any).forceClass })), []);
   const { quality, config: lodConfig, changeQuality, computeFrame } = useCityLod(buildingDefs);
   const [showQualityMenu, setShowQualityMenu] = useState(false);
 
