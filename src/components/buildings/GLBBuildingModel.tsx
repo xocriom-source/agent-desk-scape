@@ -26,42 +26,25 @@ function GLBFallback({ height }: { height: number }) {
   );
 }
 
-/** Error boundary fallback — shows a magenta box */
-function GLBErrorBox({ height, error }: { height: number; error?: string }) {
-  console.error("[GLB ERROR]", error);
-  return (
-    <mesh position={[0, height / 2, 0]}>
-      <boxGeometry args={[2, height, 2]} />
-      <meshStandardMaterial color="#FF00FF" wireframe />
-    </mesh>
-  );
-}
-
 /** Renders a GLB model scaled/colored to fit the city building slot */
 function GLBBuildingModelInner({ buildingId, height, primaryColor, isSkyscraper = false }: GLBBuildingModelProps) {
   const seed = useMemo(() => hash(buildingId), [buildingId]);
   const asset = useMemo(() => pickBuildingModel(seed, isSkyscraper), [seed, isSkyscraper]);
+
+  // useGLTF must be called unconditionally (React hook rules)
+  const { scene } = useGLTF(asset.path);
 
   // Debug: log which model is being used
   useMemo(() => {
     console.log(`[GLB] Building "${buildingId}" → model: ${asset.id} (${asset.path}), height: ${height}, skyscraper: ${isSkyscraper}`);
   }, [buildingId, asset.id, asset.path, height, isSkyscraper]);
 
-  let scene: THREE.Group;
-  try {
-    const result = useGLTF(asset.path);
-    scene = result.scene;
-  } catch (e) {
-    console.error(`[GLB LOAD FAIL] ${asset.path}:`, e);
-    return <GLBErrorBox height={height} error={String(e)} />;
-  }
-
-  if (!scene) {
-    console.error(`[GLB] No scene returned for ${asset.path}`);
-    return <GLBErrorBox height={height} error="No scene" />;
-  }
-
   const clonedScene = useMemo(() => {
+    if (!scene) {
+      console.error(`[GLB] No scene returned for ${asset.path}`);
+      return null;
+    }
+
     const clone = scene.clone(true);
 
     // Compute bounding box to normalize scale
@@ -116,7 +99,11 @@ function GLBBuildingModelInner({ buildingId, height, primaryColor, isSkyscraper 
     console.log(`[GLB] ${asset.id} → ${meshCount} meshes, final scale: ${clone.scale.x.toFixed(3)}`);
 
     return clone;
-  }, [scene, height, primaryColor, seed, asset.scale, asset.id]);
+  }, [scene, height, primaryColor, seed, asset.scale, asset.id, asset.path]);
+
+  if (!clonedScene) {
+    return <GLBFallback height={height} />;
+  }
 
   return <primitive object={clonedScene} />;
 }
@@ -133,17 +120,10 @@ export const GLBBuildingModel = memo(function GLBBuildingModel(props: GLBBuildin
 /** Detail prop model (awning, parasol, etc) */
 function GLBDetailModelInner({ seed, position, scale = 1 }: { seed: number; position: [number, number, number]; scale?: number }) {
   const asset = useMemo(() => pickDetailModel(seed), [seed]);
-
-  let scene: THREE.Group;
-  try {
-    const result = useGLTF(asset.path);
-    scene = result.scene;
-  } catch (e) {
-    console.error(`[GLB DETAIL FAIL] ${asset.path}:`, e);
-    return null;
-  }
+  const { scene } = useGLTF(asset.path);
 
   const clonedScene = useMemo(() => {
+    if (!scene) return null;
     const clone = scene.clone(true);
     clone.scale.setScalar(scale * asset.scale);
     const box = new THREE.Box3().setFromObject(clone);
@@ -151,6 +131,8 @@ function GLBDetailModelInner({ seed, position, scale = 1 }: { seed: number; posi
     clone.rotation.y = (seed % 4) * Math.PI / 2;
     return clone;
   }, [scene, scale, seed, asset.scale]);
+
+  if (!clonedScene) return null;
 
   return (
     <group position={position}>
