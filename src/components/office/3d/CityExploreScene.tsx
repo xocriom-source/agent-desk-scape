@@ -689,39 +689,71 @@ function CityLandscaping() {
   );
 }
 
-// ── Neon Signs on buildings ──
-function BuildingNeonSigns() {
-  const signs = useMemo(() => [
-    { x: -18, z: -12, h: 2.8, text: "CAFÉ", color: "#FF6B9D" },
-    { x: 12, z: -12, h: 3.5, text: "TECH", color: "#00D4FF" },
-    { x: -18, z: 8, h: 2.5, text: "ART", color: "#FFD700" },
-    { x: 12, z: 8, h: 2.2, text: "SHOP", color: "#00FF88" },
-    { x: 0, z: -14, h: 3.5, text: "HUB", color: "#FF4444" },
-    { x: 0, z: 18, h: 2.5, text: "SOCIAL", color: "#AA66FF" },
+// ── Voxel Parked Cars (diorama style) ──
+function VoxelParkedCars() {
+  const cars = useMemo(() => [
+    { x: -16, z: -3, color: "#D4A030", rot: 0 },
+    { x: -10, z: -3, color: "#C94040", rot: 0 },
+    { x: 16, z: -3, color: "#3A7A6A", rot: Math.PI },
+    { x: 10, z: -3, color: "#5A6A8A", rot: Math.PI },
+    { x: -16, z: 3, color: "#B85C38", rot: 0 },
+    { x: 10, z: 3, color: "#6B3A3A", rot: Math.PI },
+    { x: -3, z: -10, color: "#D4C5A9", rot: Math.PI / 2 },
+    { x: -3, z: 10, color: "#4A3040", rot: Math.PI / 2 },
+    { x: 3, z: -16, color: "#E8B4B8", rot: -Math.PI / 2 },
+    { x: 3, z: 16, color: "#7A5030", rot: -Math.PI / 2 },
+    // Delivery van
+    { x: -20, z: 0, color: "#E07030", rot: Math.PI / 2 },
+    { x: 20, z: 0, color: "#3080C0", rot: -Math.PI / 2 },
   ], []);
 
   return (
     <group>
-      {signs.map((s, i) => (
-        <group key={i} position={[s.x, s.h + 0.3, s.z]}>
-          {/* Neon glow bar */}
-          <mesh position={[0, 0, 0]}>
-            <boxGeometry args={[0.8, 0.15, 0.02]} />
-            <meshStandardMaterial
-              color={s.color}
-              emissive={s.color}
-              emissiveIntensity={2.5}
-              transparent
-              opacity={0.9}
-            />
-          </mesh>
-          {/* Mounting bracket */}
-          <mesh position={[0, 0.1, -0.02]}>
-            <boxGeometry args={[0.06, 0.12, 0.04]} />
-            <meshStandardMaterial color="#333" metalness={0.6} />
-          </mesh>
-        </group>
-      ))}
+      {cars.map((c, i) => {
+        const isVan = i >= 10;
+        const bw = isVan ? 0.5 : 0.35;
+        const bl = isVan ? 0.8 : 0.55;
+        const bh = isVan ? 0.25 : 0.18;
+        const cabH = isVan ? 0.2 : 0.14;
+        return (
+          <group key={i} position={[c.x, 0, c.z]} rotation={[0, c.rot, 0]}>
+            {/* Body */}
+            <mesh position={[0, bh / 2 + 0.04, 0]}>
+              <boxGeometry args={[bw, bh, bl]} />
+              <meshStandardMaterial color={c.color} />
+            </mesh>
+            {/* Cabin */}
+            <mesh position={[0, bh + cabH / 2 + 0.04, isVan ? -0.1 : 0]}>
+              <boxGeometry args={[bw - 0.04, cabH, isVan ? bl * 0.5 : bl * 0.55]} />
+              <meshStandardMaterial color={c.color} />
+            </mesh>
+            {/* Windows */}
+            <mesh position={[0, bh + cabH / 2 + 0.04, isVan ? -0.1 + (bl * 0.25 + 0.01) : bl * 0.275 + 0.01]}>
+              <boxGeometry args={[bw - 0.06, cabH - 0.04, 0.01]} />
+              <meshStandardMaterial color="#1a1a2e" emissive="#AADDFF" emissiveIntensity={0.3} />
+            </mesh>
+            {/* Wheels */}
+            {[[-1, -1], [-1, 1], [1, -1], [1, 1]].map(([sx, sz], wi) => (
+              <mesh key={wi} position={[sx * bw * 0.45, 0.04, sz * bl * 0.35]}>
+                <boxGeometry args={[0.04, 0.08, 0.08]} />
+                <meshStandardMaterial color="#222" />
+              </mesh>
+            ))}
+            {/* Headlights */}
+            {[-1, 1].map(side => (
+              <mesh key={`hl-${side}`} position={[side * bw * 0.35, bh * 0.5 + 0.04, bl / 2 + 0.01]}>
+                <boxGeometry args={[0.06, 0.04, 0.01]} />
+                <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={0.5} />
+              </mesh>
+            ))}
+            {/* Shadow */}
+            <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <planeGeometry args={[bw + 0.08, bl + 0.08]} />
+              <meshBasicMaterial color="#000" transparent opacity={0.08} />
+            </mesh>
+          </group>
+        );
+      })}
     </group>
   );
 }
