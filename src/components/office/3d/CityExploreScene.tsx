@@ -1244,12 +1244,17 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         <color attach="background" args={[dn.bgColor]} />
         <fog attach="fog" args={[dn.fogColor, lodConfig.fogNear, lodConfig.fogFar]} />
 
-        <ambientLight intensity={dn.ambientIntensity * 1.1} color={dn.ambientColor} />
-        {/* Warm fill light for diorama effect */}
-        <pointLight position={[0, 20, 0]} intensity={0.4} color="#FFD4A0" distance={60} decay={1.5} />
+        {/* Cinematic dual-layer lighting: warm interior vs cool exterior */}
+        <ambientLight intensity={dn.ambientIntensity * 0.7} color={dn.isNight ? "#4466AA" : dn.ambientColor} />
+        
+        {/* Warm overhead fill — diorama key light */}
+        <pointLight position={[0, 25, 0]} intensity={0.6} color="#FFD0A0" distance={70} decay={1.2} />
+        {/* Cool rim fill from opposite side — cinematic contrast */}
+        <pointLight position={[-15, 18, -15]} intensity={0.25} color="#8899CC" distance={50} decay={1.5} />
+        
         <directionalLight
           position={dn.sunPosition}
-          intensity={dn.sunIntensity}
+          intensity={dn.sunIntensity * 0.9}
           castShadow
           shadow-mapSize-width={lodConfig.shadowMapSize}
           shadow-mapSize-height={lodConfig.shadowMapSize}
@@ -1258,9 +1263,11 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
           shadow-camera-right={20}
           shadow-camera-top={20}
           shadow-camera-bottom={-20}
+          shadow-bias={-0.001}
           color={dn.sunColor}
         />
-        <hemisphereLight args={[dn.skyColor, "#FFE8C0", dn.hemiIntensity * 1.15]} />
+        {/* Warm ground bounce via hemisphere */}
+        <hemisphereLight args={[dn.isNight ? "#334466" : dn.skyColor, "#FFE0B0", dn.hemiIntensity * 0.9]} />
 
         {/* Moon */}
         {dn.isNight && (
