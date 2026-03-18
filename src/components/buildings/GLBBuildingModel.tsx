@@ -74,20 +74,31 @@ function GLBBuildingModelInner({ buildingId, height, primaryColor, isSkyscraper 
     const rotations = [0, Math.PI / 2, Math.PI, Math.PI * 1.5];
     clone.rotation.y = rotations[seed % rotations.length];
 
-    // Tint with building color
+    // Apply building color strongly to all meshes
     if (primaryColor) {
       const tintColor = new THREE.Color(primaryColor);
       clone.traverse((child) => {
         if ((child as THREE.Mesh).isMesh) {
           const mesh = child as THREE.Mesh;
-          if (mesh.material) {
-            const mat = (mesh.material as THREE.MeshStandardMaterial).clone();
+          const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          mesh.material = materials.map((m) => {
+            const mat = (m as THREE.MeshStandardMaterial).clone();
             if (mat.color) {
-              mat.color.lerp(tintColor, 0.15);
+              // Strong tint: keep model shading but shift hue/saturation to match palette
+              const origLightness = mat.color.getHSL({ h: 0, s: 0, l: 0 }).l;
+              mat.color.lerp(tintColor, 0.65);
+              // Preserve some original lightness variation for depth
+              const tintHSL = mat.color.getHSL({ h: 0, s: 0, l: 0 });
+              const blendedL = tintHSL.l * 0.6 + origLightness * 0.4;
+              mat.color.setHSL(tintHSL.h, tintHSL.s * 0.9, blendedL);
             }
-            mesh.material = mat;
+            mat.roughness = Math.min(mat.roughness ?? 0.8, 0.85);
             mesh.castShadow = true;
             mesh.receiveShadow = true;
+            return mat;
+          });
+          if (!Array.isArray(mesh.material) && materials.length === 1) {
+            mesh.material = (mesh.material as any)[0] || mesh.material;
           }
         }
       });
