@@ -9,6 +9,7 @@ import { GLBBuildingModel, GLBDetailModel, preloadBuildingModels } from "@/compo
 import type { CityBuilding } from "@/types/building";
 import { STYLE_TRANSPORT_MAP } from "@/types/building";
 import { useCityLod } from "@/systems/city/useCityLod";
+import { type QualityLevel } from "@/systems/city/QualitySettings";
 
 // Preload GLB models on module load
 preloadBuildingModels();
