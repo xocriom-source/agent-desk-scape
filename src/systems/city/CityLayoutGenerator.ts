@@ -30,33 +30,24 @@ export interface CityZone {
 }
 
 export const CITY_ZONES: CityZone[] = [
-  // ═══ HUMAN DISTRICTS (south/east half) ═══
-  // Central commercial hub
-  { id: "downtown-core", type: "commercial", center: { x: 8, z: 12 }, radius: 18, density: 0.95, heightRange: [4, 8], styles: ["corporate", "agency", "tech"], district: "central", glowIntensity: 0.9 },
-  // Creative quarter — west
-  { id: "creative-west", type: "commercial", center: { x: -28, z: 18 }, radius: 15, density: 0.65, heightRange: [2, 5], styles: ["creative", "minimal", "startup"], district: "creator", glowIntensity: 0.5 },
-  // Residential south
-  { id: "residential-south", type: "residential", center: { x: 10, z: 35 }, radius: 20, density: 0.4, heightRange: [2, 4], styles: ["minimal", "creative", "agency"], district: "startup", glowIntensity: 0.2 },
-  // Agency row — southeast
-  { id: "agency-se", type: "commercial", center: { x: 32, z: 22 }, radius: 12, density: 0.6, heightRange: [3, 6], styles: ["agency", "corporate", "industrial"], district: "agency", glowIntensity: 0.4 },
-  // Tech campus — east
-  { id: "tech-east", type: "commercial", center: { x: 35, z: -5 }, radius: 16, density: 0.7, heightRange: [3, 7], styles: ["tech", "startup", "futuristic"], district: "tech", glowIntensity: 0.6 },
-
-  // ═══ AI DISTRICTS (north/west half — clearly separated) ═══
-  // AI Skyline — tall autonomous towers
-  { id: "ai-skyline", type: "ai", center: { x: -5, z: -30 }, radius: 16, density: 0.85, heightRange: [8, 18], styles: ["futuristic", "tech", "corporate"], district: "ai", glowIntensity: 0.95 },
-  // AI Research Campus
-  { id: "ai-research", type: "ai", center: { x: -30, z: -22 }, radius: 14, density: 0.6, heightRange: [4, 9], styles: ["tech", "futuristic", "minimal"], district: "ai", glowIntensity: 0.7 },
-  // AI Industrial — processing/data centers
-  { id: "ai-industrial", type: "ai", center: { x: 25, z: -30 }, radius: 12, density: 0.5, heightRange: [3, 7], styles: ["industrial", "tech", "futuristic"], district: "ai", glowIntensity: 0.4 },
-
-  // ═══ SHARED SPACES ═══
-  // Central dividing park (between human & AI)
-  { id: "central-park", type: "park", center: { x: 0, z: -5 }, radius: 10, density: 0, heightRange: [0, 0], styles: [], district: "central", glowIntensity: 0 },
-  // Human plaza
-  { id: "human-plaza", type: "plaza", center: { x: -12, z: 25 }, radius: 6, density: 0, heightRange: [0, 0], styles: [], district: "startup", glowIntensity: 0.3 },
-  // AI plaza
-  { id: "ai-plaza", type: "plaza", center: { x: -15, z: -35 }, radius: 5, density: 0, heightRange: [0, 0], styles: [], district: "ai", glowIntensity: 0.6 },
+  // Core urbano denso — mantém a massa principal da cidade
+  { id: "downtown-core", type: "commercial", center: { x: 0, z: 2 }, radius: 20, density: 0.96, heightRange: [4, 8], styles: ["corporate", "agency", "tech"], district: "central", glowIntensity: 0.9 },
+  // Skyline principal ao norte
+  { id: "skyline-north", type: "skyline", center: { x: -4, z: -26 }, radius: 15, density: 0.86, heightRange: [8, 16], styles: ["corporate", "futuristic", "tech"], district: "tech", glowIntensity: 0.72 },
+  // Campus tech a leste
+  { id: "tech-east", type: "commercial", center: { x: 28, z: -10 }, radius: 15, density: 0.76, heightRange: [3, 7], styles: ["tech", "startup", "futuristic"], district: "tech", glowIntensity: 0.62 },
+  // Quarter criativo a oeste
+  { id: "creative-west", type: "commercial", center: { x: -28, z: 10 }, radius: 15, density: 0.7, heightRange: [2, 5], styles: ["creative", "minimal", "startup"], district: "creator", glowIntensity: 0.48 },
+  // Residencial ao sul
+  { id: "residential-south", type: "residential", center: { x: 10, z: 30 }, radius: 18, density: 0.48, heightRange: [2, 4], styles: ["minimal", "creative", "agency"], district: "startup", glowIntensity: 0.18 },
+  // Fileira de agências no sudeste
+  { id: "agency-se", type: "commercial", center: { x: 28, z: 20 }, radius: 12, density: 0.64, heightRange: [3, 6], styles: ["agency", "corporate", "industrial"], district: "agency", glowIntensity: 0.38 },
+  // Distrito de IA separado, mas sem matar a malha urbana
+  { id: "ai-nexus", type: "ai", center: { x: -34, z: -26 }, radius: 11, density: 0.72, heightRange: [6, 14], styles: ["futuristic", "tech", "corporate"], district: "ai", glowIntensity: 0.82 },
+  // Parque central menor para não abrir vazio excessivo
+  { id: "central-park", type: "park", center: { x: 12, z: 6 }, radius: 5, density: 0, heightRange: [0, 0], styles: [], district: "central", glowIntensity: 0 },
+  // Praça secundária compacta
+  { id: "south-plaza", type: "plaza", center: { x: -10, z: 22 }, radius: 4, density: 0, heightRange: [0, 0], styles: [], district: "startup", glowIntensity: 0.28 },
 ];
 
 // ── Street grid ──
@@ -68,35 +59,25 @@ export interface Street {
 }
 
 export const CITY_STREETS: Street[] = [
-  // === Main divider boulevard (horizontal — separates Human from AI) ===
-  { start: { x: -60, z: -5 }, end: { x: 60, z: -5 }, width: 4, type: "main" },
-  // Main vertical
+  // Eixos principais
+  { start: { x: -60, z: 0 }, end: { x: 60, z: 0 }, width: 3.5, type: "main" },
   { start: { x: 0, z: -50 }, end: { x: 0, z: 50 }, width: 3.5, type: "main" },
-
-  // Secondary grid — Human side
+  // Grade secundária
+  { start: { x: -60, z: -18 }, end: { x: 60, z: -18 }, width: 2.2, type: "secondary" },
   { start: { x: -60, z: 18 }, end: { x: 60, z: 18 }, width: 2.2, type: "secondary" },
-  { start: { x: -60, z: 35 }, end: { x: 60, z: 35 }, width: 2, type: "secondary" },
-  { start: { x: -18, z: -5 }, end: { x: -18, z: 50 }, width: 2.2, type: "secondary" },
-  { start: { x: 20, z: -5 }, end: { x: 20, z: 50 }, width: 2.2, type: "secondary" },
-
-  // Secondary grid — AI side
-  { start: { x: -60, z: -22 }, end: { x: 60, z: -22 }, width: 2.2, type: "secondary" },
-  { start: { x: -60, z: -38 }, end: { x: 60, z: -38 }, width: 2, type: "secondary" },
-  { start: { x: -18, z: -50 }, end: { x: -18, z: -5 }, width: 2.2, type: "secondary" },
-  { start: { x: 20, z: -50 }, end: { x: 20, z: -5 }, width: 2.2, type: "secondary" },
-
-  // Diagonal accent
-  { start: { x: -35, z: -40 }, end: { x: -10, z: -15 }, width: 2, type: "secondary" },
-
-  // Alleys — Human
-  { start: { x: 9, z: 5 }, end: { x: 9, z: 15 }, width: 1.2, type: "alley" },
-  { start: { x: -9, z: 5 }, end: { x: -9, z: 15 }, width: 1.2, type: "alley" },
-  { start: { x: 25, z: 12 }, end: { x: 40, z: 12 }, width: 1.2, type: "alley" },
-
-  // Alleys — AI
-  { start: { x: -9, z: -15 }, end: { x: -9, z: -35 }, width: 1.2, type: "alley" },
-  { start: { x: 10, z: -18 }, end: { x: 10, z: -35 }, width: 1.2, type: "alley" },
-  { start: { x: -25, z: -30 }, end: { x: -35, z: -30 }, width: 1.2, type: "alley" },
+  { start: { x: -18, z: -50 }, end: { x: -18, z: 50 }, width: 2.2, type: "secondary" },
+  { start: { x: 18, z: -50 }, end: { x: 18, z: 50 }, width: 2.2, type: "secondary" },
+  // Via diagonal para quebrar rigidez
+  { start: { x: -35, z: -35 }, end: { x: -8, z: -8 }, width: 2, type: "secondary" },
+  // Via exclusiva de acesso ao distrito AI
+  { start: { x: -48, z: -26 }, end: { x: -22, z: -26 }, width: 2, type: "secondary" },
+  // Becos
+  { start: { x: -9, z: -12 }, end: { x: -9, z: 12 }, width: 1.2, type: "alley" },
+  { start: { x: 9, z: -12 }, end: { x: 9, z: 12 }, width: 1.2, type: "alley" },
+  { start: { x: -12, z: -9 }, end: { x: 12, z: -9 }, width: 1.2, type: "alley" },
+  { start: { x: -12, z: 9 }, end: { x: 12, z: 9 }, width: 1.2, type: "alley" },
+  { start: { x: 22, z: -8 }, end: { x: 38, z: -8 }, width: 1.2, type: "alley" },
+  { start: { x: -38, z: 2 }, end: { x: -22, z: 2 }, width: 1.2, type: "alley" },
 ];
 
 // ── Check if point is on a street ──
@@ -155,14 +136,11 @@ const ZONE_PALETTES: Record<string, { primary: string[]; secondary: string[] }> 
 
 // ── Focal point buildings ──
 const FOCAL_POINTS: Array<{ x: number; z: number; name: string; style: BuildingStyle; height: number; color: string; glow: boolean; district: District }> = [
-  // Human landmarks
-  { x: 8, z: 10, name: "City Hall", style: "corporate", height: 10, color: "#FFB840", glow: true, district: "central" },
-  { x: -30, z: 20, name: "Art Pavilion", style: "creative", height: 5, color: "#E85580", glow: true, district: "creator" },
-  { x: 35, z: -3, name: "Innovation Hub", style: "tech", height: 9, color: "#4A9FE0", glow: true, district: "tech" },
-  // AI landmarks
-  { x: -5, z: -32, name: "Apex Tower", style: "futuristic", height: 18, color: "#00E890", glow: true, district: "ai" },
-  { x: -30, z: -20, name: "Neural Core", style: "tech", height: 12, color: "#7A55CC", glow: true, district: "ai" },
-  { x: 25, z: -30, name: "Data Nexus", style: "industrial", height: 8, color: "#40C8E0", glow: true, district: "ai" },
+  { x: 0, z: -2, name: "City Hall", style: "corporate", height: 10, color: "#FFB840", glow: true, district: "central" },
+  { x: -6, z: -30, name: "Apex Tower", style: "futuristic", height: 18, color: "#4A9FE0", glow: true, district: "tech" },
+  { x: 30, z: -15, name: "Innovation Hub", style: "tech", height: 9, color: "#40C8E0", glow: true, district: "tech" },
+  { x: -32, z: 10, name: "Art Pavilion", style: "creative", height: 5, color: "#E85580", glow: true, district: "creator" },
+  { x: -34, z: -26, name: "AI Nexus", style: "futuristic", height: 13, color: "#00E890", glow: true, district: "ai" },
 ];
 
 /**

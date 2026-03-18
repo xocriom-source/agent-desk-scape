@@ -6,7 +6,7 @@ import { Building3D } from "./Building3D";
 import { VoxelCar, StreetLamp, Bench, TrashCan, Hydrant, PottedPlant, CafeTable, Dumpster, ParkingMeter } from "./VoxelProps";
 import { preloadBuildingModels } from "./GLBBuildingModel";
 import { useDayNight } from "@/hooks/useDayNight";
-import { generateCityLayout, CITY_STREETS, CITY_ZONES, getZoneGlow, isInAIDistrict } from "@/systems/city/CityLayoutGenerator";
+import { generateCityLayout, CITY_STREETS, CITY_ZONES, getZoneGlow } from "@/systems/city/CityLayoutGenerator";
 import type { CityBuilding } from "@/types/building";
 import { DISTRICTS } from "@/types/building";
 
@@ -154,66 +154,51 @@ const StreetFurniture = memo(function StreetFurniture({ nightIntensity }: { nigh
   );
 });
 
-// ── Trees clustered in parks, along streets, AI vs Human themed ──
+// ── Trees clustered in parks and a few residential streets ──
 const CityTrees = memo(function CityTrees() {
   const trees = useMemo(() => {
     const positions: Array<{ pos: [number, number]; scale: number; crown: number; isAI: boolean }> = [];
 
-    // Park trees (dense cluster in central dividing park)
     const parkZone = CITY_ZONES.find(z => z.type === "park");
     if (parkZone) {
-      for (let i = 0; i < 25; i++) {
+      for (let i = 0; i < 14; i++) {
         const angle = seededRandom(i * 7) * Math.PI * 2;
-        const dist = seededRandom(i * 13) * (parkZone.radius - 1);
+        const dist = seededRandom(i * 13) * (parkZone.radius - 0.8);
         positions.push({
           pos: [parkZone.center.x + Math.cos(angle) * dist, parkZone.center.z + Math.sin(angle) * dist],
-          scale: 0.8 + seededRandom(i * 3) * 0.5, crown: i % 3, isAI: false,
+          scale: 0.75 + seededRandom(i * 3) * 0.35,
+          crown: i % 3,
+          isAI: false,
         });
       }
     }
 
-    // Plaza greenery (both plazas)
-    for (const pz of CITY_ZONES.filter(z => z.type === "plaza")) {
+    for (let x = -34; x < 36; x += 10) {
+      for (let z = 24; z < 40; z += 10) {
+        const seed = hash(`tree-${x}-${z}`);
+        if (seededRandom(seed) > 0.52) {
+          positions.push({
+            pos: [x + (seededRandom(seed + 1) - 0.5) * 2.2, z + (seededRandom(seed + 2) - 0.5) * 2.2],
+            scale: 0.72 + seededRandom(seed + 3) * 0.28,
+            crown: seed % 3,
+            isAI: false,
+          });
+        }
+      }
+    }
+
+    const aiZone = CITY_ZONES.find(z => z.id === "ai-nexus");
+    if (aiZone) {
       for (let i = 0; i < 6; i++) {
         const angle = (i / 6) * Math.PI * 2;
-        const dist = pz.radius * 0.5;
+        const dist = aiZone.radius * 0.72;
         positions.push({
-          pos: [pz.center.x + Math.cos(angle) * dist, pz.center.z + Math.sin(angle) * dist],
-          scale: 0.7 + seededRandom(i * 5 + 100) * 0.3, crown: i % 3, isAI: pz.district === "ai",
+          pos: [aiZone.center.x + Math.cos(angle) * dist, aiZone.center.z + Math.sin(angle) * dist],
+          scale: 0.68,
+          crown: i % 3,
+          isAI: true,
         });
       }
-    }
-
-    // Human residential trees (south)
-    for (let x = -45; x < 45; x += 8) {
-      for (let z = 20; z < 48; z += 9) {
-        const seed = hash(`tree-${x}-${z}`);
-        if (seededRandom(seed) > 0.45) {
-          positions.push({
-            pos: [x + (seededRandom(seed + 1) - 0.5) * 3, z + (seededRandom(seed + 2) - 0.5) * 3],
-            scale: 0.7 + seededRandom(seed + 3) * 0.4, crown: seed % 3, isAI: false,
-          });
-        }
-      }
-    }
-
-    // AI district trees (north — sparse, geometric)
-    for (let x = -40; x < 40; x += 12) {
-      for (let z = -45; z < -10; z += 14) {
-        const seed = hash(`ai-tree-${x}-${z}`);
-        if (seededRandom(seed) > 0.6) {
-          positions.push({
-            pos: [x + (seededRandom(seed + 1) - 0.5) * 2, z + (seededRandom(seed + 2) - 0.5) * 2],
-            scale: 0.6 + seededRandom(seed + 3) * 0.3, crown: seed % 3, isAI: true,
-          });
-        }
-      }
-    }
-
-    // Boulevard trees along the divider
-    for (let x = -50; x < 50; x += 6) {
-      positions.push({ pos: [x, -3], scale: 0.9, crown: Math.abs(x) % 3, isAI: false });
-      positions.push({ pos: [x, -7], scale: 0.85, crown: (Math.abs(x) + 1) % 3, isAI: true });
     }
 
     return positions;
@@ -338,12 +323,10 @@ const CityStreets = memo(function CityStreets() {
 const CityGround = memo(function CityGround() {
   return (
     <group>
-      {/* Main ground */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
         <planeGeometry args={[200, 200]} />
         <meshStandardMaterial color="hsl(220, 15%, 16%)" roughness={0.95} />
       </mesh>
-      {/* Extended ground rings */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 0]}>
         <ringGeometry args={[100, 250, 32]} />
         <meshStandardMaterial color="hsl(220, 12%, 10%)" roughness={0.98} />
@@ -353,97 +336,40 @@ const CityGround = memo(function CityGround() {
         <meshStandardMaterial color="hsl(220, 10%, 6%)" roughness={1} />
       </mesh>
 
-      {/* ═══ AI DISTRICT GROUND — teal/cyan tinted ═══ */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.003, -28]}>
-        <planeGeometry args={[120, 50]} />
-        <meshStandardMaterial color="hsl(180, 12%, 14%)" roughness={0.95} />
-      </mesh>
-      {/* AI glow border line */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.008, -5]}>
-        <planeGeometry args={[120, 0.3]} />
-        <meshStandardMaterial color="#00E890" emissive="#00E890" emissiveIntensity={0.4} transparent opacity={0.5} />
-      </mesh>
-
-      {/* ═══ HUMAN DISTRICT GROUND — warm tinted ═══ */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.003, 22]}>
-        <planeGeometry args={[120, 50]} />
-        <meshStandardMaterial color="hsl(25, 8%, 16%)" roughness={0.95} />
-      </mesh>
-
-      {/* Zone ground tints */}
       {CITY_ZONES.filter(z => z.type !== "park" && z.type !== "plaza").map(zone => {
         const zoneColors: Record<string, string> = {
           commercial: "hsl(220, 20%, 18%)",
           skyline: "hsl(230, 18%, 15%)",
-          residential: "hsl(30, 10%, 18%)",
-          ai: "hsl(170, 15%, 13%)",
+          residential: "hsl(28, 12%, 18%)",
+          ai: "hsl(182, 16%, 14%)",
         };
         return (
           <mesh key={zone.id} rotation={[-Math.PI / 2, 0, 0]} position={[zone.center.x, 0.005, zone.center.z]}>
             <circleGeometry args={[zone.radius, 32]} />
-            <meshStandardMaterial color={zoneColors[zone.type] || "hsl(220, 15%, 18%)"} transparent opacity={0.4} />
+            <meshStandardMaterial color={zoneColors[zone.type] || "hsl(220, 15%, 18%)"} transparent opacity={0.32} />
           </mesh>
         );
       })}
 
-      {/* Park grass */}
       {CITY_ZONES.filter(z => z.type === "park" || z.type === "plaza").map(zone => (
         <mesh key={zone.id} rotation={[-Math.PI / 2, 0, 0]} position={[zone.center.x, 0.01, zone.center.z]}>
           <circleGeometry args={[zone.radius, 32]} />
-          <meshStandardMaterial color={zone.type === "park" ? "hsl(120, 25%, 18%)" : "hsl(220, 12%, 22%)"} roughness={0.95} />
+          <meshStandardMaterial color={zone.type === "park" ? "hsl(120, 24%, 18%)" : "hsl(220, 12%, 22%)"} roughness={0.95} />
         </mesh>
       ))}
 
-      {/* Distant hills */}
-      {Array.from({ length: 16 }).map((_, i) => {
-        const angle = (i / 16) * Math.PI * 2;
-        const dist = 110 + Math.sin(i * 2.1) * 20;
-        const hh = 6 + Math.sin(i * 1.5) * 3;
-        return (
-          <mesh key={`hill-${i}`} position={[Math.cos(angle) * dist, hh / 2 - 1, Math.sin(angle) * dist]}>
-            <sphereGeometry args={[30, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2]} />
-            <meshStandardMaterial color="hsl(220, 10%, 7%)" roughness={1} />
-          </mesh>
-        );
-      })}
-
-      {/* ═══ DISTRICT SECTION LABELS ═══ */}
-      <Text
-        position={[0, 0.12, 45]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        fontSize={2.5}
-        color="#E8A580"
-        anchorX="center"
-        fillOpacity={0.25}
-        font={undefined}
-      >
-        🏠 HUMAN DISTRICT
-      </Text>
-      <Text
-        position={[0, 0.12, -48]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        fontSize={2.5}
-        color="#40C88A"
-        anchorX="center"
-        fillOpacity={0.25}
-        font={undefined}
-      >
-        🤖 AI DISTRICT
-      </Text>
-
-      {/* Individual district labels */}
       {DISTRICTS.map(d => {
         const zone = CITY_ZONES.find(z => z.district === d.id && z.type !== "park" && z.type !== "plaza");
         if (!zone) return null;
         return (
           <Text
             key={d.id}
-            position={[zone.center.x, 0.1, zone.center.z + zone.radius + 1.5]}
+            position={[zone.center.x, 0.1, zone.center.z + zone.radius + 1.25]}
             rotation={[-Math.PI / 2, 0, 0]}
-            fontSize={1}
+            fontSize={0.9}
             color={d.color}
             anchorX="center"
-            fillOpacity={0.35}
+            fillOpacity={0.28}
           >
             {d.emoji} {d.name}
           </Text>
