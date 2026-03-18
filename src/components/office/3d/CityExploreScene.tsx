@@ -258,10 +258,11 @@ function LightBuilding3D({ building, highlighted, onClick, occluded }: {
 }
 
 // ── Static building with LoD-aware rendering ──
-function StaticBuildingOccludable({ x, z, w, d, h, color, occluded, seed, lod }: {
+function StaticBuildingOccludable({ x, z, w, d, h, color, occluded, seed, lod, rotation, mirror, forceClass }: {
   x: number; z: number; w: number; d: number; h: number; color: string; occluded?: boolean; seed: number; lod?: number;
+  rotation?: number; mirror?: boolean; forceClass?: string;
 }) {
-  return <VoxelBuildingMultiLoD x={x} z={z} w={w} d={d} h={h} color={color} seed={seed} occluded={occluded} lod={lod ?? 0} />;
+  return <VoxelBuildingMultiLoD x={x} z={z} w={w} d={d} h={h} color={color} seed={seed} occluded={occluded} lod={lod ?? 0} rotation={rotation} mirror={mirror} forceClass={forceClass as any} />;
 }
 
 // ── Simplified Plaza ──
