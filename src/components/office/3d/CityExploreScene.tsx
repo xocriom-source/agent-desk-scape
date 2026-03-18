@@ -5,9 +5,12 @@ import * as THREE from "three";
 import { useDayNight } from "@/hooks/useDayNight";
 import { useCityBuildings } from "@/hooks/useCityBuildings";
 import { Vehicle3D } from "@/components/city/Vehicle3D";
-import { VoxelCityBuilding } from "@/components/city/VoxelCityBuilding";
+import { VoxelCityBuilding, VoxelBuildingMultiLoD } from "@/components/city/VoxelCityBuilding";
 import type { CityBuilding } from "@/types/building";
 import { STYLE_TRANSPORT_MAP } from "@/types/building";
+import { useCityLod } from "@/systems/city/useCityLod";
+import { getLodLevel } from "@/systems/city/ChunkManager";
+import { QUALITY_PRESETS, type QualityLevel } from "@/systems/city/QualitySettings";
 
 // ── District data ──
 const DISTRICTS = [
@@ -75,6 +78,57 @@ const CITY_BUILDINGS = [
   { x: 22, z: -16, w: 2.4, d: 2.2, h: 2.4, color: "#5A6A8A" },
   { x: -22, z: 16, w: 2.6, d: 2.4, h: 2.2, color: "#7A5A4A" },
   { x: 22, z: 16, w: 2.4, d: 2.2, h: 2.0, color: "#6A5A5A" },
+
+  // ── Extended city: distant buildings (LOD 2-4 territory) ──
+  { x: -30, z: -20, w: 3.0, d: 2.6, h: 3.2, color: "#7A6A5A" },
+  { x: -36, z: -14, w: 2.8, d: 2.4, h: 2.8, color: "#5A4A3A" },
+  { x: -32, z: -8, w: 2.6, d: 2.2, h: 2.0, color: "#9A8A7A" },
+  { x: -36, z: 0, w: 3.2, d: 2.8, h: 3.5, color: "#6A5A4A" },
+  { x: -32, z: 8, w: 2.4, d: 2.0, h: 2.2, color: "#8A7A6A" },
+  { x: -36, z: 14, w: 2.8, d: 2.4, h: 2.6, color: "#5A6A5A" },
+  { x: -30, z: 20, w: 3.0, d: 2.6, h: 3.0, color: "#7A8A7A" },
+
+  { x: 30, z: -20, w: 3.0, d: 2.6, h: 3.0, color: "#5A6A7A" },
+  { x: 36, z: -14, w: 2.8, d: 2.4, h: 2.6, color: "#4A5A6A" },
+  { x: 32, z: -8, w: 2.6, d: 2.2, h: 2.2, color: "#6A7A8A" },
+  { x: 36, z: 0, w: 3.2, d: 2.8, h: 3.4, color: "#3A4A5A" },
+  { x: 32, z: 8, w: 2.4, d: 2.0, h: 2.0, color: "#5A6A8A" },
+  { x: 36, z: 14, w: 2.8, d: 2.4, h: 2.8, color: "#7A8A9A" },
+  { x: 30, z: 20, w: 3.0, d: 2.6, h: 2.8, color: "#4A6A7A" },
+
+  { x: -20, z: -28, w: 2.8, d: 2.4, h: 2.6, color: "#8A6A5A" },
+  { x: -10, z: -28, w: 2.6, d: 2.2, h: 3.0, color: "#6A5A4A" },
+  { x: 0, z: -28, w: 3.0, d: 2.6, h: 3.2, color: "#5A4A3A" },
+  { x: 10, z: -28, w: 2.6, d: 2.2, h: 2.8, color: "#7A6A5A" },
+  { x: 20, z: -28, w: 2.8, d: 2.4, h: 2.4, color: "#4A5A4A" },
+
+  { x: -20, z: 28, w: 2.8, d: 2.4, h: 2.4, color: "#5A7A6A" },
+  { x: -10, z: 28, w: 2.6, d: 2.2, h: 2.8, color: "#7A8A6A" },
+  { x: 0, z: 28, w: 3.0, d: 2.6, h: 3.0, color: "#4A6A5A" },
+  { x: 10, z: 28, w: 2.6, d: 2.2, h: 2.6, color: "#6A7A6A" },
+  { x: 20, z: 28, w: 2.8, d: 2.4, h: 2.2, color: "#8A9A7A" },
+
+  // ── Far outer ring (LOD 3-4) ──
+  { x: -42, z: -10, w: 3.0, d: 2.6, h: 3.0, color: "#5A5A5A" },
+  { x: -42, z: 10, w: 2.8, d: 2.4, h: 2.6, color: "#6A6A6A" },
+  { x: 42, z: -10, w: 3.0, d: 2.6, h: 2.8, color: "#4A4A5A" },
+  { x: 42, z: 10, w: 2.8, d: 2.4, h: 3.2, color: "#5A5A6A" },
+  { x: -28, z: -34, w: 2.6, d: 2.2, h: 2.4, color: "#7A6A6A" },
+  { x: 0, z: -36, w: 3.2, d: 2.8, h: 3.6, color: "#5A5A4A" },
+  { x: 28, z: -34, w: 2.6, d: 2.2, h: 2.6, color: "#6A5A5A" },
+  { x: -28, z: 34, w: 2.6, d: 2.2, h: 2.2, color: "#5A6A5A" },
+  { x: 0, z: 36, w: 3.2, d: 2.8, h: 3.4, color: "#4A5A4A" },
+  { x: 28, z: 34, w: 2.6, d: 2.2, h: 2.8, color: "#6A7A5A" },
+
+  // Ultra distant (LOD 4 — flat sprites)
+  { x: -50, z: 0, w: 3.0, d: 2.6, h: 3.0, color: "#4A4A4A" },
+  { x: 50, z: 0, w: 3.0, d: 2.6, h: 3.2, color: "#3A3A4A" },
+  { x: 0, z: -48, w: 3.2, d: 2.8, h: 3.4, color: "#4A4A3A" },
+  { x: 0, z: 48, w: 3.2, d: 2.8, h: 3.0, color: "#3A4A3A" },
+  { x: -40, z: -30, w: 2.8, d: 2.4, h: 2.6, color: "#5A4A4A" },
+  { x: 40, z: -30, w: 2.8, d: 2.4, h: 2.8, color: "#4A4A5A" },
+  { x: -40, z: 30, w: 2.8, d: 2.4, h: 2.4, color: "#4A5A5A" },
+  { x: 40, z: 30, w: 2.8, d: 2.4, h: 3.0, color: "#5A5A4A" },
 ];
 
 // ── NPC data ──
@@ -203,11 +257,11 @@ function LightBuilding3D({ building, highlighted, onClick, occluded }: {
   );
 }
 
-// ── Static building with occlusion (now voxel) ──
-function StaticBuildingOccludable({ x, z, w, d, h, color, occluded, seed }: {
-  x: number; z: number; w: number; d: number; h: number; color: string; occluded?: boolean; seed: number;
+// ── Static building with LoD-aware rendering ──
+function StaticBuildingOccludable({ x, z, w, d, h, color, occluded, seed, lod }: {
+  x: number; z: number; w: number; d: number; h: number; color: string; occluded?: boolean; seed: number; lod?: number;
 }) {
-  return <VoxelCityBuilding x={x} z={z} w={w} d={d} h={h} color={color} seed={seed} occluded={occluded} />;
+  return <VoxelBuildingMultiLoD x={x} z={z} w={w} d={d} h={h} color={color} seed={seed} occluded={occluded} lod={lod ?? 0} />;
 }
 
 // ── Simplified Plaza ──
@@ -996,6 +1050,11 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
   const controlsRef = useRef<any>(null);
   const dn = useDayNight();
 
+  // ── LoD system ──
+  const buildingDefs = useMemo(() => CITY_BUILDINGS.map(b => ({ x: b.x, z: b.z, w: b.w, d: b.d, h: b.h, color: b.color })), []);
+  const { quality, config: lodConfig, changeQuality, computeFrame } = useCityLod(buildingDefs);
+  const [showQualityMenu, setShowQualityMenu] = useState(false);
+
   const userId = useMemo(() => {
     const stored = localStorage.getItem("agentoffice_user");
     return stored ? JSON.parse(stored).email || "" : "";
@@ -1017,6 +1076,9 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
   const [clickTarget, setClickTarget] = useState<[number, number, number] | null>(null);
   const [occludedBuildings, setOccludedBuildings] = useState<Set<string>>(new Set());
   const hasSpawned = useRef(false);
+
+  // Compute LoD for all static buildings based on player position
+  const lodFrame = useMemo(() => computeFrame(playerPos[0], playerPos[2]), [computeFrame, playerPos]);
 
   useEffect(() => {
     if (!hasSpawned.current && userBuilding) {
@@ -1129,12 +1191,50 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
 
   return (
     <div className="absolute inset-0 w-full h-full">
+      {/* Quality Settings UI */}
+      <div className="absolute top-2 right-2 z-20 flex flex-col items-end gap-1">
+        <button
+          onClick={() => setShowQualityMenu(!showQualityMenu)}
+          className="px-2 py-1 text-[10px] rounded bg-background/80 border border-border text-foreground backdrop-blur-sm hover:bg-accent transition-colors"
+        >
+          ⚙ {quality.toUpperCase()}
+        </button>
+        {showQualityMenu && (
+          <div className="flex flex-col gap-0.5 p-1.5 rounded-lg bg-background/90 border border-border backdrop-blur-sm">
+            {(["low", "medium", "high", "ultra"] as QualityLevel[]).map(q => (
+              <button
+                key={q}
+                onClick={() => { changeQuality(q); setShowQualityMenu(false); }}
+                className={`px-3 py-1 text-[10px] rounded transition-colors ${
+                  quality === q
+                    ? "bg-primary text-primary-foreground"
+                    : "text-foreground hover:bg-accent"
+                }`}
+              >
+                {q.toUpperCase()}
+                <span className="ml-1 text-muted-foreground">
+                  {q === "low" ? "• 30+ FPS" : q === "medium" ? "• 60 FPS" : q === "high" ? "• Detail" : "• Max"}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* LoD Stats Overlay */}
+      <div className="absolute bottom-2 left-2 z-20 px-2 py-1 text-[9px] rounded bg-background/60 text-muted-foreground backdrop-blur-sm pointer-events-none">
+        LOD: {lodFrame.lodBuildings.filter(b => b.lod === 0).length} HD |{" "}
+        {lodFrame.lodBuildings.filter(b => b.lod === 1).length} Med |{" "}
+        {lodFrame.lodBuildings.filter(b => b.lod >= 2).length} Low |{" "}
+        Chunks: {lodFrame.chunks.length}
+      </div>
+
       <Canvas
         shadows
         style={{ touchAction: "none", width: "100%", height: "100%", display: "block" }}
-        camera={{ position: [12, 18, 22], fov: 40, near: 0.5, far: 500 }}
+        camera={{ position: [12, 18, 22], fov: 40, near: 0.5, far: lodConfig.cameraFar }}
         gl={{ antialias: false, powerPreference: "high-performance" }}
-        dpr={[1, 1.5]}
+        dpr={lodConfig.dpr}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
           gl.toneMappingExposure = dn.exposure;
@@ -1142,7 +1242,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         }}
       >
         <color attach="background" args={[dn.bgColor]} />
-        <fog attach="fog" args={[dn.fogColor, 25, 120]} />
+        <fog attach="fog" args={[dn.fogColor, lodConfig.fogNear, lodConfig.fogFar]} />
 
         <ambientLight intensity={dn.ambientIntensity * 1.1} color={dn.ambientColor} />
         {/* Warm fill light for diorama effect */}
@@ -1151,8 +1251,8 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
           position={dn.sunPosition}
           intensity={dn.sunIntensity}
           castShadow
-          shadow-mapSize-width={512}
-          shadow-mapSize-height={512}
+          shadow-mapSize-width={lodConfig.shadowMapSize}
+          shadow-mapSize-height={lodConfig.shadowMapSize}
           shadow-camera-far={40}
           shadow-camera-left={-20}
           shadow-camera-right={20}
@@ -1169,12 +1269,10 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
               <sphereGeometry args={[2, 16, 16]} />
               <meshBasicMaterial color="#E8E8F0" />
             </mesh>
-            {/* Moon glow */}
             <mesh>
               <sphereGeometry args={[3, 16, 16]} />
               <meshBasicMaterial color="#8899CC" transparent opacity={0.08} />
             </mesh>
-            {/* Moonlight - directional from moon position */}
             <directionalLight
               position={[0, 0, 0]}
               target-position={[0, 0, 0]}
@@ -1192,7 +1290,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
           </group>
         )}
 
-        {dn.showStars && <Stars radius={100} depth={50} count={1500} factor={4} saturation={0.3} fade speed={0.5} />}
+        {lodConfig.enableStars && dn.showStars && <Stars radius={100} depth={50} count={1500} factor={4} saturation={0.3} fade speed={0.5} />}
 
         {/* Ground mode controls */}
         {!flyMode && (
@@ -1222,28 +1320,29 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         {/* Camera occlusion */}
         <CameraOcclusion playerPos={playerPos} onOccludedBuildings={setOccludedBuildings} />
 
-        {/* Clickable ground */}
+        {/* Clickable ground (extended for larger world) */}
         <mesh position={[0, -0.025, 0]} rotation={[-Math.PI / 2, 0, 0]} onPointerDown={handleFloorClick}>
-          <planeGeometry args={[80, 80]} />
+          <planeGeometry args={[120, 120]} />
           <meshBasicMaterial visible={false} />
         </mesh>
 
         <CityGround />
         <CityPlaza />
         <StreetLights />
-        <CityLandscaping />
-        <VoxelParkedCars />
+        {lodConfig.enableLandscaping && <CityLandscaping />}
+        {lodConfig.enableVehicles && <VoxelParkedCars />}
 
         {/* Click marker */}
         <ClickMarker position={clickTarget} />
 
-        {/* Static buildings with occlusion */}
-        {CITY_BUILDINGS.map((b, i) => (
+        {/* Static buildings with chunk-based LoD */}
+        {lodFrame.lodBuildings.map((lb) => (
           <StaticBuildingOccludable
-            key={i}
-            x={b.x} z={b.z} w={b.w} d={b.d} h={b.h} color={b.color}
-            seed={i}
-            occluded={occludedBuildings.has(`static-${b.x}-${b.z}`)}
+            key={lb.index}
+            x={lb.def.x} z={lb.def.z} w={lb.def.w} d={lb.def.d} h={lb.def.h} color={lb.def.color}
+            seed={lb.index}
+            occluded={occludedBuildings.has(`static-${lb.def.x}-${lb.def.z}`)}
+            lod={lb.lod}
           />
         ))}
 
@@ -1274,8 +1373,8 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
           );
         })}
 
-        {/* NPCs with collision awareness */}
-        {NPC_DATA.map((npc, i) => (
+        {/* NPCs with collision awareness (quality-gated) */}
+        {lodConfig.enableNPCs && NPC_DATA.map((npc, i) => (
           <CityNPC key={i} startX={npc.x} startZ={npc.z} color={npc.color} aabbs={aabbs} />
         ))}
 

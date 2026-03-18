@@ -643,27 +643,127 @@ export const VoxelCityBuilding = memo(function VoxelCityBuilding({
 });
 
 // ═══════════════════════════════════════
-// LOD WRAPPER (simplified version at distance)
+// MULTI-LEVEL LOD SYSTEM (LOD 0–4)
 // ═══════════════════════════════════════
 
+/** LOD 1 — Simplified building: walls + windows as emissive strips + roof cap */
+const VoxelBuildingLod1 = memo(function VoxelBuildingLod1({
+  x, z, w, d, h, color, seed,
+}: VoxelCityBuildingProps) {
+  const cfg = useMemo(() => {
+    const palette = hashPick(WALL_PALETTES, seed, 0);
+    const wallColor = new THREE.Color(hashPick(palette, seed, 1)).lerp(new THREE.Color(color), 0.15);
+    const roofColor = new THREE.Color(wallColor).multiplyScalar(0.6);
+    const windowGlow = hashPick(WINDOW_GLOWS, seed, 6);
+    return { wallColor, roofColor, windowGlow };
+  }, [seed, color]);
+
+  const floors = Math.max(Math.floor(h / 0.6), 2);
+
+  return (
+    <group position={[x, 0, z]}>
+      {/* Main body */}
+      <mesh position={[0, h / 2, 0]} castShadow>
+        <boxGeometry args={[w, h, d]} />
+        <meshStandardMaterial color={cfg.wallColor} roughness={0.75} />
+      </mesh>
+      {/* Window strips (emissive bands instead of individual windows) */}
+      {Array.from({ length: Math.min(floors, 4) }).map((_, i) => (
+        <mesh key={i} position={[0, 0.75 + i * (h / floors) + 0.3, d / 2 + 0.01]}>
+          <boxGeometry args={[w * 0.7, 0.15, 0.01]} />
+          <meshStandardMaterial color="#0a0a12" emissive={cfg.windowGlow} emissiveIntensity={0.6} />
+        </mesh>
+      ))}
+      {/* Simple roof cap */}
+      <mesh position={[0, h + 0.04, 0]}>
+        <boxGeometry args={[w + 0.1, 0.08, d + 0.1]} />
+        <meshStandardMaterial color={cfg.roofColor} roughness={0.6} />
+      </mesh>
+    </group>
+  );
+});
+
+/** LOD 2 — Low poly: single box with color, no windows */
+const VoxelBuildingLod2 = memo(function VoxelBuildingLod2({
+  x, z, w, d, h, color, seed,
+}: VoxelCityBuildingProps) {
+  const wallColor = useMemo(() => {
+    const palette = hashPick(WALL_PALETTES, seed, 0);
+    return new THREE.Color(hashPick(palette, seed, 1)).lerp(new THREE.Color(color), 0.15);
+  }, [seed, color]);
+
+  return (
+    <group position={[x, 0, z]}>
+      <mesh position={[0, h / 2, 0]}>
+        <boxGeometry args={[w, h, d]} />
+        <meshStandardMaterial color={wallColor} roughness={0.85} />
+      </mesh>
+    </group>
+  );
+});
+
+/** LOD 3 — Flat colored block with reduced geometry */
+const VoxelBuildingLod3 = memo(function VoxelBuildingLod3({
+  x, z, w, d, h, color,
+}: VoxelCityBuildingProps) {
+  const c = useMemo(() => new THREE.Color(color).multiplyScalar(0.5), [color]);
+  return (
+    <group position={[x, 0, z]}>
+      <mesh position={[0, h / 2, 0]}>
+        <boxGeometry args={[w, h, d]} />
+        <meshStandardMaterial color={c} roughness={0.95} />
+      </mesh>
+    </group>
+  );
+});
+
+/** LOD 4 — Minimal: tiny flat rectangle on ground (map-like representation) */
+const VoxelBuildingLod4 = memo(function VoxelBuildingLod4({
+  x, z, w, d, color,
+}: VoxelCityBuildingProps) {
+  const c = useMemo(() => new THREE.Color(color).multiplyScalar(0.35), [color]);
+  return (
+    <mesh position={[x, 0.02, z]} rotation={[-Math.PI / 2, 0, 0]}>
+      <planeGeometry args={[w, d]} />
+      <meshBasicMaterial color={c} />
+    </mesh>
+  );
+});
+
+/** Multi-level LoD wrapper — renders the appropriate level based on `lod` prop */
+export const VoxelBuildingMultiLoD = memo(function VoxelBuildingMultiLoD(
+  props: VoxelCityBuildingProps & { lod: number }
+) {
+  const { lod, ...buildingProps } = props;
+
+  switch (lod) {
+    case 0:
+      return <VoxelCityBuilding {...buildingProps} />;
+    case 1:
+      return <VoxelBuildingLod1 {...buildingProps} />;
+    case 2:
+      return <VoxelBuildingLod2 {...buildingProps} />;
+    case 3:
+      return <VoxelBuildingLod3 {...buildingProps} />;
+    case 4:
+      return <VoxelBuildingLod4 {...buildingProps} />;
+    default:
+      return null;
+  }
+});
+
+// Keep legacy LoD wrapper for backward compatibility
 export const VoxelBuildingLoD = memo(function VoxelBuildingLoD(
   props: VoxelCityBuildingProps & { playerX: number; playerZ: number }
 ) {
   const { playerX, playerZ, ...buildingProps } = props;
   const dist = Math.hypot(props.x - playerX, props.z - playerZ);
 
-  // Far away → simple box
-  if (dist > 35) {
-    const c = new THREE.Color(props.color).multiplyScalar(0.5);
-    return (
-      <group position={[props.x, 0, props.z]}>
-        <mesh position={[0, props.h / 2, 0]}>
-          <boxGeometry args={[props.w, props.h, props.d]} />
-          <meshStandardMaterial color={c} roughness={0.9} />
-        </mesh>
-      </group>
-    );
-  }
+  let lod = 0;
+  if (dist > 90) lod = 4;
+  else if (dist > 60) lod = 3;
+  else if (dist > 35) lod = 2;
+  else if (dist > 18) lod = 1;
 
-  return <VoxelCityBuilding {...buildingProps} />;
+  return <VoxelBuildingMultiLoD {...buildingProps} lod={lod} />;
 });
