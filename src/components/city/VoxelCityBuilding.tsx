@@ -2,88 +2,80 @@ import { memo, useMemo } from "react";
 import * as THREE from "three";
 
 /**
- * MagicaVoxel-style 3D pixel art buildings for the city scene.
- * Inspired by https://www.behance.net/gallery/58526505/3D-Pixel-Art-01
- * Each building is procedurally generated based on a seed index.
+ * Diorama-style 3D voxel buildings for the city.
+ * Each building is procedurally unique via a hash-based seed system.
+ * Modular blocks: base, walls, windows, doors, awnings, signs, roofs, decor.
  */
 
-// ── Building type configs ──
-interface VoxelBuildingConfig {
-  name: string;
-  wallColor: string;
-  trimColor: string;
-  awningColor: string;
-  awningStripe: string;
-  signColor: string;
-  signEmissive: string;
-  roofColor: string;
-  roofType: "flat" | "peaked" | "terrace" | "water_tower" | "ac_units";
-  hasAwning: boolean;
-  hasBalcony: boolean;
-  hasSignboard: boolean;
-  hasSideDecor: boolean;
-  windowGlow: string;
-  groundFloorType: "cafe" | "shop" | "garage" | "office" | "bar";
+// ── Deterministic hash from seed ──
+function hash(seed: number, offset = 0): number {
+  let h = ((seed + offset) * 2654435761) >>> 0;
+  h = ((h ^ (h >> 16)) * 0x45d9f3b) >>> 0;
+  h = ((h ^ (h >> 16))) >>> 0;
+  return h;
+}
+function hashF(seed: number, offset = 0): number {
+  return (hash(seed, offset) % 10000) / 10000;
+}
+function hashPick<T>(arr: T[], seed: number, offset = 0): T {
+  return arr[hash(seed, offset) % arr.length];
 }
 
-const BUILDING_CONFIGS: VoxelBuildingConfig[] = [
-  {
-    name: "Cafe", wallColor: "#8B4533", trimColor: "#5A2D1A", awningColor: "#D4A030", awningStripe: "#FFFFFF",
-    signColor: "#FFD060", signEmissive: "#FFD060", roofColor: "#4A3528", roofType: "terrace",
-    hasAwning: true, hasBalcony: true, hasSignboard: true, hasSideDecor: true,
-    windowGlow: "#FFE4A8", groundFloorType: "cafe",
-  },
-  {
-    name: "Books", wallColor: "#6B5A4A", trimColor: "#4A3A2A", awningColor: "#C94040", awningStripe: "#FFE8E8",
-    signColor: "#FF6060", signEmissive: "#FF4040", roofColor: "#3A3A3A", roofType: "flat",
-    hasAwning: true, hasBalcony: false, hasSignboard: true, hasSideDecor: false,
-    windowGlow: "#AADDFF", groundFloorType: "shop",
-  },
-  {
-    name: "Studio", wallColor: "#5A6A7A", trimColor: "#3A4A5A", awningColor: "#40A060", awningStripe: "#DDFFDD",
-    signColor: "#60FF90", signEmissive: "#40D070", roofColor: "#2A3A2A", roofType: "peaked",
-    hasAwning: false, hasBalcony: true, hasSignboard: true, hasSideDecor: true,
-    windowGlow: "#BBFFBB", groundFloorType: "office",
-  },
-  {
-    name: "Bar", wallColor: "#4A3040", trimColor: "#2A1A28", awningColor: "#8040A0", awningStripe: "#E0C0FF",
-    signColor: "#D060FF", signEmissive: "#A040D0", roofColor: "#2A2030", roofType: "water_tower",
-    hasAwning: true, hasBalcony: false, hasSignboard: true, hasSideDecor: true,
-    windowGlow: "#FFB0D0", groundFloorType: "bar",
-  },
-  {
-    name: "Ramen", wallColor: "#7A5030", trimColor: "#5A3A20", awningColor: "#E0E0E0", awningStripe: "#4040A0",
-    signColor: "#FF8040", signEmissive: "#FF6020", roofColor: "#4A4030", roofType: "ac_units",
-    hasAwning: true, hasBalcony: true, hasSignboard: true, hasSideDecor: false,
-    windowGlow: "#FFD4A0", groundFloorType: "cafe",
-  },
-  {
-    name: "Tech", wallColor: "#3A4A5A", trimColor: "#2A3040", awningColor: "#30A0D0", awningStripe: "#FFFFFF",
-    signColor: "#40D0FF", signEmissive: "#20B0E0", roofColor: "#2A2A3A", roofType: "flat",
-    hasAwning: false, hasBalcony: true, hasSignboard: true, hasSideDecor: true,
-    windowGlow: "#80D0FF", groundFloorType: "office",
-  },
-  {
-    name: "Bakery", wallColor: "#9A7A5A", trimColor: "#7A5A3A", awningColor: "#FF8080", awningStripe: "#FFFFFF",
-    signColor: "#FFAA60", signEmissive: "#FF8840", roofColor: "#5A4A3A", roofType: "peaked",
-    hasAwning: true, hasBalcony: false, hasSignboard: true, hasSideDecor: false,
-    windowGlow: "#FFE0B0", groundFloorType: "shop",
-  },
-  {
-    name: "Music", wallColor: "#3A3A4A", trimColor: "#2A2A3A", awningColor: "#FF4080", awningStripe: "#FFD0E0",
-    signColor: "#FF40FF", signEmissive: "#D020D0", roofColor: "#1A1A2A", roofType: "terrace",
-    hasAwning: true, hasBalcony: true, hasSignboard: true, hasSideDecor: true,
-    windowGlow: "#FF80FF", groundFloorType: "bar",
-  },
+// ── Color palettes (warm, vibrant, diorama-like) ──
+const WALL_PALETTES = [
+  // Warm brick/terracotta
+  ["#B85C38", "#A0522D", "#CD853F", "#8B4513"],
+  // Cream/beige
+  ["#D4C5A9", "#C4B08B", "#BFA980", "#E8DCC8"],
+  // Pastel townhouse
+  ["#E8B4B8", "#B4D4E8", "#B8E8B4", "#E8D4B4"],
+  // Urban gray-blue
+  ["#6B7B8D", "#5A6A7D", "#7A8A9D", "#4A5A6D"],
+  // Deep burgundy/brown
+  ["#6B3A3A", "#5A2A2A", "#7A4A4A", "#4A2020"],
+  // Warm yellow/ochre
+  ["#D4A040", "#C49030", "#E4B050", "#B48020"],
+  // Teal/green
+  ["#3A7A6A", "#2A6A5A", "#4A8A7A", "#1A5A4A"],
+  // Dusty rose
+  ["#C4828A", "#B47280", "#D49298", "#A46270"],
 ];
 
-// ── Sub-components ──
+const TRIM_COLORS = ["#2A1A10", "#3A2A1A", "#1A1A2A", "#2A2A2A", "#4A3A2A", "#1A2A1A"];
+const DOOR_COLORS = ["#3A2A1A", "#2A3A1A", "#4A2A2A", "#2A2A3A", "#5A3A2A", "#1A1A2A"];
+const AWNING_COLORS = ["#D4A030", "#C94040", "#40A060", "#8040A0", "#E07030", "#3080C0", "#D06080", "#40B0B0"];
+const SIGN_GLOW_COLORS = ["#FFD060", "#FF6060", "#60FF90", "#D060FF", "#FF8040", "#40D0FF", "#FF40A0", "#60FFD0"];
+const WINDOW_GLOWS = ["#FFE4A8", "#AADDFF", "#FFD4A0", "#FFB0D0", "#BBFFBB", "#80D0FF", "#FFE0B0", "#FF80FF"];
 
-function VoxelWindows({ y, w, d, glowColor, count = 3 }: {
-  y: number; w: number; d: number; glowColor: string; count?: number;
+// ── Shape archetypes (determines silhouette) ──
+type ShapeType = "box" | "tower" | "wide" | "L_shape" | "stepped" | "wedge";
+const SHAPE_TYPES: ShapeType[] = ["box", "box", "tower", "wide", "L_shape", "stepped", "wedge"];
+
+// ── Roof types ──
+type RoofStyle = "flat" | "peaked" | "terrace" | "water_tower" | "dome" | "antenna" | "garden";
+const ROOF_STYLES: RoofStyle[] = ["flat", "peaked", "terrace", "water_tower", "dome", "antenna", "garden"];
+
+// ── Ground floor types ──
+type GroundType = "cafe" | "shop" | "office" | "bar" | "garage" | "gallery";
+const GROUND_TYPES: GroundType[] = ["cafe", "shop", "office", "bar", "garage", "gallery"];
+
+// ── Business names for signs ──
+const BUSINESS_NAMES = [
+  "CAFÉ", "BOOKS", "TECH", "RAMEN", "ART", "MUSIC", "BAKERY", "BAR",
+  "STUDIO", "SHOP", "HUB", "LAB", "DELI", "GYM", "SPA", "PIZZA",
+  "TACOS", "TEA", "VINYL", "ARCADE", "PHOTO", "PRINT", "BREW", "SUSHI",
+];
+
+// ═══════════════════════════════════════
+// MODULAR BUILDING BLOCKS
+// ═══════════════════════════════════════
+
+// ── Windows Module ──
+function WindowRow({ y, w, d, glow, count, style }: {
+  y: number; w: number; d: number; glow: string; count: number; style: number;
 }) {
-  const winW = w * 0.18;
-  const winH = 0.28;
+  const winW = style === 0 ? w * 0.16 : w * 0.22;
+  const winH = style === 0 ? 0.22 : 0.3;
   const spacing = w / (count + 1);
 
   return (
@@ -94,27 +86,36 @@ function VoxelWindows({ y, w, d, glowColor, count = 3 }: {
           <group key={i}>
             {/* Frame */}
             <mesh position={[xOff, y, d / 2 + 0.01]}>
-              <boxGeometry args={[winW + 0.04, winH + 0.04, 0.02]} />
-              <meshStandardMaterial color="#1a1a2e" />
+              <boxGeometry args={[winW + 0.03, winH + 0.03, 0.015]} />
+              <meshStandardMaterial color="#1a1a28" />
             </mesh>
-            {/* Glass */}
-            <mesh position={[xOff, y, d / 2 + 0.02]}>
-              <boxGeometry args={[winW, winH, 0.02]} />
-              <meshStandardMaterial color="#0a0a15" emissive={glowColor} emissiveIntensity={0.8} />
+            {/* Glass with warm glow */}
+            <mesh position={[xOff, y, d / 2 + 0.018]}>
+              <boxGeometry args={[winW, winH, 0.01]} />
+              <meshStandardMaterial color="#0a0a12" emissive={glow} emissiveIntensity={0.9} />
             </mesh>
-            {/* Cross divider */}
-            <mesh position={[xOff, y, d / 2 + 0.025]}>
-              <boxGeometry args={[0.015, winH, 0.01]} />
-              <meshStandardMaterial color="#2a2a3e" />
-            </mesh>
-            <mesh position={[xOff, y, d / 2 + 0.025]}>
-              <boxGeometry args={[winW, 0.015, 0.01]} />
-              <meshStandardMaterial color="#2a2a3e" />
+            {/* Dividers */}
+            {style === 0 && (
+              <>
+                <mesh position={[xOff, y, d / 2 + 0.022]}>
+                  <boxGeometry args={[0.012, winH, 0.005]} />
+                  <meshStandardMaterial color="#2a2a38" />
+                </mesh>
+                <mesh position={[xOff, y, d / 2 + 0.022]}>
+                  <boxGeometry args={[winW, 0.012, 0.005]} />
+                  <meshStandardMaterial color="#2a2a38" />
+                </mesh>
+              </>
+            )}
+            {/* Window sill */}
+            <mesh position={[xOff, y - winH / 2 - 0.02, d / 2 + 0.025]}>
+              <boxGeometry args={[winW + 0.06, 0.025, 0.03]} />
+              <meshStandardMaterial color="#3a3a3a" />
             </mesh>
             {/* Back window (simpler) */}
             <mesh position={[xOff, y, -d / 2 - 0.01]}>
-              <boxGeometry args={[winW, winH, 0.02]} />
-              <meshStandardMaterial color="#0a0a15" emissive={glowColor} emissiveIntensity={0.4} />
+              <boxGeometry args={[winW * 0.8, winH * 0.8, 0.01]} />
+              <meshStandardMaterial color="#0a0a12" emissive={glow} emissiveIntensity={0.4} />
             </mesh>
           </group>
         );
@@ -123,41 +124,34 @@ function VoxelWindows({ y, w, d, glowColor, count = 3 }: {
   );
 }
 
-function VoxelAwning({ w, d, color, stripe }: { w: number; d: number; color: string; stripe: string }) {
+// ── Awning Module ──
+function Awning({ w, d, color, hasStripes }: { w: number; d: number; color: string; hasStripes: boolean }) {
+  const stripeColor = new THREE.Color(color).lerp(new THREE.Color("#FFFFFF"), 0.7).getStyle();
   return (
-    <group position={[0, 0.85, d / 2 + 0.2]}>
-      {/* Main canopy - stepped for voxel look */}
-      <mesh>
-        <boxGeometry args={[w * 0.92, 0.05, 0.45]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-      <mesh position={[0, -0.05, 0.06]}>
-        <boxGeometry args={[w * 0.92, 0.05, 0.32]} />
-        <meshStandardMaterial color={color} />
+    <group position={[0, 0.82, d / 2 + 0.18]}>
+      {/* Canopy layers (stepped voxel) */}
+      <mesh><boxGeometry args={[w * 0.88, 0.04, 0.4]} /><meshStandardMaterial color={color} /></mesh>
+      <mesh position={[0, -0.04, 0.05]}>
+        <boxGeometry args={[w * 0.88, 0.04, 0.28]} /><meshStandardMaterial color={color} />
       </mesh>
       {/* Stripes */}
-      {[-2, -1, 0, 1, 2].map(i => (
-        <mesh key={i} position={[i * w * 0.15, 0.026, 0]}>
-          <boxGeometry args={[w * 0.08, 0.008, 0.47]} />
-          <meshStandardMaterial color={stripe} transparent opacity={0.6} />
+      {hasStripes && [-2, -1, 0, 1, 2].map(i => (
+        <mesh key={i} position={[i * w * 0.14, 0.022, 0]}>
+          <boxGeometry args={[w * 0.065, 0.005, 0.42]} />
+          <meshStandardMaterial color={stripeColor} transparent opacity={0.5} />
         </mesh>
       ))}
-      {/* Valance (hanging edge) */}
-      <mesh position={[0, -0.08, 0.2]}>
-        <boxGeometry args={[w * 0.92, 0.06, 0.02]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
       {/* Scalloped edge */}
-      {Array.from({ length: 6 }).map((_, i) => (
-        <mesh key={`sc-${i}`} position={[-w * 0.38 + i * w * 0.15, -0.12, 0.2]}>
-          <boxGeometry args={[w * 0.08, 0.04, 0.02]} />
+      {Array.from({ length: 5 }).map((_, i) => (
+        <mesh key={`sc-${i}`} position={[-w * 0.32 + i * w * 0.16, -0.1, 0.16]}>
+          <boxGeometry args={[w * 0.07, 0.035, 0.015]} />
           <meshStandardMaterial color={color} />
         </mesh>
       ))}
-      {/* Support brackets */}
+      {/* Brackets */}
       {[-1, 1].map(side => (
-        <mesh key={side} position={[side * w * 0.42, -0.15, 0.1]}>
-          <boxGeometry args={[0.03, 0.25, 0.03]} />
+        <mesh key={side} position={[side * w * 0.4, -0.12, 0.08]}>
+          <boxGeometry args={[0.025, 0.2, 0.025]} />
           <meshStandardMaterial color="#333" metalness={0.5} />
         </mesh>
       ))}
@@ -165,126 +159,126 @@ function VoxelAwning({ w, d, color, stripe }: { w: number; d: number; color: str
   );
 }
 
-function VoxelSignboard({ w, d, name, color, emissive }: {
-  w: number; d: number; name: string; color: string; emissive: string;
+// ── Signboard Module ──
+function Signboard({ w, d, glowColor, style }: {
+  w: number; d: number; glowColor: string; style: number;
 }) {
+  if (style === 0) {
+    // Flat sign above door
+    return (
+      <group position={[0, 0.55, d / 2 + 0.01]}>
+        <mesh><boxGeometry args={[w * 0.65, 0.18, 0.03]} /><meshStandardMaterial color="#111" /></mesh>
+        <mesh position={[0, 0, 0.018]}>
+          <boxGeometry args={[w * 0.6, 0.13, 0.008]} />
+          <meshStandardMaterial color={glowColor} emissive={glowColor} emissiveIntensity={1.0} />
+        </mesh>
+      </group>
+    );
+  }
+  // Hanging sign (perpendicular)
   return (
-    <group position={[0, 0.55, d / 2 + 0.01]}>
-      {/* Sign backing */}
-      <mesh>
-        <boxGeometry args={[w * 0.7, 0.22, 0.04]} />
-        <meshStandardMaterial color="#111" />
+    <group position={[w / 2 + 0.08, 0.7, 0]}>
+      {/* Bracket */}
+      <mesh position={[-0.04, 0.06, 0]}>
+        <boxGeometry args={[0.08, 0.03, 0.03]} /><meshStandardMaterial color="#333" metalness={0.6} />
       </mesh>
-      {/* Sign border */}
-      <mesh position={[0, 0, 0.01]}>
-        <boxGeometry args={[w * 0.72, 0.24, 0.01]} />
-        <meshStandardMaterial color={color} emissive={emissive} emissiveIntensity={0.3} />
+      {/* Sign board */}
+      <mesh position={[0.08, 0, 0]}>
+        <boxGeometry args={[0.03, 0.2, 0.16]} />
+        <meshStandardMaterial color="#1a1a1a" />
       </mesh>
-      {/* Inner sign face */}
-      <mesh position={[0, 0, 0.025]}>
-        <boxGeometry args={[w * 0.65, 0.16, 0.01]} />
-        <meshStandardMaterial color={color} emissive={emissive} emissiveIntensity={1.2} />
+      <mesh position={[0.095, 0, 0]}>
+        <boxGeometry args={[0.008, 0.15, 0.12]} />
+        <meshStandardMaterial color={glowColor} emissive={glowColor} emissiveIntensity={0.8} />
       </mesh>
     </group>
   );
 }
 
-function VoxelStorefront({ w, d, type, trimColor }: {
-  w: number; d: number; type: string; trimColor: string;
+// ── Storefront Module ──
+function Storefront({ w, d, type, trimColor, doorColor }: {
+  w: number; d: number; type: GroundType; trimColor: string; doorColor: string;
 }) {
-  const doorColor = type === "bar" ? "#2A1A2A" : "#3A2A1A";
-  const windowEmissive = type === "bar" ? "#FF80A0" : type === "cafe" ? "#FFCC80" : "#AADDFF";
+  const winEmissive = type === "bar" ? "#FF80A0" : type === "cafe" ? "#FFCC80" : type === "gallery" ? "#E0E0FF" : "#AADDFF";
+  const hasDoubleDoor = type === "shop" || type === "gallery";
 
   return (
     <group>
-      {/* Large storefront window */}
-      <mesh position={[-w * 0.15, 0.42, d / 2 + 0.01]}>
-        <boxGeometry args={[w * 0.5, 0.55, 0.02]} />
-        <meshStandardMaterial color="#0a0a15" emissive={windowEmissive} emissiveIntensity={0.6} />
+      {/* Storefront window */}
+      <mesh position={[hasDoubleDoor ? 0 : -w * 0.12, 0.42, d / 2 + 0.01]}>
+        <boxGeometry args={[hasDoubleDoor ? w * 0.4 : w * 0.48, 0.5, 0.015]} />
+        <meshStandardMaterial color="#0a0a12" emissive={winEmissive} emissiveIntensity={0.55} />
       </mesh>
       {/* Window frame */}
-      <mesh position={[-w * 0.15, 0.42, d / 2 + 0.015]}>
-        <boxGeometry args={[w * 0.52, 0.57, 0.01]} />
-        <meshStandardMaterial color={trimColor} />
-      </mesh>
-      {/* Window mullions */}
-      <mesh position={[-w * 0.15, 0.42, d / 2 + 0.02]}>
-        <boxGeometry args={[0.02, 0.55, 0.01]} />
+      <mesh position={[hasDoubleDoor ? 0 : -w * 0.12, 0.42, d / 2 + 0.013]}>
+        <boxGeometry args={[(hasDoubleDoor ? w * 0.42 : w * 0.5), 0.52, 0.008]} />
         <meshStandardMaterial color={trimColor} />
       </mesh>
       {/* Door */}
-      <mesh position={[w * 0.28, 0.32, d / 2 + 0.02]}>
-        <boxGeometry args={[0.28, 0.58, 0.03]} />
+      <mesh position={[hasDoubleDoor ? w * 0.3 : w * 0.25, 0.3, d / 2 + 0.018]}>
+        <boxGeometry args={[hasDoubleDoor ? 0.35 : 0.26, 0.54, 0.02]} />
         <meshStandardMaterial color={doorColor} />
       </mesh>
       {/* Door frame */}
-      <mesh position={[w * 0.28, 0.32, d / 2 + 0.025]}>
-        <boxGeometry args={[0.32, 0.62, 0.01]} />
+      <mesh position={[hasDoubleDoor ? w * 0.3 : w * 0.25, 0.3, d / 2 + 0.02]}>
+        <boxGeometry args={[hasDoubleDoor ? 0.38 : 0.29, 0.57, 0.008]} />
         <meshStandardMaterial color={trimColor} />
       </mesh>
-      {/* Door handle */}
-      <mesh position={[w * 0.23, 0.32, d / 2 + 0.04]}>
-        <boxGeometry args={[0.03, 0.04, 0.03]} />
+      {/* Handle */}
+      <mesh position={[(hasDoubleDoor ? w * 0.25 : w * 0.21), 0.3, d / 2 + 0.035]}>
+        <boxGeometry args={[0.025, 0.035, 0.025]} />
         <meshStandardMaterial color="#D4A030" metalness={0.8} />
       </mesh>
       {/* Step */}
-      <mesh position={[w * 0.28, 0.02, d / 2 + 0.12]}>
-        <boxGeometry args={[0.4, 0.04, 0.1]} />
+      <mesh position={[(hasDoubleDoor ? w * 0.3 : w * 0.25), 0.02, d / 2 + 0.1]}>
+        <boxGeometry args={[0.35, 0.04, 0.08]} />
         <meshStandardMaterial color="#555" />
       </mesh>
-      {/* Doormat */}
-      <mesh position={[w * 0.28, 0.04, d / 2 + 0.16]}>
-        <boxGeometry args={[0.25, 0.01, 0.06]} />
-        <meshStandardMaterial color="#5A4A30" />
-      </mesh>
+      {/* Interior glow hint (floor visible through window) */}
+      {type === "cafe" && (
+        <mesh position={[0, 0.01, 0]}>
+          <boxGeometry args={[w * 0.8, 0.01, d * 0.8]} />
+          <meshStandardMaterial color="#3A2A1A" emissive="#FFD080" emissiveIntensity={0.15} />
+        </mesh>
+      )}
     </group>
   );
 }
 
-function VoxelBalcony({ w, d, y }: { w: number; d: number; y: number }) {
+// ── Balcony Module ──
+function Balcony({ w, d, y }: { w: number; d: number; y: number }) {
   return (
-    <group position={[0, y, d / 2 + 0.12]}>
-      {/* Platform */}
-      <mesh>
-        <boxGeometry args={[w * 0.45, 0.04, 0.24]} />
-        <meshStandardMaterial color="#555" />
-      </mesh>
-      {/* Railings */}
+    <group position={[0, y, d / 2 + 0.1]}>
+      <mesh><boxGeometry args={[w * 0.42, 0.035, 0.2]} /><meshStandardMaterial color="#555" /></mesh>
       {[-2, -1, 0, 1, 2].map(i => (
-        <mesh key={i} position={[i * w * 0.08, 0.1, 0.1]}>
-          <boxGeometry args={[0.03, 0.16, 0.03]} />
-          <meshStandardMaterial color="#444" metalness={0.5} />
+        <mesh key={i} position={[i * w * 0.075, 0.09, 0.08]}>
+          <boxGeometry args={[0.025, 0.14, 0.025]} /><meshStandardMaterial color="#444" metalness={0.5} />
         </mesh>
       ))}
-      {/* Top rail */}
-      <mesh position={[0, 0.18, 0.1]}>
-        <boxGeometry args={[w * 0.45, 0.03, 0.03]} />
-        <meshStandardMaterial color="#444" metalness={0.5} />
+      <mesh position={[0, 0.16, 0.08]}>
+        <boxGeometry args={[w * 0.42, 0.025, 0.025]} /><meshStandardMaterial color="#444" metalness={0.5} />
       </mesh>
-      {/* Plant pot */}
-      <mesh position={[0, 0.07, 0.02]}>
-        <boxGeometry args={[0.12, 0.08, 0.1]} />
-        <meshStandardMaterial color="#8B5E3C" />
-      </mesh>
-      <mesh position={[0, 0.14, 0.02]}>
-        <boxGeometry args={[0.15, 0.08, 0.12]} />
-        <meshStandardMaterial color="#2D7A3A" />
-      </mesh>
+      {/* Plant */}
+      <mesh position={[0, 0.06, 0]}><boxGeometry args={[0.1, 0.06, 0.08]} /><meshStandardMaterial color="#7A5A3A" /></mesh>
+      <mesh position={[0, 0.12, 0]}><boxGeometry args={[0.13, 0.07, 0.1]} /><meshStandardMaterial color="#2D7A3A" /></mesh>
     </group>
   );
 }
 
-function VoxelRoof({ type, w, d, h, color }: {
-  type: string; w: number; d: number; h: number; color: string;
+// ── Roof Modules ──
+function Roof({ style, w, d, h, color, seed }: {
+  style: RoofStyle; w: number; d: number; h: number; color: string; seed: number;
 }) {
-  switch (type) {
+  const roofCol = new THREE.Color(color).multiplyScalar(0.6).getStyle();
+
+  switch (style) {
     case "peaked":
       return (
         <group position={[0, h, 0]}>
           {[0, 1, 2, 3].map(step => (
-            <mesh key={step} position={[0, step * 0.1 + 0.06, 0]}>
-              <boxGeometry args={[w - step * 0.3, 0.1, d - step * 0.3]} />
-              <meshStandardMaterial color={color} roughness={0.7} />
+            <mesh key={step} position={[0, step * 0.09 + 0.05, 0]}>
+              <boxGeometry args={[w - step * 0.28, 0.09, d - step * 0.28]} />
+              <meshStandardMaterial color={roofCol} roughness={0.7} />
             </mesh>
           ))}
         </group>
@@ -292,35 +286,19 @@ function VoxelRoof({ type, w, d, h, color }: {
     case "terrace":
       return (
         <group position={[0, h, 0]}>
-          <mesh position={[0, 0.05, 0]}>
-            <boxGeometry args={[w + 0.15, 0.1, d + 0.15]} />
-            <meshStandardMaterial color={color} roughness={0.5} />
+          <mesh position={[0, 0.04, 0]}>
+            <boxGeometry args={[w + 0.12, 0.08, d + 0.12]} /><meshStandardMaterial color={roofCol} roughness={0.5} />
           </mesh>
-          {/* Terrace fence */}
-          {[-1, 1].map(side => (
-            <mesh key={`f${side}`} position={[side * w * 0.45, 0.2, 0]}>
-              <boxGeometry args={[0.04, 0.25, d * 0.8]} />
-              <meshStandardMaterial color="#555" />
+          {[-1, 1].map(s => (
+            <mesh key={s} position={[s * w * 0.42, 0.18, 0]}>
+              <boxGeometry args={[0.03, 0.22, d * 0.75]} /><meshStandardMaterial color="#555" />
             </mesh>
           ))}
-          {/* Plants */}
-          {[[-0.3, 0.22, -0.2], [0.2, 0.2, 0.3]].map(([x, y, z], i) => (
-            <group key={i}>
-              <mesh position={[x, y, z]}>
-                <boxGeometry args={[0.15, 0.12, 0.15]} />
-                <meshStandardMaterial color="#6A4A30" />
-              </mesh>
-              <mesh position={[x, y + 0.12, z]}>
-                <boxGeometry args={[0.2, 0.15, 0.2]} />
-                <meshStandardMaterial color="#2D7A3A" />
-              </mesh>
-            </group>
-          ))}
           {/* String lights */}
-          {Array.from({ length: 5 }).map((_, i) => (
-            <mesh key={`sl-${i}`} position={[-w * 0.35 + i * w * 0.18, 0.3, 0]}>
-              <boxGeometry args={[0.04, 0.04, 0.04]} />
-              <meshStandardMaterial color="#FFE060" emissive="#FFD040" emissiveIntensity={1.5} />
+          {Array.from({ length: 4 }).map((_, i) => (
+            <mesh key={i} position={[-w * 0.3 + i * w * 0.2, 0.26, 0]}>
+              <boxGeometry args={[0.035, 0.035, 0.035]} />
+              <meshStandardMaterial color="#FFE060" emissive="#FFD040" emissiveIntensity={1.8} />
             </mesh>
           ))}
         </group>
@@ -328,129 +306,188 @@ function VoxelRoof({ type, w, d, h, color }: {
     case "water_tower":
       return (
         <group position={[0, h, 0]}>
-          <mesh position={[0, 0.05, 0]}>
-            <boxGeometry args={[w + 0.1, 0.1, d + 0.1]} />
-            <meshStandardMaterial color={color} />
+          <mesh position={[0, 0.04, 0]}>
+            <boxGeometry args={[w + 0.08, 0.08, d + 0.08]} /><meshStandardMaterial color={roofCol} />
           </mesh>
-          {/* Water tower legs */}
-          {[[-0.2, -0.2], [0.2, -0.2], [-0.2, 0.2], [0.2, 0.2]].map(([x, z], i) => (
-            <mesh key={i} position={[x, 0.3, z]}>
-              <boxGeometry args={[0.04, 0.4, 0.04]} />
-              <meshStandardMaterial color="#5A4A3A" />
+          {[[-0.18, -0.18], [0.18, -0.18], [-0.18, 0.18], [0.18, 0.18]].map(([x, z], i) => (
+            <mesh key={i} position={[x, 0.28, z]}>
+              <boxGeometry args={[0.035, 0.38, 0.035]} /><meshStandardMaterial color="#5A4A3A" />
             </mesh>
           ))}
-          {/* Tank */}
-          <mesh position={[0, 0.55, 0]}>
-            <boxGeometry args={[0.5, 0.3, 0.5]} />
-            <meshStandardMaterial color="#6A6A6A" metalness={0.3} />
+          <mesh position={[0, 0.52, 0]}>
+            <boxGeometry args={[0.45, 0.26, 0.45]} /><meshStandardMaterial color="#6A6A6A" metalness={0.3} />
           </mesh>
-          {/* Cone top */}
-          <mesh position={[0, 0.75, 0]}>
-            <boxGeometry args={[0.35, 0.1, 0.35]} />
-            <meshStandardMaterial color="#5A5A5A" />
-          </mesh>
-          <mesh position={[0, 0.82, 0]}>
-            <boxGeometry args={[0.2, 0.06, 0.2]} />
-            <meshStandardMaterial color="#4A4A4A" />
+          <mesh position={[0, 0.68, 0]}>
+            <boxGeometry args={[0.3, 0.08, 0.3]} /><meshStandardMaterial color="#5A5A5A" />
           </mesh>
         </group>
       );
-    case "ac_units":
+    case "dome":
       return (
         <group position={[0, h, 0]}>
-          <mesh position={[0, 0.05, 0]}>
-            <boxGeometry args={[w + 0.1, 0.1, d + 0.1]} />
-            <meshStandardMaterial color={color} roughness={0.5} />
+          <mesh position={[0, 0.04, 0]}>
+            <boxGeometry args={[w + 0.08, 0.08, d + 0.08]} /><meshStandardMaterial color={roofCol} />
           </mesh>
-          {/* AC units */}
-          {[[-0.4, -0.2], [0.3, 0.2]].map(([x, z], i) => (
-            <mesh key={i} position={[x, 0.2, z]}>
-              <boxGeometry args={[0.3, 0.2, 0.25]} />
-              <meshStandardMaterial color="#888" />
+          {[0, 1, 2].map(step => (
+            <mesh key={step} position={[0, 0.12 + step * 0.1, 0]}>
+              <boxGeometry args={[0.6 - step * 0.18, 0.1, 0.6 - step * 0.18]} />
+              <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.1} />
             </mesh>
           ))}
-          {/* Antenna */}
-          <mesh position={[0.4, 0.5, -0.3]}>
-            <boxGeometry args={[0.04, 0.8, 0.04]} />
-            <meshStandardMaterial color="#555" metalness={0.6} />
+        </group>
+      );
+    case "antenna":
+      return (
+        <group position={[0, h, 0]}>
+          <mesh position={[0, 0.04, 0]}>
+            <boxGeometry args={[w + 0.08, 0.08, d + 0.08]} /><meshStandardMaterial color={roofCol} />
           </mesh>
-          <mesh position={[0.4, 0.92, -0.3]}>
+          <mesh position={[0.3, 0.45, 0]}>
+            <boxGeometry args={[0.04, 0.7, 0.04]} /><meshStandardMaterial color="#555" metalness={0.6} />
+          </mesh>
+          <mesh position={[0.3, 0.82, 0]}>
             <boxGeometry args={[0.08, 0.08, 0.08]} />
             <meshStandardMaterial color="#FF3030" emissive="#FF3030" emissiveIntensity={1.5} />
           </mesh>
+          {/* Satellite dish */}
+          <mesh position={[-0.25, 0.3, 0.2]}>
+            <boxGeometry args={[0.22, 0.18, 0.04]} /><meshStandardMaterial color="#aaa" metalness={0.5} />
+          </mesh>
+        </group>
+      );
+    case "garden":
+      return (
+        <group position={[0, h, 0]}>
+          <mesh position={[0, 0.04, 0]}>
+            <boxGeometry args={[w + 0.08, 0.08, d + 0.08]} /><meshStandardMaterial color={roofCol} />
+          </mesh>
+          {/* Garden bed */}
+          <mesh position={[0, 0.1, 0]}>
+            <boxGeometry args={[w * 0.7, 0.04, d * 0.7]} /><meshStandardMaterial color="#3A2818" />
+          </mesh>
+          {/* Plants */}
+          {[[-0.25, -0.15], [0.2, 0.2], [-0.1, 0.25]].map(([x, z], i) => (
+            <mesh key={i} position={[x, 0.2, z]}>
+              <boxGeometry args={[0.16, 0.14, 0.16]} /><meshStandardMaterial color={["#2D7A3A", "#1A6A2A", "#3A8A3A"][i]} />
+            </mesh>
+          ))}
         </group>
       );
     default: // flat
       return (
         <group position={[0, h, 0]}>
-          <mesh position={[0, 0.04, 0]}>
-            <boxGeometry args={[w + 0.12, 0.08, d + 0.12]} />
-            <meshStandardMaterial color={color} roughness={0.5} />
+          <mesh position={[0, 0.035, 0]}>
+            <boxGeometry args={[w + 0.1, 0.07, d + 0.1]} /><meshStandardMaterial color={roofCol} roughness={0.5} />
           </mesh>
           {/* Edge trim */}
           {[
-            [0, 0.1, d / 2 + 0.04, w + 0.12, 0.06, 0.04],
-            [0, 0.1, -d / 2 - 0.04, w + 0.12, 0.06, 0.04],
-            [w / 2 + 0.04, 0.1, 0, 0.04, 0.06, d],
-            [-w / 2 - 0.04, 0.1, 0, 0.04, 0.06, d],
+            [0, 0.08, d / 2 + 0.03, w + 0.1, 0.05, 0.03],
+            [0, 0.08, -d / 2 - 0.03, w + 0.1, 0.05, 0.03],
           ].map(([x, y, z, bw, bh, bd], i) => (
             <mesh key={i} position={[x, y, z]}>
-              <boxGeometry args={[bw, bh, bd]} />
-              <meshStandardMaterial color="#444" />
+              <boxGeometry args={[bw, bh, bd]} /><meshStandardMaterial color="#444" />
             </mesh>
           ))}
+          {/* AC unit */}
+          {hashF(seed, 99) > 0.4 && (
+            <mesh position={[-0.3, 0.15, -0.2]}>
+              <boxGeometry args={[0.25, 0.16, 0.2]} /><meshStandardMaterial color="#888" />
+            </mesh>
+          )}
         </group>
       );
   }
 }
 
-function VoxelSideDetails({ w, d, h }: { w: number; d: number; h: number }) {
+// ── Side decoration module ──
+function SideDecor({ w, d, h, seed }: { w: number; d: number; h: number; seed: number }) {
+  const hasPipe = hashF(seed, 50) > 0.4;
+  const hasVent = hashF(seed, 51) > 0.5;
+  const hasLadder = hashF(seed, 52) > 0.7;
+
   return (
     <group>
-      {/* Pipe */}
-      <mesh position={[-w / 2 - 0.03, h * 0.45, -d * 0.15]}>
-        <boxGeometry args={[0.05, h * 0.75, 0.05]} />
-        <meshStandardMaterial color="#555" metalness={0.5} />
-      </mesh>
-      {/* Pipe brackets */}
-      {[0.3, 0.6].map(frac => (
-        <mesh key={frac} position={[-w / 2 - 0.01, h * frac, -d * 0.15]}>
-          <boxGeometry args={[0.08, 0.03, 0.08]} />
-          <meshStandardMaterial color="#444" />
+      {hasPipe && (
+        <>
+          <mesh position={[-w / 2 - 0.025, h * 0.4, -d * 0.12]}>
+            <boxGeometry args={[0.04, h * 0.7, 0.04]} /><meshStandardMaterial color="#555" metalness={0.5} />
+          </mesh>
+          {[0.3, 0.6].map(f => (
+            <mesh key={f} position={[-w / 2 - 0.01, h * f, -d * 0.12]}>
+              <boxGeometry args={[0.06, 0.025, 0.06]} /><meshStandardMaterial color="#444" />
+            </mesh>
+          ))}
+        </>
+      )}
+      {hasVent && (
+        <mesh position={[w / 2 + 0.015, h * 0.5, 0]}>
+          <boxGeometry args={[0.025, 0.18, 0.25]} /><meshStandardMaterial color="#3A3A3A" />
         </mesh>
-      ))}
-      {/* Side vent */}
-      <mesh position={[w / 2 + 0.02, h * 0.55, 0]}>
-        <boxGeometry args={[0.03, 0.2, 0.3]} />
-        <meshStandardMaterial color="#3A3A3A" />
-      </mesh>
-      {/* Side sign/poster */}
-      <mesh position={[w / 2 + 0.02, h * 0.35, d * 0.2]}>
-        <boxGeometry args={[0.02, 0.2, 0.15]} />
-        <meshStandardMaterial color="#6A5A40" />
-      </mesh>
+      )}
+      {hasLadder && (
+        <group position={[-w / 2 - 0.06, 0, d * 0.25]}>
+          {Array.from({ length: Math.min(Math.floor(h / 0.35), 6) }).map((_, i) => (
+            <mesh key={i} position={[0, i * 0.35 + 0.25, 0]}>
+              <boxGeometry args={[0.03, 0.03, 0.15]} /><meshStandardMaterial color="#666" metalness={0.4} />
+            </mesh>
+          ))}
+          {[-1, 1].map(s => (
+            <mesh key={s} position={[0, h * 0.35, s * 0.065]}>
+              <boxGeometry args={[0.03, h * 0.6, 0.03]} /><meshStandardMaterial color="#666" metalness={0.4} />
+            </mesh>
+          ))}
+        </group>
+      )}
     </group>
   );
 }
 
-function VoxelStreetDecor({ w, d, side }: { w: number; d: number; side: number }) {
+// ── Street-level props module ──
+function StreetProps({ w, d, seed }: { w: number; d: number; seed: number }) {
+  const side = hashF(seed, 60) > 0.5 ? 1 : -1;
+  const hasTrashCan = hashF(seed, 61) > 0.3;
+  const hasSign = hashF(seed, 62) > 0.5;
+  const hasPot = hashF(seed, 63) > 0.4;
+  const hasBike = hashF(seed, 64) > 0.7;
+
   return (
     <group>
-      {/* Trash can */}
-      <mesh position={[side * (w / 2 + 0.25), 0.1, d / 2 - 0.2]}>
-        <boxGeometry args={[0.12, 0.2, 0.12]} />
-        <meshStandardMaterial color="#4A4A4A" />
-      </mesh>
-      {/* A-frame sign */}
-      {side > 0 && (
-        <group position={[w / 2 + 0.4, 0, d / 2 + 0.3]}>
-          <mesh position={[0, 0.15, 0]}>
-            <boxGeometry args={[0.2, 0.3, 0.04]} />
-            <meshStandardMaterial color="#2A2A2A" />
+      {hasTrashCan && (
+        <mesh position={[side * (w / 2 + 0.2), 0.08, d / 2 - 0.15]}>
+          <boxGeometry args={[0.1, 0.16, 0.1]} /><meshStandardMaterial color="#4A4A4A" />
+        </mesh>
+      )}
+      {hasSign && (
+        <group position={[-side * (w / 2 + 0.35), 0, d / 2 + 0.2]}>
+          <mesh position={[0, 0.13, 0]}>
+            <boxGeometry args={[0.16, 0.25, 0.03]} /><meshStandardMaterial color="#2A2A2A" />
           </mesh>
-          <mesh position={[0, 0.15, 0.01]}>
-            <boxGeometry args={[0.16, 0.22, 0.02]} />
-            <meshStandardMaterial color="#E8D8B0" />
+          <mesh position={[0, 0.13, 0.008]}>
+            <boxGeometry args={[0.12, 0.18, 0.015]} /><meshStandardMaterial color="#E8D8B0" />
+          </mesh>
+        </group>
+      )}
+      {hasPot && (
+        <group position={[side * (w / 2 + 0.25), 0, d / 2 + 0.15]}>
+          <mesh position={[0, 0.06, 0]}>
+            <boxGeometry args={[0.12, 0.12, 0.12]} /><meshStandardMaterial color="#7A5A3A" />
+          </mesh>
+          <mesh position={[0, 0.16, 0]}>
+            <boxGeometry args={[0.14, 0.1, 0.14]} /><meshStandardMaterial color="#2D7A3A" />
+          </mesh>
+        </group>
+      )}
+      {hasBike && (
+        <group position={[-side * (w / 2 + 0.3), 0.06, -d / 2 + 0.15]}>
+          {/* Simplified pixel bike */}
+          <mesh position={[0, 0.04, 0]}>
+            <boxGeometry args={[0.2, 0.04, 0.06]} /><meshStandardMaterial color="#555" metalness={0.5} />
+          </mesh>
+          <mesh position={[-0.06, 0, 0]}>
+            <boxGeometry args={[0.06, 0.08, 0.02]} /><meshStandardMaterial color="#333" />
+          </mesh>
+          <mesh position={[0.06, 0, 0]}>
+            <boxGeometry args={[0.06, 0.08, 0.02]} /><meshStandardMaterial color="#333" />
           </mesh>
         </group>
       )}
@@ -458,7 +495,10 @@ function VoxelStreetDecor({ w, d, side }: { w: number; d: number; side: number }
   );
 }
 
-// ── Main component ──
+// ═══════════════════════════════════════
+// MAIN BUILDING GENERATOR
+// ═══════════════════════════════════════
+
 interface VoxelCityBuildingProps {
   x: number;
   z: number;
@@ -468,30 +508,55 @@ interface VoxelCityBuildingProps {
   color: string;
   seed: number;
   occluded?: boolean;
+  /** For user buildings – show their name on the sign */
+  ownerName?: string;
 }
 
 export const VoxelCityBuilding = memo(function VoxelCityBuilding({
-  x, z, w, d, h, color, seed, occluded,
+  x, z, w, d, h, color, seed, occluded, ownerName,
 }: VoxelCityBuildingProps) {
-  const config = BUILDING_CONFIGS[seed % BUILDING_CONFIGS.length];
-  const floors = Math.max(Math.floor(h / 0.65), 2);
-  const floorH = (h - 0.8) / floors; // ground floor takes 0.8
 
-  const wallColor = useMemo(() => {
-    // Blend the building's original color hint with the config's wall color
-    const c = new THREE.Color(config.wallColor);
-    c.lerp(new THREE.Color(color), 0.2);
-    return c;
-  }, [config.wallColor, color]);
+  // ── Procedural config from seed ──
+  const config = useMemo(() => {
+    const palette = hashPick(WALL_PALETTES, seed, 0);
+    const wallColor = hashPick(palette, seed, 1);
+    const trimColor = hashPick(TRIM_COLORS, seed, 2);
+    const doorColor = hashPick(DOOR_COLORS, seed, 3);
+    const awningColor = hashPick(AWNING_COLORS, seed, 4);
+    const signGlow = hashPick(SIGN_GLOW_COLORS, seed, 5);
+    const windowGlow = hashPick(WINDOW_GLOWS, seed, 6);
+    const roofStyle = hashPick(ROOF_STYLES, seed, 7);
+    const groundType = hashPick(GROUND_TYPES, seed, 8);
+    const hasAwning = hashF(seed, 10) > 0.35;
+    const hasBalcony = hashF(seed, 11) > 0.5;
+    const hasSignboard = hashF(seed, 12) > 0.25;
+    const signStyle = hash(seed, 13) % 2;
+    const windowStyle = hash(seed, 14) % 2;
+    const windowCount = 2 + (hash(seed, 15) % 2);
+    const hasStripes = hashF(seed, 16) > 0.4;
 
-  const darkerWall = useMemo(() => new THREE.Color(wallColor).multiplyScalar(0.7), [wallColor]);
+    // Blend building's original color hint with procedural palette
+    const blendedWall = new THREE.Color(wallColor).lerp(new THREE.Color(color), 0.15);
+
+    return {
+      wallColor: blendedWall,
+      darkerWall: new THREE.Color(blendedWall).multiplyScalar(0.65),
+      trimColor, doorColor, awningColor, signGlow, windowGlow,
+      roofStyle, groundType: groundType as GroundType,
+      hasAwning, hasBalcony, hasSignboard,
+      signStyle, windowStyle, windowCount, hasStripes,
+    };
+  }, [seed, color]);
+
+  const floors = Math.max(Math.floor(h / 0.6), 2);
+  const floorH = (h - 0.75) / floors;
 
   if (occluded) {
     return (
       <group position={[x, 0, z]}>
         <mesh position={[0, h / 2, 0]}>
           <boxGeometry args={[w, h, d]} />
-          <meshStandardMaterial color={wallColor} transparent opacity={0.12} roughness={0.85} />
+          <meshStandardMaterial color={config.wallColor} transparent opacity={0.1} roughness={0.85} />
         </mesh>
       </group>
     );
@@ -500,69 +565,105 @@ export const VoxelCityBuilding = memo(function VoxelCityBuilding({
   return (
     <group position={[x, 0, z]}>
       {/* ── Ground floor (darker base) ── */}
-      <mesh position={[0, 0.4, 0]}>
-        <boxGeometry args={[w, 0.8, d]} />
-        <meshStandardMaterial color={darkerWall} roughness={0.8} />
+      <mesh position={[0, 0.375, 0]}>
+        <boxGeometry args={[w, 0.75, d]} />
+        <meshStandardMaterial color={config.darkerWall} roughness={0.8} />
       </mesh>
 
       {/* ── Storefront ── */}
-      <VoxelStorefront w={w} d={d} type={config.groundFloorType} trimColor={config.trimColor} />
+      <Storefront w={w} d={d} type={config.groundType} trimColor={config.trimColor} doorColor={config.doorColor} />
 
       {/* ── Upper floors body ── */}
-      <mesh position={[0, 0.8 + (h - 0.8) / 2, 0]} castShadow>
-        <boxGeometry args={[w, h - 0.8, d]} />
-        <meshStandardMaterial color={wallColor} roughness={0.75} metalness={0.08} />
+      <mesh position={[0, 0.75 + (h - 0.75) / 2, 0]} castShadow>
+        <boxGeometry args={[w, h - 0.75, d]} />
+        <meshStandardMaterial color={config.wallColor} roughness={0.72} metalness={0.06} />
       </mesh>
 
       {/* ── Floor separator bands ── */}
-      {Array.from({ length: floors }).map((_, i) => (
-        <mesh key={`sep-${i}`} position={[0, 0.8 + (i + 1) * floorH, d / 2 + 0.005]}>
-          <boxGeometry args={[w + 0.03, 0.03, 0.015]} />
+      {Array.from({ length: Math.min(floors, 6) }).map((_, i) => (
+        <mesh key={`sep-${i}`} position={[0, 0.75 + (i + 1) * floorH, d / 2 + 0.004]}>
+          <boxGeometry args={[w + 0.02, 0.025, 0.01]} />
           <meshStandardMaterial color={config.trimColor} />
         </mesh>
       ))}
 
       {/* ── Windows per floor ── */}
       {Array.from({ length: Math.min(floors, 4) }).map((_, floor) => (
-        <VoxelWindows
+        <WindowRow
           key={floor}
-          y={0.8 + floor * floorH + floorH * 0.55}
-          w={w}
-          d={d}
-          glowColor={config.windowGlow}
-          count={Math.max(2, Math.floor(w / 0.8))}
+          y={0.75 + floor * floorH + floorH * 0.55}
+          w={w} d={d}
+          glow={config.windowGlow}
+          count={config.windowCount}
+          style={config.windowStyle}
         />
       ))}
 
       {/* ── Awning ── */}
-      {config.hasAwning && (
-        <VoxelAwning w={w} d={d} color={config.awningColor} stripe={config.awningStripe} />
-      )}
+      {config.hasAwning && <Awning w={w} d={d} color={config.awningColor} hasStripes={config.hasStripes} />}
 
       {/* ── Signboard ── */}
       {config.hasSignboard && (
-        <VoxelSignboard
-          w={w}
-          d={d}
-          name={config.name}
-          color={config.signColor}
-          emissive={config.signEmissive}
-        />
+        <Signboard w={w} d={d} glowColor={config.signGlow} style={config.signStyle} />
       )}
 
-      {/* ── Balcony on upper floor ── */}
+      {/* ── Balcony ── */}
       {config.hasBalcony && floors >= 2 && (
-        <VoxelBalcony w={w} d={d} y={0.8 + floorH * 1.15} />
+        <Balcony w={w} d={d} y={0.75 + floorH * 1.1} />
       )}
 
       {/* ── Roof ── */}
-      <VoxelRoof type={config.roofType} w={w} d={d} h={h} color={config.roofColor} />
+      <Roof style={config.roofStyle} w={w} d={d} h={h} color={color} seed={seed} />
 
       {/* ── Side details ── */}
-      {config.hasSideDecor && <VoxelSideDetails w={w} d={d} h={h} />}
+      <SideDecor w={w} d={d} h={h} seed={seed} />
 
-      {/* ── Street-level decoration ── */}
-      <VoxelStreetDecor w={w} d={d} side={seed % 2 === 0 ? 1 : -1} />
+      {/* ── Street props ── */}
+      <StreetProps w={w} d={d} seed={seed} />
+
+      {/* ── Owner name sign (for user buildings) ── */}
+      {ownerName && (
+        <group position={[0, h * 0.7, d / 2 + 0.04]}>
+          <mesh position={[0, 0, -0.015]}>
+            <boxGeometry args={[w * 0.75, 0.28, 0.03]} />
+            <meshStandardMaterial color="#111" />
+          </mesh>
+          <mesh position={[0, 0, 0.005]}>
+            <boxGeometry args={[w * 0.7, 0.22, 0.01]} />
+            <meshStandardMaterial
+              color={config.signGlow}
+              emissive={config.signGlow}
+              emissiveIntensity={1.0}
+            />
+          </mesh>
+        </group>
+      )}
     </group>
   );
+});
+
+// ═══════════════════════════════════════
+// LOD WRAPPER (simplified version at distance)
+// ═══════════════════════════════════════
+
+export const VoxelBuildingLoD = memo(function VoxelBuildingLoD(
+  props: VoxelCityBuildingProps & { playerX: number; playerZ: number }
+) {
+  const { playerX, playerZ, ...buildingProps } = props;
+  const dist = Math.hypot(props.x - playerX, props.z - playerZ);
+
+  // Far away → simple box
+  if (dist > 35) {
+    const c = new THREE.Color(props.color).multiplyScalar(0.5);
+    return (
+      <group position={[props.x, 0, props.z]}>
+        <mesh position={[0, props.h / 2, 0]}>
+          <boxGeometry args={[props.w, props.h, props.d]} />
+          <meshStandardMaterial color={c} roughness={0.9} />
+        </mesh>
+      </group>
+    );
+  }
+
+  return <VoxelCityBuilding {...buildingProps} />;
 });
