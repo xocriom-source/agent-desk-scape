@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { useDayNight } from "@/hooks/useDayNight";
 import { useCityBuildings } from "@/hooks/useCityBuildings";
 import { Vehicle3D } from "@/components/city/Vehicle3D";
+import { VoxelCityBuilding } from "@/components/city/VoxelCityBuilding";
 import type { CityBuilding } from "@/types/building";
 import { STYLE_TRANSPORT_MAP } from "@/types/building";
 
