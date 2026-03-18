@@ -154,95 +154,107 @@ const StreetFurniture = memo(function StreetFurniture({ nightIntensity }: { nigh
   );
 });
 
-// ── Trees clustered in parks and along residential streets ──
+// ── Trees clustered in parks, along streets, AI vs Human themed ──
 const CityTrees = memo(function CityTrees() {
   const trees = useMemo(() => {
-    const positions: Array<{ pos: [number, number]; scale: number; crown: number }> = [];
+    const positions: Array<{ pos: [number, number]; scale: number; crown: number; isAI: boolean }> = [];
 
-    // Park trees (dense cluster)
+    // Park trees (dense cluster in central dividing park)
     const parkZone = CITY_ZONES.find(z => z.type === "park");
     if (parkZone) {
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 25; i++) {
         const angle = seededRandom(i * 7) * Math.PI * 2;
         const dist = seededRandom(i * 13) * (parkZone.radius - 1);
         positions.push({
           pos: [parkZone.center.x + Math.cos(angle) * dist, parkZone.center.z + Math.sin(angle) * dist],
-          scale: 0.8 + seededRandom(i * 3) * 0.5,
-          crown: i % 3,
+          scale: 0.8 + seededRandom(i * 3) * 0.5, crown: i % 3, isAI: false,
         });
       }
     }
 
-    // Plaza greenery
-    const plazaZone = CITY_ZONES.find(z => z.type === "plaza");
-    if (plazaZone) {
+    // Plaza greenery (both plazas)
+    for (const pz of CITY_ZONES.filter(z => z.type === "plaza")) {
       for (let i = 0; i < 6; i++) {
         const angle = (i / 6) * Math.PI * 2;
-        const dist = plazaZone.radius * 0.5;
+        const dist = pz.radius * 0.5;
         positions.push({
-          pos: [plazaZone.center.x + Math.cos(angle) * dist, plazaZone.center.z + Math.sin(angle) * dist],
-          scale: 0.7 + seededRandom(i * 5 + 100) * 0.3,
-          crown: i % 3,
+          pos: [pz.center.x + Math.cos(angle) * dist, pz.center.z + Math.sin(angle) * dist],
+          scale: 0.7 + seededRandom(i * 5 + 100) * 0.3, crown: i % 3, isAI: pz.district === "ai",
         });
       }
     }
 
-    // Street trees along residential zone roads
+    // Human residential trees (south)
     for (let x = -45; x < 45; x += 8) {
-      for (let z = 20; z < 45; z += 10) {
+      for (let z = 20; z < 48; z += 9) {
         const seed = hash(`tree-${x}-${z}`);
-        if (seededRandom(seed) > 0.5) {
+        if (seededRandom(seed) > 0.45) {
           positions.push({
             pos: [x + (seededRandom(seed + 1) - 0.5) * 3, z + (seededRandom(seed + 2) - 0.5) * 3],
-            scale: 0.7 + seededRandom(seed + 3) * 0.4,
-            crown: seed % 3,
+            scale: 0.7 + seededRandom(seed + 3) * 0.4, crown: seed % 3, isAI: false,
           });
         }
       }
     }
 
-    // Scattered along main roads
-    const roadTreePositions: [number, number][] = [
-      [-40, 2], [-28, -1], [28, 1], [40, -2],
-      [2, -35], [-1, -22], [1, 35], [-2, 42],
-    ];
-    roadTreePositions.forEach(([x, z], i) => {
-      positions.push({ pos: [x, z], scale: 0.9 + (i % 3) * 0.15, crown: i % 3 });
-    });
+    // AI district trees (north — sparse, geometric)
+    for (let x = -40; x < 40; x += 12) {
+      for (let z = -45; z < -10; z += 14) {
+        const seed = hash(`ai-tree-${x}-${z}`);
+        if (seededRandom(seed) > 0.6) {
+          positions.push({
+            pos: [x + (seededRandom(seed + 1) - 0.5) * 2, z + (seededRandom(seed + 2) - 0.5) * 2],
+            scale: 0.6 + seededRandom(seed + 3) * 0.3, crown: seed % 3, isAI: true,
+          });
+        }
+      }
+    }
+
+    // Boulevard trees along the divider
+    for (let x = -50; x < 50; x += 6) {
+      positions.push({ pos: [x, -3], scale: 0.9, crown: Math.abs(x) % 3, isAI: false });
+      positions.push({ pos: [x, -7], scale: 0.85, crown: (Math.abs(x) + 1) % 3, isAI: true });
+    }
 
     return positions;
   }, []);
 
-  const treeColors = ["#1A6B2A", "#2D5A1E", "#1B7A30", "#3A7A2A", "#246B1E", "#2A8B35"];
+  const humanTreeColors = ["#1A6B2A", "#2D5A1E", "#1B7A30", "#3A7A2A", "#246B1E", "#2A8B35"];
+  const aiTreeColors = ["#1A8B6A", "#2D7A5E", "#1B9A70", "#108060", "#20AA75", "#0A7050"];
   const trunkColors = ["#5A3A20", "#4A2A15", "#6B4A2A"];
+  const aiTrunkColors = ["#3A4858", "#2A3848", "#4A5868"];
 
   return (
     <group>
-      {trees.map(({ pos: [x, z], scale, crown }, i) => (
-        <group key={`tree-${i}`} position={[x, 0, z]} scale={scale}>
-          <mesh position={[0, 0.35, 0]}>
-            <boxGeometry args={[0.08, 0.7, 0.08]} />
-            <meshStandardMaterial color={trunkColors[i % trunkColors.length]} roughness={0.9} />
-          </mesh>
-          {crown === 0 ? (
-            <>
-              <mesh position={[0, 0.85, 0]}><boxGeometry args={[0.8, 0.5, 0.8]} /><meshStandardMaterial color={treeColors[i % treeColors.length]} roughness={0.85} /></mesh>
-              <mesh position={[0, 1.2, 0]}><boxGeometry args={[0.55, 0.35, 0.55]} /><meshStandardMaterial color={treeColors[(i + 1) % treeColors.length]} roughness={0.85} /></mesh>
-            </>
-          ) : crown === 1 ? (
-            <>
-              <mesh position={[0, 0.8, 0]}><boxGeometry args={[0.6, 0.4, 0.6]} /><meshStandardMaterial color={treeColors[i % treeColors.length]} roughness={0.85} /></mesh>
-              <mesh position={[0, 1.1, 0]}><boxGeometry args={[0.5, 0.35, 0.5]} /><meshStandardMaterial color={treeColors[(i + 1) % treeColors.length]} roughness={0.85} /></mesh>
-              <mesh position={[0, 1.35, 0]}><boxGeometry args={[0.35, 0.25, 0.35]} /><meshStandardMaterial color={treeColors[(i + 2) % treeColors.length]} roughness={0.85} /></mesh>
-            </>
-          ) : (
-            <>
-              <mesh position={[0, 0.8, 0]}><boxGeometry args={[0.9, 0.35, 0.9]} /><meshStandardMaterial color={treeColors[i % treeColors.length]} roughness={0.85} /></mesh>
-              <mesh position={[0, 1.05, 0]}><boxGeometry args={[0.7, 0.25, 0.7]} /><meshStandardMaterial color={treeColors[(i + 1) % treeColors.length]} roughness={0.85} /></mesh>
-            </>
-          )}
-        </group>
-      ))}
+      {trees.map(({ pos: [x, z], scale, crown, isAI }, i) => {
+        const colors = isAI ? aiTreeColors : humanTreeColors;
+        const trunks = isAI ? aiTrunkColors : trunkColors;
+        return (
+          <group key={`tree-${i}`} position={[x, 0, z]} scale={scale}>
+            <mesh position={[0, 0.35, 0]}>
+              <boxGeometry args={[0.08, 0.7, 0.08]} />
+              <meshStandardMaterial color={trunks[i % trunks.length]} roughness={0.9} />
+            </mesh>
+            {crown === 0 ? (
+              <>
+                <mesh position={[0, 0.85, 0]}><boxGeometry args={[0.8, 0.5, 0.8]} /><meshStandardMaterial color={colors[i % colors.length]} roughness={0.85} /></mesh>
+                <mesh position={[0, 1.2, 0]}><boxGeometry args={[0.55, 0.35, 0.55]} /><meshStandardMaterial color={colors[(i + 1) % colors.length]} roughness={0.85} /></mesh>
+              </>
+            ) : crown === 1 ? (
+              <>
+                <mesh position={[0, 0.8, 0]}><boxGeometry args={[0.6, 0.4, 0.6]} /><meshStandardMaterial color={colors[i % colors.length]} roughness={0.85} /></mesh>
+                <mesh position={[0, 1.1, 0]}><boxGeometry args={[0.5, 0.35, 0.5]} /><meshStandardMaterial color={colors[(i + 1) % colors.length]} roughness={0.85} /></mesh>
+                <mesh position={[0, 1.35, 0]}><boxGeometry args={[0.35, 0.25, 0.35]} /><meshStandardMaterial color={colors[(i + 2) % colors.length]} roughness={0.85} /></mesh>
+              </>
+            ) : (
+              <>
+                <mesh position={[0, 0.8, 0]}><boxGeometry args={[0.9, 0.35, 0.9]} /><meshStandardMaterial color={colors[i % colors.length]} roughness={0.85} /></mesh>
+                <mesh position={[0, 1.05, 0]}><boxGeometry args={[0.7, 0.25, 0.7]} /><meshStandardMaterial color={colors[(i + 1) % colors.length]} roughness={0.85} /></mesh>
+              </>
+            )}
+          </group>
+        );
+      })}
     </group>
   );
 });
