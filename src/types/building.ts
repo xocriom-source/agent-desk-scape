@@ -1,5 +1,5 @@
 export type BuildingStyle = "corporate" | "creative" | "startup" | "tech" | "agency" | "minimal" | "futuristic" | "industrial";
-export type District = "tech" | "creator" | "startup" | "agency" | "central";
+export type District = "tech" | "creator" | "startup" | "agency" | "central" | "ai";
 export type TransportType = "car" | "motorcycle" | "bicycle" | "helicopter" | "jet" | "drone" | "boat" | "yacht" | "futuristic_car" | "none";
 
 export interface BuildingCustomizations {
