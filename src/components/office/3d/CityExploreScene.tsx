@@ -1187,6 +1187,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
           <StaticBuildingOccludable
             key={i}
             x={b.x} z={b.z} w={b.w} d={b.d} h={b.h} color={b.color}
+            seed={i}
             occluded={occludedBuildings.has(`static-${b.x}-${b.z}`)}
           />
         ))}
