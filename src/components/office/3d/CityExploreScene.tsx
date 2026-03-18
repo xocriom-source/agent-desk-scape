@@ -5,9 +5,12 @@ import * as THREE from "three";
 import { useDayNight } from "@/hooks/useDayNight";
 import { useCityBuildings } from "@/hooks/useCityBuildings";
 import { Vehicle3D } from "@/components/city/Vehicle3D";
-import { VoxelCityBuilding } from "@/components/city/VoxelCityBuilding";
+import { VoxelCityBuilding, VoxelBuildingMultiLoD } from "@/components/city/VoxelCityBuilding";
 import type { CityBuilding } from "@/types/building";
 import { STYLE_TRANSPORT_MAP } from "@/types/building";
+import { useCityLod } from "@/systems/city/useCityLod";
+import { getLodLevel } from "@/systems/city/ChunkManager";
+import { QUALITY_PRESETS, type QualityLevel } from "@/systems/city/QualitySettings";
 
 // ── District data ──
 const DISTRICTS = [
