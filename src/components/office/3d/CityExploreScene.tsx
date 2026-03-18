@@ -257,11 +257,11 @@ function LightBuilding3D({ building, highlighted, onClick, occluded }: {
   );
 }
 
-// ── Static building with occlusion (now voxel) ──
-function StaticBuildingOccludable({ x, z, w, d, h, color, occluded, seed }: {
-  x: number; z: number; w: number; d: number; h: number; color: string; occluded?: boolean; seed: number;
+// ── Static building with LoD-aware rendering ──
+function StaticBuildingOccludable({ x, z, w, d, h, color, occluded, seed, lod }: {
+  x: number; z: number; w: number; d: number; h: number; color: string; occluded?: boolean; seed: number; lod?: number;
 }) {
-  return <VoxelCityBuilding x={x} z={z} w={w} d={d} h={h} color={color} seed={seed} occluded={occluded} />;
+  return <VoxelBuildingMultiLoD x={x} z={z} w={w} d={d} h={h} color={color} seed={seed} occluded={occluded} lod={lod ?? 0} />;
 }
 
 // ── Simplified Plaza ──
