@@ -3,6 +3,7 @@ import { Text } from "@react-three/drei";
 import * as THREE from "three";
 import type { CityBuilding } from "@/types/building";
 import { BuildingProps, useBuildingProps } from "./VoxelProps";
+import { GLBBuildingModel, GLBDetailModel } from "./GLBBuildingModel";
 
 interface Building3DProps {
   building: CityBuilding;
