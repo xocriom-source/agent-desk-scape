@@ -75,34 +75,46 @@ function GLBBuildingModelInner({ buildingId, height, primaryColor, isSkyscraper 
     clone.rotation.y = rotations[seed % rotations.length];
 
     // Apply building color strongly to all meshes
-    if (primaryColor) {
+    clone.traverse((child) => {
+      if (!(child as THREE.Mesh).isMesh) return;
+
+      const mesh = child as THREE.Mesh;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.frustumCulled = false;
+
+      if (!primaryColor) return;
+
       const tintColor = new THREE.Color(primaryColor);
-      clone.traverse((child) => {
-        if ((child as THREE.Mesh).isMesh) {
-          const mesh = child as THREE.Mesh;
-          const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-          mesh.material = materials.map((m) => {
-            const mat = (m as THREE.MeshStandardMaterial).clone();
-            if (mat.color) {
-              // Strong tint: keep model shading but shift hue/saturation to match palette
-              const origLightness = mat.color.getHSL({ h: 0, s: 0, l: 0 }).l;
-              mat.color.lerp(tintColor, 0.65);
-              // Preserve some original lightness variation for depth
-              const tintHSL = mat.color.getHSL({ h: 0, s: 0, l: 0 });
-              const blendedL = tintHSL.l * 0.6 + origLightness * 0.4;
-              mat.color.setHSL(tintHSL.h, tintHSL.s * 0.9, blendedL);
-            }
-            mat.roughness = Math.min(mat.roughness ?? 0.8, 0.85);
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            return mat;
-          });
-          if (!Array.isArray(mesh.material) && materials.length === 1) {
-            mesh.material = (mesh.material as any)[0] || mesh.material;
+      const originalMaterial = mesh.material;
+      const isMultiMaterial = Array.isArray(originalMaterial);
+      const materials = isMultiMaterial ? originalMaterial : [originalMaterial];
+
+      const tintedMaterials = materials
+        .filter(Boolean)
+        .map((material) => {
+          const clonedMaterial = material.clone();
+
+          if ("color" in clonedMaterial && clonedMaterial.color) {
+            const origLightness = clonedMaterial.color.getHSL({ h: 0, s: 0, l: 0 }).l;
+            clonedMaterial.color.lerp(tintColor, 0.65);
+            const tintHSL = clonedMaterial.color.getHSL({ h: 0, s: 0, l: 0 });
+            const blendedL = tintHSL.l * 0.6 + origLightness * 0.4;
+            clonedMaterial.color.setHSL(tintHSL.h, tintHSL.s * 0.9, blendedL);
           }
-        }
-      });
-    }
+
+          if ("roughness" in clonedMaterial && typeof clonedMaterial.roughness === "number") {
+            clonedMaterial.roughness = Math.min(clonedMaterial.roughness, 0.85);
+          }
+
+          clonedMaterial.needsUpdate = true;
+          return clonedMaterial;
+        });
+
+      if (tintedMaterials.length > 0) {
+        mesh.material = isMultiMaterial ? tintedMaterials : tintedMaterials[0];
+      }
+    });
 
     // Count meshes for debug
     let meshCount = 0;
