@@ -445,18 +445,22 @@ const CityGround = memo(function CityGround() {
 const CommercialGlow = memo(function CommercialGlow() {
   return (
     <group>
-      {CITY_ZONES.filter(z => z.glowIntensity > 0.4).map(zone => (
-        <mesh key={zone.id} rotation={[-Math.PI / 2, 0, 0]} position={[zone.center.x, 0.02, zone.center.z]}>
-          <circleGeometry args={[zone.radius * 0.6, 24]} />
-          <meshStandardMaterial
-            color="#FFD060"
-            emissive="#FFD060"
-            emissiveIntensity={zone.glowIntensity * 0.15}
-            transparent
-            opacity={zone.glowIntensity * 0.08}
-          />
-        </mesh>
-      ))}
+      {CITY_ZONES.filter(z => z.glowIntensity > 0.4).map(zone => {
+        const isAI = zone.type === "ai";
+        const glowColor = isAI ? "#00E890" : "#FFD060";
+        return (
+          <mesh key={zone.id} rotation={[-Math.PI / 2, 0, 0]} position={[zone.center.x, 0.02, zone.center.z]}>
+            <circleGeometry args={[zone.radius * 0.6, 24]} />
+            <meshStandardMaterial
+              color={glowColor}
+              emissive={glowColor}
+              emissiveIntensity={zone.glowIntensity * 0.15}
+              transparent
+              opacity={zone.glowIntensity * 0.08}
+            />
+          </mesh>
+        );
+      })}
     </group>
   );
 });
