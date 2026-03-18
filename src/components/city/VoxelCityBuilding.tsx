@@ -1083,9 +1083,17 @@ export const VoxelBuildingMultiLoD = memo(function VoxelBuildingMultiLoD(
   props: VoxelCityBuildingProps & { lod: number }
 ) {
   const { lod, ...buildingProps } = props;
+  // Apply rotation to lower LoDs too for consistency
+  const wrapperRotation = buildingProps.rotation || 0;
+  const wrapperMirror = buildingProps.mirror ? -1 : 1;
+
   switch (lod) {
     case 0: return <VoxelCityBuilding {...buildingProps} />;
-    case 1: return <VoxelBuildingLod1 {...buildingProps} />;
+    case 1: return (
+      <group rotation={[0, wrapperRotation, 0]} scale={[wrapperMirror, 1, 1]}>
+        <VoxelBuildingLod1 {...buildingProps} />
+      </group>
+    );
     case 2: return <VoxelBuildingLod2 {...buildingProps} />;
     case 3: return <VoxelBuildingLod3 {...buildingProps} />;
     case 4: return <VoxelBuildingLod4 {...buildingProps} />;
