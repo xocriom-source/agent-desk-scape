@@ -1,15 +1,15 @@
-import { useRef, useEffect, useState, useMemo } from "react";
+import { useRef, useEffect, useState, useMemo, memo } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Sky, Text, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import { Building3D } from "./Building3D";
-import { VoxelCar, StreetLamp, Bench, TrashCan, Hydrant, PottedPlant } from "./VoxelProps";
+import { VoxelCar, StreetLamp, Bench, TrashCan, Hydrant, PottedPlant, CafeTable, Dumpster, ParkingMeter } from "./VoxelProps";
 import { preloadBuildingModels } from "./GLBBuildingModel";
 import { useDayNight } from "@/hooks/useDayNight";
+import { generateCityLayout, CITY_STREETS, CITY_ZONES, getZoneGlow } from "@/systems/city/CityLayoutGenerator";
 import type { CityBuilding } from "@/types/building";
 import { DISTRICTS } from "@/types/building";
 
-// Preload all GLB models on module load
 preloadBuildingModels();
 
 interface CityBuildingsSceneProps {
@@ -19,6 +19,7 @@ interface CityBuildingsSceneProps {
   flyToTarget?: boolean;
 }
 
+// ── Camera ──
 function CameraController({ target, fly }: { target?: CityBuilding | null; fly?: boolean }) {
   const { camera } = useThree();
   const targetPos = useRef(new THREE.Vector3(0, 25, 40));
@@ -48,51 +49,87 @@ function CameraController({ target, fly }: { target?: CityBuilding | null; fly?:
   return null;
 }
 
-// ── Street furniture along roads (deterministic) ──
-function StreetFurniture({ nightIntensity }: { nightIntensity: number }) {
+// ── Deterministic hash ──
+function hash(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; }
+  return Math.abs(h);
+}
+function seededRandom(seed: number): number {
+  const x = Math.sin(seed * 9301 + 49297) * 49297;
+  return x - Math.floor(x);
+}
+
+// ── Street furniture distributed along streets contextually ──
+const StreetFurniture = memo(function StreetFurniture({ nightIntensity }: { nightIntensity: number }) {
   const items = useMemo(() => {
     const result: Array<{ type: string; pos: [number, number, number]; rot?: number; color?: string; variant?: number }> = [];
 
-    // Street lamps along main roads
-    const lampPositions: [number, number][] = [
-      [-20, -20], [-20, 20], [20, -20], [20, 20],
-      [-10, 0], [10, 0], [0, -10], [0, 10],
-      [-30, -10], [-30, 10], [30, -10], [30, 10],
-      [-10, -30], [-10, 30], [10, -30], [10, 30],
-    ];
-    lampPositions.forEach(([x, z]) => result.push({ type: "lamp", pos: [x, 0, z] }));
+    for (const street of CITY_STREETS) {
+      const dx = street.end.x - street.start.x;
+      const dz = street.end.z - street.start.z;
+      const len = Math.sqrt(dx * dx + dz * dz);
+      const steps = Math.floor(len / 6);
+      const nx = dx / len;
+      const nz = dz / len;
+      const perpX = -nz;
+      const perpZ = nx;
 
-    // Parked cars (voxel style) along streets
-    const carColors = ["#3366CC", "#CC3333", "#33AA55", "#EEEE33", "#8833AA", "#FF8800", "#2288AA", "#555555"];
-    const carPositions: [number, number, number][] = [
-      [-7, 0, 12], [7, 0, -12], [-12, 0, 7], [12, 0, -7],
-      [-18, 0, 12], [18, 0, -12], [-25, 0, -18], [25, 0, 18],
-      [-5, 0, -22], [15, 0, 22], [-22, 0, 5], [22, 0, -5],
-      [-35, 0, -15], [35, 0, 15], [-15, 0, 35], [15, 0, -35],
-    ];
-    carPositions.forEach(([x, y, z], i) => {
-      result.push({ type: "car", pos: [x, y, z], rot: (i % 4) * Math.PI / 2, color: carColors[i % carColors.length] });
-    });
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        const x = street.start.x + dx * t;
+        const z = street.start.z + dz * t;
+        const seed = hash(`sf-${Math.round(x)}-${Math.round(z)}`);
+        const side = (i % 2 === 0) ? 1 : -1;
+        const offset = street.width / 2 + 0.8;
 
-    // Benches in parks/plazas
-    [[-5, 5], [5, -5], [-15, -5], [15, 5], [0, 0]].forEach(([x, z], i) => {
-      result.push({ type: "bench", pos: [x, 0, z], rot: (i % 2) * Math.PI / 2 });
-    });
+        // Lamps on both sides of main streets, one side for secondary
+        if (street.type === "main" || i % 2 === 0) {
+          result.push({ type: "lamp", pos: [x + perpX * offset * side, 0, z + perpZ * offset * side] });
+        }
+        if (street.type === "main" && i % 2 === 1) {
+          result.push({ type: "lamp", pos: [x - perpX * offset * side, 0, z - perpZ * offset * side] });
+        }
 
-    // Trash cans
-    [[-8, 11], [8, -11], [-22, -8], [22, 8], [-3, -15], [3, 15]].forEach(([x, z]) => {
-      result.push({ type: "trash", pos: [x, 0, z] });
-    });
+        // Contextual props based on zone
+        const glow = getZoneGlow(x, z);
+        if (glow > 0.5 && seed % 4 === 0) {
+          // Commercial zone: cafe tables
+          result.push({ type: "cafe", pos: [x + perpX * (offset + 0.6) * side, 0, z + perpZ * (offset + 0.6) * side] });
+        }
+        if (glow < 0.3 && seed % 5 === 0) {
+          // Residential: benches
+          result.push({ type: "bench", pos: [x + perpX * (offset + 0.3) * side, 0, z + perpZ * (offset + 0.3) * side], rot: Math.atan2(nz, nx) });
+        }
 
-    // Hydrants
-    [[-6, 13], [6, -13], [-18, 5], [18, -5]].forEach(([x, z]) => {
-      result.push({ type: "hydrant", pos: [x, 0, z] });
-    });
+        // Cars parked along streets
+        if (seed % 3 === 0 && street.type !== "alley") {
+          const carColors = ["#3366CC", "#CC3333", "#33AA55", "#EEEE33", "#8833AA", "#FF8800", "#2288AA", "#555555"];
+          result.push({
+            type: "car",
+            pos: [x + perpX * (street.width / 2 + 0.3) * side, 0, z + perpZ * (street.width / 2 + 0.3) * side],
+            rot: Math.atan2(nz, nx) + (side > 0 ? 0 : Math.PI),
+            color: carColors[seed % carColors.length],
+          });
+        }
 
-    // Potted plants at intersections
-    [[-9, 9], [9, -9], [-9, -9], [9, 9], [-11, 11], [11, -11]].forEach(([x, z], i) => {
-      result.push({ type: "plant", pos: [x, 0, z], variant: i % 4 });
-    });
+        // Trash/hydrant/meter scattered
+        if (seed % 7 === 0) result.push({ type: "trash", pos: [x + perpX * offset * side, 0, z + perpZ * offset * side] });
+        if (seed % 11 === 0) result.push({ type: "hydrant", pos: [x + perpX * (offset - 0.2) * side, 0, z + perpZ * (offset - 0.2) * side] });
+        if (seed % 9 === 0 && street.type === "main") result.push({ type: "meter", pos: [x + perpX * (offset + 0.2) * side, 0, z + perpZ * (offset + 0.2) * side] });
+      }
+    }
+
+    // Dumpsters in alleys
+    for (const street of CITY_STREETS) {
+      if (street.type !== "alley") continue;
+      const seed = hash(`dump-${street.start.x}-${street.start.z}`);
+      if (seed % 3 === 0) {
+        const mx = (street.start.x + street.end.x) / 2;
+        const mz = (street.start.z + street.end.z) / 2;
+        result.push({ type: "dumpster", pos: [mx + 1.5, 0, mz], rot: seededRandom(seed) * Math.PI });
+      }
+    }
 
     return result;
   }, []);
@@ -101,28 +138,78 @@ function StreetFurniture({ nightIntensity }: { nightIntensity: number }) {
     <group>
       {items.map((item, i) => {
         switch (item.type) {
-          case "lamp": return <StreetLamp key={i} position={item.pos} lightIntensity={nightIntensity * 3} />;
+          case "lamp": return <StreetLamp key={i} position={item.pos} lightIntensity={nightIntensity * 2.5} />;
           case "car": return <VoxelCar key={i} position={item.pos} rotation={item.rot} color={item.color} />;
           case "bench": return <Bench key={i} position={item.pos} rotation={item.rot} />;
           case "trash": return <TrashCan key={i} position={item.pos} />;
           case "hydrant": return <Hydrant key={i} position={item.pos} />;
+          case "cafe": return <CafeTable key={i} position={item.pos} />;
+          case "meter": return <ParkingMeter key={i} position={item.pos} />;
+          case "dumpster": return <Dumpster key={i} position={item.pos} rotation={item.rot} />;
           case "plant": return <PottedPlant key={i} position={item.pos} variant={item.variant} scale={1.2} />;
           default: return null;
         }
       })}
     </group>
   );
-}
+});
 
-// ── Trees (improved variety) ──
-function CityTrees() {
+// ── Trees clustered in parks and along residential streets ──
+const CityTrees = memo(function CityTrees() {
   const trees = useMemo(() => {
-    const positions: [number, number][] = [
-      [-15, -15], [-15, 15], [15, -15], [15, 15],
-      [-25, 0], [25, 0], [0, -25], [0, 25],
-      [-8, 15], [8, -15], [-35, -10], [35, 10],
-      [-10, -35], [10, 35], [-28, 15], [28, -15],
+    const positions: Array<{ pos: [number, number]; scale: number; crown: number }> = [];
+
+    // Park trees (dense cluster)
+    const parkZone = CITY_ZONES.find(z => z.type === "park");
+    if (parkZone) {
+      for (let i = 0; i < 20; i++) {
+        const angle = seededRandom(i * 7) * Math.PI * 2;
+        const dist = seededRandom(i * 13) * (parkZone.radius - 1);
+        positions.push({
+          pos: [parkZone.center.x + Math.cos(angle) * dist, parkZone.center.z + Math.sin(angle) * dist],
+          scale: 0.8 + seededRandom(i * 3) * 0.5,
+          crown: i % 3,
+        });
+      }
+    }
+
+    // Plaza greenery
+    const plazaZone = CITY_ZONES.find(z => z.type === "plaza");
+    if (plazaZone) {
+      for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2;
+        const dist = plazaZone.radius * 0.5;
+        positions.push({
+          pos: [plazaZone.center.x + Math.cos(angle) * dist, plazaZone.center.z + Math.sin(angle) * dist],
+          scale: 0.7 + seededRandom(i * 5 + 100) * 0.3,
+          crown: i % 3,
+        });
+      }
+    }
+
+    // Street trees along residential zone roads
+    for (let x = -45; x < 45; x += 8) {
+      for (let z = 20; z < 45; z += 10) {
+        const seed = hash(`tree-${x}-${z}`);
+        if (seededRandom(seed) > 0.5) {
+          positions.push({
+            pos: [x + (seededRandom(seed + 1) - 0.5) * 3, z + (seededRandom(seed + 2) - 0.5) * 3],
+            scale: 0.7 + seededRandom(seed + 3) * 0.4,
+            crown: seed % 3,
+          });
+        }
+      }
+    }
+
+    // Scattered along main roads
+    const roadTreePositions: [number, number][] = [
+      [-40, 2], [-28, -1], [28, 1], [40, -2],
+      [2, -35], [-1, -22], [1, 35], [-2, 42],
     ];
+    roadTreePositions.forEach(([x, z], i) => {
+      positions.push({ pos: [x, z], scale: 0.9 + (i % 3) * 0.15, crown: i % 3 });
+    });
+
     return positions;
   }, []);
 
@@ -131,56 +218,152 @@ function CityTrees() {
 
   return (
     <group>
-      {trees.map(([x, z], i) => {
-        const scale = 0.8 + (i % 3) * 0.2;
-        const crownShape = i % 3; // 0: round, 1: tall, 2: wide
+      {trees.map(({ pos: [x, z], scale, crown }, i) => (
+        <group key={`tree-${i}`} position={[x, 0, z]} scale={scale}>
+          <mesh position={[0, 0.35, 0]}>
+            <boxGeometry args={[0.08, 0.7, 0.08]} />
+            <meshStandardMaterial color={trunkColors[i % trunkColors.length]} roughness={0.9} />
+          </mesh>
+          {crown === 0 ? (
+            <>
+              <mesh position={[0, 0.85, 0]}><boxGeometry args={[0.8, 0.5, 0.8]} /><meshStandardMaterial color={treeColors[i % treeColors.length]} roughness={0.85} /></mesh>
+              <mesh position={[0, 1.2, 0]}><boxGeometry args={[0.55, 0.35, 0.55]} /><meshStandardMaterial color={treeColors[(i + 1) % treeColors.length]} roughness={0.85} /></mesh>
+            </>
+          ) : crown === 1 ? (
+            <>
+              <mesh position={[0, 0.8, 0]}><boxGeometry args={[0.6, 0.4, 0.6]} /><meshStandardMaterial color={treeColors[i % treeColors.length]} roughness={0.85} /></mesh>
+              <mesh position={[0, 1.1, 0]}><boxGeometry args={[0.5, 0.35, 0.5]} /><meshStandardMaterial color={treeColors[(i + 1) % treeColors.length]} roughness={0.85} /></mesh>
+              <mesh position={[0, 1.35, 0]}><boxGeometry args={[0.35, 0.25, 0.35]} /><meshStandardMaterial color={treeColors[(i + 2) % treeColors.length]} roughness={0.85} /></mesh>
+            </>
+          ) : (
+            <>
+              <mesh position={[0, 0.8, 0]}><boxGeometry args={[0.9, 0.35, 0.9]} /><meshStandardMaterial color={treeColors[i % treeColors.length]} roughness={0.85} /></mesh>
+              <mesh position={[0, 1.05, 0]}><boxGeometry args={[0.7, 0.25, 0.7]} /><meshStandardMaterial color={treeColors[(i + 1) % treeColors.length]} roughness={0.85} /></mesh>
+            </>
+          )}
+        </group>
+      ))}
+    </group>
+  );
+});
+
+// ── Streets with lane markings ──
+const CityStreets = memo(function CityStreets() {
+  return (
+    <group>
+      {CITY_STREETS.map((street, idx) => {
+        const dx = street.end.x - street.start.x;
+        const dz = street.end.z - street.start.z;
+        const len = Math.sqrt(dx * dx + dz * dz);
+        const mx = (street.start.x + street.end.x) / 2;
+        const mz = (street.start.z + street.end.z) / 2;
+        const angle = Math.atan2(dx, dz);
+
+        const roadColor = street.type === "main" ? "hsl(220, 8%, 20%)" : street.type === "secondary" ? "hsl(220, 8%, 22%)" : "hsl(220, 6%, 24%)";
+        const sidewalkColor = "hsl(220, 10%, 28%)";
+
         return (
-          <group key={`tree-${i}`} position={[x, 0, z]} scale={scale}>
-            {/* Trunk */}
-            <mesh position={[0, 0.35, 0]}>
-              <boxGeometry args={[0.08, 0.7, 0.08]} />
-              <meshStandardMaterial color={trunkColors[i % trunkColors.length]} roughness={0.9} />
+          <group key={`street-${idx}`}>
+            {/* Road surface */}
+            <mesh rotation={[-Math.PI / 2, 0, angle]} position={[mx, 0.015, mz]}>
+              <planeGeometry args={[street.width, len]} />
+              <meshStandardMaterial color={roadColor} roughness={0.85} />
             </mesh>
-            {/* Crown layers (voxel style) */}
-            {crownShape === 0 ? (
+            {/* Center line for main/secondary */}
+            {street.type !== "alley" && (
+              <group>
+                {Array.from({ length: Math.floor(len / 3) }).map((_, i) => {
+                  const t = (i + 0.5) / Math.floor(len / 3);
+                  const px = street.start.x + dx * t;
+                  const pz = street.start.z + dz * t;
+                  return (
+                    <mesh key={i} rotation={[-Math.PI / 2, 0, angle]} position={[px, 0.02, pz]}>
+                      <planeGeometry args={[0.08, 1.2]} />
+                      <meshStandardMaterial color="#FFD060" transparent opacity={street.type === "main" ? 0.5 : 0.3} />
+                    </mesh>
+                  );
+                })}
+              </group>
+            )}
+            {/* Sidewalks */}
+            {street.type !== "alley" && (
               <>
-                <mesh position={[0, 0.85, 0]}><boxGeometry args={[0.8, 0.5, 0.8]} /><meshStandardMaterial color={treeColors[i % treeColors.length]} roughness={0.85} /></mesh>
-                <mesh position={[0, 1.2, 0]}><boxGeometry args={[0.55, 0.35, 0.55]} /><meshStandardMaterial color={treeColors[(i + 1) % treeColors.length]} roughness={0.85} /></mesh>
-              </>
-            ) : crownShape === 1 ? (
-              <>
-                <mesh position={[0, 0.8, 0]}><boxGeometry args={[0.6, 0.4, 0.6]} /><meshStandardMaterial color={treeColors[i % treeColors.length]} roughness={0.85} /></mesh>
-                <mesh position={[0, 1.1, 0]}><boxGeometry args={[0.5, 0.35, 0.5]} /><meshStandardMaterial color={treeColors[(i + 1) % treeColors.length]} roughness={0.85} /></mesh>
-                <mesh position={[0, 1.35, 0]}><boxGeometry args={[0.35, 0.25, 0.35]} /><meshStandardMaterial color={treeColors[(i + 2) % treeColors.length]} roughness={0.85} /></mesh>
-              </>
-            ) : (
-              <>
-                <mesh position={[0, 0.8, 0]}><boxGeometry args={[0.9, 0.35, 0.9]} /><meshStandardMaterial color={treeColors[i % treeColors.length]} roughness={0.85} /></mesh>
-                <mesh position={[0, 1.05, 0]}><boxGeometry args={[0.7, 0.25, 0.7]} /><meshStandardMaterial color={treeColors[(i + 1) % treeColors.length]} roughness={0.85} /></mesh>
+                {[-1, 1].map(side => {
+                  const perpX = -(dz / len);
+                  const perpZ = (dx / len);
+                  const sw = street.width / 2 + 0.4;
+                  return (
+                    <mesh key={side} rotation={[-Math.PI / 2, 0, angle]} position={[mx + perpX * sw * side, 0.025, mz + perpZ * sw * side]}>
+                      <planeGeometry args={[0.5, len]} />
+                      <meshStandardMaterial color={sidewalkColor} roughness={0.95} />
+                    </mesh>
+                  );
+                })}
               </>
             )}
           </group>
         );
       })}
+
+      {/* Crosswalks at main intersections */}
+      {[
+        [0, -18], [0, 18], [-18, 0], [18, 0],
+      ].map(([x, z], idx) => (
+        <group key={`cross-${idx}`}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[x + (i - 2.5) * 0.45, 0.025, z]}>
+              <planeGeometry args={[0.3, 2.5]} />
+              <meshStandardMaterial color="#DDDDDD" transparent opacity={0.35} />
+            </mesh>
+          ))}
+        </group>
+      ))}
     </group>
   );
-}
+});
 
-function CityGround() {
+// ── Ground with zone tinting ──
+const CityGround = memo(function CityGround() {
   return (
     <group>
+      {/* Main ground */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
         <planeGeometry args={[200, 200]} />
-        <meshStandardMaterial color="hsl(220, 15%, 18%)" roughness={0.95} />
+        <meshStandardMaterial color="hsl(220, 15%, 16%)" roughness={0.95} />
       </mesh>
+      {/* Extended ground rings */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 0]}>
         <ringGeometry args={[100, 250, 32]} />
-        <meshStandardMaterial color="hsl(220, 12%, 12%)" roughness={0.98} />
+        <meshStandardMaterial color="hsl(220, 12%, 10%)" roughness={0.98} />
       </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.06, 0]}>
         <ringGeometry args={[250, 600, 32]} />
-        <meshStandardMaterial color="hsl(220, 10%, 8%)" roughness={1} />
+        <meshStandardMaterial color="hsl(220, 10%, 6%)" roughness={1} />
       </mesh>
+
+      {/* Zone ground tints (subtle color coding) */}
+      {CITY_ZONES.filter(z => z.type !== "park" && z.type !== "plaza").map(zone => {
+        const zoneColors: Record<string, string> = {
+          commercial: "hsl(220, 20%, 18%)",
+          skyline: "hsl(230, 18%, 15%)",
+          residential: "hsl(30, 10%, 18%)",
+        };
+        return (
+          <mesh key={zone.id} rotation={[-Math.PI / 2, 0, 0]} position={[zone.center.x, 0.005, zone.center.z]}>
+            <circleGeometry args={[zone.radius, 32]} />
+            <meshStandardMaterial color={zoneColors[zone.type] || "hsl(220, 15%, 18%)"} transparent opacity={0.4} />
+          </mesh>
+        );
+      })}
+
+      {/* Park grass */}
+      {CITY_ZONES.filter(z => z.type === "park" || z.type === "plaza").map(zone => (
+        <mesh key={zone.id} rotation={[-Math.PI / 2, 0, 0]} position={[zone.center.x, 0.01, zone.center.z]}>
+          <circleGeometry args={[zone.radius, 32]} />
+          <meshStandardMaterial color={zone.type === "park" ? "hsl(120, 25%, 18%)" : "hsl(220, 12%, 22%)"} roughness={0.95} />
+        </mesh>
+      ))}
+
       {/* Distant hills */}
       {Array.from({ length: 16 }).map((_, i) => {
         const angle = (i / 16) * Math.PI * 2;
@@ -193,93 +376,55 @@ function CityGround() {
           </mesh>
         );
       })}
-      {/* Grid */}
-      <gridHelper args={[200, 40, "hsl(220, 20%, 25%)", "hsl(220, 15%, 22%)"]} position={[0, 0.01, 0]} />
 
-      {/* District markers */}
+      {/* District labels */}
       {DISTRICTS.map(d => {
-        const offsets: Record<string, [number, number]> = {
-          tech: [-30, -20], creator: [30, -20], startup: [-30, 20], agency: [30, 20], central: [0, 0],
-        };
-        const [ox, oz] = offsets[d.id] || [0, 0];
+        const zone = CITY_ZONES.find(z => z.district === d.id && z.type !== "park");
+        if (!zone) return null;
         return (
-          <group key={d.id} position={[ox, 0.02, oz]}>
-            <mesh rotation={[-Math.PI / 2, 0, 0]}>
-              <planeGeometry args={[25, 25]} />
-              <meshStandardMaterial color={d.color} transparent opacity={0.05} />
-            </mesh>
-            <Text position={[0, 0.1, -11]} rotation={[-Math.PI / 2, 0, 0]} fontSize={1} color={d.color} anchorX="center" fillOpacity={0.4}>
-              {d.emoji} {d.name}
-            </Text>
-          </group>
+          <Text
+            key={d.id}
+            position={[zone.center.x, 0.1, zone.center.z + zone.radius + 1.5]}
+            rotation={[-Math.PI / 2, 0, 0]}
+            fontSize={1}
+            color={d.color}
+            anchorX="center"
+            fillOpacity={0.35}
+          >
+            {d.emoji} {d.name}
+          </Text>
         );
       })}
+    </group>
+  );
+});
 
-      {/* Roads with lane markings */}
-      {[-1, 1].map(dir => (
-        <group key={`road-x-${dir}`}>
-          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, dir * 10]}>
-            <planeGeometry args={[200, 2.5]} />
-            <meshStandardMaterial color="hsl(220, 8%, 22%)" roughness={0.8} />
-          </mesh>
-          {/* Center lane dashes */}
-          {Array.from({ length: 40 }).map((_, i) => (
-            <mesh key={`dash-x-${dir}-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[-95 + i * 5, 0.025, dir * 10]}>
-              <planeGeometry args={[1.5, 0.08]} />
-              <meshStandardMaterial color="#FFD060" transparent opacity={0.5} />
-            </mesh>
-          ))}
-        </group>
-      ))}
-      {[-1, 1].map(dir => (
-        <group key={`road-z-${dir}`}>
-          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[dir * 10, 0.02, 0]}>
-            <planeGeometry args={[2.5, 200]} />
-            <meshStandardMaterial color="hsl(220, 8%, 22%)" roughness={0.8} />
-          </mesh>
-          {Array.from({ length: 40 }).map((_, i) => (
-            <mesh key={`dash-z-${dir}-${i}`} rotation={[-Math.PI / 2, 0, 0]} position={[dir * 10, 0.025, -95 + i * 5]}>
-              <planeGeometry args={[0.08, 1.5]} />
-              <meshStandardMaterial color="#FFD060" transparent opacity={0.5} />
-            </mesh>
-          ))}
-        </group>
-      ))}
-
-      {/* Crosswalks at intersections */}
-      {[[-10, -10], [-10, 10], [10, -10], [10, 10]].map(([x, z], idx) => (
-        <group key={`cross-${idx}`}>
-          {Array.from({ length: 5 }).map((_, i) => (
-            <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[x + (i - 2) * 0.4, 0.03, z]}>
-              <planeGeometry args={[0.25, 2]} />
-              <meshStandardMaterial color="#DDDDDD" transparent opacity={0.4} />
-            </mesh>
-          ))}
-        </group>
-      ))}
-
-      {/* Sidewalks along roads */}
-      {[-1, 1].map(dir => (
-        <group key={`sw-${dir}`}>
-          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, dir * 10 + dir * 1.6]}>
-            <planeGeometry args={[200, 0.6]} />
-            <meshStandardMaterial color="hsl(220, 10%, 28%)" roughness={0.95} />
-          </mesh>
-          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.03, dir * 10 - dir * 1.6]}>
-            <planeGeometry args={[200, 0.6]} />
-            <meshStandardMaterial color="hsl(220, 10%, 28%)" roughness={0.95} />
-          </mesh>
-        </group>
+// ── Commercial glow planes (warm light pools on ground) ──
+const CommercialGlow = memo(function CommercialGlow() {
+  return (
+    <group>
+      {CITY_ZONES.filter(z => z.glowIntensity > 0.4).map(zone => (
+        <mesh key={zone.id} rotation={[-Math.PI / 2, 0, 0]} position={[zone.center.x, 0.02, zone.center.z]}>
+          <circleGeometry args={[zone.radius * 0.6, 24]} />
+          <meshStandardMaterial
+            color="#FFD060"
+            emissive="#FFD060"
+            emissiveIntensity={zone.glowIntensity * 0.15}
+            transparent
+            opacity={zone.glowIntensity * 0.08}
+          />
+        </mesh>
       ))}
     </group>
   );
-}
+});
 
+// ── Cinematic lighting ──
 function Lighting() {
   const dn = useDayNight();
   return (
     <>
-      <ambientLight intensity={dn.ambientIntensity} color={dn.ambientColor} />
+      <ambientLight intensity={dn.ambientIntensity * 0.9} color={dn.ambientColor} />
       <directionalLight
         position={dn.sunPosition}
         intensity={dn.sunIntensity}
@@ -287,8 +432,18 @@ function Lighting() {
         castShadow
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
+        shadow-camera-far={120}
+        shadow-camera-left={-50}
+        shadow-camera-right={50}
+        shadow-camera-top={50}
+        shadow-camera-bottom={-50}
       />
-      <hemisphereLight args={[dn.skyColor, dn.groundColor, dn.hemiIntensity]} />
+      <hemisphereLight args={[dn.skyColor, dn.groundColor, dn.hemiIntensity * 0.8]} />
+
+      {/* Cool rim light from opposite side — adds depth */}
+      <directionalLight position={[20, 15, -30]} intensity={0.15} color="#4488CC" />
+
+      {/* Moon */}
       {dn.isNight && (
         <group position={[-25, 35, -20]}>
           <mesh><sphereGeometry args={[2.5, 16, 16]} /><meshBasicMaterial color="#E8E8F0" /></mesh>
@@ -301,9 +456,16 @@ function Lighting() {
   );
 }
 
+// ── Main scene ──
 export function CityBuildingsScene({ buildings, targetBuilding, onBuildingClick, flyToTarget }: CityBuildingsSceneProps) {
   const dn = useDayNight();
   const nightIntensity = dn.isNight ? 1 : dn.isSunset ? 0.6 : dn.isSunrise ? 0.4 : 0;
+
+  // Generate NPC buildings to fill the city
+  const allBuildings = useMemo(() => {
+    const npcBuildings = generateCityLayout(buildings);
+    return [...buildings, ...npcBuildings];
+  }, [buildings]);
 
   return (
     <div className="w-full h-full">
@@ -313,15 +475,17 @@ export function CityBuildingsScene({ buildings, targetBuilding, onBuildingClick,
         gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: dn.exposure }}
         dpr={[1, 1.5]}
       >
-        <fog attach="fog" args={[dn.fogColor, 30, 150]} />
+        <fog attach="fog" args={[dn.fogColor, 25, 120]} />
         <Lighting />
         <Sky sunPosition={dn.sunPosition} turbidity={dn.isNight ? 20 : 8} rayleigh={dn.isNight ? 0 : 2} />
 
         <CityGround />
+        <CityStreets />
         <CityTrees />
         <StreetFurniture nightIntensity={nightIntensity} />
+        <CommercialGlow />
 
-        {buildings.map(b => (
+        {allBuildings.map(b => (
           <Building3D key={b.id} building={b} onClick={() => onBuildingClick?.(b)} highlighted={targetBuilding?.id === b.id} />
         ))}
 
