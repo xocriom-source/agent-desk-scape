@@ -154,66 +154,51 @@ const StreetFurniture = memo(function StreetFurniture({ nightIntensity }: { nigh
   );
 });
 
-// ── Trees clustered in parks, along streets, AI vs Human themed ──
+// ── Trees clustered in parks and a few residential streets ──
 const CityTrees = memo(function CityTrees() {
   const trees = useMemo(() => {
     const positions: Array<{ pos: [number, number]; scale: number; crown: number; isAI: boolean }> = [];
 
-    // Park trees (dense cluster in central dividing park)
     const parkZone = CITY_ZONES.find(z => z.type === "park");
     if (parkZone) {
-      for (let i = 0; i < 25; i++) {
+      for (let i = 0; i < 14; i++) {
         const angle = seededRandom(i * 7) * Math.PI * 2;
-        const dist = seededRandom(i * 13) * (parkZone.radius - 1);
+        const dist = seededRandom(i * 13) * (parkZone.radius - 0.8);
         positions.push({
           pos: [parkZone.center.x + Math.cos(angle) * dist, parkZone.center.z + Math.sin(angle) * dist],
-          scale: 0.8 + seededRandom(i * 3) * 0.5, crown: i % 3, isAI: false,
+          scale: 0.75 + seededRandom(i * 3) * 0.35,
+          crown: i % 3,
+          isAI: false,
         });
       }
     }
 
-    // Plaza greenery (both plazas)
-    for (const pz of CITY_ZONES.filter(z => z.type === "plaza")) {
+    for (let x = -34; x < 36; x += 10) {
+      for (let z = 24; z < 40; z += 10) {
+        const seed = hash(`tree-${x}-${z}`);
+        if (seededRandom(seed) > 0.52) {
+          positions.push({
+            pos: [x + (seededRandom(seed + 1) - 0.5) * 2.2, z + (seededRandom(seed + 2) - 0.5) * 2.2],
+            scale: 0.72 + seededRandom(seed + 3) * 0.28,
+            crown: seed % 3,
+            isAI: false,
+          });
+        }
+      }
+    }
+
+    const aiZone = CITY_ZONES.find(z => z.id === "ai-nexus");
+    if (aiZone) {
       for (let i = 0; i < 6; i++) {
         const angle = (i / 6) * Math.PI * 2;
-        const dist = pz.radius * 0.5;
+        const dist = aiZone.radius * 0.72;
         positions.push({
-          pos: [pz.center.x + Math.cos(angle) * dist, pz.center.z + Math.sin(angle) * dist],
-          scale: 0.7 + seededRandom(i * 5 + 100) * 0.3, crown: i % 3, isAI: pz.district === "ai",
+          pos: [aiZone.center.x + Math.cos(angle) * dist, aiZone.center.z + Math.sin(angle) * dist],
+          scale: 0.68,
+          crown: i % 3,
+          isAI: true,
         });
       }
-    }
-
-    // Human residential trees (south)
-    for (let x = -45; x < 45; x += 8) {
-      for (let z = 20; z < 48; z += 9) {
-        const seed = hash(`tree-${x}-${z}`);
-        if (seededRandom(seed) > 0.45) {
-          positions.push({
-            pos: [x + (seededRandom(seed + 1) - 0.5) * 3, z + (seededRandom(seed + 2) - 0.5) * 3],
-            scale: 0.7 + seededRandom(seed + 3) * 0.4, crown: seed % 3, isAI: false,
-          });
-        }
-      }
-    }
-
-    // AI district trees (north — sparse, geometric)
-    for (let x = -40; x < 40; x += 12) {
-      for (let z = -45; z < -10; z += 14) {
-        const seed = hash(`ai-tree-${x}-${z}`);
-        if (seededRandom(seed) > 0.6) {
-          positions.push({
-            pos: [x + (seededRandom(seed + 1) - 0.5) * 2, z + (seededRandom(seed + 2) - 0.5) * 2],
-            scale: 0.6 + seededRandom(seed + 3) * 0.3, crown: seed % 3, isAI: true,
-          });
-        }
-      }
-    }
-
-    // Boulevard trees along the divider
-    for (let x = -50; x < 50; x += 6) {
-      positions.push({ pos: [x, -3], scale: 0.9, crown: Math.abs(x) % 3, isAI: false });
-      positions.push({ pos: [x, -7], scale: 0.85, crown: (Math.abs(x) + 1) % 3, isAI: true });
     }
 
     return positions;
