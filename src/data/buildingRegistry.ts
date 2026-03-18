@@ -48,6 +48,7 @@ export function generateBuilding(ownerName: string, accountType?: string): CityB
     startup: { x: -30, z: 20 },
     agency: { x: 30, z: 20 },
     central: { x: 0, z: 0 },
+    ai: { x: 0, z: -40 },
   };
   x += districtOffsets[district].x;
   z += districtOffsets[district].z;
