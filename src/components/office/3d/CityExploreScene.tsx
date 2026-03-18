@@ -1112,7 +1112,9 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         <color attach="background" args={[dn.bgColor]} />
         <fog attach="fog" args={[dn.fogColor, 25, 120]} />
 
-        <ambientLight intensity={dn.ambientIntensity} color={dn.ambientColor} />
+        <ambientLight intensity={dn.ambientIntensity * 1.1} color={dn.ambientColor} />
+        {/* Warm fill light for diorama effect */}
+        <pointLight position={[0, 20, 0]} intensity={0.4} color="#FFD4A0" distance={60} decay={1.5} />
         <directionalLight
           position={dn.sunPosition}
           intensity={dn.sunIntensity}
@@ -1126,7 +1128,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
           shadow-camera-bottom={-20}
           color={dn.sunColor}
         />
-        <hemisphereLight args={[dn.skyColor, dn.groundColor, dn.hemiIntensity]} />
+        <hemisphereLight args={[dn.skyColor, "#FFE8C0", dn.hemiIntensity * 1.15]} />
 
         {/* Moon */}
         {dn.isNight && (
