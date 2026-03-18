@@ -182,21 +182,11 @@ function LightBuilding3D({ building, highlighted, onClick, occluded }: {
   );
 }
 
-// ── Static building with occlusion ──
-function StaticBuildingOccludable({ x, z, w, d, h, color, occluded }: {
-  x: number; z: number; w: number; d: number; h: number; color: string; occluded?: boolean;
+// ── Static building with occlusion (now voxel) ──
+function StaticBuildingOccludable({ x, z, w, d, h, color, occluded, seed }: {
+  x: number; z: number; w: number; d: number; h: number; color: string; occluded?: boolean; seed: number;
 }) {
-  if (occluded) {
-    return (
-      <group position={[x, 0, z]}>
-        <mesh position={[0, h / 2, 0]}>
-          <boxGeometry args={[w, h, d]} />
-          <meshStandardMaterial color={color} transparent opacity={0.12} roughness={0.85} />
-        </mesh>
-      </group>
-    );
-  }
-  return <StaticBuilding x={x} z={z} w={w} d={d} h={h} color={color} />;
+  return <VoxelCityBuilding x={x} z={z} w={w} d={d} h={h} color={color} seed={seed} occluded={occluded} />;
 }
 
 // ── Simplified Plaza ──
