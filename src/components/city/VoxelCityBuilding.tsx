@@ -2,11 +2,11 @@ import { memo, useMemo } from "react";
 import * as THREE from "three";
 
 /**
- * Art-Directed Diorama Buildings
+ * Diorama-Quality Voxel Buildings
  * 
- * Philosophy: Each building is a hand-crafted miniature.
- * 5 building classes with curated designs, not random assembly.
- * Strong silhouette → focal point → controlled detail → cinematic light.
+ * Design philosophy: Monument Valley / Townscaper level craft.
+ * Every surface has INTENTION — micro-bevels, depth, material variation.
+ * Cinematic warm/cold lighting contrast built into geometry.
  */
 
 // ── Deterministic hash ──
@@ -24,628 +24,891 @@ function hashPick<T>(arr: T[], seed: number, offset = 0): T {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ART-DIRECTED PALETTES — curated, harmonious, limited
-// Each palette: [wall, wallAccent, trim, warm/glow]
+// MATERIAL SYSTEM — simulated surfaces, NOT flat colors
 // ═══════════════════════════════════════════════════════════
 
-interface BuildingPalette {
-  wall: string;
-  wallDark: string;
-  trim: string;
-  accent: string;
-  glow: string;
-  windowGlow: string;
-  roofMain: string;
-  roofAccent: string;
+interface Palette {
+  wall: string;          // Main wall color
+  wallShadow: string;    // Darker face (sides, AO fake)
+  wallHighlight: string; // Lighter face (top surfaces)
+  trim: string;          // Window frames, door frames
+  wood: string;          // Warm wood accents
+  glass: string;         // Window glass (dark)
+  glowWarm: string;      // Interior warm glow
+  glowAccent: string;    // Sign/accent glow
+  roof: string;          // Roof main
+  roofEdge: string;      // Roof trim/edge
+  metal: string;         // Railings, hardware
+  ground: string;        // Sidewalk/base
 }
 
-const PALETTES: BuildingPalette[] = [
+const PALETTES: Palette[] = [
   // Warm Terracotta Café
-  { wall: "#C4734B", wallDark: "#8B4A30", trim: "#2A1A10", accent: "#D4A030", glow: "#FFD060", windowGlow: "#FFE4A8", roofMain: "#6B3A2A", roofAccent: "#8B5A3A" },
+  { wall: "#C27348", wallShadow: "#8A4A2E", wallHighlight: "#D4956A", trim: "#1A1008", wood: "#7A5030", glass: "#0A0A14", glowWarm: "#FFD080", glowAccent: "#FFB040", roof: "#6B3225", roofEdge: "#4A2018", metal: "#3A3A42", ground: "#484440" },
   // Dusty Blue Bookshop
-  { wall: "#6A8BA0", wallDark: "#4A6578", trim: "#1A2A3A", accent: "#E8C870", glow: "#FFE080", windowGlow: "#AADDFF", roofMain: "#3A4A5A", roofAccent: "#5A6A7A" },
+  { wall: "#6888A0", wallShadow: "#3E5568", wallHighlight: "#8AA8C0", trim: "#0A1420", wood: "#6A4A30", glass: "#060810", glowWarm: "#FFE8B0", glowAccent: "#FFE080", roof: "#384858", roofEdge: "#283848", metal: "#4A4A55", ground: "#3E3E40" },
   // Cream Patisserie
-  { wall: "#E8DCC0", wallDark: "#C4B898", trim: "#3A2A18", accent: "#C94050", glow: "#FF8090", windowGlow: "#FFD4C0", roofMain: "#8A6A4A", roofAccent: "#A08060" },
+  { wall: "#E0D4B8", wallShadow: "#B8A88A", wallHighlight: "#F0E8D4", trim: "#2A1A10", wood: "#8A6A3A", glass: "#08080E", glowWarm: "#FFD4A0", glowAccent: "#FF8090", roof: "#8A6848", roofEdge: "#6A4A30", metal: "#484848", ground: "#4A4844" },
   // Sage Green Studio
-  { wall: "#6A9A78", wallDark: "#4A7A58", trim: "#1A2A1A", accent: "#E8B040", glow: "#FFD860", windowGlow: "#BBFFBB", roofMain: "#3A5A3A", roofAccent: "#4A6A4A" },
-  // Deep Plum Bar
-  { wall: "#7A4A5A", wallDark: "#5A2A3A", trim: "#1A0A1A", accent: "#D06080", glow: "#FF60A0", windowGlow: "#FFB0D0", roofMain: "#4A2A3A", roofAccent: "#6A3A4A" },
-  // Warm Ochre Workshop
-  { wall: "#C4983A", wallDark: "#9A7828", trim: "#2A1A08", accent: "#E07030", glow: "#FF8040", windowGlow: "#FFE0B0", roofMain: "#6A4A1A", roofAccent: "#8A6A2A" },
-  // Slate Tech Office
-  { wall: "#5A6A78", wallDark: "#3A4A58", trim: "#0A0A1A", accent: "#40D0FF", glow: "#40D0FF", windowGlow: "#80D0FF", roofMain: "#2A3A4A", roofAccent: "#4A5A6A" },
+  { wall: "#6A9878", wallShadow: "#3E6A48", wallHighlight: "#8AB898", trim: "#0A1808", wood: "#6A4828", glass: "#060A08", glowWarm: "#FFE0A0", glowAccent: "#FFD860", roof: "#3A5838", roofEdge: "#2A4028", metal: "#3E4240", ground: "#3A3E38" },
+  // Deep Plum Wine Bar
+  { wall: "#7A485A", wallShadow: "#4A2838", wallHighlight: "#9A6878", trim: "#0A0610", wood: "#5A3828", glass: "#080610", glowWarm: "#FFB0D0", glowAccent: "#FF60A0", roof: "#3E2830", roofEdge: "#2E1820", metal: "#444048", ground: "#403840" },
+  // Ochre Workshop
+  { wall: "#C0943A", wallShadow: "#886828", wallHighlight: "#D8B060", trim: "#1A1008", wood: "#5A3818", glass: "#0A0808", glowWarm: "#FFE0B0", glowAccent: "#FF8040", roof: "#5A3818", roofEdge: "#402810", metal: "#4A4840", ground: "#484438" },
+  // Slate Tech
+  { wall: "#586878", wallShadow: "#2E3E4E", wallHighlight: "#788898", trim: "#060810", wood: "#4A3828", glass: "#040610", glowWarm: "#80D0FF", glowAccent: "#40D0FF", roof: "#283040", roofEdge: "#182030", metal: "#505560", ground: "#383840" },
   // Rose Boutique
-  { wall: "#C4828A", wallDark: "#A46270", trim: "#2A1018", accent: "#FFD060", glow: "#FFD060", windowGlow: "#FFE4C8", roofMain: "#7A4A50", roofAccent: "#9A5A60" },
+  { wall: "#C0808A", wallShadow: "#8A5A62", wallHighlight: "#D8A0A8", trim: "#180810", wood: "#7A5038", glass: "#080608", glowWarm: "#FFE4C8", glowAccent: "#FFD060", roof: "#6A3E48", roofEdge: "#502E38", metal: "#484048", ground: "#424040" },
 ];
-
-// ═══════════════════════════════════════════════════════════
-// BUILDING CLASSES — art-directed templates
-// ═══════════════════════════════════════════════════════════
 
 type BuildingClass = "cafe" | "shop" | "office" | "tech_tower" | "creative_studio";
 const BUILDING_CLASSES: BuildingClass[] = ["cafe", "shop", "office", "tech_tower", "creative_studio"];
 
 // ═══════════════════════════════════════════════════════════
-// MICRO-COMPONENTS — curated building details
+// MICRO-DETAIL PRIMITIVES — the soul of the diorama
 // ═══════════════════════════════════════════════════════════
 
-/** Art-directed window grid — clean, intentional placement */
-function ArtWindows({ y, w, d, glow, count, h: winH = 0.22 }: {
-  y: number; w: number; d: number; glow: string; count: number; h?: number;
+/** Bevel-edged wall panel — NOT a flat box. Has subtle depth variation. */
+function BevelWall({ w, h, d, color, shadowColor, highlightColor, position }: {
+  w: number; h: number; d: number; color: string; shadowColor: string; highlightColor: string;
+  position: [number, number, number];
 }) {
-  const winW = w * 0.14;
+  const bevel = 0.015;
+  return (
+    <group position={position}>
+      {/* Main body */}
+      <mesh castShadow>
+        <boxGeometry args={[w, h, d]} />
+        <meshStandardMaterial color={color} roughness={0.72} />
+      </mesh>
+      {/* Top bevel highlight — catches light */}
+      <mesh position={[0, h / 2 - bevel / 2, 0]}>
+        <boxGeometry args={[w + 0.004, bevel, d + 0.004]} />
+        <meshStandardMaterial color={highlightColor} roughness={0.6} />
+      </mesh>
+      {/* Bottom shadow line — fake AO */}
+      <mesh position={[0, -h / 2 + bevel / 2, 0]}>
+        <boxGeometry args={[w + 0.006, bevel, d + 0.006]} />
+        <meshStandardMaterial color={shadowColor} roughness={0.85} />
+      </mesh>
+    </group>
+  );
+}
+
+/** Deep-set window with frame, sill, and interior glow */
+function DeepWindow({ x, y, z, winW, winH, pal, glowIntensity = 1.0 }: {
+  x: number; y: number; z: number; winW: number; winH: number; pal: Palette; glowIntensity?: number;
+}) {
+  const depth = 0.04; // Window recess depth
+  const frameT = 0.012; // Frame thickness
+  return (
+    <group position={[x, y, z]}>
+      {/* Recess/cavity — dark shadow to create depth */}
+      <mesh position={[0, 0, -depth / 2]}>
+        <boxGeometry args={[winW + frameT * 2, winH + frameT * 2, depth]} />
+        <meshStandardMaterial color={pal.trim} roughness={0.9} />
+      </mesh>
+      {/* Glass pane — at back of recess */}
+      <mesh position={[0, 0, -depth + 0.005]}>
+        <boxGeometry args={[winW, winH, 0.006]} />
+        <meshStandardMaterial 
+          color={pal.glass} 
+          emissive={pal.glowWarm} 
+          emissiveIntensity={1.4 * glowIntensity} 
+          roughness={0.1}
+          metalness={0.05}
+        />
+      </mesh>
+      {/* Top frame (lintel) */}
+      <mesh position={[0, winH / 2 + frameT / 2, 0.003]}>
+        <boxGeometry args={[winW + frameT * 3, frameT, 0.02]} />
+        <meshStandardMaterial color={pal.trim} roughness={0.7} />
+      </mesh>
+      {/* Sill — projects outward with slight overhang */}
+      <mesh position={[0, -winH / 2 - 0.008, 0.018]}>
+        <boxGeometry args={[winW + frameT * 3, 0.016, 0.035]} />
+        <meshStandardMaterial color={pal.metal} roughness={0.5} metalness={0.2} />
+      </mesh>
+      {/* Side frames */}
+      {[-1, 1].map(s => (
+        <mesh key={s} position={[s * (winW / 2 + frameT / 2), 0, 0.002]}>
+          <boxGeometry args={[frameT, winH + frameT, 0.016]} />
+          <meshStandardMaterial color={pal.trim} roughness={0.7} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/** Window row with deep-set windows */
+function WindowRow({ y, w, d, pal, count, winH = 0.22 }: {
+  y: number; w: number; d: number; pal: Palette; count: number; winH?: number;
+}) {
+  const winW = w * 0.12;
   const spacing = w / (count + 1);
   return (
     <group>
       {Array.from({ length: count }).map((_, i) => {
         const xOff = -w / 2 + spacing * (i + 1);
         return (
-          <group key={i}>
-            {/* Frame — dark, thin */}
-            <mesh position={[xOff, y, d / 2 + 0.008]}>
-              <boxGeometry args={[winW + 0.025, winH + 0.025, 0.012]} />
-              <meshStandardMaterial color="#0A0A14" />
-            </mesh>
-            {/* Glass — warm interior glow */}
-            <mesh position={[xOff, y, d / 2 + 0.016]}>
-              <boxGeometry args={[winW, winH, 0.008]} />
-              <meshStandardMaterial color="#050508" emissive={glow} emissiveIntensity={1.2} />
-            </mesh>
-            {/* Sill */}
-            <mesh position={[xOff, y - winH / 2 - 0.015, d / 2 + 0.022]}>
-              <boxGeometry args={[winW + 0.04, 0.018, 0.025]} />
-              <meshStandardMaterial color="#3A3A3A" />
-            </mesh>
-          </group>
+          <DeepWindow
+            key={i}
+            x={xOff} y={y} z={d / 2 + 0.001}
+            winW={winW} winH={winH}
+            pal={pal}
+            glowIntensity={0.8 + (i % 2) * 0.4}
+          />
         );
       })}
     </group>
   );
 }
 
-/** Cinematic sign — the focal point of ground floor */
-function CinematicSign({ w, d, glowColor, label }: {
-  w: number; d: number; glowColor: string; label: string;
+/** Cinematic illuminated sign — the building's focal point */
+function GlowSign({ w, d, pal, yPos = 0.62 }: {
+  w: number; d: number; pal: Palette; yPos?: number;
 }) {
   return (
-    <group position={[0, 0.6, d / 2 + 0.005]}>
-      {/* Sign backing — dark */}
+    <group position={[0, yPos, d / 2 + 0.005]}>
+      {/* Sign board with micro-bevel */}
       <mesh>
-        <boxGeometry args={[w * 0.55, 0.16, 0.025]} />
-        <meshStandardMaterial color="#0A0A0A" />
+        <boxGeometry args={[w * 0.5, 0.14, 0.03]} />
+        <meshStandardMaterial color="#080808" roughness={0.4} />
       </mesh>
-      {/* Glowing text panel */}
-      <mesh position={[0, 0, 0.016]}>
-        <boxGeometry args={[w * 0.48, 0.11, 0.006]} />
-        <meshStandardMaterial color={glowColor} emissive={glowColor} emissiveIntensity={1.6} />
+      {/* Top edge highlight */}
+      <mesh position={[0, 0.075, 0]}>
+        <boxGeometry args={[w * 0.52, 0.008, 0.032]} />
+        <meshStandardMaterial color={pal.metal} roughness={0.3} metalness={0.5} />
       </mesh>
-      {/* Subtle glow halo (bloom fake) */}
-      <mesh position={[0, 0, 0.025]}>
-        <boxGeometry args={[w * 0.56, 0.18, 0.003]} />
-        <meshStandardMaterial color={glowColor} emissive={glowColor} emissiveIntensity={0.3} transparent opacity={0.25} />
+      {/* Glowing text area */}
+      <mesh position={[0, 0, 0.017]}>
+        <boxGeometry args={[w * 0.42, 0.09, 0.005]} />
+        <meshStandardMaterial color={pal.glowAccent} emissive={pal.glowAccent} emissiveIntensity={2.2} />
       </mesh>
+      {/* Bloom halo (subtle) */}
+      <mesh position={[0, 0, 0.022]}>
+        <boxGeometry args={[w * 0.54, 0.18, 0.003]} />
+        <meshStandardMaterial color={pal.glowAccent} emissive={pal.glowAccent} emissiveIntensity={0.4} transparent opacity={0.18} />
+      </mesh>
+      {/* Bracket arms */}
+      {[-1, 1].map(s => (
+        <mesh key={s} position={[s * w * 0.22, 0.09, -0.01]}>
+          <boxGeometry args={[0.02, 0.04, 0.04]} />
+          <meshStandardMaterial color={pal.metal} metalness={0.6} roughness={0.3} />
+        </mesh>
+      ))}
     </group>
   );
 }
 
-/** Curated awning — striped, with depth */
-function CuratedAwning({ w, d, color }: { w: number; d: number; color: string }) {
-  const stripe = new THREE.Color(color).lerp(new THREE.Color("#FFFFFF"), 0.6).getStyle();
+/** Detailed awning with stepped voxel canopy + fringe */
+function DetailedAwning({ w, d, color, shadowColor }: {
+  w: number; d: number; color: string; shadowColor: string;
+}) {
+  const aw = w * 0.82;
+  const stripe = new THREE.Color(color).lerp(new THREE.Color("#FFFFFF"), 0.55).getStyle();
   return (
-    <group position={[0, 0.78, d / 2 + 0.16]}>
-      {/* Main canopy — layered for stepped voxel look */}
-      <mesh><boxGeometry args={[w * 0.85, 0.035, 0.36]} /><meshStandardMaterial color={color} /></mesh>
-      <mesh position={[0, -0.035, 0.04]}>
-        <boxGeometry args={[w * 0.85, 0.035, 0.26]} /><meshStandardMaterial color={color} />
-      </mesh>
-      {/* Stripes */}
-      {[-2, -1, 0, 1, 2].map(i => (
-        <mesh key={i} position={[i * w * 0.13, 0.019, 0]}>
-          <boxGeometry args={[w * 0.05, 0.004, 0.38]} />
-          <meshStandardMaterial color={stripe} transparent opacity={0.45} />
+    <group position={[0, 0.78, d / 2 + 0.14]}>
+      {/* 3-step canopy for voxel depth */}
+      {[0, 1, 2].map(step => (
+        <mesh key={step} position={[0, -step * 0.02, -step * 0.05]}>
+          <boxGeometry args={[aw, 0.022, 0.32 - step * 0.08]} />
+          <meshStandardMaterial color={step === 0 ? color : step === 1 ? shadowColor : color} roughness={0.7} />
         </mesh>
       ))}
-      {/* Scalloped edge */}
-      {Array.from({ length: 6 }).map((_, i) => (
-        <mesh key={`sc-${i}`} position={[-w * 0.34 + i * w * 0.135, -0.085, 0.14]}>
-          <boxGeometry args={[w * 0.055, 0.028, 0.012]} />
+      {/* Stripe details on top */}
+      {[-3, -2, -1, 0, 1, 2, 3].map(i => (
+        <mesh key={`s${i}`} position={[i * aw * 0.1, 0.013, 0]}>
+          <boxGeometry args={[aw * 0.035, 0.004, 0.34]} />
+          <meshStandardMaterial color={stripe} transparent opacity={0.4} />
+        </mesh>
+      ))}
+      {/* Scalloped fringe */}
+      {Array.from({ length: 8 }).map((_, i) => (
+        <mesh key={`f${i}`} position={[-aw * 0.38 + i * aw * 0.11, -0.055, 0.13]}>
+          <boxGeometry args={[aw * 0.04, 0.025, 0.01]} />
           <meshStandardMaterial color={color} />
         </mesh>
       ))}
+      {/* Shadow strip underneath */}
+      <mesh position={[0, -0.065, 0.06]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[aw, 0.25]} />
+        <meshBasicMaterial color="#000" transparent opacity={0.12} />
+      </mesh>
     </group>
   );
 }
 
-/** Ground floor storefront — large window, warm interior */
-function ArtStorefront({ w, d, pal, type }: {
-  w: number; d: number; pal: BuildingPalette; type: BuildingClass;
+/** Ground-floor storefront with depth, shelving hints, and interior */
+function RichStorefront({ w, d, pal, hasDoor = true }: {
+  w: number; d: number; pal: Palette; hasDoor?: boolean;
 }) {
-  const interiorGlow = type === "cafe" ? "#FFD080" : type === "shop" ? "#FFCC80" : "#AADDFF";
-  const doorW = type === "shop" ? 0.32 : 0.24;
-  const doorSide = type === "cafe" ? 0.28 : 0.22;
   return (
     <group>
-      {/* Large storefront window — focal point */}
-      <mesh position={[-w * 0.1, 0.38, d / 2 + 0.008]}>
-        <boxGeometry args={[w * 0.5, 0.46, 0.012]} />
-        <meshStandardMaterial color="#050508" emissive={interiorGlow} emissiveIntensity={0.7} />
-      </mesh>
-      {/* Window frame */}
-      <mesh position={[-w * 0.1, 0.38, d / 2 + 0.012]}>
-        <boxGeometry args={[w * 0.52, 0.48, 0.006]} />
-        <meshStandardMaterial color={pal.trim} />
-      </mesh>
-      {/* Door */}
-      <mesh position={[w * doorSide, 0.28, d / 2 + 0.015]}>
-        <boxGeometry args={[doorW, 0.5, 0.018]} />
-        <meshStandardMaterial color={pal.trim} />
-      </mesh>
-      {/* Door handle */}
-      <mesh position={[w * doorSide - 0.05, 0.28, d / 2 + 0.03]}>
-        <boxGeometry args={[0.02, 0.03, 0.02]} />
-        <meshStandardMaterial color="#C4983A" metalness={0.8} />
-      </mesh>
-      {/* Step */}
-      <mesh position={[w * doorSide, 0.015, d / 2 + 0.08]}>
-        <boxGeometry args={[doorW + 0.08, 0.03, 0.06]} />
-        <meshStandardMaterial color="#555" />
-      </mesh>
-      {/* Interior floor glow */}
-      <mesh position={[0, 0.005, 0]}>
-        <boxGeometry args={[w * 0.85, 0.01, d * 0.85]} />
-        <meshStandardMaterial color="#2A1A08" emissive={interiorGlow} emissiveIntensity={0.12} />
-      </mesh>
-    </group>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════
-// BUILDING CLASS RENDERERS — art-directed full compositions
-// ═══════════════════════════════════════════════════════════
-
-/** CAFÉ — warm, inviting, low building with peaked roof and outdoor seating */
-function CafeBuilding({ w, d, h, pal, seed }: { w: number; d: number; h: number; pal: BuildingPalette; seed: number }) {
-  const floors = Math.max(2, Math.floor(h / 0.65));
-  const bodyH = h - 0.7;
-  const variant = hash(seed, 100) % 3;
-
-  return (
-    <group>
-      {/* ── BASE: dark stone foundation ── */}
-      <mesh position={[0, 0.05, 0]}>
-        <boxGeometry args={[w + 0.04, 0.1, d + 0.04]} />
-        <meshStandardMaterial color="#2A2A2A" roughness={0.9} />
-      </mesh>
-
-      {/* ── GROUND FLOOR: warm, inviting ── */}
-      <mesh position={[0, 0.38, 0]}>
-        <boxGeometry args={[w, 0.7, d]} />
-        <meshStandardMaterial color={pal.wallDark} roughness={0.75} />
-      </mesh>
-      <ArtStorefront w={w} d={d} pal={pal} type="cafe" />
-      <CuratedAwning w={w} d={d} color={pal.accent} />
-      <CinematicSign w={w} d={d} glowColor={pal.glow} label="CAFÉ" />
-
-      {/* ── UPPER: main wall body ── */}
-      <mesh position={[0, 0.7 + bodyH / 2, 0]} castShadow>
-        <boxGeometry args={[w, bodyH, d]} />
-        <meshStandardMaterial color={pal.wall} roughness={0.7} />
-      </mesh>
-
-      {/* ── WINDOWS: clean rows ── */}
-      {Array.from({ length: Math.min(floors - 1, 3) }).map((_, i) => (
-        <ArtWindows key={i} y={0.9 + i * 0.55} w={w} d={d} glow={pal.windowGlow} count={3} />
-      ))}
-
-      {/* ── FLOOR BANDS ── */}
-      {Array.from({ length: Math.min(floors, 3) }).map((_, i) => (
-        <mesh key={`band-${i}`} position={[0, 0.7 + (i + 1) * (bodyH / floors), d / 2 + 0.003]}>
-          <boxGeometry args={[w + 0.015, 0.02, 0.008]} />
-          <meshStandardMaterial color={pal.trim} />
+      {/* Large display window — recessed for depth */}
+      <group position={[hasDoor ? -w * 0.08 : 0, 0.38, d / 2]}>
+        {/* Window cavity */}
+        <mesh position={[0, 0, -0.02]}>
+          <boxGeometry args={[w * 0.52, 0.48, 0.045]} />
+          <meshStandardMaterial color={pal.trim} roughness={0.85} />
         </mesh>
-      ))}
-
-      {/* ── ROOF: peaked (stepped voxel pyramid) ── */}
-      <group position={[0, h, 0]}>
-        {[0, 1, 2, 3].map(step => (
-          <mesh key={step} position={[0, step * 0.08 + 0.04, 0]}>
-            <boxGeometry args={[w - step * 0.25, 0.08, d - step * 0.25]} />
-            <meshStandardMaterial color={pal.roofMain} roughness={0.65} />
+        {/* Glass — warm interior */}
+        <mesh position={[0, 0, -0.035]}>
+          <boxGeometry args={[w * 0.48, 0.44, 0.008]} />
+          <meshStandardMaterial 
+            color={pal.glass} 
+            emissive={pal.glowWarm} 
+            emissiveIntensity={0.9}
+            roughness={0.08}
+          />
+        </mesh>
+        {/* Interior shelf silhouettes */}
+        {[-0.12, 0, 0.12].map((ox, i) => (
+          <mesh key={i} position={[ox, -0.1, -0.04]}>
+            <boxGeometry args={[0.08, 0.06, 0.008]} />
+            <meshStandardMaterial color={pal.glass} emissive={pal.glowWarm} emissiveIntensity={0.3} />
           </mesh>
         ))}
-        {/* Chimney */}
-        {variant === 0 && (
-          <group position={[w * 0.25, 0.45, -d * 0.15]}>
-            <mesh><boxGeometry args={[0.12, 0.25, 0.12]} /><meshStandardMaterial color={pal.roofAccent} /></mesh>
-            <mesh position={[0, 0.15, 0]}><boxGeometry args={[0.15, 0.04, 0.15]} /><meshStandardMaterial color={pal.trim} /></mesh>
-          </group>
-        )}
+        {/* Mullion (center divider) */}
+        <mesh position={[0, 0, 0.002]}>
+          <boxGeometry args={[0.01, 0.46, 0.015]} />
+          <meshStandardMaterial color={pal.trim} />
+        </mesh>
       </group>
 
-      {/* ── FOCAL: outdoor seating ── */}
-      {[[-0.35, 0.06, d / 2 + 0.5], [0.15, 0.06, d / 2 + 0.5]].map(([tx, ty, tz], i) => (
-        <group key={`seat-${i}`} position={[tx, ty, tz]}>
-          {/* Table */}
-          <mesh position={[0, 0.12, 0]}><boxGeometry args={[0.18, 0.02, 0.18]} /><meshStandardMaterial color="#8B6B3A" /></mesh>
-          <mesh position={[0, 0.06, 0]}><boxGeometry args={[0.03, 0.12, 0.03]} /><meshStandardMaterial color="#5A4A3A" /></mesh>
-          {/* Chair */}
-          <mesh position={[0.14, 0.08, 0]}><boxGeometry args={[0.1, 0.02, 0.1]} /><meshStandardMaterial color="#4A3A2A" /></mesh>
-          <mesh position={[0.14, 0.14, -0.04]}><boxGeometry args={[0.1, 0.1, 0.02]} /><meshStandardMaterial color="#4A3A2A" /></mesh>
+      {/* Door — recessed with handle and step */}
+      {hasDoor && (
+        <group position={[w * 0.28, 0, d / 2]}>
+          {/* Door recess */}
+          <mesh position={[0, 0.3, -0.015]}>
+            <boxGeometry args={[0.28, 0.55, 0.035]} />
+            <meshStandardMaterial color={pal.trim} roughness={0.8} />
+          </mesh>
+          {/* Door panel */}
+          <mesh position={[0, 0.3, -0.025]}>
+            <boxGeometry args={[0.24, 0.5, 0.015]} />
+            <meshStandardMaterial color={pal.wood} roughness={0.75} />
+          </mesh>
+          {/* Door window (upper) */}
+          <mesh position={[0, 0.42, -0.018]}>
+            <boxGeometry args={[0.16, 0.14, 0.008]} />
+            <meshStandardMaterial color={pal.glass} emissive={pal.glowWarm} emissiveIntensity={0.6} />
+          </mesh>
+          {/* Handle */}
+          <mesh position={[-0.08, 0.3, 0.004]}>
+            <boxGeometry args={[0.015, 0.04, 0.025]} />
+            <meshStandardMaterial color="#C4983A" metalness={0.8} roughness={0.2} />
+          </mesh>
+          {/* Step */}
+          <mesh position={[0, 0.015, 0.04]}>
+            <boxGeometry args={[0.32, 0.03, 0.08]} />
+            <meshStandardMaterial color={pal.ground} roughness={0.8} />
+          </mesh>
+          {/* Interior glow spill through door */}
+          <mesh position={[0, 0.2, 0.05]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry args={[0.3, 0.12]} />
+            <meshBasicMaterial color={pal.glowWarm} transparent opacity={0.08} />
+          </mesh>
+        </group>
+      )}
+
+      {/* Interior floor glow (visible through windows) */}
+      <mesh position={[0, 0.01, 0]}>
+        <boxGeometry args={[w * 0.8, 0.008, d * 0.8]} />
+        <meshStandardMaterial color="#1A1008" emissive={pal.glowWarm} emissiveIntensity={0.15} />
+      </mesh>
+    </group>
+  );
+}
+
+/** Wall with texture — subtle per-face color variation */
+function TexturedWall({ w, h, d, pal, seed }: {
+  w: number; h: number; d: number; pal: Palette; seed: number;
+}) {
+  // Subdivide into horizontal bands for material variety
+  const bands = Math.max(2, Math.floor(h / 0.4));
+  const bandH = h / bands;
+  return (
+    <group>
+      {Array.from({ length: bands }).map((_, i) => {
+        const variation = hashF(seed, i * 10);
+        const baseColor = new THREE.Color(pal.wall);
+        // Subtle warmth/cool shift per band
+        baseColor.offsetHSL(0, 0, (variation - 0.5) * 0.04);
+        return (
+          <mesh key={i} position={[0, bandH / 2 + i * bandH, 0]} castShadow>
+            <boxGeometry args={[w, bandH + 0.002, d]} />
+            <meshStandardMaterial color={baseColor} roughness={0.68 + variation * 0.1} />
+          </mesh>
+        );
+      })}
+      {/* Horizontal mortar lines between bands */}
+      {Array.from({ length: bands - 1 }).map((_, i) => (
+        <mesh key={`m${i}`} position={[0, (i + 1) * bandH, d / 2 + 0.002]}>
+          <boxGeometry args={[w + 0.003, 0.008, 0.005]} />
+          <meshStandardMaterial color={pal.wallShadow} roughness={0.85} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/** Detailed foundation with bevel and shadow */
+function Foundation({ w, d, pal }: { w: number; d: number; pal: Palette }) {
+  return (
+    <group>
+      {/* Base plate */}
+      <mesh position={[0, 0.025, 0]}>
+        <boxGeometry args={[w + 0.06, 0.05, d + 0.06]} />
+        <meshStandardMaterial color={pal.ground} roughness={0.85} />
+      </mesh>
+      {/* Step up */}
+      <mesh position={[0, 0.06, 0]}>
+        <boxGeometry args={[w + 0.03, 0.02, d + 0.03]} />
+        <meshStandardMaterial color={pal.wallShadow} roughness={0.8} />
+      </mesh>
+      {/* Shadow contact line */}
+      <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[w + 0.12, d + 0.12]} />
+        <meshBasicMaterial color="#000" transparent opacity={0.15} />
+      </mesh>
+    </group>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// DIORAMA PROPS — street context elements
+// ═══════════════════════════════════════════════════════════
+
+/** Detailed outdoor table+chairs set */
+function OutdoorSeating({ x, z, pal }: { x: number; z: number; pal: Palette }) {
+  return (
+    <group position={[x, 0, z]}>
+      {/* Table top — with beveled edge */}
+      <mesh position={[0, 0.14, 0]}>
+        <boxGeometry args={[0.2, 0.018, 0.2]} />
+        <meshStandardMaterial color={pal.wood} roughness={0.7} />
+      </mesh>
+      {/* Table edge bevel */}
+      <mesh position={[0, 0.128, 0]}>
+        <boxGeometry args={[0.22, 0.006, 0.22]} />
+        <meshStandardMaterial color={new THREE.Color(pal.wood).multiplyScalar(0.8).getStyle()} roughness={0.75} />
+      </mesh>
+      {/* Leg (center) */}
+      <mesh position={[0, 0.07, 0]}>
+        <boxGeometry args={[0.025, 0.13, 0.025]} />
+        <meshStandardMaterial color={pal.metal} metalness={0.4} roughness={0.4} />
+      </mesh>
+      {/* Foot plate */}
+      <mesh position={[0, 0.005, 0]}>
+        <boxGeometry args={[0.1, 0.01, 0.1]} />
+        <meshStandardMaterial color={pal.metal} metalness={0.3} roughness={0.5} />
+      </mesh>
+      {/* Chair 1 */}
+      <group position={[0.15, 0, 0]}>
+        <mesh position={[0, 0.1, 0]}><boxGeometry args={[0.1, 0.015, 0.1]} /><meshStandardMaterial color={pal.wood} roughness={0.75} /></mesh>
+        {/* Chair back */}
+        <mesh position={[0.04, 0.17, 0]}><boxGeometry args={[0.015, 0.12, 0.1]} /><meshStandardMaterial color={pal.wood} roughness={0.75} /></mesh>
+        {/* Legs */}
+        {[[-0.035, -0.035], [-0.035, 0.035], [0.035, -0.035], [0.035, 0.035]].map(([lx, lz], li) => (
+          <mesh key={li} position={[lx, 0.05, lz]}><boxGeometry args={[0.015, 0.09, 0.015]} /><meshStandardMaterial color={pal.metal} metalness={0.3} /></mesh>
+        ))}
+      </group>
+      {/* Chair 2 (opposite) */}
+      <group position={[-0.15, 0, 0]}>
+        <mesh position={[0, 0.1, 0]}><boxGeometry args={[0.1, 0.015, 0.1]} /><meshStandardMaterial color={pal.wood} roughness={0.75} /></mesh>
+        <mesh position={[-0.04, 0.17, 0]}><boxGeometry args={[0.015, 0.12, 0.1]} /><meshStandardMaterial color={pal.wood} roughness={0.75} /></mesh>
+        {[[-0.035, -0.035], [-0.035, 0.035], [0.035, -0.035], [0.035, 0.035]].map(([lx, lz], li) => (
+          <mesh key={li} position={[lx, 0.05, lz]}><boxGeometry args={[0.015, 0.09, 0.015]} /><meshStandardMaterial color={pal.metal} metalness={0.3} /></mesh>
+        ))}
+      </group>
+    </group>
+  );
+}
+
+/** Potted plant with volumetric foliage */
+function PottedPlant({ x, z, scale = 1 }: { x: number; z: number; scale?: number }) {
+  const s = scale;
+  return (
+    <group position={[x, 0, z]}>
+      {/* Pot — tapered */}
+      <mesh position={[0, 0.05 * s, 0]}>
+        <boxGeometry args={[0.1 * s, 0.08 * s, 0.1 * s]} />
+        <meshStandardMaterial color="#7A5838" roughness={0.8} />
+      </mesh>
+      <mesh position={[0, 0.095 * s, 0]}>
+        <boxGeometry args={[0.11 * s, 0.015 * s, 0.11 * s]} />
+        <meshStandardMaterial color="#6A4828" roughness={0.8} />
+      </mesh>
+      {/* Soil */}
+      <mesh position={[0, 0.085 * s, 0]}>
+        <boxGeometry args={[0.08 * s, 0.01 * s, 0.08 * s]} />
+        <meshStandardMaterial color="#3A2818" roughness={0.95} />
+      </mesh>
+      {/* Foliage spheres (multi-layer) */}
+      <mesh position={[0, 0.16 * s, 0]}>
+        <sphereGeometry args={[0.08 * s, 6, 5]} />
+        <meshStandardMaterial color="#2A7A38" roughness={0.8} />
+      </mesh>
+      <mesh position={[0.03 * s, 0.14 * s, 0.02 * s]}>
+        <sphereGeometry args={[0.055 * s, 5, 4]} />
+        <meshStandardMaterial color="#1A6A28" roughness={0.82} />
+      </mesh>
+    </group>
+  );
+}
+
+/** Hanging perpendicular sign (for shops) */
+function HangingSign({ w, d, pal }: { w: number; d: number; pal: Palette }) {
+  return (
+    <group position={[w / 2 + 0.04, 0.72, 0]}>
+      {/* Bracket arm */}
+      <mesh position={[0.03, 0.08, 0]}>
+        <boxGeometry args={[0.06, 0.018, 0.018]} />
+        <meshStandardMaterial color={pal.metal} metalness={0.6} roughness={0.3} />
+      </mesh>
+      {/* Sign board */}
+      <mesh position={[0.08, 0, 0]}>
+        <boxGeometry args={[0.022, 0.2, 0.15]} />
+        <meshStandardMaterial color="#0A0A0A" roughness={0.4} />
+      </mesh>
+      {/* Glow face */}
+      <mesh position={[0.095, 0, 0]}>
+        <boxGeometry args={[0.005, 0.16, 0.11]} />
+        <meshStandardMaterial color={pal.glowAccent} emissive={pal.glowAccent} emissiveIntensity={1.8} />
+      </mesh>
+      {/* Edge trim */}
+      <mesh position={[0.08, 0.105, 0]}>
+        <boxGeometry args={[0.024, 0.008, 0.155]} />
+        <meshStandardMaterial color={pal.metal} metalness={0.5} />
+      </mesh>
+    </group>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// BUILDING CLASS RENDERERS — full diorama compositions
+// ═══════════════════════════════════════════════════════════
+
+function CafeBuilding({ w, d, h, pal, seed }: { w: number; d: number; h: number; pal: Palette; seed: number }) {
+  const floors = Math.max(2, Math.floor(h / 0.65));
+  const bodyH = h - 0.75;
+
+  return (
+    <group>
+      <Foundation w={w} d={d} pal={pal} />
+
+      {/* Ground floor — warm inviting */}
+      <BevelWall w={w} h={0.7} d={d} color={pal.wallShadow} shadowColor={pal.trim} highlightColor={pal.wall} position={[0, 0.42, 0]} />
+      <RichStorefront w={w} d={d} pal={pal} />
+      <DetailedAwning w={w} d={d} color={pal.glowAccent} shadowColor={pal.wallShadow} />
+      <GlowSign w={w} d={d} pal={pal} />
+
+      {/* Upper body — textured wall */}
+      <group position={[0, 0.75, 0]}>
+        <TexturedWall w={w} h={bodyH} d={d} pal={pal} seed={seed} />
+      </group>
+
+      {/* Windows with deep recesses */}
+      {Array.from({ length: Math.min(floors - 1, 3) }).map((_, i) => (
+        <WindowRow key={i} y={0.95 + i * 0.55} w={w} d={d} pal={pal} count={3} />
+      ))}
+
+      {/* Cornice/molding between floors */}
+      {Array.from({ length: Math.min(floors, 3) }).map((_, i) => (
+        <group key={`c${i}`}>
+          <mesh position={[0, 0.73 + (i + 1) * (bodyH / floors), d / 2 + 0.006]}>
+            <boxGeometry args={[w + 0.02, 0.025, 0.012]} />
+            <meshStandardMaterial color={pal.wallHighlight} roughness={0.6} />
+          </mesh>
+          <mesh position={[0, 0.73 + (i + 1) * (bodyH / floors) - 0.014, d / 2 + 0.004]}>
+            <boxGeometry args={[w + 0.015, 0.008, 0.008]} />
+            <meshStandardMaterial color={pal.wallShadow} roughness={0.8} />
+          </mesh>
         </group>
       ))}
 
-      {/* ── CONTEXT: potted plant at entrance ── */}
-      <group position={[-w / 2 - 0.15, 0, d / 2 + 0.08]}>
-        <mesh position={[0, 0.06, 0]}><boxGeometry args={[0.1, 0.12, 0.1]} /><meshStandardMaterial color="#7A5A3A" /></mesh>
-        <mesh position={[0, 0.16, 0]}><boxGeometry args={[0.13, 0.1, 0.13]} /><meshStandardMaterial color="#2D7A3A" /></mesh>
+      {/* Peaked roof — stepped voxel pyramid with edge details */}
+      <group position={[0, h, 0]}>
+        {[0, 1, 2, 3].map(step => (
+          <group key={step}>
+            <mesh position={[0, step * 0.075 + 0.04, 0]}>
+              <boxGeometry args={[w - step * 0.22, 0.075, d - step * 0.22]} />
+              <meshStandardMaterial color={step % 2 === 0 ? pal.roof : pal.roofEdge} roughness={0.6} />
+            </mesh>
+            {/* Edge cap on each step */}
+            {step < 3 && (
+              <mesh position={[0, step * 0.075 + 0.08, (d - step * 0.22) / 2 + 0.003]}>
+                <boxGeometry args={[w - step * 0.22, 0.01, 0.008]} />
+                <meshStandardMaterial color={pal.roofEdge} roughness={0.7} />
+              </mesh>
+            )}
+          </group>
+        ))}
+        {/* Chimney with cap */}
+        <group position={[w * 0.25, 0.42, -d * 0.15]}>
+          <mesh><boxGeometry args={[0.1, 0.24, 0.1]} /><meshStandardMaterial color={pal.roof} roughness={0.7} /></mesh>
+          <mesh position={[0, 0.14, 0]}><boxGeometry args={[0.13, 0.03, 0.13]} /><meshStandardMaterial color={pal.roofEdge} /></mesh>
+          {/* Smoke wisps (tiny blocks) */}
+          <mesh position={[0.02, 0.2, 0]}><boxGeometry args={[0.025, 0.025, 0.025]} /><meshStandardMaterial color="#AAA" transparent opacity={0.2} /></mesh>
+        </group>
       </group>
+
+      {/* DIORAMA CONTEXT — outdoor seating */}
+      <OutdoorSeating x={-0.3} z={d / 2 + 0.45} pal={pal} />
+      <OutdoorSeating x={0.2} z={d / 2 + 0.48} pal={pal} />
+      <PottedPlant x={-w / 2 - 0.12} z={d / 2 + 0.06} />
+      <PottedPlant x={w / 2 + 0.12} z={d / 2 + 0.06} scale={0.8} />
     </group>
   );
 }
 
-/** SHOP — wide front, display window, hanging sign */
-function ShopBuilding({ w, d, h, pal, seed }: { w: number; d: number; h: number; pal: BuildingPalette; seed: number }) {
+function ShopBuilding({ w, d, h, pal, seed }: { w: number; d: number; h: number; pal: Palette; seed: number }) {
   const floors = Math.max(2, Math.floor(h / 0.65));
-  const bodyH = h - 0.7;
+  const bodyH = h - 0.75;
 
   return (
     <group>
-      {/* Foundation */}
-      <mesh position={[0, 0.05, 0]}>
-        <boxGeometry args={[w + 0.04, 0.1, d + 0.04]} />
-        <meshStandardMaterial color="#2A2A28" roughness={0.9} />
-      </mesh>
+      <Foundation w={w} d={d} pal={pal} />
 
       {/* Ground floor */}
-      <mesh position={[0, 0.38, 0]}>
-        <boxGeometry args={[w, 0.7, d]} />
-        <meshStandardMaterial color={pal.wallDark} roughness={0.75} />
-      </mesh>
+      <BevelWall w={w} h={0.7} d={d} color={pal.wallShadow} shadowColor={pal.trim} highlightColor={pal.wall} position={[0, 0.42, 0]} />
+      <RichStorefront w={w} d={d} pal={pal} />
+      <DetailedAwning w={w} d={d} color={pal.glowAccent} shadowColor={pal.wallShadow} />
 
-      {/* Wide display window — focal point */}
-      <mesh position={[0, 0.4, d / 2 + 0.008]}>
-        <boxGeometry args={[w * 0.7, 0.5, 0.012]} />
-        <meshStandardMaterial color="#050508" emissive={pal.windowGlow} emissiveIntensity={0.65} />
-      </mesh>
-      <mesh position={[0, 0.4, d / 2 + 0.012]}>
-        <boxGeometry args={[w * 0.72, 0.52, 0.006]} />
-        <meshStandardMaterial color={pal.trim} />
-      </mesh>
-      {/* Door (offset right) */}
-      <mesh position={[w * 0.3, 0.28, d / 2 + 0.016]}>
-        <boxGeometry args={[0.28, 0.5, 0.016]} />
-        <meshStandardMaterial color={pal.trim} />
-      </mesh>
+      {/* Hanging sign — shop signature */}
+      <HangingSign w={w} d={d} pal={pal} />
 
-      <CuratedAwning w={w} d={d} color={pal.accent} />
+      {/* Upper body */}
+      <group position={[0, 0.75, 0]}>
+        <TexturedWall w={w} h={bodyH} d={d} pal={pal} seed={seed} />
+      </group>
 
-      {/* FOCAL: Hanging perpendicular sign */}
-      <group position={[w / 2 + 0.06, 0.75, 0]}>
-        <mesh position={[-0.03, 0.06, 0]}>
-          <boxGeometry args={[0.06, 0.025, 0.025]} /><meshStandardMaterial color="#333" metalness={0.6} />
+      <WindowRow y={0.95} w={w} d={d} pal={pal} count={3} />
+      {floors > 2 && <WindowRow y={1.5} w={w} d={d} pal={pal} count={3} />}
+
+      {/* Cornice */}
+      {Array.from({ length: Math.min(floors, 3) }).map((_, i) => (
+        <mesh key={`co${i}`} position={[0, 0.73 + (i + 1) * (bodyH / floors), d / 2 + 0.005]}>
+          <boxGeometry args={[w + 0.02, 0.02, 0.01]} />
+          <meshStandardMaterial color={pal.wallHighlight} roughness={0.6} />
         </mesh>
-        <mesh position={[0.06, 0, 0]}>
-          <boxGeometry args={[0.025, 0.22, 0.16]} />
-          <meshStandardMaterial color="#0A0A0A" />
+      ))}
+
+      {/* Flat roof with parapet */}
+      <group position={[0, h, 0]}>
+        <mesh position={[0, 0.03, 0]}>
+          <boxGeometry args={[w + 0.08, 0.06, d + 0.08]} />
+          <meshStandardMaterial color={pal.roof} roughness={0.55} />
         </mesh>
-        <mesh position={[0.076, 0, 0]}>
-          <boxGeometry args={[0.006, 0.17, 0.12]} />
-          <meshStandardMaterial color={pal.glow} emissive={pal.glow} emissiveIntensity={1.2} />
+        {/* Parapet walls */}
+        {[[0, d / 2 + 0.02, w + 0.08, 0.08, 0.025], [0, -d / 2 - 0.02, w + 0.08, 0.08, 0.025]].map(([px, pz, bw, bh, bd], i) => (
+          <mesh key={i} position={[px, 0.1, pz]}>
+            <boxGeometry args={[bw, bh, bd]} />
+            <meshStandardMaterial color={pal.roofEdge} roughness={0.65} />
+          </mesh>
+        ))}
+        {/* Parapet cap (top bevel) */}
+        <mesh position={[0, 0.145, d / 2 + 0.02]}>
+          <boxGeometry args={[w + 0.1, 0.01, 0.03]} />
+          <meshStandardMaterial color={pal.wallHighlight} roughness={0.5} />
         </mesh>
       </group>
 
-      {/* Upper body */}
-      <mesh position={[0, 0.7 + bodyH / 2, 0]} castShadow>
-        <boxGeometry args={[w, bodyH, d]} />
-        <meshStandardMaterial color={pal.wall} roughness={0.7} />
-      </mesh>
-
-      {/* Windows */}
-      {Array.from({ length: Math.min(floors - 1, 3) }).map((_, i) => (
-        <ArtWindows key={i} y={0.9 + i * 0.55} w={w} d={d} glow={pal.windowGlow} count={3} />
-      ))}
-
-      {/* Roof: flat with parapet edge */}
-      <group position={[0, h, 0]}>
-        <mesh position={[0, 0.035, 0]}>
-          <boxGeometry args={[w + 0.08, 0.07, d + 0.08]} /><meshStandardMaterial color={pal.roofMain} roughness={0.55} />
-        </mesh>
-        {/* Parapet */}
-        {[
-          [0, 0.1, d / 2 + 0.02, w + 0.08, 0.06, 0.025],
-          [0, 0.1, -d / 2 - 0.02, w + 0.08, 0.06, 0.025],
-        ].map(([px, py, pz, bw, bh, bd], i) => (
-          <mesh key={i} position={[px, py, pz]}>
-            <boxGeometry args={[bw, bh, bd]} /><meshStandardMaterial color={pal.roofAccent} />
-          </mesh>
+      {/* A-frame sign on sidewalk */}
+      <group position={[w / 2 + 0.25, 0, d / 2 + 0.18]}>
+        <mesh position={[0, 0.12, 0]}><boxGeometry args={[0.13, 0.2, 0.022]} /><meshStandardMaterial color="#1A1A1A" roughness={0.5} /></mesh>
+        <mesh position={[0, 0.12, 0.008]}><boxGeometry args={[0.1, 0.15, 0.008]} /><meshStandardMaterial color="#E8D8B0" roughness={0.7} /></mesh>
+        {/* Legs */}
+        {[-0.05, 0.05].map((lx, i) => (
+          <mesh key={i} position={[lx, 0.005, 0]}><boxGeometry args={[0.015, 0.01, 0.06]} /><meshStandardMaterial color="#333" /></mesh>
         ))}
       </group>
 
-      {/* Context: A-frame board on sidewalk */}
-      <group position={[w / 2 + 0.25, 0, d / 2 + 0.2]}>
-        <mesh position={[0, 0.12, 0]}>
-          <boxGeometry args={[0.14, 0.22, 0.025]} /><meshStandardMaterial color="#2A2A2A" />
-        </mesh>
-        <mesh position={[0, 0.12, 0.006]}>
-          <boxGeometry args={[0.1, 0.16, 0.012]} /><meshStandardMaterial color="#E8D8B0" />
-        </mesh>
-      </group>
+      <PottedPlant x={-w / 2 - 0.1} z={d / 2 + 0.05} scale={0.85} />
     </group>
   );
 }
 
-/** OFFICE — taller, clean lines, glass facade, antenna */
-function OfficeBuilding({ w, d, h, pal, seed }: { w: number; d: number; h: number; pal: BuildingPalette; seed: number }) {
+function OfficeBuilding({ w, d, h, pal, seed }: { w: number; d: number; h: number; pal: Palette; seed: number }) {
   const floors = Math.max(3, Math.floor(h / 0.5));
   const floorH = h / floors;
 
   return (
     <group>
-      {/* Foundation */}
-      <mesh position={[0, 0.04, 0]}>
-        <boxGeometry args={[w + 0.05, 0.08, d + 0.05]} />
-        <meshStandardMaterial color="#1A1A1A" roughness={0.9} />
-      </mesh>
+      <Foundation w={w} d={d} pal={pal} />
 
-      {/* Ground floor — lobby */}
-      <mesh position={[0, 0.35, 0]}>
-        <boxGeometry args={[w, 0.62, d]} />
-        <meshStandardMaterial color={pal.wallDark} roughness={0.6} />
-      </mesh>
-      {/* Glass lobby entrance */}
-      <mesh position={[0, 0.35, d / 2 + 0.008]}>
-        <boxGeometry args={[w * 0.6, 0.48, 0.01]} />
-        <meshStandardMaterial color="#0A0A14" emissive={pal.windowGlow} emissiveIntensity={0.5} />
-      </mesh>
-      {/* Double doors */}
-      {[-0.09, 0.09].map((dx, i) => (
-        <mesh key={i} position={[dx, 0.28, d / 2 + 0.016]}>
-          <boxGeometry args={[0.14, 0.46, 0.014]} />
-          <meshStandardMaterial color={pal.trim} />
+      {/* Ground floor — glass lobby */}
+      <BevelWall w={w} h={0.62} d={d} color={pal.wallShadow} shadowColor={pal.trim} highlightColor={pal.wall} position={[0, 0.38, 0]} />
+      
+      {/* Full-width lobby glass */}
+      <group position={[0, 0.38, d / 2]}>
+        <mesh position={[0, 0, -0.015]}>
+          <boxGeometry args={[w * 0.65, 0.5, 0.035]} />
+          <meshStandardMaterial color={pal.trim} roughness={0.8} />
+        </mesh>
+        <mesh position={[0, 0, -0.025]}>
+          <boxGeometry args={[w * 0.6, 0.46, 0.01]} />
+          <meshStandardMaterial color={pal.glass} emissive={pal.glowWarm} emissiveIntensity={0.6} roughness={0.08} />
+        </mesh>
+        {/* Vertical mullions */}
+        {[-0.12, 0, 0.12].map((mx, i) => (
+          <mesh key={i} position={[mx, 0, 0.002]}>
+            <boxGeometry args={[0.008, 0.48, 0.012]} />
+            <meshStandardMaterial color={pal.metal} metalness={0.4} />
+          </mesh>
+        ))}
+      </group>
+
+      {/* Revolving doors hint */}
+      {[-0.08, 0.08].map((dx, i) => (
+        <mesh key={i} position={[dx, 0.3, d / 2 + 0.01]}>
+          <boxGeometry args={[0.13, 0.5, 0.012]} />
+          <meshStandardMaterial color={pal.metal} metalness={0.3} roughness={0.4} />
         </mesh>
       ))}
 
-      {/* Sign — subtle, corporate */}
-      <CinematicSign w={w} d={d} glowColor={pal.glow} label="OFFICE" />
+      <GlowSign w={w} d={d} pal={pal} yPos={0.6} />
 
-      {/* Upper floors — stepped inset for silhouette */}
-      <mesh position={[0, 0.66 + (h - 0.66) / 2, 0]} castShadow>
-        <boxGeometry args={[w - 0.04, h - 0.66, d - 0.04]} />
-        <meshStandardMaterial color={pal.wall} roughness={0.6} metalness={0.05} />
-      </mesh>
+      {/* Upper tower — stepped inset */}
+      <group position={[0, 0.69, 0]}>
+        <TexturedWall w={w - 0.04} h={h - 0.69} d={d - 0.04} pal={pal} seed={seed} />
+      </group>
 
-      {/* Window grid — clean, corporate */}
+      {/* Window grid */}
       {Array.from({ length: Math.min(floors - 1, 5) }).map((_, i) => (
-        <ArtWindows key={i} y={0.85 + i * floorH} w={w - 0.04} d={d - 0.04} glow={pal.windowGlow} count={4} h={0.18} />
+        <WindowRow key={i} y={0.88 + i * floorH} w={w - 0.04} d={d - 0.04} pal={pal} count={4} winH={0.17} />
       ))}
 
-      {/* Horizontal bands per floor */}
+      {/* Floor bands */}
       {Array.from({ length: Math.min(floors, 5) }).map((_, i) => (
-        <mesh key={`b-${i}`} position={[0, 0.66 + (i + 1) * floorH, (d - 0.04) / 2 + 0.003]}>
-          <boxGeometry args={[w - 0.02, 0.015, 0.006]} />
-          <meshStandardMaterial color={pal.trim} />
+        <mesh key={`b${i}`} position={[0, 0.69 + (i + 1) * floorH, (d - 0.04) / 2 + 0.006]}>
+          <boxGeometry args={[w - 0.02, 0.018, 0.008]} />
+          <meshStandardMaterial color={pal.wallHighlight} roughness={0.55} />
         </mesh>
       ))}
 
-      {/* Roof — flat with antenna */}
+      {/* Flat roof with antenna */}
       <group position={[0, h, 0]}>
         <mesh position={[0, 0.03, 0]}>
-          <boxGeometry args={[w, 0.06, d]} /><meshStandardMaterial color={pal.roofMain} />
+          <boxGeometry args={[w, 0.06, d]} />
+          <meshStandardMaterial color={pal.roof} roughness={0.5} />
         </mesh>
-        {/* Antenna — focal silhouette element */}
-        <mesh position={[w * 0.25, 0.4, 0]}>
-          <boxGeometry args={[0.035, 0.7, 0.035]} /><meshStandardMaterial color="#555" metalness={0.6} />
+        {/* Antenna mast */}
+        <mesh position={[w * 0.22, 0.4, 0]}>
+          <boxGeometry args={[0.03, 0.7, 0.03]} />
+          <meshStandardMaterial color={pal.metal} metalness={0.6} roughness={0.3} />
         </mesh>
-        <mesh position={[w * 0.25, 0.78, 0]}>
-          <boxGeometry args={[0.06, 0.06, 0.06]} />
-          <meshStandardMaterial color="#FF3030" emissive="#FF3030" emissiveIntensity={2.0} />
+        {/* Beacon */}
+        <mesh position={[w * 0.22, 0.78, 0]}>
+          <boxGeometry args={[0.05, 0.05, 0.05]} />
+          <meshStandardMaterial color="#FF3030" emissive="#FF3030" emissiveIntensity={2.5} />
         </mesh>
-        {/* AC unit */}
-        <mesh position={[-w * 0.2, 0.12, -d * 0.15]}>
-          <boxGeometry args={[0.22, 0.14, 0.18]} /><meshStandardMaterial color="#888" />
-        </mesh>
+        {/* AC unit with vent detail */}
+        <group position={[-w * 0.18, 0.08, -d * 0.15]}>
+          <mesh><boxGeometry args={[0.2, 0.12, 0.16]} /><meshStandardMaterial color="#888" roughness={0.4} metalness={0.2} /></mesh>
+          {/* Vent lines */}
+          {[-0.04, 0, 0.04].map((vz, vi) => (
+            <mesh key={vi} position={[0, 0.02, 0.082 + vz * 0.3]}>
+              <boxGeometry args={[0.18, 0.006, 0.006]} />
+              <meshStandardMaterial color="#666" />
+            </mesh>
+          ))}
+        </group>
       </group>
     </group>
   );
 }
 
-/** TECH TOWER — tallest, sleek, glass-heavy, LED accents */
-function TechTowerBuilding({ w, d, h, pal, seed }: { w: number; d: number; h: number; pal: BuildingPalette; seed: number }) {
+function TechTowerBuilding({ w, d, h, pal, seed }: { w: number; d: number; h: number; pal: Palette; seed: number }) {
   const floors = Math.max(4, Math.floor(h / 0.45));
   const floorH = h / floors;
+  const setbackH = h * 0.6;
 
   return (
     <group>
-      {/* Foundation — wider base plate */}
-      <mesh position={[0, 0.03, 0]}>
-        <boxGeometry args={[w + 0.1, 0.06, d + 0.1]} />
-        <meshStandardMaterial color="#111" roughness={0.9} />
-      </mesh>
+      <Foundation w={w} d={d} pal={pal} />
 
-      {/* Ground floor — glass lobby with LED accent */}
-      <mesh position={[0, 0.35, 0]}>
-        <boxGeometry args={[w, 0.62, d]} />
-        <meshStandardMaterial color={pal.wallDark} roughness={0.5} metalness={0.1} />
-      </mesh>
+      {/* Ground — dark tech lobby */}
+      <BevelWall w={w} h={0.62} d={d} color={pal.wallShadow} shadowColor={pal.trim} highlightColor={pal.wall} position={[0, 0.38, 0]} />
+      
       {/* Full glass front */}
       <mesh position={[0, 0.38, d / 2 + 0.006]}>
         <boxGeometry args={[w * 0.8, 0.5, 0.01]} />
-        <meshStandardMaterial color="#050510" emissive={pal.glow} emissiveIntensity={0.45} />
+        <meshStandardMaterial color={pal.glass} emissive={pal.glowAccent} emissiveIntensity={0.5} roughness={0.05} />
       </mesh>
-      {/* LED accent strip at base — focal */}
-      <mesh position={[0, 0.025, d / 2 + 0.01]}>
-        <boxGeometry args={[w * 0.9, 0.025, 0.008]} />
-        <meshStandardMaterial color={pal.glow} emissive={pal.glow} emissiveIntensity={2.5} />
-      </mesh>
-
-      <CinematicSign w={w} d={d} glowColor={pal.glow} label="TECH" />
-
-      {/* Main tower — slight inset for silhouette depth */}
-      <mesh position={[0, 0.66 + (h - 0.66) / 2, 0]} castShadow>
-        <boxGeometry args={[w - 0.06, h - 0.66, d - 0.06]} />
-        <meshStandardMaterial color={pal.wall} roughness={0.5} metalness={0.1} />
+      {/* LED accent strip at base */}
+      <mesh position={[0, 0.025, d / 2 + 0.008]}>
+        <boxGeometry args={[w * 0.88, 0.02, 0.006]} />
+        <meshStandardMaterial color={pal.glowAccent} emissive={pal.glowAccent} emissiveIntensity={3.0} />
       </mesh>
 
-      {/* Stepped setback at 60% height for unique silhouette */}
-      <mesh position={[0, h * 0.6 + (h * 0.4) / 2, 0]}>
-        <boxGeometry args={[w - 0.2, h * 0.4, d - 0.2]} />
-        <meshStandardMaterial color={pal.wall} roughness={0.5} metalness={0.12} />
+      <GlowSign w={w} d={d} pal={pal} />
+
+      {/* Main tower body */}
+      <group position={[0, 0.69, 0]}>
+        <TexturedWall w={w - 0.06} h={h - 0.69} d={d - 0.06} pal={pal} seed={seed} />
+      </group>
+
+      {/* Stepped setback at 60% — unique silhouette */}
+      <mesh position={[0, setbackH + (h - setbackH) / 2, 0]}>
+        <boxGeometry args={[w - 0.18, h - setbackH, d - 0.18]} />
+        <meshStandardMaterial color={pal.wall} roughness={0.5} metalness={0.08} />
       </mesh>
 
-      {/* Window strips — horizontal bands (modern look) */}
-      {Array.from({ length: Math.min(floors, 6) }).map((_, i) => (
-        <mesh key={i} position={[0, 0.75 + i * floorH, (d - 0.06) / 2 + 0.005]}>
-          <boxGeometry args={[(i > floors * 0.6 ? w - 0.2 : w - 0.06) * 0.85, 0.12, 0.008]} />
-          <meshStandardMaterial color="#050510" emissive={pal.windowGlow} emissiveIntensity={0.8} />
-        </mesh>
-      ))}
+      {/* Horizontal window bands (modern) */}
+      {Array.from({ length: Math.min(floors, 6) }).map((_, i) => {
+        const inSetback = (0.75 + i * floorH) > setbackH;
+        const bw = inSetback ? w - 0.2 : w - 0.06;
+        return (
+          <mesh key={i} position={[0, 0.78 + i * floorH, (d - 0.06) / 2 + 0.005]}>
+            <boxGeometry args={[bw * 0.82, 0.1, 0.008]} />
+            <meshStandardMaterial color={pal.glass} emissive={pal.glowWarm} emissiveIntensity={0.9} roughness={0.08} />
+          </mesh>
+        );
+      })}
 
-      {/* Vertical LED accent lines on corners */}
+      {/* Vertical LED corner accents */}
       {[[-1, -1], [-1, 1], [1, -1], [1, 1]].map(([sx, sz], ci) => (
         <mesh key={ci} position={[sx * (w / 2 - 0.04), h / 2, sz * (d / 2 - 0.04)]}>
-          <boxGeometry args={[0.015, h * 0.7, 0.015]} />
-          <meshStandardMaterial color={pal.glow} emissive={pal.glow} emissiveIntensity={0.6} />
+          <boxGeometry args={[0.012, h * 0.65, 0.012]} />
+          <meshStandardMaterial color={pal.glowAccent} emissive={pal.glowAccent} emissiveIntensity={0.8} />
         </mesh>
       ))}
 
-      {/* Roof — antenna cluster */}
+      {/* Roof — spire */}
       <group position={[0, h, 0]}>
-        <mesh position={[0, 0.03, 0]}>
-          <boxGeometry args={[w - 0.06, 0.06, d - 0.06]} /><meshStandardMaterial color={pal.roofMain} />
+        <mesh position={[0, 0.025, 0]}>
+          <boxGeometry args={[w - 0.06, 0.05, d - 0.06]} />
+          <meshStandardMaterial color={pal.roof} roughness={0.45} />
         </mesh>
-        {/* Spire */}
         <mesh position={[0, 0.5, 0]}>
-          <boxGeometry args={[0.06, 0.8, 0.06]} /><meshStandardMaterial color="#666" metalness={0.7} />
+          <boxGeometry args={[0.05, 0.85, 0.05]} />
+          <meshStandardMaterial color={pal.metal} metalness={0.7} roughness={0.25} />
         </mesh>
-        <mesh position={[0, 0.94, 0]}>
-          <boxGeometry args={[0.08, 0.08, 0.08]} />
-          <meshStandardMaterial color={pal.glow} emissive={pal.glow} emissiveIntensity={2.0} />
+        <mesh position={[0, 0.96, 0]}>
+          <boxGeometry args={[0.065, 0.065, 0.065]} />
+          <meshStandardMaterial color={pal.glowAccent} emissive={pal.glowAccent} emissiveIntensity={2.5} />
         </mesh>
-        {/* Satellite dish */}
-        <mesh position={[-w * 0.2, 0.2, d * 0.15]}>
-          <boxGeometry args={[0.18, 0.14, 0.03]} /><meshStandardMaterial color="#aaa" metalness={0.5} />
+        {/* Dish */}
+        <mesh position={[-w * 0.18, 0.18, d * 0.15]}>
+          <boxGeometry args={[0.16, 0.12, 0.025]} />
+          <meshStandardMaterial color="#AAA" metalness={0.5} roughness={0.3} />
         </mesh>
       </group>
     </group>
   );
 }
 
-/** CREATIVE STUDIO — eclectic, colorful accent, rooftop garden, balconies */
-function CreativeStudioBuilding({ w, d, h, pal, seed }: { w: number; d: number; h: number; pal: BuildingPalette; seed: number }) {
+function CreativeStudioBuilding({ w, d, h, pal, seed }: { w: number; d: number; h: number; pal: Palette; seed: number }) {
   const floors = Math.max(2, Math.floor(h / 0.6));
-  const bodyH = h - 0.7;
+  const bodyH = h - 0.75;
   const variant = hash(seed, 200) % 2;
 
   return (
     <group>
-      {/* Foundation */}
-      <mesh position={[0, 0.05, 0]}>
-        <boxGeometry args={[w + 0.04, 0.1, d + 0.04]} />
-        <meshStandardMaterial color="#2A2A2A" roughness={0.9} />
-      </mesh>
+      <Foundation w={w} d={d} pal={pal} />
 
       {/* Ground floor */}
-      <mesh position={[0, 0.38, 0]}>
-        <boxGeometry args={[w, 0.7, d]} />
-        <meshStandardMaterial color={pal.wallDark} roughness={0.75} />
-      </mesh>
-      <ArtStorefront w={w} d={d} pal={pal} type="creative_studio" />
-      <CuratedAwning w={w} d={d} color={pal.accent} />
-      <CinematicSign w={w} d={d} glowColor={pal.glow} label="STUDIO" />
+      <BevelWall w={w} h={0.7} d={d} color={pal.wallShadow} shadowColor={pal.trim} highlightColor={pal.wall} position={[0, 0.42, 0]} />
+      <RichStorefront w={w} d={d} pal={pal} />
+      <DetailedAwning w={w} d={d} color={pal.glowAccent} shadowColor={pal.wallShadow} />
+      <GlowSign w={w} d={d} pal={pal} />
 
-      {/* Upper body — with accent color band */}
-      <mesh position={[0, 0.7 + bodyH / 2, 0]} castShadow>
-        <boxGeometry args={[w, bodyH, d]} />
-        <meshStandardMaterial color={pal.wall} roughness={0.7} />
-      </mesh>
-      {/* Accent color band (mural hint) */}
-      <mesh position={[0, h * 0.5, d / 2 + 0.004]}>
-        <boxGeometry args={[w * 0.8, 0.18, 0.008]} />
-        <meshStandardMaterial color={pal.accent} emissive={pal.accent} emissiveIntensity={0.2} />
-      </mesh>
-
-      {/* Windows */}
-      {Array.from({ length: Math.min(floors - 1, 3) }).map((_, i) => (
-        <ArtWindows key={i} y={0.9 + i * 0.55} w={w} d={d} glow={pal.windowGlow} count={2} h={0.28} />
-      ))}
-
-      {/* FOCAL: Balcony on second floor */}
-      <group position={[0, 1.2, d / 2 + 0.1]}>
-        <mesh><boxGeometry args={[w * 0.4, 0.03, 0.18]} /><meshStandardMaterial color="#555" /></mesh>
-        {[-2, -1, 0, 1, 2].map(i => (
-          <mesh key={i} position={[i * w * 0.07, 0.08, 0.07]}>
-            <boxGeometry args={[0.02, 0.12, 0.02]} /><meshStandardMaterial color="#444" metalness={0.5} />
-          </mesh>
-        ))}
-        <mesh position={[0, 0.14, 0.07]}>
-          <boxGeometry args={[w * 0.4, 0.02, 0.02]} /><meshStandardMaterial color="#444" metalness={0.5} />
-        </mesh>
-        {/* Balcony plant */}
-        <mesh position={[0, 0.05, 0]}><boxGeometry args={[0.1, 0.05, 0.08]} /><meshStandardMaterial color="#7A5A3A" /></mesh>
-        <mesh position={[0, 0.1, 0]}><boxGeometry args={[0.12, 0.06, 0.1]} /><meshStandardMaterial color="#2D7A3A" /></mesh>
+      {/* Upper body with textured wall */}
+      <group position={[0, 0.75, 0]}>
+        <TexturedWall w={w} h={bodyH} d={d} pal={pal} seed={seed} />
       </group>
 
-      {/* Roof: garden terrace — signature studio element */}
-      <group position={[0, h, 0]}>
-        <mesh position={[0, 0.035, 0]}>
-          <boxGeometry args={[w + 0.06, 0.07, d + 0.06]} /><meshStandardMaterial color={pal.roofMain} />
+      {/* Accent mural band */}
+      <mesh position={[0, h * 0.5, d / 2 + 0.005]}>
+        <boxGeometry args={[w * 0.75, 0.16, 0.01]} />
+        <meshStandardMaterial color={pal.glowAccent} emissive={pal.glowAccent} emissiveIntensity={0.25} />
+      </mesh>
+
+      {/* Large art windows */}
+      {Array.from({ length: Math.min(floors - 1, 3) }).map((_, i) => (
+        <WindowRow key={i} y={0.95 + i * 0.55} w={w} d={d} pal={pal} count={2} winH={0.3} />
+      ))}
+
+      {/* FOCAL: Balcony with railing detail */}
+      <group position={[0, 1.25, d / 2 + 0.1]}>
+        {/* Floor slab */}
+        <mesh><boxGeometry args={[w * 0.38, 0.025, 0.16]} /><meshStandardMaterial color={pal.ground} roughness={0.7} /></mesh>
+        {/* Bottom bracket */}
+        <mesh position={[0, -0.02, -0.06]}>
+          <boxGeometry args={[w * 0.3, 0.01, 0.04]} />
+          <meshStandardMaterial color={pal.wallShadow} />
         </mesh>
-        {/* Garden bed */}
-        <mesh position={[0, 0.08, 0]}>
-          <boxGeometry args={[w * 0.65, 0.03, d * 0.65]} /><meshStandardMaterial color="#3A2818" />
-        </mesh>
-        {/* Plants */}
-        {[[-0.2, -0.12], [0.15, 0.18], [-0.08, 0.22], [0.22, -0.1]].map(([px, pz], i) => (
-          <mesh key={i} position={[px, 0.15, pz]}>
-            <boxGeometry args={[0.12, 0.1, 0.12]} />
-            <meshStandardMaterial color={["#2D7A3A", "#1A6A2A", "#3A8A3A", "#1B5A20"][i]} />
+        {/* Railing posts */}
+        {Array.from({ length: 7 }).map((_, i) => (
+          <mesh key={i} position={[-w * 0.15 + i * w * 0.05, 0.07, 0.06]}>
+            <boxGeometry args={[0.012, 0.12, 0.012]} />
+            <meshStandardMaterial color={pal.metal} metalness={0.5} roughness={0.3} />
           </mesh>
         ))}
-        {/* String lights */}
+        {/* Top rail */}
+        <mesh position={[0, 0.135, 0.06]}>
+          <boxGeometry args={[w * 0.38, 0.014, 0.014]} />
+          <meshStandardMaterial color={pal.metal} metalness={0.5} roughness={0.3} />
+        </mesh>
+        {/* Balcony plant */}
+        <PottedPlant x={0} z={0.02} scale={0.6} />
+      </group>
+
+      {/* Roof: garden terrace */}
+      <group position={[0, h, 0]}>
+        <mesh position={[0, 0.03, 0]}>
+          <boxGeometry args={[w + 0.06, 0.06, d + 0.06]} />
+          <meshStandardMaterial color={pal.roof} roughness={0.55} />
+        </mesh>
+        {/* Garden bed */}
+        <mesh position={[0, 0.07, 0]}>
+          <boxGeometry args={[w * 0.6, 0.025, d * 0.6]} />
+          <meshStandardMaterial color="#2A1810" roughness={0.9} />
+        </mesh>
+        {/* Rooftop plants */}
+        {[[-0.18, -0.1], [0.14, 0.16], [-0.06, 0.2], [0.2, -0.08]].map(([px, pz], i) => (
+          <mesh key={i} position={[px, 0.13, pz]}>
+            <sphereGeometry args={[0.08, 5, 4]} />
+            <meshStandardMaterial color={["#2A7A38", "#1A6A28", "#3A8A38", "#1B5A20"][i]} roughness={0.82} />
+          </mesh>
+        ))}
+        {/* String lights posts */}
         {variant === 0 && (
           <>
             {[-1, 1].map(s => (
-              <mesh key={s} position={[s * w * 0.38, 0.18, 0]}>
-                <boxGeometry args={[0.025, 0.22, d * 0.7]} /><meshStandardMaterial color="#555" />
+              <mesh key={s} position={[s * w * 0.36, 0.16, 0]}>
+                <boxGeometry args={[0.02, 0.2, d * 0.65]} />
+                <meshStandardMaterial color={pal.metal} metalness={0.4} />
               </mesh>
             ))}
             {Array.from({ length: 5 }).map((_, i) => (
-              <mesh key={`l-${i}`} position={[-w * 0.28 + i * w * 0.14, 0.28, 0]}>
-                <boxGeometry args={[0.03, 0.03, 0.03]} />
-                <meshStandardMaterial color="#FFE060" emissive="#FFD040" emissiveIntensity={2.2} />
+              <mesh key={`l${i}`} position={[-w * 0.26 + i * w * 0.13, 0.25, 0]}>
+                <boxGeometry args={[0.025, 0.025, 0.025]} />
+                <meshStandardMaterial color="#FFE060" emissive="#FFD040" emissiveIntensity={2.8} />
               </mesh>
             ))}
           </>
         )}
       </group>
 
-      {/* Context: Street art easel */}
-      <group position={[w / 2 + 0.2, 0, -d / 2 + 0.15]}>
-        <mesh position={[0, 0.15, 0]}>
-          <boxGeometry args={[0.12, 0.26, 0.02]} /><meshStandardMaterial color="#E8DCC0" />
-        </mesh>
-        <mesh position={[0, 0.15, -0.015]}>
-          <boxGeometry args={[0.03, 0.3, 0.03]} /><meshStandardMaterial color="#5A4A3A" />
-        </mesh>
+      {/* Street easel */}
+      <group position={[w / 2 + 0.18, 0, -d / 2 + 0.12]}>
+        <mesh position={[0, 0.15, 0]}><boxGeometry args={[0.11, 0.24, 0.018]} /><meshStandardMaterial color="#E8DCC0" roughness={0.7} /></mesh>
+        <mesh position={[0, 0.15, -0.012]}><boxGeometry args={[0.025, 0.28, 0.02]} /><meshStandardMaterial color={pal.wood} roughness={0.8} /></mesh>
       </group>
     </group>
   );
 }
 
 // ═══════════════════════════════════════════════════════════
-// MAIN BUILDING GENERATOR — class-based dispatch
+// MAIN BUILDING GENERATOR
 // ═══════════════════════════════════════════════════════════
 
 interface VoxelCityBuildingProps {
-  x: number;
-  z: number;
-  w: number;
-  d: number;
-  h: number;
-  color: string;
-  seed: number;
-  occluded?: boolean;
-  ownerName?: string;
+  x: number; z: number; w: number; d: number; h: number;
+  color: string; seed: number; occluded?: boolean; ownerName?: string;
 }
 
 export const VoxelCityBuilding = memo(function VoxelCityBuilding({
@@ -653,18 +916,13 @@ export const VoxelCityBuilding = memo(function VoxelCityBuilding({
 }: VoxelCityBuildingProps) {
 
   const config = useMemo(() => {
-    // Pick building class based on seed (weighted for variety)
     const buildingClass = hashPick(BUILDING_CLASSES, seed, 0);
-    // Pick palette — blend with input color hint
     const basePal = hashPick(PALETTES, seed, 1);
     const hintColor = new THREE.Color(color);
-    const wall = new THREE.Color(basePal.wall).lerp(hintColor, 0.12).getStyle();
-    const wallDark = new THREE.Color(basePal.wallDark).lerp(hintColor, 0.1).getStyle();
-
-    return {
-      buildingClass,
-      pal: { ...basePal, wall, wallDark },
-    };
+    const wall = new THREE.Color(basePal.wall).lerp(hintColor, 0.1).getStyle();
+    const wallShadow = new THREE.Color(basePal.wallShadow).lerp(hintColor, 0.08).getStyle();
+    const wallHighlight = new THREE.Color(basePal.wallHighlight).lerp(hintColor, 0.06).getStyle();
+    return { buildingClass, pal: { ...basePal, wall, wallShadow, wallHighlight } };
   }, [seed, color]);
 
   if (occluded) {
@@ -672,7 +930,7 @@ export const VoxelCityBuilding = memo(function VoxelCityBuilding({
       <group position={[x, 0, z]}>
         <mesh position={[0, h / 2, 0]}>
           <boxGeometry args={[w, h, d]} />
-          <meshStandardMaterial color={config.pal.wall} transparent opacity={0.08} roughness={0.85} />
+          <meshStandardMaterial color={config.pal.wall} transparent opacity={0.06} roughness={0.85} />
         </mesh>
       </group>
     );
@@ -682,27 +940,21 @@ export const VoxelCityBuilding = memo(function VoxelCityBuilding({
 
   return (
     <group position={[x, 0, z]}>
-      {/* Render by class */}
       {config.buildingClass === "cafe" && <CafeBuilding {...classProps} />}
       {config.buildingClass === "shop" && <ShopBuilding {...classProps} />}
       {config.buildingClass === "office" && <OfficeBuilding {...classProps} />}
       {config.buildingClass === "tech_tower" && <TechTowerBuilding {...classProps} />}
       {config.buildingClass === "creative_studio" && <CreativeStudioBuilding {...classProps} />}
 
-      {/* Owner name sign (for user buildings) */}
       {ownerName && (
-        <group position={[0, h * 0.72, d / 2 + 0.035]}>
-          <mesh position={[0, 0, -0.012]}>
-            <boxGeometry args={[w * 0.7, 0.24, 0.025]} />
-            <meshStandardMaterial color="#0A0A0A" />
+        <group position={[0, h * 0.72, d / 2 + 0.04]}>
+          <mesh position={[0, 0, -0.015]}>
+            <boxGeometry args={[w * 0.68, 0.22, 0.03]} />
+            <meshStandardMaterial color="#080808" roughness={0.4} />
           </mesh>
           <mesh position={[0, 0, 0.004]}>
-            <boxGeometry args={[w * 0.64, 0.18, 0.008]} />
-            <meshStandardMaterial
-              color={config.pal.glow}
-              emissive={config.pal.glow}
-              emissiveIntensity={1.4}
-            />
+            <boxGeometry args={[w * 0.6, 0.16, 0.006]} />
+            <meshStandardMaterial color={config.pal.glowAccent} emissive={config.pal.glowAccent} emissiveIntensity={1.8} />
           </mesh>
         </group>
       )}
@@ -720,47 +972,68 @@ const VoxelBuildingLod1 = memo(function VoxelBuildingLod1({
 }: VoxelCityBuildingProps) {
   const cfg = useMemo(() => {
     const pal = hashPick(PALETTES, seed, 1);
-    const wallColor = new THREE.Color(pal.wall).lerp(new THREE.Color(color), 0.12);
-    const roofColor = new THREE.Color(pal.roofMain);
-    return { wallColor, roofColor, glow: pal.windowGlow };
+    const wallColor = new THREE.Color(pal.wall).lerp(new THREE.Color(color), 0.1);
+    const wallDark = new THREE.Color(pal.wallShadow);
+    const roofColor = new THREE.Color(pal.roof);
+    return { wallColor, wallDark, roofColor, glow: pal.glowWarm, accent: pal.glowAccent };
   }, [seed, color]);
 
   const floors = Math.max(2, Math.floor(h / 0.6));
 
   return (
     <group position={[x, 0, z]}>
-      <mesh position={[0, h / 2, 0]} castShadow>
-        <boxGeometry args={[w, h, d]} />
-        <meshStandardMaterial color={cfg.wallColor} roughness={0.75} />
+      {/* Foundation hint */}
+      <mesh position={[0, 0.025, 0]}>
+        <boxGeometry args={[w + 0.04, 0.05, d + 0.04]} />
+        <meshStandardMaterial color={cfg.wallDark} roughness={0.85} />
       </mesh>
+      {/* Main body */}
+      <mesh position={[0, h / 2 + 0.05, 0]} castShadow>
+        <boxGeometry args={[w, h, d]} />
+        <meshStandardMaterial color={cfg.wallColor} roughness={0.72} />
+      </mesh>
+      {/* Window strips */}
       {Array.from({ length: Math.min(floors, 4) }).map((_, i) => (
-        <mesh key={i} position={[0, 0.7 + i * (h / floors) + 0.3, d / 2 + 0.008]}>
-          <boxGeometry args={[w * 0.7, 0.12, 0.008]} />
-          <meshStandardMaterial color="#050508" emissive={cfg.glow} emissiveIntensity={0.7} />
+        <mesh key={i} position={[0, 0.7 + i * (h / floors) + 0.3, d / 2 + 0.006]}>
+          <boxGeometry args={[w * 0.7, 0.1, 0.006]} />
+          <meshStandardMaterial color="#0A0A14" emissive={cfg.glow} emissiveIntensity={0.8} />
         </mesh>
       ))}
+      {/* Sign glow */}
+      <mesh position={[0, 0.62, d / 2 + 0.008]}>
+        <boxGeometry args={[w * 0.4, 0.08, 0.005]} />
+        <meshStandardMaterial color={cfg.accent} emissive={cfg.accent} emissiveIntensity={1.5} />
+      </mesh>
+      {/* Roof cap */}
       <mesh position={[0, h + 0.035, 0]}>
-        <boxGeometry args={[w + 0.08, 0.07, d + 0.08]} />
+        <boxGeometry args={[w + 0.06, 0.07, d + 0.06]} />
         <meshStandardMaterial color={cfg.roofColor} roughness={0.6} />
       </mesh>
     </group>
   );
 });
 
-/** LOD 2 — Low poly: single box with color */
+/** LOD 2 — Low poly: body + colored roof */
 const VoxelBuildingLod2 = memo(function VoxelBuildingLod2({
   x, z, w, d, h, color, seed,
 }: VoxelCityBuildingProps) {
-  const wallColor = useMemo(() => {
+  const cfg = useMemo(() => {
     const pal = hashPick(PALETTES, seed, 1);
-    return new THREE.Color(pal.wall).lerp(new THREE.Color(color), 0.12);
+    return {
+      wall: new THREE.Color(pal.wall).lerp(new THREE.Color(color), 0.1),
+      roof: new THREE.Color(pal.roof),
+    };
   }, [seed, color]);
 
   return (
     <group position={[x, 0, z]}>
       <mesh position={[0, h / 2, 0]}>
         <boxGeometry args={[w, h, d]} />
-        <meshStandardMaterial color={wallColor} roughness={0.85} />
+        <meshStandardMaterial color={cfg.wall} roughness={0.8} />
+      </mesh>
+      <mesh position={[0, h + 0.02, 0]}>
+        <boxGeometry args={[w + 0.04, 0.04, d + 0.04]} />
+        <meshStandardMaterial color={cfg.roof} roughness={0.65} />
       </mesh>
     </group>
   );
@@ -772,12 +1045,10 @@ const VoxelBuildingLod3 = memo(function VoxelBuildingLod3({
 }: VoxelCityBuildingProps) {
   const c = useMemo(() => new THREE.Color(color).multiplyScalar(0.5), [color]);
   return (
-    <group position={[x, 0, z]}>
-      <mesh position={[0, h / 2, 0]}>
-        <boxGeometry args={[w, h, d]} />
-        <meshStandardMaterial color={c} roughness={0.95} />
-      </mesh>
-    </group>
+    <mesh position={[x, h / 2, z]}>
+      <boxGeometry args={[w, h, d]} />
+      <meshStandardMaterial color={c} roughness={0.95} />
+    </mesh>
   );
 });
 
