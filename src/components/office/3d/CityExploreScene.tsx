@@ -1050,6 +1050,11 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
   const controlsRef = useRef<any>(null);
   const dn = useDayNight();
 
+  // ── LoD system ──
+  const buildingDefs = useMemo(() => CITY_BUILDINGS.map(b => ({ x: b.x, z: b.z, w: b.w, d: b.d, h: b.h, color: b.color })), []);
+  const { quality, config: lodConfig, changeQuality, computeFrame } = useCityLod(buildingDefs);
+  const [showQualityMenu, setShowQualityMenu] = useState(false);
+
   const userId = useMemo(() => {
     const stored = localStorage.getItem("agentoffice_user");
     return stored ? JSON.parse(stored).email || "" : "";
@@ -1071,6 +1076,9 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
   const [clickTarget, setClickTarget] = useState<[number, number, number] | null>(null);
   const [occludedBuildings, setOccludedBuildings] = useState<Set<string>>(new Set());
   const hasSpawned = useRef(false);
+
+  // Compute LoD for all static buildings based on player position
+  const lodFrame = useMemo(() => computeFrame(playerPos[0], playerPos[2]), [computeFrame, playerPos]);
 
   useEffect(() => {
     if (!hasSpawned.current && userBuilding) {
