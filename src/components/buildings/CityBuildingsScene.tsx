@@ -4,9 +4,13 @@ import { OrbitControls, Sky, Text, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import { Building3D } from "./Building3D";
 import { VoxelCar, StreetLamp, Bench, TrashCan, Hydrant, PottedPlant } from "./VoxelProps";
+import { preloadBuildingModels } from "./GLBBuildingModel";
 import { useDayNight } from "@/hooks/useDayNight";
 import type { CityBuilding } from "@/types/building";
 import { DISTRICTS } from "@/types/building";
+
+// Preload all GLB models on module load
+preloadBuildingModels();
 
 interface CityBuildingsSceneProps {
   buildings: CityBuilding[];
