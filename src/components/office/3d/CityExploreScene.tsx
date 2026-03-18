@@ -18,30 +18,63 @@ const DISTRICTS = [
   { name: "Distrito Social", emoji: "☕", x: 14, z: 10, radius: 4, color: "#EC4899" },
 ];
 
-// ── Static building defs ──
+// ── Static building defs (expanded for a richer city) ──
 const CITY_BUILDINGS = [
-  { x: -18, z: -12, w: 3.5, d: 3, h: 2.8, color: "#8B6B3A" },
-  { x: -12, z: -12, w: 3, d: 2.5, h: 2.2, color: "#7A5A3A" },
-  { x: -18, z: -6, w: 3, d: 3, h: 3, color: "#6B5A4A" },
-  { x: -12, z: -6, w: 2.8, d: 2.8, h: 2.5, color: "#8A7A5A" },
-  { x: 12, z: -12, w: 3.5, d: 3, h: 3.5, color: "#3A4A6A" },
-  { x: 18, z: -12, w: 3, d: 2.5, h: 2.8, color: "#4A5A7A" },
-  { x: 12, z: -6, w: 3, d: 3, h: 2.5, color: "#5A6A8A" },
-  { x: 18, z: -6, w: 2.8, d: 2.8, h: 3.2, color: "#4A5A6A" },
-  { x: -18, z: 8, w: 3.5, d: 3, h: 2.5, color: "#6A4A3A" },
-  { x: -12, z: 8, w: 3, d: 2.5, h: 2.2, color: "#7A5A4A" },
-  { x: -18, z: 14, w: 3, d: 3, h: 2.8, color: "#8A6A4A" },
-  { x: -12, z: 14, w: 2.5, d: 2.5, h: 2, color: "#9A7A5A" },
-  { x: 12, z: 8, w: 3.5, d: 3, h: 2.2, color: "#5A4A4A" },
-  { x: 18, z: 8, w: 3, d: 2.5, h: 2.5, color: "#6A5A5A" },
-  { x: 12, z: 14, w: 3, d: 3, h: 2.8, color: "#4A5A5A" },
-  { x: 18, z: 14, w: 2.8, d: 2.8, h: 2, color: "#5A6A5A" },
-  { x: -6, z: -14, w: 3, d: 2.5, h: 3, color: "#5A5A3A" },
-  { x: 0, z: -14, w: 3.5, d: 3, h: 3.5, color: "#6A6A4A" },
-  { x: 6, z: -14, w: 3, d: 2.5, h: 2.8, color: "#4A4A5A" },
-  { x: -6, z: 18, w: 3, d: 2.5, h: 2.2, color: "#5A4A5A" },
-  { x: 0, z: 18, w: 3.5, d: 3, h: 2.5, color: "#6A5A4A" },
-  { x: 6, z: 18, w: 3, d: 2.5, h: 2, color: "#7A6A5A" },
+  // ── Distrito Criativo (x: -14...-18, z: -6...-12) ──
+  { x: -18, z: -12, w: 3.2, d: 2.8, h: 2.8, color: "#B85C38" },
+  { x: -12, z: -12, w: 2.8, d: 2.4, h: 2.2, color: "#D4C5A9" },
+  { x: -18, z: -6, w: 3.0, d: 2.6, h: 3.0, color: "#C4828A" },
+  { x: -12, z: -6, w: 2.6, d: 2.6, h: 2.5, color: "#E8B4B8" },
+  { x: -15, z: -9, w: 2.4, d: 2.2, h: 1.8, color: "#D4A040" },
+  { x: -21, z: -9, w: 2.6, d: 2.4, h: 2.0, color: "#9A7A5A" },
+
+  // ── Distrito Inovação (x: 12...18, z: -6...-12) ──
+  { x: 12, z: -12, w: 3.2, d: 2.8, h: 3.5, color: "#6B7B8D" },
+  { x: 18, z: -12, w: 2.8, d: 2.4, h: 2.8, color: "#5A6A7D" },
+  { x: 12, z: -6, w: 2.8, d: 2.6, h: 2.5, color: "#3A7A6A" },
+  { x: 18, z: -6, w: 2.6, d: 2.6, h: 3.2, color: "#7A8A9D" },
+  { x: 15, z: -9, w: 2.2, d: 2.0, h: 2.4, color: "#4A5A6D" },
+  { x: 21, z: -9, w: 2.4, d: 2.2, h: 1.8, color: "#5A6A8A" },
+
+  // ── Distrito Comércio (x: -14...-18, z: 8...14) ──
+  { x: -18, z: 8, w: 3.2, d: 2.8, h: 2.5, color: "#CD853F" },
+  { x: -12, z: 8, w: 2.8, d: 2.4, h: 2.2, color: "#B4D4E8" },
+  { x: -18, z: 14, w: 2.8, d: 2.6, h: 2.8, color: "#8B4513" },
+  { x: -12, z: 14, w: 2.4, d: 2.4, h: 2.0, color: "#A0522D" },
+  { x: -15, z: 11, w: 2.6, d: 2.2, h: 1.6, color: "#E4B050" },
+  { x: -21, z: 11, w: 2.8, d: 2.4, h: 2.2, color: "#6B3A3A" },
+
+  // ── Distrito Social (x: 12...18, z: 8...14) ──
+  { x: 12, z: 8, w: 3.2, d: 2.8, h: 2.2, color: "#E8D4B4" },
+  { x: 18, z: 8, w: 2.8, d: 2.4, h: 2.5, color: "#B8E8B4" },
+  { x: 12, z: 14, w: 2.8, d: 2.6, h: 2.8, color: "#D4C5A9" },
+  { x: 18, z: 14, w: 2.6, d: 2.6, h: 2.0, color: "#C4B08B" },
+  { x: 15, z: 11, w: 2.4, d: 2.0, h: 1.8, color: "#B85C38" },
+  { x: 21, z: 11, w: 2.6, d: 2.2, h: 2.4, color: "#D49298" },
+
+  // ── Streets along main axes ──
+  { x: -6, z: -14, w: 2.8, d: 2.4, h: 3.0, color: "#BFA980" },
+  { x: 0, z: -14, w: 3.2, d: 2.8, h: 3.5, color: "#6B5A4A" },
+  { x: 6, z: -14, w: 2.8, d: 2.4, h: 2.8, color: "#8B6B3A" },
+  { x: -6, z: 18, w: 2.8, d: 2.4, h: 2.2, color: "#5A6A7A" },
+  { x: 0, z: 18, w: 3.2, d: 2.8, h: 2.5, color: "#4A3040" },
+  { x: 6, z: 18, w: 2.8, d: 2.4, h: 2.0, color: "#7A5030" },
+
+  // ── Extra fill buildings (outer ring) ──
+  { x: -24, z: -4, w: 2.4, d: 2.2, h: 2.0, color: "#9A7A5A" },
+  { x: -24, z: 4, w: 2.6, d: 2.4, h: 2.4, color: "#6A4A3A" },
+  { x: 24, z: -4, w: 2.4, d: 2.2, h: 2.2, color: "#3A4A5A" },
+  { x: 24, z: 4, w: 2.6, d: 2.4, h: 1.8, color: "#4A5A7A" },
+  { x: -8, z: -20, w: 2.4, d: 2.0, h: 2.0, color: "#C4828A" },
+  { x: 8, z: -20, w: 2.6, d: 2.2, h: 2.4, color: "#D4A040" },
+  { x: -8, z: 22, w: 2.4, d: 2.0, h: 1.8, color: "#B4D4E8" },
+  { x: 8, z: 22, w: 2.6, d: 2.2, h: 2.2, color: "#E8B4B8" },
+
+  // ── Corner buildings ──
+  { x: -22, z: -16, w: 2.6, d: 2.4, h: 2.6, color: "#8A7A5A" },
+  { x: 22, z: -16, w: 2.4, d: 2.2, h: 2.4, color: "#5A6A8A" },
+  { x: -22, z: 16, w: 2.6, d: 2.4, h: 2.2, color: "#7A5A4A" },
+  { x: 22, z: 16, w: 2.4, d: 2.2, h: 2.0, color: "#6A5A5A" },
 ];
 
 // ── NPC data ──
