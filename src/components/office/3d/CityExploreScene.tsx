@@ -1191,12 +1191,50 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
 
   return (
     <div className="absolute inset-0 w-full h-full">
+      {/* Quality Settings UI */}
+      <div className="absolute top-2 right-2 z-20 flex flex-col items-end gap-1">
+        <button
+          onClick={() => setShowQualityMenu(!showQualityMenu)}
+          className="px-2 py-1 text-[10px] rounded bg-background/80 border border-border text-foreground backdrop-blur-sm hover:bg-accent transition-colors"
+        >
+          ⚙ {quality.toUpperCase()}
+        </button>
+        {showQualityMenu && (
+          <div className="flex flex-col gap-0.5 p-1.5 rounded-lg bg-background/90 border border-border backdrop-blur-sm">
+            {(["low", "medium", "high", "ultra"] as QualityLevel[]).map(q => (
+              <button
+                key={q}
+                onClick={() => { changeQuality(q); setShowQualityMenu(false); }}
+                className={`px-3 py-1 text-[10px] rounded transition-colors ${
+                  quality === q
+                    ? "bg-primary text-primary-foreground"
+                    : "text-foreground hover:bg-accent"
+                }`}
+              >
+                {q.toUpperCase()}
+                <span className="ml-1 text-muted-foreground">
+                  {q === "low" ? "• 30+ FPS" : q === "medium" ? "• 60 FPS" : q === "high" ? "• Detail" : "• Max"}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* LoD Stats Overlay */}
+      <div className="absolute bottom-2 left-2 z-20 px-2 py-1 text-[9px] rounded bg-background/60 text-muted-foreground backdrop-blur-sm pointer-events-none">
+        LOD: {lodFrame.lodBuildings.filter(b => b.lod === 0).length} HD |{" "}
+        {lodFrame.lodBuildings.filter(b => b.lod === 1).length} Med |{" "}
+        {lodFrame.lodBuildings.filter(b => b.lod >= 2).length} Low |{" "}
+        Chunks: {lodFrame.chunks.length}
+      </div>
+
       <Canvas
         shadows
         style={{ touchAction: "none", width: "100%", height: "100%", display: "block" }}
-        camera={{ position: [12, 18, 22], fov: 40, near: 0.5, far: 500 }}
+        camera={{ position: [12, 18, 22], fov: 40, near: 0.5, far: lodConfig.cameraFar }}
         gl={{ antialias: false, powerPreference: "high-performance" }}
-        dpr={[1, 1.5]}
+        dpr={lodConfig.dpr}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
           gl.toneMappingExposure = dn.exposure;
@@ -1204,7 +1242,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         }}
       >
         <color attach="background" args={[dn.bgColor]} />
-        <fog attach="fog" args={[dn.fogColor, 25, 120]} />
+        <fog attach="fog" args={[dn.fogColor, lodConfig.fogNear, lodConfig.fogFar]} />
 
         <ambientLight intensity={dn.ambientIntensity * 1.1} color={dn.ambientColor} />
         {/* Warm fill light for diorama effect */}
@@ -1213,8 +1251,8 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
           position={dn.sunPosition}
           intensity={dn.sunIntensity}
           castShadow
-          shadow-mapSize-width={512}
-          shadow-mapSize-height={512}
+          shadow-mapSize-width={lodConfig.shadowMapSize}
+          shadow-mapSize-height={lodConfig.shadowMapSize}
           shadow-camera-far={40}
           shadow-camera-left={-20}
           shadow-camera-right={20}
@@ -1231,12 +1269,10 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
               <sphereGeometry args={[2, 16, 16]} />
               <meshBasicMaterial color="#E8E8F0" />
             </mesh>
-            {/* Moon glow */}
             <mesh>
               <sphereGeometry args={[3, 16, 16]} />
               <meshBasicMaterial color="#8899CC" transparent opacity={0.08} />
             </mesh>
-            {/* Moonlight - directional from moon position */}
             <directionalLight
               position={[0, 0, 0]}
               target-position={[0, 0, 0]}
@@ -1254,7 +1290,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
           </group>
         )}
 
-        {dn.showStars && <Stars radius={100} depth={50} count={1500} factor={4} saturation={0.3} fade speed={0.5} />}
+        {lodConfig.enableStars && dn.showStars && <Stars radius={100} depth={50} count={1500} factor={4} saturation={0.3} fade speed={0.5} />}
 
         {/* Ground mode controls */}
         {!flyMode && (
@@ -1284,28 +1320,29 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         {/* Camera occlusion */}
         <CameraOcclusion playerPos={playerPos} onOccludedBuildings={setOccludedBuildings} />
 
-        {/* Clickable ground */}
+        {/* Clickable ground (extended for larger world) */}
         <mesh position={[0, -0.025, 0]} rotation={[-Math.PI / 2, 0, 0]} onPointerDown={handleFloorClick}>
-          <planeGeometry args={[80, 80]} />
+          <planeGeometry args={[120, 120]} />
           <meshBasicMaterial visible={false} />
         </mesh>
 
         <CityGround />
         <CityPlaza />
         <StreetLights />
-        <CityLandscaping />
-        <VoxelParkedCars />
+        {lodConfig.enableLandscaping && <CityLandscaping />}
+        {lodConfig.enableVehicles && <VoxelParkedCars />}
 
         {/* Click marker */}
         <ClickMarker position={clickTarget} />
 
-        {/* Static buildings with occlusion */}
-        {CITY_BUILDINGS.map((b, i) => (
+        {/* Static buildings with chunk-based LoD */}
+        {lodFrame.lodBuildings.map((lb) => (
           <StaticBuildingOccludable
-            key={i}
-            x={b.x} z={b.z} w={b.w} d={b.d} h={b.h} color={b.color}
-            seed={i}
-            occluded={occludedBuildings.has(`static-${b.x}-${b.z}`)}
+            key={lb.index}
+            x={lb.def.x} z={lb.def.z} w={lb.def.w} d={lb.def.d} h={lb.def.h} color={lb.def.color}
+            seed={lb.index}
+            occluded={occludedBuildings.has(`static-${lb.def.x}-${lb.def.z}`)}
+            lod={lb.lod}
           />
         ))}
 
@@ -1336,8 +1373,8 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
           );
         })}
 
-        {/* NPCs with collision awareness */}
-        {NPC_DATA.map((npc, i) => (
+        {/* NPCs with collision awareness (quality-gated) */}
+        {lodConfig.enableNPCs && NPC_DATA.map((npc, i) => (
           <CityNPC key={i} startX={npc.x} startZ={npc.z} color={npc.color} aabbs={aabbs} />
         ))}
 
