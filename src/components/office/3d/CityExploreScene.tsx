@@ -18,30 +18,63 @@ const DISTRICTS = [
   { name: "Distrito Social", emoji: "☕", x: 14, z: 10, radius: 4, color: "#EC4899" },
 ];
 
-// ── Static building defs ──
+// ── Static building defs (expanded for a richer city) ──
 const CITY_BUILDINGS = [
-  { x: -18, z: -12, w: 3.5, d: 3, h: 2.8, color: "#8B6B3A" },
-  { x: -12, z: -12, w: 3, d: 2.5, h: 2.2, color: "#7A5A3A" },
-  { x: -18, z: -6, w: 3, d: 3, h: 3, color: "#6B5A4A" },
-  { x: -12, z: -6, w: 2.8, d: 2.8, h: 2.5, color: "#8A7A5A" },
-  { x: 12, z: -12, w: 3.5, d: 3, h: 3.5, color: "#3A4A6A" },
-  { x: 18, z: -12, w: 3, d: 2.5, h: 2.8, color: "#4A5A7A" },
-  { x: 12, z: -6, w: 3, d: 3, h: 2.5, color: "#5A6A8A" },
-  { x: 18, z: -6, w: 2.8, d: 2.8, h: 3.2, color: "#4A5A6A" },
-  { x: -18, z: 8, w: 3.5, d: 3, h: 2.5, color: "#6A4A3A" },
-  { x: -12, z: 8, w: 3, d: 2.5, h: 2.2, color: "#7A5A4A" },
-  { x: -18, z: 14, w: 3, d: 3, h: 2.8, color: "#8A6A4A" },
-  { x: -12, z: 14, w: 2.5, d: 2.5, h: 2, color: "#9A7A5A" },
-  { x: 12, z: 8, w: 3.5, d: 3, h: 2.2, color: "#5A4A4A" },
-  { x: 18, z: 8, w: 3, d: 2.5, h: 2.5, color: "#6A5A5A" },
-  { x: 12, z: 14, w: 3, d: 3, h: 2.8, color: "#4A5A5A" },
-  { x: 18, z: 14, w: 2.8, d: 2.8, h: 2, color: "#5A6A5A" },
-  { x: -6, z: -14, w: 3, d: 2.5, h: 3, color: "#5A5A3A" },
-  { x: 0, z: -14, w: 3.5, d: 3, h: 3.5, color: "#6A6A4A" },
-  { x: 6, z: -14, w: 3, d: 2.5, h: 2.8, color: "#4A4A5A" },
-  { x: -6, z: 18, w: 3, d: 2.5, h: 2.2, color: "#5A4A5A" },
-  { x: 0, z: 18, w: 3.5, d: 3, h: 2.5, color: "#6A5A4A" },
-  { x: 6, z: 18, w: 3, d: 2.5, h: 2, color: "#7A6A5A" },
+  // ── Distrito Criativo (x: -14...-18, z: -6...-12) ──
+  { x: -18, z: -12, w: 3.2, d: 2.8, h: 2.8, color: "#B85C38" },
+  { x: -12, z: -12, w: 2.8, d: 2.4, h: 2.2, color: "#D4C5A9" },
+  { x: -18, z: -6, w: 3.0, d: 2.6, h: 3.0, color: "#C4828A" },
+  { x: -12, z: -6, w: 2.6, d: 2.6, h: 2.5, color: "#E8B4B8" },
+  { x: -15, z: -9, w: 2.4, d: 2.2, h: 1.8, color: "#D4A040" },
+  { x: -21, z: -9, w: 2.6, d: 2.4, h: 2.0, color: "#9A7A5A" },
+
+  // ── Distrito Inovação (x: 12...18, z: -6...-12) ──
+  { x: 12, z: -12, w: 3.2, d: 2.8, h: 3.5, color: "#6B7B8D" },
+  { x: 18, z: -12, w: 2.8, d: 2.4, h: 2.8, color: "#5A6A7D" },
+  { x: 12, z: -6, w: 2.8, d: 2.6, h: 2.5, color: "#3A7A6A" },
+  { x: 18, z: -6, w: 2.6, d: 2.6, h: 3.2, color: "#7A8A9D" },
+  { x: 15, z: -9, w: 2.2, d: 2.0, h: 2.4, color: "#4A5A6D" },
+  { x: 21, z: -9, w: 2.4, d: 2.2, h: 1.8, color: "#5A6A8A" },
+
+  // ── Distrito Comércio (x: -14...-18, z: 8...14) ──
+  { x: -18, z: 8, w: 3.2, d: 2.8, h: 2.5, color: "#CD853F" },
+  { x: -12, z: 8, w: 2.8, d: 2.4, h: 2.2, color: "#B4D4E8" },
+  { x: -18, z: 14, w: 2.8, d: 2.6, h: 2.8, color: "#8B4513" },
+  { x: -12, z: 14, w: 2.4, d: 2.4, h: 2.0, color: "#A0522D" },
+  { x: -15, z: 11, w: 2.6, d: 2.2, h: 1.6, color: "#E4B050" },
+  { x: -21, z: 11, w: 2.8, d: 2.4, h: 2.2, color: "#6B3A3A" },
+
+  // ── Distrito Social (x: 12...18, z: 8...14) ──
+  { x: 12, z: 8, w: 3.2, d: 2.8, h: 2.2, color: "#E8D4B4" },
+  { x: 18, z: 8, w: 2.8, d: 2.4, h: 2.5, color: "#B8E8B4" },
+  { x: 12, z: 14, w: 2.8, d: 2.6, h: 2.8, color: "#D4C5A9" },
+  { x: 18, z: 14, w: 2.6, d: 2.6, h: 2.0, color: "#C4B08B" },
+  { x: 15, z: 11, w: 2.4, d: 2.0, h: 1.8, color: "#B85C38" },
+  { x: 21, z: 11, w: 2.6, d: 2.2, h: 2.4, color: "#D49298" },
+
+  // ── Streets along main axes ──
+  { x: -6, z: -14, w: 2.8, d: 2.4, h: 3.0, color: "#BFA980" },
+  { x: 0, z: -14, w: 3.2, d: 2.8, h: 3.5, color: "#6B5A4A" },
+  { x: 6, z: -14, w: 2.8, d: 2.4, h: 2.8, color: "#8B6B3A" },
+  { x: -6, z: 18, w: 2.8, d: 2.4, h: 2.2, color: "#5A6A7A" },
+  { x: 0, z: 18, w: 3.2, d: 2.8, h: 2.5, color: "#4A3040" },
+  { x: 6, z: 18, w: 2.8, d: 2.4, h: 2.0, color: "#7A5030" },
+
+  // ── Extra fill buildings (outer ring) ──
+  { x: -24, z: -4, w: 2.4, d: 2.2, h: 2.0, color: "#9A7A5A" },
+  { x: -24, z: 4, w: 2.6, d: 2.4, h: 2.4, color: "#6A4A3A" },
+  { x: 24, z: -4, w: 2.4, d: 2.2, h: 2.2, color: "#3A4A5A" },
+  { x: 24, z: 4, w: 2.6, d: 2.4, h: 1.8, color: "#4A5A7A" },
+  { x: -8, z: -20, w: 2.4, d: 2.0, h: 2.0, color: "#C4828A" },
+  { x: 8, z: -20, w: 2.6, d: 2.2, h: 2.4, color: "#D4A040" },
+  { x: -8, z: 22, w: 2.4, d: 2.0, h: 1.8, color: "#B4D4E8" },
+  { x: 8, z: 22, w: 2.6, d: 2.2, h: 2.2, color: "#E8B4B8" },
+
+  // ── Corner buildings ──
+  { x: -22, z: -16, w: 2.6, d: 2.4, h: 2.6, color: "#8A7A5A" },
+  { x: 22, z: -16, w: 2.4, d: 2.2, h: 2.4, color: "#5A6A8A" },
+  { x: -22, z: 16, w: 2.6, d: 2.4, h: 2.2, color: "#7A5A4A" },
+  { x: 22, z: 16, w: 2.4, d: 2.2, h: 2.0, color: "#6A5A5A" },
 ];
 
 // ── NPC data ──
@@ -116,14 +149,21 @@ function moveWithCollision(
 
 // StaticBuilding is now replaced by VoxelCityBuilding
 
-// ── Lightweight dynamic building with occlusion support ──
+// ── Dynamic building (user-owned) using voxel style ──
 function LightBuilding3D({ building, highlighted, onClick, occluded }: {
   building: CityBuilding; highlighted?: boolean; onClick?: () => void; occluded?: boolean;
 }) {
   const h = building.height;
-  const w = 2.2;
-  const color = building.primaryColor;
+  const w = 2.4;
+  const d = 2.2;
   const [hovered, setHovered] = useState(false);
+
+  // Generate a stable seed from building id
+  const seed = useMemo(() => {
+    let s = 0;
+    for (let i = 0; i < building.id.length; i++) s = ((s << 5) - s + building.id.charCodeAt(i)) | 0;
+    return Math.abs(s);
+  }, [building.id]);
 
   return (
     <group
@@ -132,49 +172,30 @@ function LightBuilding3D({ building, highlighted, onClick, occluded }: {
       onPointerOver={() => setHovered(true)}
       onPointerOut={() => setHovered(false)}
     >
-      <mesh position={[0, h / 2, 0]}>
-        <boxGeometry args={[w, h, w]} />
-        <meshStandardMaterial
-          color={color}
-          emissive={highlighted || hovered ? color : "#000000"}
-          emissiveIntensity={highlighted ? 0.3 : hovered ? 0.15 : 0}
-          roughness={0.6}
-          metalness={0.2}
-          transparent={occluded}
-          opacity={occluded ? 0.15 : 1}
-        />
-      </mesh>
-      <mesh position={[0, h + 0.15, 0]}>
-        <boxGeometry args={[w + 0.3, 0.3, w + 0.3]} />
-        <meshStandardMaterial
-          color={building.secondaryColor}
-          roughness={0.4}
-          metalness={0.3}
-          transparent={occluded}
-          opacity={occluded ? 0.15 : 1}
-        />
-      </mesh>
-      {!occluded && Array.from({ length: Math.min(building.floors, 5) }).map((_, floor) => (
-        <group key={floor}>
-          {[-0.4, 0.4].map((ox, i) => (
-            <mesh key={i} position={[ox, 1 + floor * (h / building.floors), w / 2 + 0.01]}>
-              <planeGeometry args={[0.3, 0.35]} />
-              <meshStandardMaterial emissive="#FFD060" emissiveIntensity={0.6} color="black" />
-            </mesh>
-          ))}
-        </group>
-      ))}
+      <VoxelCityBuilding
+        x={0} z={0} w={w} d={d} h={h}
+        color={building.primaryColor}
+        seed={seed}
+        occluded={occluded}
+        ownerName={building.name}
+      />
+      {/* Highlight ring */}
       {(highlighted || hovered) && !occluded && (
         <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[w, w + 0.5, 16]} />
-          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.8} transparent opacity={hovered ? 0.4 : 0.6} />
+          <ringGeometry args={[w * 0.6, w * 0.6 + 0.4, 6]} />
+          <meshStandardMaterial
+            color={building.primaryColor}
+            emissive={building.primaryColor}
+            emissiveIntensity={0.8}
+            transparent opacity={hovered ? 0.4 : 0.6}
+          />
         </mesh>
       )}
       {hovered && !occluded && (
         <Html position={[0, h + 1, 0]} center>
-          <div className="px-2 py-1 rounded-lg bg-gray-900/90 border border-gray-700 text-white text-[10px] whitespace-nowrap pointer-events-none backdrop-blur-sm">
+          <div className="px-2 py-1 rounded-lg bg-background/90 border border-border text-foreground text-[10px] whitespace-nowrap pointer-events-none backdrop-blur-sm">
             <span className="font-bold">{building.name}</span>
-            <span className="text-gray-400 ml-1">• Visitar</span>
+            <span className="text-muted-foreground ml-1">• Visitar</span>
           </div>
         </Html>
       )}
@@ -668,39 +689,71 @@ function CityLandscaping() {
   );
 }
 
-// ── Neon Signs on buildings ──
-function BuildingNeonSigns() {
-  const signs = useMemo(() => [
-    { x: -18, z: -12, h: 2.8, text: "CAFÉ", color: "#FF6B9D" },
-    { x: 12, z: -12, h: 3.5, text: "TECH", color: "#00D4FF" },
-    { x: -18, z: 8, h: 2.5, text: "ART", color: "#FFD700" },
-    { x: 12, z: 8, h: 2.2, text: "SHOP", color: "#00FF88" },
-    { x: 0, z: -14, h: 3.5, text: "HUB", color: "#FF4444" },
-    { x: 0, z: 18, h: 2.5, text: "SOCIAL", color: "#AA66FF" },
+// ── Voxel Parked Cars (diorama style) ──
+function VoxelParkedCars() {
+  const cars = useMemo(() => [
+    { x: -16, z: -3, color: "#D4A030", rot: 0 },
+    { x: -10, z: -3, color: "#C94040", rot: 0 },
+    { x: 16, z: -3, color: "#3A7A6A", rot: Math.PI },
+    { x: 10, z: -3, color: "#5A6A8A", rot: Math.PI },
+    { x: -16, z: 3, color: "#B85C38", rot: 0 },
+    { x: 10, z: 3, color: "#6B3A3A", rot: Math.PI },
+    { x: -3, z: -10, color: "#D4C5A9", rot: Math.PI / 2 },
+    { x: -3, z: 10, color: "#4A3040", rot: Math.PI / 2 },
+    { x: 3, z: -16, color: "#E8B4B8", rot: -Math.PI / 2 },
+    { x: 3, z: 16, color: "#7A5030", rot: -Math.PI / 2 },
+    // Delivery van
+    { x: -20, z: 0, color: "#E07030", rot: Math.PI / 2 },
+    { x: 20, z: 0, color: "#3080C0", rot: -Math.PI / 2 },
   ], []);
 
   return (
     <group>
-      {signs.map((s, i) => (
-        <group key={i} position={[s.x, s.h + 0.3, s.z]}>
-          {/* Neon glow bar */}
-          <mesh position={[0, 0, 0]}>
-            <boxGeometry args={[0.8, 0.15, 0.02]} />
-            <meshStandardMaterial
-              color={s.color}
-              emissive={s.color}
-              emissiveIntensity={2.5}
-              transparent
-              opacity={0.9}
-            />
-          </mesh>
-          {/* Mounting bracket */}
-          <mesh position={[0, 0.1, -0.02]}>
-            <boxGeometry args={[0.06, 0.12, 0.04]} />
-            <meshStandardMaterial color="#333" metalness={0.6} />
-          </mesh>
-        </group>
-      ))}
+      {cars.map((c, i) => {
+        const isVan = i >= 10;
+        const bw = isVan ? 0.5 : 0.35;
+        const bl = isVan ? 0.8 : 0.55;
+        const bh = isVan ? 0.25 : 0.18;
+        const cabH = isVan ? 0.2 : 0.14;
+        return (
+          <group key={i} position={[c.x, 0, c.z]} rotation={[0, c.rot, 0]}>
+            {/* Body */}
+            <mesh position={[0, bh / 2 + 0.04, 0]}>
+              <boxGeometry args={[bw, bh, bl]} />
+              <meshStandardMaterial color={c.color} />
+            </mesh>
+            {/* Cabin */}
+            <mesh position={[0, bh + cabH / 2 + 0.04, isVan ? -0.1 : 0]}>
+              <boxGeometry args={[bw - 0.04, cabH, isVan ? bl * 0.5 : bl * 0.55]} />
+              <meshStandardMaterial color={c.color} />
+            </mesh>
+            {/* Windows */}
+            <mesh position={[0, bh + cabH / 2 + 0.04, isVan ? -0.1 + (bl * 0.25 + 0.01) : bl * 0.275 + 0.01]}>
+              <boxGeometry args={[bw - 0.06, cabH - 0.04, 0.01]} />
+              <meshStandardMaterial color="#1a1a2e" emissive="#AADDFF" emissiveIntensity={0.3} />
+            </mesh>
+            {/* Wheels */}
+            {[[-1, -1], [-1, 1], [1, -1], [1, 1]].map(([sx, sz], wi) => (
+              <mesh key={wi} position={[sx * bw * 0.45, 0.04, sz * bl * 0.35]}>
+                <boxGeometry args={[0.04, 0.08, 0.08]} />
+                <meshStandardMaterial color="#222" />
+              </mesh>
+            ))}
+            {/* Headlights */}
+            {[-1, 1].map(side => (
+              <mesh key={`hl-${side}`} position={[side * bw * 0.35, bh * 0.5 + 0.04, bl / 2 + 0.01]}>
+                <boxGeometry args={[0.06, 0.04, 0.01]} />
+                <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={0.5} />
+              </mesh>
+            ))}
+            {/* Shadow */}
+            <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <planeGeometry args={[bw + 0.08, bl + 0.08]} />
+              <meshBasicMaterial color="#000" transparent opacity={0.08} />
+            </mesh>
+          </group>
+        );
+      })}
     </group>
   );
 }
@@ -1091,7 +1144,9 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         <color attach="background" args={[dn.bgColor]} />
         <fog attach="fog" args={[dn.fogColor, 25, 120]} />
 
-        <ambientLight intensity={dn.ambientIntensity} color={dn.ambientColor} />
+        <ambientLight intensity={dn.ambientIntensity * 1.1} color={dn.ambientColor} />
+        {/* Warm fill light for diorama effect */}
+        <pointLight position={[0, 20, 0]} intensity={0.4} color="#FFD4A0" distance={60} decay={1.5} />
         <directionalLight
           position={dn.sunPosition}
           intensity={dn.sunIntensity}
@@ -1105,7 +1160,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
           shadow-camera-bottom={-20}
           color={dn.sunColor}
         />
-        <hemisphereLight args={[dn.skyColor, dn.groundColor, dn.hemiIntensity]} />
+        <hemisphereLight args={[dn.skyColor, "#FFE8C0", dn.hemiIntensity * 1.15]} />
 
         {/* Moon */}
         {dn.isNight && (
@@ -1177,7 +1232,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         <CityPlaza />
         <StreetLights />
         <CityLandscaping />
-        <BuildingNeonSigns />
+        <VoxelParkedCars />
 
         {/* Click marker */}
         <ClickMarker position={clickTarget} />
