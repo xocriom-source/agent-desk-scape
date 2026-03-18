@@ -93,9 +93,12 @@ function GLBBuildingModelInner({ buildingId, height, primaryColor, isSkyscraper 
       const tintedMaterials = materials
         .filter(Boolean)
         .map((material) => {
-          const clonedMaterial = material.clone();
+          const clonedMaterial = material.clone() as THREE.Material & {
+            color?: THREE.Color;
+            roughness?: number;
+          };
 
-          if ("color" in clonedMaterial && clonedMaterial.color) {
+          if (clonedMaterial.color instanceof THREE.Color) {
             const origLightness = clonedMaterial.color.getHSL({ h: 0, s: 0, l: 0 }).l;
             clonedMaterial.color.lerp(tintColor, 0.65);
             const tintHSL = clonedMaterial.color.getHSL({ h: 0, s: 0, l: 0 });
