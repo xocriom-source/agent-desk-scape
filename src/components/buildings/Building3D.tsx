@@ -555,46 +555,21 @@ export const Building3D = memo(function Building3D({ building, onClick, highligh
       onPointerOver={() => setHovered(true)}
       onPointerOut={() => setHovered(false)}
     >
-      {/* ── Ground floor / Storefront ── */}
-      <VoxelStorefront w={w} d={d} color={color} seed={seed} />
+      {/* ── GLB Building Model (primary) ── */}
+      <GLBBuildingModel
+        buildingId={building.id}
+        height={h}
+        primaryColor={building.primaryColor}
+        isSkyscraper={h > 7}
+      />
 
-      {/* ── Upper floors body ── */}
-      <mesh position={[0, 0.8 + upperH / 2, 0]} castShadow receiveShadow>
-        <boxGeometry args={[w, upperH, d]} />
-        <meshStandardMaterial
-          color={color}
-          emissive={highlighted || hovered ? color : BLACK}
-          emissiveIntensity={highlighted ? 0.25 : hovered ? 0.12 : 0}
-          roughness={0.75}
-          metalness={0.1}
-        />
-      </mesh>
-
-      {/* ── Corner pilasters ── */}
-      <CornerDetails w={w} d={d} h={h} color={color} />
-
-      {/* ── Facade detail pattern ── */}
-      <FacadeDetail w={w} d={d} h={h} pattern={vs.facadePattern} color={color} />
-
-      {/* ── Floor separator lines ── */}
-      {Array.from({ length: upperFloors }).map((_, i) => (
-        <group key={`sep-${i}`}>
-          <mesh position={[0, 0.8 + (i + 1) * vs.floorHeight, d / 2 + 0.01]}>
-            <boxGeometry args={[w + 0.04, 0.04, 0.02]} />
-            <meshStandardMaterial color={new THREE.Color(color).multiplyScalar(0.75)} />
-          </mesh>
-          {/* Back separator */}
-          <mesh position={[0, 0.8 + (i + 1) * vs.floorHeight, -d / 2 - 0.01]}>
-            <boxGeometry args={[w + 0.04, 0.04, 0.02]} />
-            <meshStandardMaterial color={new THREE.Color(color).multiplyScalar(0.75)} />
-          </mesh>
-        </group>
-      ))}
-
-      {/* ── Windows per floor (all 4 sides) ── */}
-      {Array.from({ length: Math.min(upperFloors, 6) }).map((_, floor) => (
-        <VoxelWindows key={floor} floor={floor + 1} floorH={vs.floorHeight} w={w} d={d} style={building.style} seed={seed} />
-      ))}
+      {/* ── GLB Detail props (awnings, parasols) ── */}
+      {seed % 3 === 0 && (
+        <GLBDetailModel seed={seed} position={[0, 0, d / 2 + 0.3]} scale={h * 0.15} />
+      )}
+      {seed % 5 === 0 && (
+        <GLBDetailModel seed={seed + 3} position={[w / 2 + 0.5, 0, 0]} scale={0.8} />
+      )}
 
       {/* ── Awning ── */}
       {vs.hasAwning && <VoxelAwning w={w} d={d} color={vs.awningColor} seed={seed} />}
