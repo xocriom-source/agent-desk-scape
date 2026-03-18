@@ -128,6 +128,66 @@ export type Database = {
           },
         ]
       }
+      agent_contracts: {
+        Row: {
+          contract_type: string
+          created_at: string
+          duration_days: number | null
+          expires_at: string | null
+          id: string
+          initiator_agent_id: string
+          resolved_at: string | null
+          revenue_split: number | null
+          status: string
+          target_agent_id: string
+          terms: Json
+          total_value: number | null
+        }
+        Insert: {
+          contract_type?: string
+          created_at?: string
+          duration_days?: number | null
+          expires_at?: string | null
+          id?: string
+          initiator_agent_id: string
+          resolved_at?: string | null
+          revenue_split?: number | null
+          status?: string
+          target_agent_id: string
+          terms?: Json
+          total_value?: number | null
+        }
+        Update: {
+          contract_type?: string
+          created_at?: string
+          duration_days?: number | null
+          expires_at?: string | null
+          id?: string
+          initiator_agent_id?: string
+          resolved_at?: string | null
+          revenue_split?: number | null
+          status?: string
+          target_agent_id?: string
+          terms?: Json
+          total_value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_contracts_initiator_agent_id_fkey"
+            columns: ["initiator_agent_id"]
+            isOneToOne: false
+            referencedRelation: "external_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_contracts_target_agent_id_fkey"
+            columns: ["target_agent_id"]
+            isOneToOne: false
+            referencedRelation: "external_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_creations: {
         Row: {
           agent_id: string
@@ -208,6 +268,99 @@ export type Database = {
           },
         ]
       }
+      agent_mission_completions: {
+        Row: {
+          agent_id: string
+          completed_at: string
+          id: string
+          mission_id: string
+          reward_earned: number | null
+          status: string
+          xp_earned: number | null
+        }
+        Insert: {
+          agent_id: string
+          completed_at?: string
+          id?: string
+          mission_id: string
+          reward_earned?: number | null
+          status?: string
+          xp_earned?: number | null
+        }
+        Update: {
+          agent_id?: string
+          completed_at?: string
+          id?: string
+          mission_id?: string
+          reward_earned?: number | null
+          status?: string
+          xp_earned?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_mission_completions_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "external_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_mission_completions_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "agent_missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_missions: {
+        Row: {
+          created_at: string
+          description: string | null
+          district: string | null
+          expires_at: string | null
+          id: string
+          max_participants: number | null
+          min_skill_level: number | null
+          mission_type: string
+          required_skill: string | null
+          reward_credits: number
+          reward_xp: number
+          status: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          district?: string | null
+          expires_at?: string | null
+          id?: string
+          max_participants?: number | null
+          min_skill_level?: number | null
+          mission_type?: string
+          required_skill?: string | null
+          reward_credits?: number
+          reward_xp?: number
+          status?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          district?: string | null
+          expires_at?: string | null
+          id?: string
+          max_participants?: number | null
+          min_skill_level?: number | null
+          mission_type?: string
+          required_skill?: string | null
+          reward_credits?: number
+          reward_xp?: number
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
       agent_protocols: {
         Row: {
           created_at: string
@@ -244,6 +397,100 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_reputation: {
+        Row: {
+          agent_id: string
+          category: string
+          created_at: string
+          delta: number
+          id: string
+          reason: string | null
+          score: number
+          source: string | null
+        }
+        Insert: {
+          agent_id: string
+          category?: string
+          created_at?: string
+          delta?: number
+          id?: string
+          reason?: string | null
+          score?: number
+          source?: string | null
+        }
+        Update: {
+          agent_id?: string
+          category?: string
+          created_at?: string
+          delta?: number
+          id?: string
+          reason?: string | null
+          score?: number
+          source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_reputation_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "external_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_skills: {
+        Row: {
+          agent_id: string
+          category: string
+          created_at: string
+          hourly_rate: number | null
+          id: string
+          is_for_hire: boolean | null
+          rating: number | null
+          skill_level: number
+          skill_name: string
+          total_jobs: number | null
+          updated_at: string
+          xp: number
+        }
+        Insert: {
+          agent_id: string
+          category?: string
+          created_at?: string
+          hourly_rate?: number | null
+          id?: string
+          is_for_hire?: boolean | null
+          rating?: number | null
+          skill_level?: number
+          skill_name: string
+          total_jobs?: number | null
+          updated_at?: string
+          xp?: number
+        }
+        Update: {
+          agent_id?: string
+          category?: string
+          created_at?: string
+          hourly_rate?: number | null
+          id?: string
+          is_for_hire?: boolean | null
+          rating?: number | null
+          skill_level?: number
+          skill_name?: string
+          total_jobs?: number | null
+          updated_at?: string
+          xp?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_skills_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "external_agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_usage: {
         Row: {
           agent_id: string | null
@@ -273,6 +520,108 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      agent_wallet_transactions: {
+        Row: {
+          agent_id: string
+          amount: number
+          counterparty_agent_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          transaction_type: string
+          wallet_id: string
+        }
+        Insert: {
+          agent_id: string
+          amount: number
+          counterparty_agent_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          transaction_type?: string
+          wallet_id: string
+        }
+        Update: {
+          agent_id?: string
+          amount?: number
+          counterparty_agent_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          transaction_type?: string
+          wallet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_wallet_transactions_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "external_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_wallet_transactions_counterparty_agent_id_fkey"
+            columns: ["counterparty_agent_id"]
+            isOneToOne: false
+            referencedRelation: "external_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_wallet_transactions_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "agent_wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_wallets: {
+        Row: {
+          agent_id: string
+          balance: number
+          created_at: string
+          currency: string
+          id: string
+          owner_user_id: string
+          total_earned: number
+          total_spent: number
+          updated_at: string
+        }
+        Insert: {
+          agent_id: string
+          balance?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          owner_user_id: string
+          total_earned?: number
+          total_spent?: number
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string
+          balance?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          owner_user_id?: string
+          total_earned?: number
+          total_spent?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_wallets_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: true
+            referencedRelation: "external_agents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       api_usage: {
         Row: {
@@ -527,6 +876,7 @@ export type Database = {
       }
       city_buildings: {
         Row: {
+          agent_owner_id: string | null
           business_id: string | null
           city: string | null
           country: string | null
@@ -551,6 +901,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          agent_owner_id?: string | null
           business_id?: string | null
           city?: string | null
           country?: string | null
@@ -575,6 +926,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          agent_owner_id?: string | null
           business_id?: string | null
           city?: string | null
           country?: string | null
@@ -599,6 +951,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "city_buildings_agent_owner_id_fkey"
+            columns: ["agent_owner_id"]
+            isOneToOne: false
+            referencedRelation: "external_agents"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "city_buildings_business_id_fkey"
             columns: ["business_id"]
