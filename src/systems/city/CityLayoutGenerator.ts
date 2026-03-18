@@ -136,14 +136,11 @@ const ZONE_PALETTES: Record<string, { primary: string[]; secondary: string[] }> 
 
 // ── Focal point buildings ──
 const FOCAL_POINTS: Array<{ x: number; z: number; name: string; style: BuildingStyle; height: number; color: string; glow: boolean; district: District }> = [
-  // Human landmarks
-  { x: 8, z: 10, name: "City Hall", style: "corporate", height: 10, color: "#FFB840", glow: true, district: "central" },
-  { x: -30, z: 20, name: "Art Pavilion", style: "creative", height: 5, color: "#E85580", glow: true, district: "creator" },
-  { x: 35, z: -3, name: "Innovation Hub", style: "tech", height: 9, color: "#4A9FE0", glow: true, district: "tech" },
-  // AI landmarks
-  { x: -5, z: -32, name: "Apex Tower", style: "futuristic", height: 18, color: "#00E890", glow: true, district: "ai" },
-  { x: -30, z: -20, name: "Neural Core", style: "tech", height: 12, color: "#7A55CC", glow: true, district: "ai" },
-  { x: 25, z: -30, name: "Data Nexus", style: "industrial", height: 8, color: "#40C8E0", glow: true, district: "ai" },
+  { x: 0, z: -2, name: "City Hall", style: "corporate", height: 10, color: "#FFB840", glow: true, district: "central" },
+  { x: -6, z: -30, name: "Apex Tower", style: "futuristic", height: 18, color: "#4A9FE0", glow: true, district: "tech" },
+  { x: 30, z: -15, name: "Innovation Hub", style: "tech", height: 9, color: "#40C8E0", glow: true, district: "tech" },
+  { x: -32, z: 10, name: "Art Pavilion", style: "creative", height: 5, color: "#E85580", glow: true, district: "creator" },
+  { x: -34, z: -26, name: "AI Nexus", style: "futuristic", height: 13, color: "#00E890", glow: true, district: "ai" },
 ];
 
 /**

@@ -338,12 +338,10 @@ const CityStreets = memo(function CityStreets() {
 const CityGround = memo(function CityGround() {
   return (
     <group>
-      {/* Main ground */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
         <planeGeometry args={[200, 200]} />
         <meshStandardMaterial color="hsl(220, 15%, 16%)" roughness={0.95} />
       </mesh>
-      {/* Extended ground rings */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.04, 0]}>
         <ringGeometry args={[100, 250, 32]} />
         <meshStandardMaterial color="hsl(220, 12%, 10%)" roughness={0.98} />
@@ -353,97 +351,40 @@ const CityGround = memo(function CityGround() {
         <meshStandardMaterial color="hsl(220, 10%, 6%)" roughness={1} />
       </mesh>
 
-      {/* ═══ AI DISTRICT GROUND — teal/cyan tinted ═══ */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.003, -28]}>
-        <planeGeometry args={[120, 50]} />
-        <meshStandardMaterial color="hsl(180, 12%, 14%)" roughness={0.95} />
-      </mesh>
-      {/* AI glow border line */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.008, -5]}>
-        <planeGeometry args={[120, 0.3]} />
-        <meshStandardMaterial color="#00E890" emissive="#00E890" emissiveIntensity={0.4} transparent opacity={0.5} />
-      </mesh>
-
-      {/* ═══ HUMAN DISTRICT GROUND — warm tinted ═══ */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.003, 22]}>
-        <planeGeometry args={[120, 50]} />
-        <meshStandardMaterial color="hsl(25, 8%, 16%)" roughness={0.95} />
-      </mesh>
-
-      {/* Zone ground tints */}
       {CITY_ZONES.filter(z => z.type !== "park" && z.type !== "plaza").map(zone => {
         const zoneColors: Record<string, string> = {
           commercial: "hsl(220, 20%, 18%)",
           skyline: "hsl(230, 18%, 15%)",
-          residential: "hsl(30, 10%, 18%)",
-          ai: "hsl(170, 15%, 13%)",
+          residential: "hsl(28, 12%, 18%)",
+          ai: "hsl(182, 16%, 14%)",
         };
         return (
           <mesh key={zone.id} rotation={[-Math.PI / 2, 0, 0]} position={[zone.center.x, 0.005, zone.center.z]}>
             <circleGeometry args={[zone.radius, 32]} />
-            <meshStandardMaterial color={zoneColors[zone.type] || "hsl(220, 15%, 18%)"} transparent opacity={0.4} />
+            <meshStandardMaterial color={zoneColors[zone.type] || "hsl(220, 15%, 18%)"} transparent opacity={0.32} />
           </mesh>
         );
       })}
 
-      {/* Park grass */}
       {CITY_ZONES.filter(z => z.type === "park" || z.type === "plaza").map(zone => (
         <mesh key={zone.id} rotation={[-Math.PI / 2, 0, 0]} position={[zone.center.x, 0.01, zone.center.z]}>
           <circleGeometry args={[zone.radius, 32]} />
-          <meshStandardMaterial color={zone.type === "park" ? "hsl(120, 25%, 18%)" : "hsl(220, 12%, 22%)"} roughness={0.95} />
+          <meshStandardMaterial color={zone.type === "park" ? "hsl(120, 24%, 18%)" : "hsl(220, 12%, 22%)"} roughness={0.95} />
         </mesh>
       ))}
 
-      {/* Distant hills */}
-      {Array.from({ length: 16 }).map((_, i) => {
-        const angle = (i / 16) * Math.PI * 2;
-        const dist = 110 + Math.sin(i * 2.1) * 20;
-        const hh = 6 + Math.sin(i * 1.5) * 3;
-        return (
-          <mesh key={`hill-${i}`} position={[Math.cos(angle) * dist, hh / 2 - 1, Math.sin(angle) * dist]}>
-            <sphereGeometry args={[30, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2]} />
-            <meshStandardMaterial color="hsl(220, 10%, 7%)" roughness={1} />
-          </mesh>
-        );
-      })}
-
-      {/* ═══ DISTRICT SECTION LABELS ═══ */}
-      <Text
-        position={[0, 0.12, 45]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        fontSize={2.5}
-        color="#E8A580"
-        anchorX="center"
-        fillOpacity={0.25}
-        font={undefined}
-      >
-        🏠 HUMAN DISTRICT
-      </Text>
-      <Text
-        position={[0, 0.12, -48]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        fontSize={2.5}
-        color="#40C88A"
-        anchorX="center"
-        fillOpacity={0.25}
-        font={undefined}
-      >
-        🤖 AI DISTRICT
-      </Text>
-
-      {/* Individual district labels */}
       {DISTRICTS.map(d => {
         const zone = CITY_ZONES.find(z => z.district === d.id && z.type !== "park" && z.type !== "plaza");
         if (!zone) return null;
         return (
           <Text
             key={d.id}
-            position={[zone.center.x, 0.1, zone.center.z + zone.radius + 1.5]}
+            position={[zone.center.x, 0.1, zone.center.z + zone.radius + 1.25]}
             rotation={[-Math.PI / 2, 0, 0]}
-            fontSize={1}
+            fontSize={0.9}
             color={d.color}
             anchorX="center"
-            fillOpacity={0.35}
+            fillOpacity={0.28}
           >
             {d.emoji} {d.name}
           </Text>
