@@ -385,23 +385,54 @@ function useWalkAnimation(
   });
 }
 
-// ── Shared geometries (created once, reused by all agents) ──
+// ── Shared geometries (pixel-art humanoid style) ──
 const SHARED_GEO = {
-  body: new THREE.BoxGeometry(0.22, 0.28, 0.14),
-  head: new THREE.BoxGeometry(0.18, 0.18, 0.16),
-  face: new THREE.BoxGeometry(0.14, 0.08, 0.01),
-  eye: new THREE.BoxGeometry(0.035, 0.035, 0.01),
-  arm: new THREE.BoxGeometry(0.05, 0.18, 0.07),
-  leg: new THREE.BoxGeometry(0.07, 0.12, 0.09),
-  antenna: new THREE.CylinderGeometry(0.008, 0.008, 0.1, 4),
-  antennaTip: new THREE.SphereGeometry(0.025, 6, 6),
-  shadow: new THREE.CircleGeometry(0.14, 8),
-  ring: new THREE.RingGeometry(0.2, 0.26, 16),
+  // Head
+  head: new THREE.BoxGeometry(0.20, 0.20, 0.18),
+  // Hair block (top of head)
+  hair: new THREE.BoxGeometry(0.22, 0.08, 0.20),
+  hairFringe: new THREE.BoxGeometry(0.22, 0.06, 0.04),
+  // Body / torso (shirt)
+  torso: new THREE.BoxGeometry(0.22, 0.20, 0.14),
+  // Arms
+  arm: new THREE.BoxGeometry(0.06, 0.18, 0.08),
+  hand: new THREE.BoxGeometry(0.05, 0.05, 0.06),
+  // Legs
+  leg: new THREE.BoxGeometry(0.08, 0.14, 0.09),
+  shoe: new THREE.BoxGeometry(0.08, 0.04, 0.11),
+  // Face features
+  eyeWhite: new THREE.BoxGeometry(0.05, 0.045, 0.01),
+  eyePupil: new THREE.BoxGeometry(0.025, 0.03, 0.005),
+  mouth: new THREE.BoxGeometry(0.06, 0.015, 0.01),
+  // Misc
+  shadow: new THREE.CircleGeometry(0.16, 8),
+  ring: new THREE.RingGeometry(0.22, 0.28, 16),
 };
-const FACE_MAT = new THREE.MeshStandardMaterial({ color: "#1a1a2e" });
+
+// Agent appearance palettes - deterministic per agent index
+const AGENT_SKINS = ["#8D5524", "#C68642", "#F1C27D", "#FFDBAC", "#E0AC69", "#D4A574", "#6B4423", "#F5DEB3"];
+const AGENT_HAIR_COLORS = ["#1a1a2e", "#2C1810", "#8B4513", "#D4A017", "#CC5500", "#4A0E0E", "#2E2E2E", "#654321"];
+const AGENT_SHIRT_COLORS = ["#3B82F6", "#EF4444", "#10B981", "#F59E0B", "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16"];
+const AGENT_PANTS_COLORS = ["#1E3A5F", "#374151", "#1F2937", "#3F3F46", "#312E81", "#1E293B", "#18181B", "#292524"];
+const AGENT_SHOE_COLORS = ["#1a1a1a", "#333", "#4A3728", "#222", "#2D2D2D", "#1a1a1a", "#333", "#2A2A2A"];
+
 const SHADOW_MAT = new THREE.MeshBasicMaterial({ color: "#000", transparent: true, opacity: 0.12 });
 
-// ── Agent 3D (memoized, shared geometries) ──
+function getAgentAppearance(agentColor: string) {
+  // Derive a stable index from the agent color
+  let hash = 0;
+  for (let i = 0; i < agentColor.length; i++) hash = ((hash << 5) - hash + agentColor.charCodeAt(i)) | 0;
+  const idx = Math.abs(hash);
+  return {
+    skin: AGENT_SKINS[idx % AGENT_SKINS.length],
+    hair: AGENT_HAIR_COLORS[(idx >> 3) % AGENT_HAIR_COLORS.length],
+    shirt: agentColor, // Use the agent's assigned color as shirt
+    pants: AGENT_PANTS_COLORS[(idx >> 6) % AGENT_PANTS_COLORS.length],
+    shoes: AGENT_SHOE_COLORS[(idx >> 9) % AGENT_SHOE_COLORS.length],
+  };
+}
+
+// ── Agent 3D — pixel-art humanoid style (like Gather.town / reference) ──
 const Agent3D = memo(function Agent3D({ agent, selected, onClick }: { agent: Agent; selected?: boolean; onClick: () => void }) {
   const ref = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
@@ -414,27 +445,56 @@ const Agent3D = memo(function Agent3D({ agent, selected, onClick }: { agent: Age
   useWalkAnimation(ref, leftLeg, rightLeg, leftArm, rightArm, agent.x * S, agent.y * S, smoothPos, prevPos, 0.1);
 
   const statusColor = STATUS_COLORS[agent.status] || "#999";
+  const look = useMemo(() => getAgentAppearance(agent.color), [agent.color]);
 
-  // Cache materials per agent color to avoid re-creation
-  const bodyMat = useMemo(() => new THREE.MeshStandardMaterial({ color: agent.color }), [agent.color]);
-  const statusMat = useMemo(() => new THREE.MeshStandardMaterial({ color: statusColor, emissive: statusColor, emissiveIntensity: 1.2 }), [statusColor]);
-  const statusTipMat = useMemo(() => new THREE.MeshStandardMaterial({ color: statusColor, emissive: statusColor, emissiveIntensity: 1.8 }), [statusColor]);
+  // Cache materials
+  const skinMat = useMemo(() => new THREE.MeshStandardMaterial({ color: look.skin }), [look.skin]);
+  const hairMat = useMemo(() => new THREE.MeshStandardMaterial({ color: look.hair }), [look.hair]);
+  const shirtMat = useMemo(() => new THREE.MeshStandardMaterial({ color: look.shirt }), [look.shirt]);
+  const pantsMat = useMemo(() => new THREE.MeshStandardMaterial({ color: look.pants }), [look.pants]);
+  const shoeMat = useMemo(() => new THREE.MeshStandardMaterial({ color: look.shoes }), [look.shoes]);
+  const eyeWhiteMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#FFFFFF" }), []);
+  const eyePupilMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#1a1a2e" }), []);
+  const mouthMat = useMemo(() => new THREE.MeshStandardMaterial({ color: "#8B4513" }), []);
+  const statusDotMat = useMemo(() => new THREE.MeshStandardMaterial({ color: statusColor, emissive: statusColor, emissiveIntensity: 1.5 }), [statusColor]);
 
   return (
     <group ref={ref} onClick={(e) => { e.stopPropagation(); onClick(); }} onPointerOver={() => { setHovered(true); document.body.style.cursor = "pointer"; }} onPointerOut={() => { setHovered(false); document.body.style.cursor = "default"; }}>
-      <mesh position={[0, 0.25, 0]} castShadow geometry={SHARED_GEO.body} material={bodyMat} />
-      <mesh position={[0, 0.47, 0]} castShadow geometry={SHARED_GEO.head} material={bodyMat} />
-      <mesh position={[0, 0.47, 0.081]} geometry={SHARED_GEO.face} material={FACE_MAT} />
-      {[-0.035, 0.035].map((ox, i) => (
-        <mesh key={i} position={[ox, 0.48, 0.09]} geometry={SHARED_GEO.eye} material={statusMat} />
-      ))}
-      <mesh ref={leftArm} position={[-0.14, 0.24, 0]} geometry={SHARED_GEO.arm} material={bodyMat} />
-      <mesh ref={rightArm} position={[0.14, 0.24, 0]} geometry={SHARED_GEO.arm} material={bodyMat} />
-      <mesh position={[0, 0.61, 0]} geometry={SHARED_GEO.antenna} material={bodyMat} />
-      <mesh position={[0, 0.67, 0]} geometry={SHARED_GEO.antennaTip} material={statusTipMat} />
-      <mesh ref={leftLeg} position={[-0.055, 0.06, 0]} geometry={SHARED_GEO.leg} material={bodyMat} />
-      <mesh ref={rightLeg} position={[0.055, 0.06, 0]} geometry={SHARED_GEO.leg} material={bodyMat} />
+      {/* Shoes */}
+      <mesh position={[-0.055, 0.02, 0.01]} geometry={SHARED_GEO.shoe} material={shoeMat} />
+      <mesh position={[0.055, 0.02, 0.01]} geometry={SHARED_GEO.shoe} material={shoeMat} />
+      {/* Legs / pants */}
+      <mesh ref={leftLeg} position={[-0.055, 0.11, 0]} geometry={SHARED_GEO.leg} material={pantsMat} />
+      <mesh ref={rightLeg} position={[0.055, 0.11, 0]} geometry={SHARED_GEO.leg} material={pantsMat} />
+      {/* Torso / shirt */}
+      <mesh position={[0, 0.28, 0]} castShadow geometry={SHARED_GEO.torso} material={shirtMat} />
+      {/* Arms */}
+      <mesh ref={leftArm} position={[-0.14, 0.27, 0]} geometry={SHARED_GEO.arm} material={shirtMat} />
+      <mesh ref={rightArm} position={[0.14, 0.27, 0]} geometry={SHARED_GEO.arm} material={shirtMat} />
+      {/* Hands */}
+      <mesh position={[-0.14, 0.155, 0]} geometry={SHARED_GEO.hand} material={skinMat} />
+      <mesh position={[0.14, 0.155, 0]} geometry={SHARED_GEO.hand} material={skinMat} />
+      {/* Head */}
+      <mesh position={[0, 0.48, 0]} castShadow geometry={SHARED_GEO.head} material={skinMat} />
+      {/* Hair - top */}
+      <mesh position={[0, 0.62, 0]} geometry={SHARED_GEO.hair} material={hairMat} />
+      {/* Hair - fringe */}
+      <mesh position={[0, 0.56, 0.08]} geometry={SHARED_GEO.hairFringe} material={hairMat} />
+      {/* Eyes */}
+      <mesh position={[-0.05, 0.50, 0.091]} geometry={SHARED_GEO.eyeWhite} material={eyeWhiteMat} />
+      <mesh position={[-0.05, 0.495, 0.096]} geometry={SHARED_GEO.eyePupil} material={eyePupilMat} />
+      <mesh position={[0.05, 0.50, 0.091]} geometry={SHARED_GEO.eyeWhite} material={eyeWhiteMat} />
+      <mesh position={[0.05, 0.495, 0.096]} geometry={SHARED_GEO.eyePupil} material={eyePupilMat} />
+      {/* Mouth */}
+      <mesh position={[0, 0.435, 0.091]} geometry={SHARED_GEO.mouth} material={mouthMat} />
+      {/* Status dot on head */}
+      <mesh position={[0.1, 0.62, 0.05]}>
+        <sphereGeometry args={[0.025, 6, 6]} />
+        <primitive object={statusDotMat} attach="material" />
+      </mesh>
+      {/* Shadow */}
       <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]} geometry={SHARED_GEO.shadow} material={SHADOW_MAT} />
+      {/* Hover/select feedback */}
       {(selected || hovered) && (
         <>
           <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]} geometry={SHARED_GEO.ring}>
