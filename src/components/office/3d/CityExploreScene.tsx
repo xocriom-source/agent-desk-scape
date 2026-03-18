@@ -114,40 +114,7 @@ function moveWithCollision(
   return [curX, curZ];
 }
 
-// ── Lightweight static building ──
-function StaticBuilding({ x, z, w, d, h, color }: { x: number; z: number; w: number; d: number; h: number; color: string }) {
-  const windowRows = Math.floor(h / 0.5);
-  const windowCols = Math.max(1, Math.floor(w / 0.8));
-
-  return (
-    <group position={[x, 0, z]}>
-      <mesh position={[0, h / 2, 0]}>
-        <boxGeometry args={[w, h, d]} />
-        <meshStandardMaterial color={color} roughness={0.85} />
-      </mesh>
-      <mesh position={[0, h + 0.03, 0]}>
-        <boxGeometry args={[w + 0.1, 0.06, d + 0.1]} />
-        <meshStandardMaterial color="#2A2A2A" />
-      </mesh>
-      {Array.from({ length: Math.min(windowRows, 4) }).map((_, ri) =>
-        Array.from({ length: Math.min(windowCols, 3) }).map((_, ci) => (
-          <mesh key={`w${ri}-${ci}`} position={[
-            -w / 2 + 0.35 + ci * (w / (windowCols + 0.5)),
-            0.4 + ri * 0.5,
-            d / 2 + 0.01
-          ]}>
-            <boxGeometry args={[0.2, 0.26, 0.01]} />
-            <meshStandardMaterial color="#FFE4A8" emissive="#FFD060" emissiveIntensity={0.5} />
-          </mesh>
-        ))
-      )}
-      <mesh position={[0, 0.35, d / 2 + 0.01]}>
-        <boxGeometry args={[0.4, 0.7, 0.02]} />
-        <meshStandardMaterial color="#3A2A1A" />
-      </mesh>
-    </group>
-  );
-}
+// StaticBuilding is now replaced by VoxelCityBuilding
 
 // ── Lightweight dynamic building with occlusion support ──
 function LightBuilding3D({ building, highlighted, onClick, occluded }: {
