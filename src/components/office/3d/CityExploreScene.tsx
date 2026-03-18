@@ -1200,7 +1200,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         <CityPlaza />
         <StreetLights />
         <CityLandscaping />
-        <BuildingNeonSigns />
+        <VoxelParkedCars />
 
         {/* Click marker */}
         <ClickMarker position={clickTarget} />
