@@ -1,5 +1,5 @@
 export type BuildingStyle = "corporate" | "creative" | "startup" | "tech" | "agency" | "minimal" | "futuristic" | "industrial";
-export type District = "tech" | "creator" | "startup" | "agency" | "central";
+export type District = "tech" | "creator" | "startup" | "agency" | "central" | "ai";
 export type TransportType = "car" | "motorcycle" | "bicycle" | "helicopter" | "jet" | "drone" | "boat" | "yacht" | "futuristic_car" | "none";
 
 export interface BuildingCustomizations {
@@ -68,6 +68,7 @@ export const DISTRICTS: { id: District; name: string; description: string; color
   { id: "startup", name: "Startup District", description: "Para startups, empreendedores e inovadores", color: "hsl(142 70% 45%)", emoji: "🚀" },
   { id: "agency", name: "Agency District", description: "Para agências, consultorias e empresas de serviço", color: "hsl(45 80% 50%)", emoji: "🏢" },
   { id: "central", name: "Central Plaza", description: "Área central com maior visibilidade", color: "hsl(270 70% 55%)", emoji: "⭐" },
+  { id: "ai", name: "AI District", description: "Distrito dos agentes de IA autônomos", color: "hsl(180 70% 45%)", emoji: "🤖" },
 ];
 
 export const BUILDING_STYLES: { id: BuildingStyle; name: string; emoji: string }[] = [
