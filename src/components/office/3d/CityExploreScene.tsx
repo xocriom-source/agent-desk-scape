@@ -5,12 +5,14 @@ import * as THREE from "three";
 import { useDayNight } from "@/hooks/useDayNight";
 import { useCityBuildings } from "@/hooks/useCityBuildings";
 import { Vehicle3D } from "@/components/city/Vehicle3D";
-import { VoxelCityBuilding, VoxelBuildingMultiLoD } from "@/components/city/VoxelCityBuilding";
+import { GLBBuildingModel, GLBDetailModel, preloadBuildingModels } from "@/components/buildings/GLBBuildingModel";
 import type { CityBuilding } from "@/types/building";
 import { STYLE_TRANSPORT_MAP } from "@/types/building";
 import { useCityLod } from "@/systems/city/useCityLod";
-import { getLodLevel } from "@/systems/city/ChunkManager";
 import { QUALITY_PRESETS, type QualityLevel } from "@/systems/city/QualitySettings";
+
+// Preload GLB models on module load
+preloadBuildingModels();
 
 // ── District data ──
 const DISTRICTS = [
@@ -201,23 +203,15 @@ function moveWithCollision(
   return [curX, curZ];
 }
 
-// StaticBuilding is now replaced by VoxelCityBuilding
-
-// ── Dynamic building (user-owned) using voxel style ──
+// ── Dynamic building (user-owned) using GLB models ──
 function LightBuilding3D({ building, highlighted, onClick, occluded }: {
   building: CityBuilding; highlighted?: boolean; onClick?: () => void; occluded?: boolean;
 }) {
   const h = building.height;
   const w = 2.4;
-  const d = 2.2;
   const [hovered, setHovered] = useState(false);
 
-  // Generate a stable seed from building id
-  const seed = useMemo(() => {
-    let s = 0;
-    for (let i = 0; i < building.id.length; i++) s = ((s << 5) - s + building.id.charCodeAt(i)) | 0;
-    return Math.abs(s);
-  }, [building.id]);
+  if (occluded) return null;
 
   return (
     <group
@@ -226,15 +220,14 @@ function LightBuilding3D({ building, highlighted, onClick, occluded }: {
       onPointerOver={() => setHovered(true)}
       onPointerOut={() => setHovered(false)}
     >
-      <VoxelCityBuilding
-        x={0} z={0} w={w} d={d} h={h}
-        color={building.primaryColor}
-        seed={seed}
-        occluded={occluded}
-        ownerName={building.name}
+      <GLBBuildingModel
+        buildingId={building.id}
+        height={h}
+        primaryColor={building.primaryColor}
+        isSkyscraper={h > 7}
       />
       {/* Highlight ring */}
-      {(highlighted || hovered) && !occluded && (
+      {(highlighted || hovered) && (
         <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[w * 0.6, w * 0.6 + 0.4, 6]} />
           <meshStandardMaterial
@@ -245,7 +238,7 @@ function LightBuilding3D({ building, highlighted, onClick, occluded }: {
           />
         </mesh>
       )}
-      {hovered && !occluded && (
+      {hovered && (
         <Html position={[0, h + 1, 0]} center>
           <div className="px-2 py-1 rounded-lg bg-background/90 border border-border text-foreground text-[10px] whitespace-nowrap pointer-events-none backdrop-blur-sm">
             <span className="font-bold">{building.name}</span>
@@ -257,12 +250,24 @@ function LightBuilding3D({ building, highlighted, onClick, occluded }: {
   );
 }
 
-// ── Static building with LoD-aware rendering ──
+// ── Static building using GLB models ──
 function StaticBuildingOccludable({ x, z, w, d, h, color, occluded, seed, lod, rotation, mirror, forceClass }: {
   x: number; z: number; w: number; d: number; h: number; color: string; occluded?: boolean; seed: number; lod?: number;
   rotation?: number; mirror?: boolean; forceClass?: string;
 }) {
-  return <VoxelBuildingMultiLoD x={x} z={z} w={w} d={d} h={h} color={color} seed={seed} occluded={occluded} lod={lod ?? 0} rotation={rotation} mirror={mirror} forceClass={forceClass as any} />;
+  if (occluded) return null;
+  // Use a deterministic ID based on position
+  const buildingId = `static-${x}-${z}-${seed}`;
+  return (
+    <group position={[x, 0, z]} rotation={[0, rotation || 0, 0]} scale={[mirror ? -1 : 1, 1, 1]}>
+      <GLBBuildingModel
+        buildingId={buildingId}
+        height={h}
+        primaryColor={color}
+        isSkyscraper={h > 3}
+      />
+    </group>
+  );
 }
 
 // ── Simplified Plaza ──
