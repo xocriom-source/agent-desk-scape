@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Music, Palette, BookOpen, Code, FlaskConical, FileText, Heart, Filter, Grid3X3, List } from "lucide-react";
-import type { Agent, AgentArtifact } from "@/types/agent";
-import { useState } from "react";
+import { X, Music, Palette, BookOpen, Code, FlaskConical, Heart, Grid3X3, List, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const TYPE_CONFIG: Record<string, { icon: typeof Music; label: string; color: string; bg: string }> = {
   music: { icon: Music, label: "Música", color: "text-[#FF6BB5]", bg: "bg-[#FF6BB5]/10" },
@@ -11,50 +11,58 @@ const TYPE_CONFIG: Record<string, { icon: typeof Music; label: string; color: st
   research: { icon: FlaskConical, label: "Pesquisa", color: "text-[#FFB347]", bg: "bg-[#FFB347]/10" },
 };
 
-interface GalleryItem extends AgentArtifact {
-  agentName: string;
-  agentColor: string;
-  agentAvatar: number;
+interface DbCreation {
+  id: string;
+  agent_id: string;
+  agent_name: string;
+  creation_type: string;
+  title: string;
+  content: string | null;
+  tags: string[] | null;
+  reactions: number | null;
+  created_at: string;
 }
 
+const VISUAL_PLACEHOLDERS: Record<string, string[]> = {
+  music: ["🎹", "🎸", "🎵", "🎼", "🎧"],
+  art: ["🖼️", "🎨", "🖌️", "🪄", "✨"],
+  text: ["📖", "✍️", "📝", "📜", "🗒️"],
+  code: ["💻", "⚙️", "🔧", "📦", "🛠️"],
+  research: ["🔬", "📊", "🧪", "📈", "🔎"],
+};
+
 interface AgentGalleryProps {
-  agents: Agent[];
+  agents?: any[];
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function AgentGallery({ agents, isOpen, onClose }: AgentGalleryProps) {
+export function AgentGallery({ isOpen, onClose }: AgentGalleryProps) {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [items, setItems] = useState<DbCreation[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const allArtifacts: GalleryItem[] = agents
-    .flatMap((a) =>
-      a.artifacts.map((art) => ({
-        ...art,
-        agentName: a.name,
-        agentColor: a.color,
-        agentAvatar: a.avatar,
-      }))
-    )
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  useEffect(() => {
+    if (!isOpen) return;
+    setLoading(true);
+    supabase
+      .from("agent_creations")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(200)
+      .then(({ data }) => {
+        setItems(data || []);
+        setLoading(false);
+      });
+  }, [isOpen]);
 
-  const filtered = typeFilter === "all" ? allArtifacts : allArtifacts.filter((a) => a.type === typeFilter);
+  const filtered = typeFilter === "all" ? items : items.filter(a => a.creation_type === typeFilter);
 
-  const typeCounts = allArtifacts.reduce<Record<string, number>>((acc, a) => {
-    acc[a.type] = (acc[a.type] || 0) + 1;
+  const typeCounts = items.reduce<Record<string, number>>((acc, a) => {
+    acc[a.creation_type] = (acc[a.creation_type] || 0) + 1;
     return acc;
   }, {});
-
-  const EMOJIS = ["🔬", "✍️", "💻", "📊", "🎨", "🔧", "⚡", "🧪"];
-
-  // Simulated visual placeholders for artifacts
-  const VISUAL_PLACEHOLDERS: Record<string, string[]> = {
-    music: ["🎹", "🎸", "🎵", "🎼", "🎧"],
-    art: ["🖼️", "🎨", "🖌️", "🪄", "✨"],
-    text: ["📖", "✍️", "📝", "📜", "🗒️"],
-    code: ["💻", "⚙️", "🔧", "📦", "🛠️"],
-    research: ["🔬", "📊", "🧪", "📈", "🔎"],
-  };
 
   return (
     <AnimatePresence>
@@ -81,14 +89,11 @@ export function AgentGallery({ agents, isOpen, onClose }: AgentGalleryProps) {
                 </div>
                 <div>
                   <h2 className="font-display font-bold text-foreground text-lg">Galeria de Artefatos</h2>
-                  <p className="text-[11px] text-muted-foreground">{allArtifacts.length} criações pelos agentes</p>
+                  <p className="text-[11px] text-muted-foreground">{items.length} criações reais dos agentes</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
-                  className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors"
-                >
+                <button onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")} className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors">
                   {viewMode === "grid" ? <List className="w-4 h-4 text-muted-foreground" /> : <Grid3X3 className="w-4 h-4 text-muted-foreground" />}
                 </button>
                 <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors">
@@ -99,22 +104,11 @@ export function AgentGallery({ agents, isOpen, onClose }: AgentGalleryProps) {
 
             {/* Type filters */}
             <div className="px-6 py-3 border-b border-border/30 flex gap-1.5 overflow-x-auto">
-              <button
-                onClick={() => setTypeFilter("all")}
-                className={`px-3 py-1.5 rounded-full text-[11px] font-medium transition-colors ${
-                  typeFilter === "all" ? "bg-primary/20 text-primary" : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
-                }`}
-              >
-                Todos ({allArtifacts.length})
+              <button onClick={() => setTypeFilter("all")} className={`px-3 py-1.5 rounded-full text-[11px] font-medium transition-colors ${typeFilter === "all" ? "bg-primary/20 text-primary" : "bg-muted/30 text-muted-foreground hover:bg-muted/50"}`}>
+                Todos ({items.length})
               </button>
               {Object.entries(TYPE_CONFIG).map(([key, cfg]) => (
-                <button
-                  key={key}
-                  onClick={() => setTypeFilter(key)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium transition-colors ${
-                    typeFilter === key ? `${cfg.bg} ${cfg.color}` : "bg-muted/30 text-muted-foreground hover:bg-muted/50"
-                  }`}
-                >
+                <button key={key} onClick={() => setTypeFilter(key)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium transition-colors ${typeFilter === key ? `${cfg.bg} ${cfg.color}` : "bg-muted/30 text-muted-foreground hover:bg-muted/50"}`}>
                   <cfg.icon className="w-3 h-3" />
                   {cfg.label} ({typeCounts[key] || 0})
                 </button>
@@ -123,12 +117,18 @@ export function AgentGallery({ agents, isOpen, onClose }: AgentGalleryProps) {
 
             {/* Gallery content */}
             <div className="flex-1 overflow-y-auto p-4">
-              {viewMode === "grid" ? (
+              {loading ? (
+                <div className="flex items-center justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
+              ) : filtered.length === 0 ? (
+                <div className="text-center py-16 text-muted-foreground text-sm">
+                  {items.length === 0 ? "Nenhuma criação ainda. Agentes geram artefatos automaticamente." : "Nenhum artefato nesta categoria."}
+                </div>
+              ) : viewMode === "grid" ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                   {filtered.map((item, i) => {
-                    const cfg = TYPE_CONFIG[item.type] || TYPE_CONFIG.text;
+                    const cfg = TYPE_CONFIG[item.creation_type] || TYPE_CONFIG.text;
                     const Icon = cfg.icon;
-                    const placeholder = VISUAL_PLACEHOLDERS[item.type]?.[i % 5] || "📄";
+                    const placeholder = VISUAL_PLACEHOLDERS[item.creation_type]?.[i % 5] || "📄";
                     return (
                       <motion.div
                         key={item.id}
@@ -137,14 +137,8 @@ export function AgentGallery({ agents, isOpen, onClose }: AgentGalleryProps) {
                         transition={{ delay: i * 0.03 }}
                         className="rounded-xl border border-border/20 overflow-hidden hover:border-border/40 transition-all hover:shadow-lg group cursor-pointer"
                       >
-                        {/* Visual placeholder */}
-                        <div
-                          className="aspect-square flex items-center justify-center text-4xl"
-                          style={{ background: `linear-gradient(135deg, ${item.agentColor}15, ${item.agentColor}05)` }}
-                        >
-                          <span className="opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all">
-                            {placeholder}
-                          </span>
+                        <div className="aspect-square flex items-center justify-center text-4xl bg-muted/20">
+                          <span className="opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all">{placeholder}</span>
                         </div>
                         <div className="p-2.5">
                           <div className="flex items-center gap-1.5 mb-1">
@@ -153,18 +147,10 @@ export function AgentGallery({ agents, isOpen, onClose }: AgentGalleryProps) {
                           </div>
                           <p className="text-[11px] text-foreground font-medium truncate">{item.title}</p>
                           <div className="flex items-center justify-between mt-1.5">
-                            <div className="flex items-center gap-1">
-                              <div
-                                className="w-4 h-4 rounded-md flex items-center justify-center text-[8px]"
-                                style={{ backgroundColor: item.agentColor }}
-                              >
-                                {EMOJIS[item.agentAvatar]}
-                              </div>
-                              <span className="text-[9px] text-muted-foreground">{item.agentName}</span>
-                            </div>
+                            <span className="text-[9px] text-muted-foreground">{item.agent_name}</span>
                             <div className="flex items-center gap-0.5">
                               <Heart className="w-2.5 h-2.5 text-destructive/50" />
-                              <span className="text-[9px] text-muted-foreground">{item.reactions}</span>
+                              <span className="text-[9px] text-muted-foreground">{item.reactions || 0}</span>
                             </div>
                           </div>
                         </div>
@@ -175,7 +161,7 @@ export function AgentGallery({ agents, isOpen, onClose }: AgentGalleryProps) {
               ) : (
                 <div className="space-y-1.5">
                   {filtered.map((item, i) => {
-                    const cfg = TYPE_CONFIG[item.type] || TYPE_CONFIG.text;
+                    const cfg = TYPE_CONFIG[item.creation_type] || TYPE_CONFIG.text;
                     const Icon = cfg.icon;
                     return (
                       <motion.div
@@ -189,24 +175,18 @@ export function AgentGallery({ agents, isOpen, onClose }: AgentGalleryProps) {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium text-foreground truncate">{item.title}</p>
-                          <span className="text-[10px] text-muted-foreground">{item.agentName}</span>
+                          <span className="text-[10px] text-muted-foreground">{item.agent_name}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Heart className="w-3 h-3 text-destructive/50" />
-                          <span className="text-[10px] text-muted-foreground">{item.reactions}</span>
+                          <span className="text-[10px] text-muted-foreground">{item.reactions || 0}</span>
                         </div>
                         <span className="text-[9px] text-muted-foreground">
-                          {item.createdAt.toLocaleDateString("pt-BR", { day: "numeric", month: "short" })}
+                          {new Date(item.created_at).toLocaleDateString("pt-BR", { day: "numeric", month: "short" })}
                         </span>
                       </motion.div>
                     );
                   })}
-                </div>
-              )}
-
-              {filtered.length === 0 && (
-                <div className="text-center py-16 text-muted-foreground text-sm">
-                  Nenhum artefato nesta categoria.
                 </div>
               )}
             </div>
