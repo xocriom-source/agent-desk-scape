@@ -909,21 +909,27 @@ function CreativeStudioBuilding({ w, d, h, pal, seed }: { w: number; d: number; 
 interface VoxelCityBuildingProps {
   x: number; z: number; w: number; d: number; h: number;
   color: string; seed: number; occluded?: boolean; ownerName?: string;
+  mirror?: boolean; rotation?: number; forceClass?: BuildingClass;
 }
 
 export const VoxelCityBuilding = memo(function VoxelCityBuilding({
-  x, z, w, d, h, color, seed, occluded, ownerName,
+  x, z, w, d, h, color, seed, occluded, ownerName, mirror, rotation = 0, forceClass,
 }: VoxelCityBuildingProps) {
 
   const config = useMemo(() => {
-    const buildingClass = hashPick(BUILDING_CLASSES, seed, 0);
+    const buildingClass = forceClass || hashPick(BUILDING_CLASSES, seed, 0);
     const basePal = hashPick(PALETTES, seed, 1);
     const hintColor = new THREE.Color(color);
-    const wall = new THREE.Color(basePal.wall).lerp(hintColor, 0.1).getStyle();
-    const wallShadow = new THREE.Color(basePal.wallShadow).lerp(hintColor, 0.08).getStyle();
-    const wallHighlight = new THREE.Color(basePal.wallHighlight).lerp(hintColor, 0.06).getStyle();
-    return { buildingClass, pal: { ...basePal, wall, wallShadow, wallHighlight } };
-  }, [seed, color]);
+    // More aggressive color blending based on seed for variety
+    const blendStrength = 0.08 + hashF(seed, 50) * 0.12; // 0.08-0.20
+    const wall = new THREE.Color(basePal.wall).lerp(hintColor, blendStrength).getStyle();
+    const wallShadow = new THREE.Color(basePal.wallShadow).lerp(hintColor, blendStrength * 0.7).getStyle();
+    const wallHighlight = new THREE.Color(basePal.wallHighlight).lerp(hintColor, blendStrength * 0.5).getStyle();
+    // Vary glow warmth per building
+    const glowShift = hashF(seed, 60) * 0.15;
+    const glowWarm = new THREE.Color(basePal.glowWarm).offsetHSL(glowShift - 0.075, 0, 0).getStyle();
+    return { buildingClass, pal: { ...basePal, wall, wallShadow, wallHighlight, glowWarm } };
+  }, [seed, color, forceClass]);
 
   if (occluded) {
     return (
@@ -936,10 +942,17 @@ export const VoxelCityBuilding = memo(function VoxelCityBuilding({
     );
   }
 
-  const classProps = { w, d, h, pal: config.pal, seed };
+  // Apply height micro-variation from seed (±8%)
+  const hVar = h * (0.96 + hashF(seed, 70) * 0.08);
+  // Apply width micro-variation (±5%)
+  const wVar = w * (0.97 + hashF(seed, 71) * 0.06);
+  const dVar = d * (0.97 + hashF(seed, 72) * 0.06);
+
+  const classProps = { w: wVar, d: dVar, h: hVar, pal: config.pal, seed };
+  const mirrorScale = mirror ? -1 : 1;
 
   return (
-    <group position={[x, 0, z]}>
+    <group position={[x, 0, z]} rotation={[0, rotation, 0]} scale={[mirrorScale, 1, 1]}>
       {config.buildingClass === "cafe" && <CafeBuilding {...classProps} />}
       {config.buildingClass === "shop" && <ShopBuilding {...classProps} />}
       {config.buildingClass === "office" && <OfficeBuilding {...classProps} />}
@@ -947,13 +960,13 @@ export const VoxelCityBuilding = memo(function VoxelCityBuilding({
       {config.buildingClass === "creative_studio" && <CreativeStudioBuilding {...classProps} />}
 
       {ownerName && (
-        <group position={[0, h * 0.72, d / 2 + 0.04]}>
+        <group position={[0, hVar * 0.72, dVar / 2 + 0.04]}>
           <mesh position={[0, 0, -0.015]}>
-            <boxGeometry args={[w * 0.68, 0.22, 0.03]} />
+            <boxGeometry args={[wVar * 0.68, 0.22, 0.03]} />
             <meshStandardMaterial color="#080808" roughness={0.4} />
           </mesh>
           <mesh position={[0, 0, 0.004]}>
-            <boxGeometry args={[w * 0.6, 0.16, 0.006]} />
+            <boxGeometry args={[wVar * 0.6, 0.16, 0.006]} />
             <meshStandardMaterial color={config.pal.glowAccent} emissive={config.pal.glowAccent} emissiveIntensity={1.8} />
           </mesh>
         </group>
