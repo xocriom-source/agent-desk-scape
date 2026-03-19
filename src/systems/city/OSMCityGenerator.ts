@@ -1,7 +1,6 @@
 /**
- * OSM City Generator v3
- * Real polygon footprints, accurate scale, full road geometry.
- * Arnis-level: REAL geography → REAL 3D city.
+ * OSM City Generator v4 — Arnis-level real world engine.
+ * Real polygon footprints, accurate Mercator projection, full road geometry.
  */
 
 import type { CityBuilding, BuildingStyle, District, BuildingCustomizations } from "@/types/building";
@@ -15,7 +14,7 @@ export interface OSMResponse {
     lat?: number;
     lon?: number;
     nodes?: number[];
-    members?: Array<{ type: string; ref: number; role: string }>;
+    members?: Array<{ type: string; ref: number; role: string; geometry?: Array<{ lat: number; lon: number }> }>;
     tags?: Record<string, string>;
     bounds?: { minlat: number; minlon: number; maxlat: number; maxlon: number };
     geometry?: Array<{ lat: number; lon: number }>;
@@ -33,9 +32,7 @@ export interface OSMStreet {
 
 /** Real polygon footprint for a building */
 export interface BuildingPolygon {
-  /** Vertices of the footprint polygon in world coords */
   vertices: Array<{ x: number; z: number }>;
-  /** Width/depth bounding box for fallback */
   w: number;
   d: number;
 }
@@ -48,7 +45,7 @@ export interface OSMCityData {
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
 }
 
-// ── Geo projection (Mercator, accurate at city scale) ──
+// ── Geo projection ──
 
 const EARTH_RADIUS = 6371000;
 
@@ -58,16 +55,12 @@ function latLonToMeters(lat: number, lon: number, centerLat: number, centerLon: 
   const cosCenter = Math.cos((centerLat * Math.PI) / 180);
   return {
     x: dLon * EARTH_RADIUS * cosCenter,
-    z: -dLat * EARTH_RADIUS, // Negative because +z is south in Three.js
+    z: -dLat * EARTH_RADIUS,
   };
 }
 
-/**
- * Scale: 1 world unit = 1 meter (TRUE SCALE).
- * This gives real proportions. Buildings at real height in meters.
- * We then scale down by a factor for navigability.
- */
-const WORLD_SCALE = 1 / 5; // 1 unit = 5 meters → a 50m building = 10 units
+// Scale: 1 unit = 2 meters for better navigability and visual density
+const WORLD_SCALE = 1 / 2;
 
 function toWorld(meters: { x: number; z: number }): { x: number; z: number } {
   return {
@@ -96,7 +89,7 @@ function seededRandom(seed: number): number {
   return x - Math.floor(x);
 }
 
-// ── OSM tag → building style mapping ──
+// ── Style mapping ──
 
 function osmTagsToStyle(tags: Record<string, string>): BuildingStyle {
   const building = tags.building || "";
@@ -128,7 +121,6 @@ function osmTagsToDistrict(tags: Record<string, string>): District {
 }
 
 function osmHeightMeters(tags: Record<string, string>, seed: number): number {
-  // Return height in METERS (real scale)
   if (tags.height) {
     const h = parseFloat(tags.height);
     if (!isNaN(h)) return Math.max(4, Math.min(h, 300));
@@ -145,12 +137,10 @@ function osmHeightMeters(tags: Record<string, string>, seed: number): number {
   if (building === "house" || building === "detached") return 6 + seededRandom(seed) * 4;
   if (building === "industrial" || building === "warehouse") return 8 + seededRandom(seed) * 6;
   if (building === "church" || building === "cathedral") return 20 + seededRandom(seed) * 15;
-
-  // Default: 3-6 stories
   return 8 + seededRandom(seed) * 15;
 }
 
-// ── Color palettes (richer, per-zone) ──
+// ── Color palettes ──
 
 const STYLE_COLORS: Record<BuildingStyle, string[]> = {
   corporate: ["#8A9BB5", "#7A8DA8", "#96AACC", "#6B7F9A", "#B0BDD0", "#5A6E85", "#A0ADC0", "#748AA0"],
@@ -163,7 +153,7 @@ const STYLE_COLORS: Record<BuildingStyle, string[]> = {
   industrial: ["#8A7B8A", "#9A8B7A", "#7B8A8A", "#A08A7A", "#7AAA9A", "#6A6A6A", "#7A7A8A", "#8A8A7A"],
 };
 
-// ── Road type mapping ──
+// ── Road mapping ──
 
 function osmHighwayToType(highway: string): "main" | "secondary" | "alley" | null {
   switch (highway) {
@@ -203,9 +193,10 @@ const OVERPASS_API = "https://overpass-api.de/api/interpreter";
 
 function buildOverpassQuery(lat: number, lon: number, radiusMeters: number): string {
   return `
-[out:json][timeout:45];
+[out:json][timeout:60];
 (
   way["building"](around:${radiusMeters},${lat},${lon});
+  relation["building"](around:${radiusMeters},${lat},${lon});
   way["highway"](around:${radiusMeters},${lat},${lon});
 );
 out body geom;
@@ -214,6 +205,7 @@ out body geom;
 
 export async function fetchOSMData(lat: number, lon: number, radiusMeters: number = 600): Promise<OSMResponse> {
   const query = buildOverpassQuery(lat, lon, radiusMeters);
+  console.log(`[OSM] Fetching from Overpass: ${lat.toFixed(4)}, ${lon.toFixed(4)}, r=${radiusMeters}m`);
   const response = await fetch(OVERPASS_API, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -222,7 +214,32 @@ export async function fetchOSMData(lat: number, lon: number, radiusMeters: numbe
   if (!response.ok) {
     throw new Error(`Overpass API error: ${response.status} ${response.statusText}`);
   }
-  return response.json();
+  const data = await response.json();
+  console.log(`[OSM] Raw elements received: ${data.elements?.length || 0}`);
+  return data;
+}
+
+/**
+ * Extract polygon vertices from an OSM element (way or relation outer ring).
+ */
+function extractPolygonGeometry(
+  el: OSMResponse["elements"][0],
+  centerLat: number,
+  centerLon: number
+): Array<{ x: number; z: number }> | null {
+  // Way with geometry
+  if (el.type === "way" && el.geometry && el.geometry.length >= 3) {
+    return el.geometry.map(pt => toWorld(latLonToMeters(pt.lat, pt.lon, centerLat, centerLon)));
+  }
+  // Relation — use outer member geometry
+  if (el.type === "relation" && el.members) {
+    for (const member of el.members) {
+      if (member.role === "outer" && member.geometry && member.geometry.length >= 3) {
+        return member.geometry.map(pt => toWorld(latLonToMeters(pt.lat, pt.lon, centerLat, centerLon)));
+      }
+    }
+  }
+  return null;
 }
 
 /**
@@ -237,29 +254,32 @@ export function convertOSMToCity(
   const streets: OSMStreet[] = [];
   const occupiedCells = new Set<string>();
 
+  let buildingCount = 0;
+  let streetCount = 0;
+  let skippedNoGeom = 0;
+  let skippedTiny = 0;
+
   for (const el of osmData.elements) {
-    if (el.type !== "way") continue;
     const tags = el.tags || {};
 
     // ── Buildings with REAL polygon footprints ──
     if (tags.building) {
-      if (!el.geometry || el.geometry.length < 3) continue;
+      const vertices = extractPolygonGeometry(el, centerLat, centerLon);
+      if (!vertices || vertices.length < 3) {
+        skippedNoGeom++;
+        continue;
+      }
 
-      // Convert all polygon vertices to world coords
-      const vertices: Array<{ x: number; z: number }> = [];
       let sumX = 0, sumZ = 0;
       let gMinX = Infinity, gMaxX = -Infinity, gMinZ = Infinity, gMaxZ = -Infinity;
 
-      for (const pt of el.geometry) {
-        const meters = latLonToMeters(pt.lat, pt.lon, centerLat, centerLon);
-        const world = toWorld(meters);
-        vertices.push(world);
-        sumX += world.x;
-        sumZ += world.z;
-        gMinX = Math.min(gMinX, world.x);
-        gMaxX = Math.max(gMaxX, world.x);
-        gMinZ = Math.min(gMinZ, world.z);
-        gMaxZ = Math.max(gMaxZ, world.z);
+      for (const v of vertices) {
+        sumX += v.x;
+        sumZ += v.z;
+        gMinX = Math.min(gMinX, v.x);
+        gMaxX = Math.max(gMaxX, v.x);
+        gMinZ = Math.min(gMinZ, v.z);
+        gMaxZ = Math.max(gMaxZ, v.z);
       }
 
       const cx = sumX / vertices.length;
@@ -267,11 +287,14 @@ export function convertOSMToCity(
       const footprintW = gMaxX - gMinX;
       const footprintD = gMaxZ - gMinZ;
 
-      // Skip tiny buildings
-      if (footprintW < 0.3 && footprintD < 0.3) continue;
+      // Skip tiny buildings (< 2m real size = 1 unit)
+      if (footprintW < 0.5 && footprintD < 0.5) {
+        skippedTiny++;
+        continue;
+      }
 
-      // De-duplicate by grid cell
-      const cellKey = `${Math.round(cx / 1.5)}_${Math.round(cz / 1.5)}`;
+      // De-duplicate by grid cell (smaller cell = higher density)
+      const cellKey = `${Math.round(cx)}_${Math.round(cz)}`;
       if (occupiedCells.has(cellKey)) continue;
       occupiedCells.add(cellKey);
 
@@ -317,21 +340,21 @@ export function convertOSMToCity(
         coordinates: { x: cx, z: cz },
         claimed: true,
         ownerId: "osm",
-        // Real polygon data
         polygon: { vertices: relativeVertices, w: footprintW, d: footprintD },
       } as CityBuilding & { polygon: BuildingPolygon });
+
+      buildingCount++;
     }
 
     // ── Roads with FULL geometry ──
-    if (tags.highway) {
+    if (tags.highway && el.type === "way") {
       const streetType = osmHighwayToType(tags.highway);
       if (!streetType) continue;
       if (!el.geometry || el.geometry.length < 2) continue;
 
       const segments: Array<{ x: number; z: number }> = [];
       for (const pt of el.geometry) {
-        const meters = latLonToMeters(pt.lat, pt.lon, centerLat, centerLon);
-        const world = toWorld(meters);
+        const world = toWorld(latLonToMeters(pt.lat, pt.lon, centerLat, centerLon));
         segments.push(world);
       }
 
@@ -344,9 +367,12 @@ export function convertOSMToCity(
         name: tags.name,
         lanes: osmHighwayToLanes(tags.highway),
       });
+
+      streetCount++;
     }
   }
 
+  console.log(`[OSM] Converted: ${buildingCount} buildings, ${streetCount} streets (skipped: ${skippedNoGeom} no-geom, ${skippedTiny} tiny)`);
   return { buildings, streets };
 }
 
@@ -358,16 +384,13 @@ export async function generateCityFromOSM(
   lon: number,
   radiusMeters: number = 600
 ): Promise<OSMCityData> {
-  console.log(`[OSM] Fetching city data for ${lat}, ${lon} (radius: ${radiusMeters}m)...`);
+  console.log(`[OSM] === Starting city generation for ${lat.toFixed(4)}, ${lon.toFixed(4)} (r=${radiusMeters}m) ===`);
 
   const osmData = await fetchOSMData(lat, lon, radiusMeters);
-  console.log(`[OSM] Received ${osmData.elements.length} elements`);
-
   const { buildings, streets } = convertOSMToCity(osmData, lat, lon);
-  console.log(`[OSM] Converted: ${buildings.length} buildings, ${streets.length} streets`);
 
   // Compute bounds
-  let minX = 0, maxX = 0, minZ = 0, maxZ = 0;
+  let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
   for (const b of buildings) {
     minX = Math.min(minX, b.coordinates.x);
     maxX = Math.max(maxX, b.coordinates.x);
@@ -382,6 +405,12 @@ export async function generateCityFromOSM(
       maxZ = Math.max(maxZ, pt.z);
     }
   }
+
+  // Handle empty data
+  if (!isFinite(minX)) { minX = -50; maxX = 50; minZ = -50; maxZ = 50; }
+
+  console.log(`[OSM] World bounds: X[${minX.toFixed(0)}..${maxX.toFixed(0)}] Z[${minZ.toFixed(0)}..${maxZ.toFixed(0)}]`);
+  console.log(`[OSM] === Generation complete: ${buildings.length} buildings, ${streets.length} streets ===`);
 
   return {
     buildings,
@@ -410,7 +439,7 @@ function generateBuildingName(style: BuildingStyle, seed: number): string {
   return pool[seed % pool.length];
 }
 
-// ── Pre-defined city locations ──
+// ── City Presets ──
 
 export interface CityPreset {
   id: string;

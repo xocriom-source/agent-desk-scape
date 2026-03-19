@@ -1138,7 +1138,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
     window.addEventListener("keydown", onDown);
     window.addEventListener("keyup", onUp);
 
-    const baseSpeed = inVehicle ? 0.45 : 0.2;
+    const baseSpeed = isOSMMode ? (inVehicle ? 1.5 : 0.6) : (inVehicle ? 0.45 : 0.2);
     const interval = setInterval(() => {
       let dx = 0, dz = 0;
       if (keys.has("arrowup") || keys.has("w")) dz -= baseSpeed;
@@ -1157,11 +1157,13 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
 
         setPlayerPos(prev => {
           const playerRadius = inVehicle ? 0.4 : 0.25;
-          const [nx, nz] = moveWithCollision(prev[0], prev[2], dx, dz, playerRadius, aabbs);
-          // Clamp to expanded world bounds
-          const fx = Math.max(-150, Math.min(150, nx));
-          const fz = Math.max(-150, Math.min(150, nz));
-          const terrainY = getTerrainHeight(fx, fz);
+          const worldLimit = isOSMMode ? 500 : 150;
+          const [nx, nz] = isOSMMode
+            ? [prev[0] + dx, prev[2] + dz] // No collision in OSM mode (real streets)
+            : moveWithCollision(prev[0], prev[2], dx, dz, playerRadius, aabbs);
+          const fx = Math.max(-worldLimit, Math.min(worldLimit, nx));
+          const fz = Math.max(-worldLimit, Math.min(worldLimit, nz));
+          const terrainY = isOSMMode ? 0 : getTerrainHeight(fx, fz);
           if (fx !== prev[0] || fz !== prev[2]) {
             setPlayerRot(Math.atan2(dx, dz));
             updateCameraCenter(fx * 2.5, fz * 2.5);
@@ -1221,7 +1223,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
       <Canvas
         shadows
         style={{ touchAction: "none", width: "100%", height: "100%", display: "block" }}
-        camera={{ position: [12, 25, 30], fov: 45, near: 0.5, far: Math.min(lodConfig.cameraFar, 500) }}
+        camera={{ position: isOSMMode ? [20, 40, 50] : [12, 25, 30], fov: 45, near: 0.5, far: isOSMMode ? 800 : Math.min(lodConfig.cameraFar, 500) }}
         gl={{ antialias: false, powerPreference: "high-performance", stencil: false, depth: true }}
         dpr={Math.min(Array.isArray(lodConfig.dpr) ? lodConfig.dpr[1] : lodConfig.dpr, 1.5)}
         onCreated={({ gl }) => {
@@ -1231,7 +1233,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         }}
       >
         <color attach="background" args={[dn.bgColor]} />
-        <fog attach="fog" args={[dn.fogColor, lodConfig.fogNear * 2, lodConfig.fogFar * 2]} />
+        <fog attach="fog" args={[dn.fogColor, isOSMMode ? 30 : lodConfig.fogNear * 2, isOSMMode ? 350 : lodConfig.fogFar * 2]} />
 
         {/* Simplified lighting — fewer lights = more FPS */}
         <ambientLight intensity={dn.ambientIntensity * 0.8} color={dn.isNight ? "#4466AA" : dn.ambientColor} />
@@ -1326,7 +1328,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
             playerX={playerPos[0]}
             playerZ={playerPos[2]}
             userBuildings={dynamicBuildings}
-            maxGLBBuildings={Math.min(lodConfig.maxFullDetailBuildings, 20)}
+            maxGLBBuildings={40}
           />
         )}
 
