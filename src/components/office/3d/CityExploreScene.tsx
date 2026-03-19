@@ -779,9 +779,11 @@ function CityPlayer({ position, name, rotation }: { position: [number, number, n
 
   useFrame(() => {
     if (!ref.current) return;
-    smoothPos.current.lerp(new THREE.Vector3(...position), 0.18);
+    const terrainY = getTerrainHeight(position[0], position[2]);
+    const targetPos = new THREE.Vector3(position[0], terrainY, position[2]);
+    smoothPos.current.lerp(targetPos, 0.18);
     ref.current.position.copy(smoothPos.current);
-    ref.current.position.y = Math.sin(Date.now() * 0.003) * 0.008;
+    ref.current.position.y += Math.sin(Date.now() * 0.003) * 0.008;
     // Smooth rotate towards movement direction
     const targetRot = rotation;
     let diff = targetRot - ref.current.rotation.y;
