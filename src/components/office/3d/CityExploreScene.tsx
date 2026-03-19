@@ -1317,29 +1317,43 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
           <meshBasicMaterial visible={false} />
         </mesh>
 
-        {/* World Terrain with elevation */}
-        <WorldTerrain size={400} resolution={80} />
+        {/* === OSM MODE: Real-world city === */}
+        {isOSMMode && osmBuildings && osmStreets && osmBounds && (
+          <OSMWorldRenderer
+            buildings={osmBuildings}
+            streets={osmStreets}
+            bounds={osmBounds}
+            playerX={playerPos[0]}
+            playerZ={playerPos[2]}
+            userBuildings={dynamicBuildings}
+            maxGLBBuildings={Math.min(lodConfig.maxFullDetailBuildings, 20)}
+          />
+        )}
 
-        {/* World Chunk-based building renderer (massive city) */}
-        <WorldChunkRenderer
-          playerX={playerPos[0]}
-          playerZ={playerPos[2]}
-          loadRadius={Math.min(lodConfig.chunkLoadRadius + 1, 4)}
-          maxGLBBuildings={Math.min(lodConfig.maxFullDetailBuildings, 15)}
-        />
+        {/* === PROCEDURAL MODE: World generator === */}
+        {!isOSMMode && (
+          <>
+            <WorldTerrain size={400} resolution={80} />
+            <WorldChunkRenderer
+              playerX={playerPos[0]}
+              playerZ={playerPos[2]}
+              loadRadius={Math.min(lodConfig.chunkLoadRadius + 1, 4)}
+              maxGLBBuildings={Math.min(lodConfig.maxFullDetailBuildings, 15)}
+            />
+            <CityGround />
+          </>
+        )}
 
-        <CityGround />
         <CityPlaza />
         <StreetLights />
         {lodConfig.enableLandscaping && <CityLandscaping />}
         {lodConfig.enableVehicles && <VoxelParkedCars />}
 
-        {/* Click marker */}
         <ClickMarker position={clickTarget} />
 
-        {/* Static buildings — only render nearby ones as GLB, skip far ones (WorldChunkRenderer covers them) */}
-        {lodFrame.lodBuildings
-          .filter(lb => lb.lod <= 1) // Only render HD and Med LOD — far buildings handled by WorldChunkRenderer
+        {/* Static buildings — only in procedural mode */}
+        {!isOSMMode && lodFrame.lodBuildings
+          .filter(lb => lb.lod <= 1)
           .map((lb) => {
             const posSeed = Math.abs(((lb.def.x * 73856093) ^ (lb.def.z * 19349663)) | 0) + lb.index * 37;
             const bDef = CITY_BUILDINGS[lb.index];
@@ -1357,8 +1371,8 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
             );
           })}
 
-        {/* Dynamic buildings */}
-        {dynamicBuildings.map(b => (
+        {/* Dynamic user buildings (both modes) */}
+        {!isOSMMode && dynamicBuildings.map(b => (
           <LightBuilding3D
             key={b.id}
             building={b}
@@ -1367,19 +1381,6 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
             occluded={false}
           />
         ))}
-
-
-        {/* OSM real-world buildings */}
-        {isOSMMode && osmBuildings && osmBuildings.map(b => (
-          <OSMBuildingRenderer
-            key={b.id}
-            building={b}
-            onClick={() => onBuildingClick?.(b.id)}
-          />
-        ))}
-
-        {/* OSM real-world streets */}
-        {isOSMMode && osmStreets && <OSMStreetRenderer streets={osmStreets} />}
 
         {/* User building vehicle */}
         {userBuilding && dynamicBuildings.filter(b => b.id === userBuilding.id).map(b => {
