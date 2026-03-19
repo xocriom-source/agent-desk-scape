@@ -1366,9 +1366,20 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
 
         {/* Clickable ground (extended for larger world) */}
         <mesh position={[0, -0.025, 0]} rotation={[-Math.PI / 2, 0, 0]} onPointerDown={handleFloorClick}>
-          <planeGeometry args={[120, 120]} />
+          <planeGeometry args={[800, 800]} />
           <meshBasicMaterial visible={false} />
         </mesh>
+
+        {/* World Terrain with elevation */}
+        <WorldTerrain size={400} resolution={80} />
+
+        {/* World Chunk-based building renderer (massive city) */}
+        <WorldChunkRenderer
+          playerX={playerPos[0]}
+          playerZ={playerPos[2]}
+          loadRadius={lodConfig.chunkLoadRadius + 2}
+          maxGLBBuildings={lodConfig.maxFullDetailBuildings}
+        />
 
         <CityGround />
         <CityPlaza />
