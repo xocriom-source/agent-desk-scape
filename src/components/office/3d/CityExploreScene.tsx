@@ -418,95 +418,44 @@ function CityGround() {
   );
 }
 
-// ── Street Lights with REAL point lights ──
-function StreetLights() {
+// ── Street Lights — emissive only, NO point lights for FPS ──
+const StreetLights = memo(function StreetLights() {
   const dn = useDayNight();
-  const lightIntensityMultiplier = dn.isNight ? 1 : dn.isSunset ? 0.6 : dn.isSunrise ? 0.4 : 0;
+  const emissiveBoost = dn.isNight ? 4 : dn.isSunset ? 2 : 1;
 
   const positions = useMemo(() => {
-    const pts: { x: number; z: number; type: "tall" | "short" | "double" }[] = [];
-    for (let v = -28; v <= 28; v += 6) {
+    const pts: { x: number; z: number; h: number }[] = [];
+    for (let v = -28; v <= 28; v += 8) {
       if (Math.abs(v) < 5) continue;
-      pts.push({ x: 1.8, z: v, type: "tall" });
-      pts.push({ x: -1.8, z: v, type: "tall" });
-      pts.push({ x: v, z: 1.8, type: "tall" });
-      pts.push({ x: v, z: -1.8, type: "tall" });
-    }
-    for (let x = -24; x <= 24; x += 16) {
-      for (let z = -24; z <= 24; z += 16) {
-        if (Math.abs(x) < 6 && Math.abs(z) < 6) continue;
-        pts.push({ x, z, type: "double" });
-      }
-    }
-    for (let v = -8; v <= 8; v += 4) {
-      pts.push({ x: v, z: -7.5, type: "short" });
-      pts.push({ x: v, z: 7.5, type: "short" });
-      pts.push({ x: -7.5, z: v, type: "short" });
-      pts.push({ x: 7.5, z: v, type: "short" });
+      pts.push({ x: 1.8, z: v, h: 2.2 });
+      pts.push({ x: -1.8, z: v, h: 2.2 });
+      pts.push({ x: v, z: 1.8, h: 2.2 });
+      pts.push({ x: v, z: -1.8, h: 2.2 });
     }
     return pts;
   }, []);
 
-  // Only add real pointLights on a subset to keep perf (every 3rd light)
-  const litIndices = useMemo(() => {
-    const s = new Set<number>();
-    for (let i = 0; i < positions.length; i += 3) s.add(i);
-    return s;
-  }, [positions]);
-
   return (
     <group>
-      {positions.map((p, i) => {
-        const h = p.type === "tall" ? 2.2 : p.type === "double" ? 2.5 : 1.6;
-        const glowSize = p.type === "double" ? 0.06 : 0.045;
-        const emissiveI = p.type === "double" ? 3 : 2;
-        const hasRealLight = litIndices.has(i) && lightIntensityMultiplier > 0;
-        return (
-          <group key={i} position={[p.x, 0, p.z]}>
-            <mesh position={[0, h / 2, 0]}>
-              <cylinderGeometry args={[0.02, 0.035, h, 4]} />
-              <meshStandardMaterial color="#2A2A2A" metalness={0.7} roughness={0.3} />
-            </mesh>
-            <mesh position={[0, h + 0.03, 0]}>
-              <sphereGeometry args={[glowSize, 6, 6]} />
-              <meshStandardMaterial
-                color="#FFE8A0"
-                emissive="#FFD060"
-                emissiveIntensity={emissiveI + lightIntensityMultiplier * 2}
-              />
-            </mesh>
-            {/* Real point light that illuminates surroundings */}
-            {hasRealLight && (
-              <pointLight
-                position={[0, h + 0.1, 0]}
-                color="#FFD060"
-                intensity={lightIntensityMultiplier * 4}
-                distance={8}
-                decay={2}
-              />
-            )}
-            {p.type === "double" && (
-              <>
-                <mesh position={[0.3, h - 0.1, 0]} rotation={[0, 0, Math.PI / 6]}>
-                  <cylinderGeometry args={[0.015, 0.015, 0.6, 3]} />
-                  <meshStandardMaterial color="#2A2A2A" metalness={0.7} />
-                </mesh>
-                <mesh position={[0.5, h + 0.05, 0]}>
-                  <sphereGeometry args={[0.04, 6, 6]} />
-                  <meshStandardMaterial color="#FFE8A0" emissive="#FFD060" emissiveIntensity={2.5 + lightIntensityMultiplier * 2} />
-                </mesh>
-              </>
-            )}
-            <mesh position={[0, 0.02, 0]}>
-              <cylinderGeometry args={[0.06, 0.07, 0.04, 6]} />
-              <meshStandardMaterial color="#1A1A1A" metalness={0.5} />
-            </mesh>
-          </group>
-        );
-      })}
+      {positions.map((p, i) => (
+        <group key={i} position={[p.x, 0, p.z]}>
+          <mesh position={[0, p.h / 2, 0]}>
+            <cylinderGeometry args={[0.02, 0.035, p.h, 4]} />
+            <meshStandardMaterial color="#2A2A2A" metalness={0.7} roughness={0.3} />
+          </mesh>
+          <mesh position={[0, p.h + 0.03, 0]}>
+            <sphereGeometry args={[0.045, 4, 4]} />
+            <meshStandardMaterial
+              color="#FFE8A0"
+              emissive="#FFD060"
+              emissiveIntensity={emissiveBoost}
+            />
+          </mesh>
+        </group>
+      ))}
     </group>
   );
-}
+});
 
 // ── Landscaping: Trees, Bushes, Flower Beds, Park Benches ──
 function CityTree({ x, z, scale = 1, variant = 0 }: { x: number; z: number; scale?: number; variant?: number }) {
