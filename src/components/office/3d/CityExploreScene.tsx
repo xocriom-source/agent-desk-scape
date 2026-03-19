@@ -962,10 +962,10 @@ function FlightCamera({ active, playerPos }: { active: boolean; playerPos: [numb
     if (keys.has(" ")) s.y += speed * dt;
     if (keys.has("control")) s.y = Math.max(1, s.y - speed * dt);
 
-    // Clamp
-    s.x = Math.max(-60, Math.min(60, s.x));
-    s.z = Math.max(-60, Math.min(60, s.z));
-    s.y = Math.max(1, Math.min(80, s.y));
+    // Clamp to world bounds
+    s.x = Math.max(-200, Math.min(200, s.x));
+    s.z = Math.max(-200, Math.min(200, s.z));
+    s.y = Math.max(1, Math.min(120, s.y));
 
     camera.position.set(s.x, s.y, s.z);
     const lookDir = new THREE.Vector3(
