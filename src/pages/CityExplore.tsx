@@ -157,6 +157,9 @@ export default function CityExplore() {
           onVehicleToggle={setInVehicle}
           onBuildingClick={(id) => navigate(`/building/${id}`)}
           onReady={handleCityReady}
+          osmBuildings={osmCity.data?.buildings}
+          osmStreets={osmCity.data?.streets}
+          isOSMMode={osmCity.isOSMMode}
         />
       </Suspense>
 
