@@ -1034,7 +1034,7 @@ interface CityExploreSceneProps {
   isOSMMode?: boolean;
 }
 
-export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, vehicleColor, onVehicleToggle, onReady, onBuildingClick, osmBuildings, osmStreets, isOSMMode }: CityExploreSceneProps) {
+export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, vehicleColor, onVehicleToggle, onReady, onBuildingClick, osmBuildings, osmStreets, osmBounds, isOSMMode }: CityExploreSceneProps) {
   const controlsRef = useRef<any>(null);
   const dn = useDayNight();
 
