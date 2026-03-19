@@ -1157,7 +1157,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         }
         setPlayerRot(Math.atan2(dx, dz));
         updateCameraCenter(nx * 2.5, nz * 2.5);
-        return [nx, 0, nz];
+        return [nx, getTerrainHeight(nx, nz), nz] as [number, number, number];
       });
     }, 33);
     return () => clearInterval(interval);
