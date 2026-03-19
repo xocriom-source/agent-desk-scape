@@ -1348,12 +1348,12 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
               enableZoom
               enableRotate
               minDistance={8}
-              maxDistance={25}
+              maxDistance={60}
               minPolarAngle={Math.PI / 8}
               maxPolarAngle={Math.PI / 2.8}
               zoomSpeed={0.8}
               rotateSpeed={0.5}
-              target={[playerPos[0], 0.5, playerPos[2]]}
+              target={[playerPos[0], playerPos[1] + 0.5, playerPos[2]]}
             />
             <CameraFollow target={playerPos} controlsRef={controlsRef} active={!flyMode} />
           </>
