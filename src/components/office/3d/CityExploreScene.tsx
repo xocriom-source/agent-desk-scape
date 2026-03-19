@@ -1221,7 +1221,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
       <Canvas
         shadows
         style={{ touchAction: "none", width: "100%", height: "100%", display: "block" }}
-        camera={{ position: [12, 25, 30], fov: 45, near: 0.5, far: Math.min(lodConfig.cameraFar, 500) }}
+        camera={{ position: isOSMMode ? [20, 40, 50] : [12, 25, 30], fov: 45, near: 0.5, far: isOSMMode ? 800 : Math.min(lodConfig.cameraFar, 500) }}
         gl={{ antialias: false, powerPreference: "high-performance", stencil: false, depth: true }}
         dpr={Math.min(Array.isArray(lodConfig.dpr) ? lodConfig.dpr[1] : lodConfig.dpr, 1.5)}
         onCreated={({ gl }) => {
@@ -1231,7 +1231,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         }}
       >
         <color attach="background" args={[dn.bgColor]} />
-        <fog attach="fog" args={[dn.fogColor, lodConfig.fogNear * 2, lodConfig.fogFar * 2]} />
+        <fog attach="fog" args={[dn.fogColor, isOSMMode ? 30 : lodConfig.fogNear * 2, isOSMMode ? 350 : lodConfig.fogFar * 2]} />
 
         {/* Simplified lighting — fewer lights = more FPS */}
         <ambientLight intensity={dn.ambientIntensity * 0.8} color={dn.isNight ? "#4466AA" : dn.ambientColor} />
