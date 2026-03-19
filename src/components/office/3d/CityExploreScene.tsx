@@ -1320,8 +1320,8 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         <WorldChunkRenderer
           playerX={playerPos[0]}
           playerZ={playerPos[2]}
-          loadRadius={lodConfig.chunkLoadRadius + 2}
-          maxGLBBuildings={lodConfig.maxFullDetailBuildings}
+          loadRadius={Math.min(lodConfig.chunkLoadRadius + 1, 4)}
+          maxGLBBuildings={Math.min(lodConfig.maxFullDetailBuildings, 15)}
         />
 
         <CityGround />
