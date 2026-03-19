@@ -26,24 +26,23 @@ function GLBFallback({ height }: { height: number }) {
   );
 }
 
+// ── Global scene cache to avoid re-cloning identical models ──
+const sceneCache = new Map<string, THREE.Group>();
+
 /** Renders a GLB model scaled/colored to fit the city building slot */
 function GLBBuildingModelInner({ buildingId, height, primaryColor, isSkyscraper = false }: GLBBuildingModelProps) {
   const seed = useMemo(() => hash(buildingId), [buildingId]);
   const asset = useMemo(() => pickBuildingModel(seed, isSkyscraper), [seed, isSkyscraper]);
 
-  // useGLTF must be called unconditionally (React hook rules)
   const { scene } = useGLTF(asset.path);
 
-  // Debug: log which model is being used
-  useMemo(() => {
-    console.log(`[GLB] Building "${buildingId}" → model: ${asset.id} (${asset.path}), height: ${height}, skyscraper: ${isSkyscraper}`);
-  }, [buildingId, asset.id, asset.path, height, isSkyscraper]);
-
   const clonedScene = useMemo(() => {
-    if (!scene) {
-      console.error(`[GLB] No scene returned for ${asset.path}`);
-      return null;
-    }
+    if (!scene) return null;
+
+    // Cache key includes model + color + height for reuse
+    const cacheKey = `${asset.id}_${height.toFixed(1)}_${primaryColor || "none"}_${seed % 4}`;
+    const cached = sceneCache.get(cacheKey);
+    if (cached) return cached.clone();
 
     const clone = scene.clone(true);
 
@@ -52,11 +51,7 @@ function GLBBuildingModelInner({ buildingId, height, primaryColor, isSkyscraper 
     const size = new THREE.Vector3();
     box.getSize(size);
 
-    console.log(`[GLB] ${asset.id} original size: ${size.x.toFixed(2)} x ${size.y.toFixed(2)} x ${size.z.toFixed(2)}`);
-
-    if (size.y < 0.001) {
-      console.warn(`[GLB] ${asset.id} has near-zero height! Model may be empty or flat.`);
-    }
+    if (size.y < 0.001) return null;
 
     // Scale to fit target height
     const scaleFactor = height / Math.max(size.y, 0.01);
@@ -74,18 +69,18 @@ function GLBBuildingModelInner({ buildingId, height, primaryColor, isSkyscraper 
     const rotations = [0, Math.PI / 2, Math.PI, Math.PI * 1.5];
     clone.rotation.y = rotations[seed % rotations.length];
 
-    // Apply building color strongly to all meshes
+    // Apply building color to all meshes
+    const tintColor = primaryColor ? new THREE.Color(primaryColor) : null;
+
     clone.traverse((child) => {
       if (!(child as THREE.Mesh).isMesh) return;
-
       const mesh = child as THREE.Mesh;
       mesh.castShadow = true;
       mesh.receiveShadow = true;
-      mesh.frustumCulled = false;
+      // Keep frustumCulled = true for GPU-side culling (perf win)
 
-      if (!primaryColor) return;
+      if (!tintColor) return;
 
-      const tintColor = new THREE.Color(primaryColor);
       const originalMaterial = mesh.material;
       const isMultiMaterial = Array.isArray(originalMaterial);
       const materials = isMultiMaterial ? originalMaterial : [originalMaterial];
@@ -119,13 +114,13 @@ function GLBBuildingModelInner({ buildingId, height, primaryColor, isSkyscraper 
       }
     });
 
-    // Count meshes for debug
-    let meshCount = 0;
-    clone.traverse((c) => { if ((c as THREE.Mesh).isMesh) meshCount++; });
-    console.log(`[GLB] ${asset.id} → ${meshCount} meshes, final scale: ${clone.scale.x.toFixed(3)}`);
+    // Cache the built scene
+    if (sceneCache.size < 200) {
+      sceneCache.set(cacheKey, clone.clone());
+    }
 
     return clone;
-  }, [scene, height, primaryColor, seed, asset.scale, asset.id, asset.path]);
+  }, [scene, height, primaryColor, seed, asset.scale, asset.id]);
 
   if (!clonedScene) {
     return <GLBFallback height={height} />;
@@ -178,7 +173,6 @@ export const GLBDetailModel = memo(function GLBDetailModel(props: { seed: number
 // Preload all building models
 export function preloadBuildingModels() {
   const allPaths = [...GLB_BUILDINGS, ...GLB_SKYSCRAPERS];
-  console.log(`[GLB] Preloading ${allPaths.length} building models...`);
   allPaths.forEach(asset => {
     useGLTF.preload(asset.path);
   });
