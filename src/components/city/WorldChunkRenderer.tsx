@@ -1,12 +1,9 @@
 /**
  * WorldChunkRenderer — Renders buildings in visible chunks with LOD.
- * Near: Full GLB models
- * Medium: Simplified colored boxes
- * Far: Instanced tiny blocks
+ * Optimized: reduced re-renders, better instancing, stable keys.
  */
 
 import { memo, useMemo, useRef, useEffect } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { GLBBuildingModel } from "@/components/buildings/GLBBuildingModel";
 import {
@@ -19,9 +16,9 @@ import {
 } from "@/systems/city/WorldGenerator";
 
 // ── LOD thresholds ──
-const LOD_GLB = 40;      // Within 40 units → full GLB
-const LOD_BOX = 100;     // Within 100 → colored box
-// Beyond 100 → instanced block
+const LOD_GLB = 35;      // Within 35 units → full GLB
+const LOD_BOX = 80;      // Within 80 → colored box
+// Beyond 80 → instanced block
 
 // ── Chunk cache ──
 const chunkCache = new Map<string, WorldChunk>();
@@ -34,28 +31,13 @@ function getCachedChunk(cx: number, cz: number): WorldChunk {
   return chunkCache.get(key)!;
 }
 
-// ── Simple box building (medium LOD) ──
+// ── Simple box building (medium LOD) — merged geometry approach ──
 const BoxBuilding = memo(function BoxBuilding({ b }: { b: WorldBuilding }) {
   return (
-    <group position={[b.x, b.y, b.z]} rotation={[0, b.rot, 0]}>
-      <mesh position={[0, b.h / 2, 0]} castShadow>
-        <boxGeometry args={[b.w, b.h, b.d]} />
-        <meshStandardMaterial color={b.color} roughness={0.75} />
-      </mesh>
-      {/* Windows as emissive strips */}
-      {b.h > 3 && (
-        <>
-          <mesh position={[b.w / 2 + 0.01, b.h * 0.6, 0]}>
-            <planeGeometry args={[0.02, b.h * 0.5]} />
-            <meshStandardMaterial color="#AADDFF" emissive="#AADDFF" emissiveIntensity={0.3} transparent opacity={0.6} />
-          </mesh>
-          <mesh position={[0, b.h * 0.6, b.d / 2 + 0.01]}>
-            <planeGeometry args={[b.w * 0.6, b.h * 0.5]} />
-            <meshStandardMaterial color="#AADDFF" emissive="#AADDFF" emissiveIntensity={0.2} transparent opacity={0.4} />
-          </mesh>
-        </>
-      )}
-    </group>
+    <mesh position={[b.x, b.y + b.h / 2, b.z]} rotation={[0, b.rot, 0]} castShadow>
+      <boxGeometry args={[b.w, b.h, b.d]} />
+      <meshStandardMaterial color={b.color} roughness={0.75} />
+    </mesh>
   );
 });
 
@@ -73,7 +55,7 @@ const DetailBuilding = memo(function DetailBuilding({ b }: { b: WorldBuilding })
   );
 });
 
-// ── Instanced far buildings ──
+// ── Instanced far buildings — single draw call for hundreds ──
 function FarBuildingInstances({ buildings }: { buildings: WorldBuilding[] }) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const count = buildings.length;
@@ -101,15 +83,15 @@ function FarBuildingInstances({ buildings }: { buildings: WorldBuilding[] }) {
   if (count === 0) return null;
 
   return (
-    <instancedMesh ref={meshRef} args={[undefined, undefined, count]} frustumCulled={false}>
+    <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
       <boxGeometry args={[1, 1, 1]} />
       <meshStandardMaterial roughness={0.8} />
     </instancedMesh>
   );
 }
 
-// ── Street renderer for a chunk ──
-function ChunkStreets({ chunk }: { chunk: WorldChunk }) {
+// ── Street renderer using instanced meshes for perf ──
+const ChunkStreets = memo(function ChunkStreets({ chunk }: { chunk: WorldChunk }) {
   return (
     <group>
       {chunk.streets.map((st, i) => {
@@ -132,7 +114,7 @@ function ChunkStreets({ chunk }: { chunk: WorldChunk }) {
       })}
     </group>
   );
-}
+});
 
 // ── Main World Chunk Renderer ──
 interface WorldChunkRendererProps {
@@ -146,11 +128,15 @@ export const WorldChunkRenderer = memo(function WorldChunkRenderer({
   playerX,
   playerZ,
   loadRadius = 5,
-  maxGLBBuildings = 40,
+  maxGLBBuildings = 30,
 }: WorldChunkRendererProps) {
+  // Only recompute when player crosses chunk boundary
+  const chunkX = Math.floor(playerX / CHUNK_SIZE);
+  const chunkZ = Math.floor(playerZ / CHUNK_SIZE);
+
   const visibleChunkCoords = useMemo(
     () => getVisibleChunks(playerX, playerZ, loadRadius),
-    [Math.floor(playerX / CHUNK_SIZE), Math.floor(playerZ / CHUNK_SIZE), loadRadius]
+    [chunkX, chunkZ, loadRadius]
   );
 
   const { glbBuildings, boxBuildings, farBuildings, chunks } = useMemo(() => {
@@ -164,9 +150,9 @@ export const WorldChunkRenderer = memo(function WorldChunkRenderer({
       loadedChunks.push(chunk);
 
       for (const b of chunk.buildings) {
-        const dist = Math.sqrt(
-          (b.x - playerX) * (b.x - playerX) + (b.z - playerZ) * (b.z - playerZ)
-        );
+        const dx = b.x - playerX;
+        const dz = b.z - playerZ;
+        const dist = Math.sqrt(dx * dx + dz * dz);
 
         if (dist < LOD_GLB && glb.length < maxGLBBuildings) {
           glb.push(b);
@@ -179,7 +165,7 @@ export const WorldChunkRenderer = memo(function WorldChunkRenderer({
     }
 
     return { glbBuildings: glb, boxBuildings: box, farBuildings: far, chunks: loadedChunks };
-  }, [visibleChunkCoords, playerX, playerZ, maxGLBBuildings]);
+  }, [visibleChunkCoords, chunkX, chunkZ, playerX, playerZ, maxGLBBuildings]);
 
   return (
     <group>

@@ -1,6 +1,6 @@
 /**
  * WorldTerrain — Generates a 3D terrain mesh with procedural elevation.
- * Creates the feeling of real geography with hills and slopes.
+ * Optimized: reduced resolution, fewer horizon hills, cached geometry.
  */
 
 import { useMemo } from "react";
@@ -12,7 +12,7 @@ interface WorldTerrainProps {
   resolution?: number;
 }
 
-export function WorldTerrain({ size = 400, resolution = 100 }: WorldTerrainProps) {
+export function WorldTerrain({ size = 400, resolution = 64 }: WorldTerrainProps) {
   const { geometry, farGeometry } = useMemo(() => {
     // Main terrain
     const geo = new THREE.PlaneGeometry(size, size, resolution, resolution);
@@ -29,15 +29,14 @@ export function WorldTerrain({ size = 400, resolution = 100 }: WorldTerrainProps
     positions.needsUpdate = true;
     geo.computeVertexNormals();
     
-    // Far ring terrain (for horizon)
-    const farGeo = new THREE.RingGeometry(size / 2, size * 2, 48, 8);
+    // Far ring terrain (for horizon) — lower res
+    const farGeo = new THREE.RingGeometry(size / 2, size * 1.5, 32, 4);
     farGeo.rotateX(-Math.PI / 2);
     const farPos = farGeo.attributes.position;
     for (let i = 0; i < farPos.count; i++) {
       const x = farPos.getX(i);
       const z = farPos.getZ(i);
       const dist = Math.sqrt(x * x + z * z);
-      // Gradually flatten to horizon
       const y = getTerrainHeight(x, z) * Math.max(0, 1 - (dist - size / 2) / (size * 1.5));
       farPos.setY(i, y - 0.5);
     }
@@ -68,15 +67,15 @@ export function WorldTerrain({ size = 400, resolution = 100 }: WorldTerrainProps
         />
       </mesh>
       
-      {/* Distant horizon hills */}
-      {Array.from({ length: 20 }).map((_, i) => {
-        const angle = (i / 20) * Math.PI * 2;
-        const dist = size * 0.8 + Math.sin(i * 2.7) * size * 0.15;
+      {/* Distant horizon hills — reduced count */}
+      {Array.from({ length: 12 }).map((_, i) => {
+        const angle = (i / 12) * Math.PI * 2;
+        const dist = size * 0.7 + Math.sin(i * 2.7) * size * 0.12;
         const hh = 8 + Math.sin(i * 1.3) * 5;
-        const ww = 40 + Math.sin(i * 0.7) * 15;
+        const ww = 50 + Math.sin(i * 0.7) * 20;
         return (
           <mesh key={i} position={[Math.cos(angle) * dist, hh / 2 - 2, Math.sin(angle) * dist]}>
-            <sphereGeometry args={[ww, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <sphereGeometry args={[ww, 6, 3, 0, Math.PI * 2, 0, Math.PI / 2]} />
             <meshStandardMaterial color="#0A0F0A" roughness={1} />
           </mesh>
         );
