@@ -375,65 +375,16 @@ function CityNPC({ startX, startZ, color, aabbs }: { startX: number; startZ: num
   );
 }
 
-// ── Ground + Roads ──
+// ── Ground + Roads (kept for procedural mode, but now layered on terrain) ──
 function CityGround() {
   return (
     <group>
-      {/* Inner city ground */}
-      <mesh position={[0, -0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[80, 80]} />
-        <meshStandardMaterial color="#1A1E24" />
-      </mesh>
-      {/* Infinite landscape rings - progressively darker/greener to simulate horizon */}
-      <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[40, 80, 32]} />
-        <meshStandardMaterial color="#151A14" roughness={0.95} />
-      </mesh>
-      <mesh position={[0, -0.08, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[80, 160, 32]} />
-        <meshStandardMaterial color="#111610" roughness={0.98} />
-      </mesh>
-      <mesh position={[0, -0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[160, 400, 32]} />
-        <meshStandardMaterial color="#0D120C" roughness={1} />
-      </mesh>
-      {/* Distant hills silhouette */}
-      {Array.from({ length: 12 }).map((_, i) => {
-        const angle = (i / 12) * Math.PI * 2;
-        const dist = 60 + Math.sin(i * 2.7) * 15;
-        const hh = 3 + Math.sin(i * 1.3) * 2;
-        const ww = 20 + Math.sin(i * 0.7) * 8;
-        return (
-          <mesh key={`hill-${i}`} position={[Math.cos(angle) * dist, hh / 2 - 0.5, Math.sin(angle) * dist]}>
-            <sphereGeometry args={[ww, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2]} />
-            <meshStandardMaterial color="#0A0F0A" roughness={1} />
-          </mesh>
-        );
-      })}
-      {/* Scattered distant trees on outer ring */}
-      {Array.from({ length: 40 }).map((_, i) => {
-        const angle = (i / 40) * Math.PI * 2 + Math.sin(i * 3.1) * 0.15;
-        const dist = 42 + Math.sin(i * 2.3) * 8;
-        const sc = 0.6 + Math.sin(i * 1.7) * 0.3;
-        return (
-          <group key={`dtree-${i}`} position={[Math.cos(angle) * dist, 0, Math.sin(angle) * dist]}>
-            <mesh position={[0, 0.4 * sc, 0]}>
-              <cylinderGeometry args={[0.04 * sc, 0.06 * sc, 0.8 * sc, 4]} />
-              <meshStandardMaterial color="#3A2A18" roughness={0.95} />
-            </mesh>
-            <mesh position={[0, (0.8 + 0.35) * sc, 0]}>
-              <sphereGeometry args={[0.5 * sc, 5, 4]} />
-              <meshStandardMaterial color={["#0D3D12", "#153D10", "#0A3A15", "#1A4A18"][i % 4]} roughness={0.9} />
-            </mesh>
-          </group>
-        );
-      })}
       {/* Main cross roads */}
-      <mesh position={[0, -0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[0, 0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[2, 60]} />
         <meshStandardMaterial color="#2A2A30" />
       </mesh>
-      <mesh position={[0, -0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[0, 0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[60, 2]} />
         <meshStandardMaterial color="#2A2A30" />
       </mesh>
@@ -441,7 +392,7 @@ function CityGround() {
       {[
         [0, -7, 20, 1.5], [0, 7, 20, 1.5], [-7, 0, 1.5, 20], [7, 0, 1.5, 20],
       ].map(([x, z, w, h], i) => (
-        <mesh key={i} position={[x, -0.014, z]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh key={i} position={[x, 0.014, z]} rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[w, h]} />
           <meshStandardMaterial color="#282830" />
         </mesh>
@@ -451,14 +402,14 @@ function CityGround() {
         [1.3, 0, 0.5, 60], [-1.3, 0, 0.5, 60],
         [0, 1.3, 60, 0.5], [0, -1.3, 60, 0.5],
       ].map(([x, z, w, h], i) => (
-        <mesh key={`sw-${i}`} position={[x, -0.012, z]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh key={`sw-${i}`} position={[x, 0.013, z]} rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[w, h]} />
           <meshStandardMaterial color="#252530" />
         </mesh>
       ))}
       {/* District ground indicators */}
       {DISTRICTS.slice(1).map((d, i) => (
-        <mesh key={i} position={[d.x, -0.008, d.z]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh key={i} position={[d.x, 0.008, d.z]} rotation={[-Math.PI / 2, 0, 0]}>
           <circleGeometry args={[d.radius, 16]} />
           <meshStandardMaterial color={d.color} transparent opacity={0.06} />
         </mesh>
