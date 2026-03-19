@@ -1207,9 +1207,10 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         setPlayerPos(prev => {
           const playerRadius = inVehicle ? 0.4 : 0.25;
           const [nx, nz] = moveWithCollision(prev[0], prev[2], dx, dz, playerRadius, aabbs);
-          // Clamp to city bounds
-          const fx = Math.max(-35, Math.min(35, nx));
-          const fz = Math.max(-35, Math.min(35, nz));
+          // Clamp to expanded world bounds
+          const fx = Math.max(-150, Math.min(150, nx));
+          const fz = Math.max(-150, Math.min(150, nz));
+          const terrainY = getTerrainHeight(fx, fz);
           if (fx !== prev[0] || fz !== prev[2]) {
             setPlayerRot(Math.atan2(dx, dz));
             updateCameraCenter(fx * 2.5, fz * 2.5);
