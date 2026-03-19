@@ -183,6 +183,19 @@ export default function CityExplore() {
                   <span className="text-[10px] text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded-full">Live</span>
                 </div>
                 <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-amber-700/30">
+                  <CityLocationSelector
+                    loading={osmCity.loading}
+                    error={osmCity.error}
+                    activePreset={osmCity.activePreset}
+                    isOSMMode={osmCity.isOSMMode}
+                    onSelectPreset={osmCity.loadPreset}
+                    onCustomLocation={osmCity.loadCustomLocation}
+                    onSwitchToProcedural={osmCity.switchToProcedural}
+                    buildingCount={osmCity.data?.buildings.length || 0}
+                    streetCount={osmCity.data?.streets.length || 0}
+                  />
+                </div>
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-amber-700/30">
                   <span className="text-xs">🪙</span>
                   <span className="text-xs font-bold text-amber-400 font-mono">1,250</span>
                 </div>
