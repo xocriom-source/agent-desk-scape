@@ -1326,7 +1326,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
             playerX={playerPos[0]}
             playerZ={playerPos[2]}
             userBuildings={dynamicBuildings}
-            maxGLBBuildings={Math.min(lodConfig.maxFullDetailBuildings, 20)}
+            maxGLBBuildings={40}
           />
         )}
 
