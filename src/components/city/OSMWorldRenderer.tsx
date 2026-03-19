@@ -82,30 +82,20 @@ function getBuildingMaterial(color: string, isNear: boolean): THREE.MeshStandard
 // ── LOD 0: Real polygon extruded building ──
 const PolygonBuilding = memo(function PolygonBuilding({ b }: { b: CityBuilding }) {
   const polygon = (b as any).polygon as BuildingPolygon | undefined;
-  if (!polygon || !polygon.vertices || polygon.vertices.length < 3) {
-    // Fallback box
-    return (
-      <group position={[b.coordinates.x, 0, b.coordinates.z]}>
-        <mesh position={[0, b.height / 2, 0]} castShadow receiveShadow>
-          <boxGeometry args={[Math.max(polygon?.w || 1, 1), b.height, Math.max(polygon?.d || 1, 1)]} />
-          <meshStandardMaterial color={b.primaryColor} roughness={0.65} metalness={0.1} />
-        </mesh>
-        <RoofDetail height={b.height} w={polygon?.w || 1} d={polygon?.d || 1} color={b.primaryColor} />
-      </group>
-    );
-  }
+  const hasPolygon = !!(polygon && polygon.vertices && polygon.vertices.length >= 3);
+  const fw = polygon?.w || 1;
+  const fd = polygon?.d || 1;
 
-  const geometry = useMemo(
-    () => getCachedGeometry(b.id, polygon, b.height),
-    [b.id, polygon, b.height]
-  );
+  const geometry = useMemo(() => {
+    if (!hasPolygon || !polygon) return null;
+    return getCachedGeometry(b.id, polygon, b.height);
+  }, [b.id, hasPolygon, polygon, b.height]);
 
   const material = useMemo(
     () => getBuildingMaterial(b.primaryColor, true),
     [b.primaryColor]
   );
 
-  // Window material for emissive strips
   const windowMat = useMemo(() => new THREE.MeshStandardMaterial({
     color: "#FFDD88",
     emissive: "#FFCC66",
@@ -114,30 +104,38 @@ const PolygonBuilding = memo(function PolygonBuilding({ b }: { b: CityBuilding }
     opacity: 0.6,
   }), []);
 
+  if (!hasPolygon || !geometry) {
+    return (
+      <group position={[b.coordinates.x, 0, b.coordinates.z]}>
+        <mesh position={[0, b.height / 2, 0]} castShadow receiveShadow>
+          <boxGeometry args={[Math.max(fw, 0.5), b.height, Math.max(fd, 0.5)]} />
+          <primitive object={material} attach="material" />
+        </mesh>
+        <RoofDetail height={b.height} w={fw} d={fd} color={b.primaryColor} />
+      </group>
+    );
+  }
+
   return (
     <group position={[b.coordinates.x, 0, b.coordinates.z]}>
       <mesh geometry={geometry} material={material} castShadow receiveShadow />
-      {/* Fake AO at base */}
       <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[polygon.w + 0.3, polygon.d + 0.3]} />
+        <planeGeometry args={[fw + 0.3, fd + 0.3]} />
         <meshBasicMaterial color="#000" transparent opacity={0.15} />
       </mesh>
-      {/* Window strips on tall buildings */}
       {b.height > 3 && (
         <>
-          {/* Front face windows */}
-          <mesh position={[0, b.height * 0.5, polygon.d / 2 + 0.02]}>
-            <planeGeometry args={[polygon.w * 0.7, b.height * 0.6]} />
+          <mesh position={[0, b.height * 0.5, fd / 2 + 0.02]}>
+            <planeGeometry args={[fw * 0.7, b.height * 0.6]} />
             <primitive object={windowMat} attach="material" />
           </mesh>
-          {/* Side face windows */}
-          <mesh position={[polygon.w / 2 + 0.02, b.height * 0.5, 0]} rotation={[0, Math.PI / 2, 0]}>
-            <planeGeometry args={[polygon.d * 0.7, b.height * 0.6]} />
+          <mesh position={[fw / 2 + 0.02, b.height * 0.5, 0]} rotation={[0, Math.PI / 2, 0]}>
+            <planeGeometry args={[fd * 0.7, b.height * 0.6]} />
             <primitive object={windowMat} attach="material" />
           </mesh>
         </>
       )}
-      <RoofDetail height={b.height} w={polygon.w} d={polygon.d} color={b.primaryColor} />
+      <RoofDetail height={b.height} w={fw} d={fd} color={b.primaryColor} />
     </group>
   );
 });
