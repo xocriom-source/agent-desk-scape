@@ -2,6 +2,9 @@ import { useRef, useState, useMemo, useCallback, useEffect } from "react";
 import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { OrbitControls, Html, Stars } from "@react-three/drei";
 import * as THREE from "three";
+import { WorldTerrain } from "@/components/city/WorldTerrain";
+import { WorldChunkRenderer } from "@/components/city/WorldChunkRenderer";
+import { getTerrainHeight } from "@/systems/city/WorldGenerator";
 import { useDayNight } from "@/hooks/useDayNight";
 import { useCityBuildings } from "@/hooks/useCityBuildings";
 import { Vehicle3D } from "@/components/city/Vehicle3D";
@@ -372,65 +375,16 @@ function CityNPC({ startX, startZ, color, aabbs }: { startX: number; startZ: num
   );
 }
 
-// ── Ground + Roads ──
+// ── Ground + Roads (kept for procedural mode, but now layered on terrain) ──
 function CityGround() {
   return (
     <group>
-      {/* Inner city ground */}
-      <mesh position={[0, -0.02, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[80, 80]} />
-        <meshStandardMaterial color="#1A1E24" />
-      </mesh>
-      {/* Infinite landscape rings - progressively darker/greener to simulate horizon */}
-      <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[40, 80, 32]} />
-        <meshStandardMaterial color="#151A14" roughness={0.95} />
-      </mesh>
-      <mesh position={[0, -0.08, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[80, 160, 32]} />
-        <meshStandardMaterial color="#111610" roughness={0.98} />
-      </mesh>
-      <mesh position={[0, -0.1, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[160, 400, 32]} />
-        <meshStandardMaterial color="#0D120C" roughness={1} />
-      </mesh>
-      {/* Distant hills silhouette */}
-      {Array.from({ length: 12 }).map((_, i) => {
-        const angle = (i / 12) * Math.PI * 2;
-        const dist = 60 + Math.sin(i * 2.7) * 15;
-        const hh = 3 + Math.sin(i * 1.3) * 2;
-        const ww = 20 + Math.sin(i * 0.7) * 8;
-        return (
-          <mesh key={`hill-${i}`} position={[Math.cos(angle) * dist, hh / 2 - 0.5, Math.sin(angle) * dist]}>
-            <sphereGeometry args={[ww, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2]} />
-            <meshStandardMaterial color="#0A0F0A" roughness={1} />
-          </mesh>
-        );
-      })}
-      {/* Scattered distant trees on outer ring */}
-      {Array.from({ length: 40 }).map((_, i) => {
-        const angle = (i / 40) * Math.PI * 2 + Math.sin(i * 3.1) * 0.15;
-        const dist = 42 + Math.sin(i * 2.3) * 8;
-        const sc = 0.6 + Math.sin(i * 1.7) * 0.3;
-        return (
-          <group key={`dtree-${i}`} position={[Math.cos(angle) * dist, 0, Math.sin(angle) * dist]}>
-            <mesh position={[0, 0.4 * sc, 0]}>
-              <cylinderGeometry args={[0.04 * sc, 0.06 * sc, 0.8 * sc, 4]} />
-              <meshStandardMaterial color="#3A2A18" roughness={0.95} />
-            </mesh>
-            <mesh position={[0, (0.8 + 0.35) * sc, 0]}>
-              <sphereGeometry args={[0.5 * sc, 5, 4]} />
-              <meshStandardMaterial color={["#0D3D12", "#153D10", "#0A3A15", "#1A4A18"][i % 4]} roughness={0.9} />
-            </mesh>
-          </group>
-        );
-      })}
       {/* Main cross roads */}
-      <mesh position={[0, -0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[0, 0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[2, 60]} />
         <meshStandardMaterial color="#2A2A30" />
       </mesh>
-      <mesh position={[0, -0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[0, 0.015, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[60, 2]} />
         <meshStandardMaterial color="#2A2A30" />
       </mesh>
@@ -438,7 +392,7 @@ function CityGround() {
       {[
         [0, -7, 20, 1.5], [0, 7, 20, 1.5], [-7, 0, 1.5, 20], [7, 0, 1.5, 20],
       ].map(([x, z, w, h], i) => (
-        <mesh key={i} position={[x, -0.014, z]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh key={i} position={[x, 0.014, z]} rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[w, h]} />
           <meshStandardMaterial color="#282830" />
         </mesh>
@@ -448,14 +402,14 @@ function CityGround() {
         [1.3, 0, 0.5, 60], [-1.3, 0, 0.5, 60],
         [0, 1.3, 60, 0.5], [0, -1.3, 60, 0.5],
       ].map(([x, z, w, h], i) => (
-        <mesh key={`sw-${i}`} position={[x, -0.012, z]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh key={`sw-${i}`} position={[x, 0.013, z]} rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[w, h]} />
           <meshStandardMaterial color="#252530" />
         </mesh>
       ))}
       {/* District ground indicators */}
       {DISTRICTS.slice(1).map((d, i) => (
-        <mesh key={i} position={[d.x, -0.008, d.z]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh key={i} position={[d.x, 0.008, d.z]} rotation={[-Math.PI / 2, 0, 0]}>
           <circleGeometry args={[d.radius, 16]} />
           <meshStandardMaterial color={d.color} transparent opacity={0.06} />
         </mesh>
@@ -825,9 +779,11 @@ function CityPlayer({ position, name, rotation }: { position: [number, number, n
 
   useFrame(() => {
     if (!ref.current) return;
-    smoothPos.current.lerp(new THREE.Vector3(...position), 0.18);
+    const terrainY = getTerrainHeight(position[0], position[2]);
+    const targetPos = new THREE.Vector3(position[0], terrainY, position[2]);
+    smoothPos.current.lerp(targetPos, 0.18);
     ref.current.position.copy(smoothPos.current);
-    ref.current.position.y = Math.sin(Date.now() * 0.003) * 0.008;
+    ref.current.position.y += Math.sin(Date.now() * 0.003) * 0.008;
     // Smooth rotate towards movement direction
     const targetRot = rotation;
     let diff = targetRot - ref.current.rotation.y;
@@ -1006,10 +962,10 @@ function FlightCamera({ active, playerPos }: { active: boolean; playerPos: [numb
     if (keys.has(" ")) s.y += speed * dt;
     if (keys.has("control")) s.y = Math.max(1, s.y - speed * dt);
 
-    // Clamp
-    s.x = Math.max(-60, Math.min(60, s.x));
-    s.z = Math.max(-60, Math.min(60, s.z));
-    s.y = Math.max(1, Math.min(80, s.y));
+    // Clamp to world bounds
+    s.x = Math.max(-200, Math.min(200, s.x));
+    s.z = Math.max(-200, Math.min(200, s.z));
+    s.y = Math.max(1, Math.min(120, s.y));
 
     camera.position.set(s.x, s.y, s.z);
     const lookDir = new THREE.Vector3(
@@ -1201,7 +1157,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         }
         setPlayerRot(Math.atan2(dx, dz));
         updateCameraCenter(nx * 2.5, nz * 2.5);
-        return [nx, 0, nz];
+        return [nx, getTerrainHeight(nx, nz), nz] as [number, number, number];
       });
     }, 33);
     return () => clearInterval(interval);
@@ -1251,14 +1207,15 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         setPlayerPos(prev => {
           const playerRadius = inVehicle ? 0.4 : 0.25;
           const [nx, nz] = moveWithCollision(prev[0], prev[2], dx, dz, playerRadius, aabbs);
-          // Clamp to city bounds
-          const fx = Math.max(-35, Math.min(35, nx));
-          const fz = Math.max(-35, Math.min(35, nz));
+          // Clamp to expanded world bounds
+          const fx = Math.max(-150, Math.min(150, nx));
+          const fz = Math.max(-150, Math.min(150, nz));
+          const terrainY = getTerrainHeight(fx, fz);
           if (fx !== prev[0] || fz !== prev[2]) {
             setPlayerRot(Math.atan2(dx, dz));
             updateCameraCenter(fx * 2.5, fz * 2.5);
           }
-          return [fx, 0, fz];
+          return [fx, terrainY, fz] as [number, number, number];
         });
       }
     }, 33);
@@ -1313,7 +1270,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
       <Canvas
         shadows
         style={{ touchAction: "none", width: "100%", height: "100%", display: "block" }}
-        camera={{ position: [12, 18, 22], fov: 40, near: 0.5, far: lodConfig.cameraFar }}
+        camera={{ position: [12, 25, 30], fov: 45, near: 0.5, far: Math.max(lodConfig.cameraFar, 800) }}
         gl={{ antialias: false, powerPreference: "high-performance" }}
         dpr={lodConfig.dpr}
         onCreated={({ gl }) => {
@@ -1323,7 +1280,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         }}
       >
         <color attach="background" args={[dn.bgColor]} />
-        <fog attach="fog" args={[dn.fogColor, lodConfig.fogNear, lodConfig.fogFar]} />
+        <fog attach="fog" args={[dn.fogColor, lodConfig.fogNear * 2, lodConfig.fogFar * 2]} />
 
         {/* Cinematic dual-layer lighting: warm interior vs cool exterior */}
         <ambientLight intensity={dn.ambientIntensity * 0.7} color={dn.isNight ? "#4466AA" : dn.ambientColor} />
@@ -1391,12 +1348,12 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
               enableZoom
               enableRotate
               minDistance={8}
-              maxDistance={25}
+              maxDistance={60}
               minPolarAngle={Math.PI / 8}
               maxPolarAngle={Math.PI / 2.8}
               zoomSpeed={0.8}
               rotateSpeed={0.5}
-              target={[playerPos[0], 0.5, playerPos[2]]}
+              target={[playerPos[0], playerPos[1] + 0.5, playerPos[2]]}
             />
             <CameraFollow target={playerPos} controlsRef={controlsRef} active={!flyMode} />
           </>
@@ -1410,9 +1367,20 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
 
         {/* Clickable ground (extended for larger world) */}
         <mesh position={[0, -0.025, 0]} rotation={[-Math.PI / 2, 0, 0]} onPointerDown={handleFloorClick}>
-          <planeGeometry args={[120, 120]} />
+          <planeGeometry args={[800, 800]} />
           <meshBasicMaterial visible={false} />
         </mesh>
+
+        {/* World Terrain with elevation */}
+        <WorldTerrain size={400} resolution={80} />
+
+        {/* World Chunk-based building renderer (massive city) */}
+        <WorldChunkRenderer
+          playerX={playerPos[0]}
+          playerZ={playerPos[2]}
+          loadRadius={lodConfig.chunkLoadRadius + 2}
+          maxGLBBuildings={lodConfig.maxFullDetailBuildings}
+        />
 
         <CityGround />
         <CityPlaza />
