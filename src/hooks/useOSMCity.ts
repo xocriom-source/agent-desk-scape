@@ -1,10 +1,9 @@
 /**
  * Hook to manage OSM-based city generation state.
- * Fetches real-world building/road data from OpenStreetMap and converts
- * it to the city's internal format for rendering with GLB models.
+ * Auto-loads a default city on mount for instant world experience.
  */
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import {
   generateCityFromOSM,
   CITY_PRESETS,
@@ -12,22 +11,16 @@ import {
   type CityPreset,
 } from "@/systems/city/OSMCityGenerator";
 import type { CityBuilding } from "@/types/building";
-import type { Street } from "@/systems/city/CityLayoutGenerator";
 
 export interface OSMCityState {
-  /** Currently loaded OSM city data */
   data: OSMCityData | null;
-  /** Loading state */
   loading: boolean;
-  /** Error message */
   error: string | null;
-  /** Currently selected preset */
   activePreset: CityPreset | null;
-  /** Whether OSM mode is active (vs procedural) */
   isOSMMode: boolean;
 }
 
-export function useOSMCity() {
+export function useOSMCity(autoLoad: boolean = true) {
   const [state, setState] = useState<OSMCityState>({
     data: null,
     loading: false,
@@ -37,10 +30,10 @@ export function useOSMCity() {
   });
 
   const abortRef = useRef<AbortController | null>(null);
+  const loadedRef = useRef(false);
 
   /** Load a city from a preset */
   const loadPreset = useCallback(async (preset: CityPreset) => {
-    // Cancel any in-flight request
     if (abortRef.current) abortRef.current.abort();
     abortRef.current = new AbortController();
 
@@ -53,7 +46,7 @@ export function useOSMCity() {
         setState((s) => ({
           ...s,
           loading: false,
-          error: "No buildings found in this area. Try a different location.",
+          error: "No buildings found. Try a different location.",
         }));
         return;
       }
@@ -72,7 +65,7 @@ export function useOSMCity() {
   }, []);
 
   /** Load a custom location */
-  const loadCustomLocation = useCallback(async (lat: number, lon: number, radius: number = 500) => {
+  const loadCustomLocation = useCallback(async (lat: number, lon: number, radius: number = 600) => {
     const customPreset: CityPreset = {
       id: "custom",
       name: "Custom Location",
@@ -96,6 +89,16 @@ export function useOSMCity() {
       isOSMMode: false,
     });
   }, []);
+
+  // Auto-load Manhattan on mount for instant world experience
+  useEffect(() => {
+    if (autoLoad && !loadedRef.current) {
+      loadedRef.current = true;
+      // Use São Paulo (Av. Paulista) as default — or check user preference
+      const defaultPreset = CITY_PRESETS.find(p => p.id === "manhattan") || CITY_PRESETS[0];
+      loadPreset(defaultPreset);
+    }
+  }, [autoLoad, loadPreset]);
 
   return {
     ...state,
