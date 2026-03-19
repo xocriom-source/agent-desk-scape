@@ -1,9 +1,7 @@
 /**
- * OSM City Generator v2
- * Fetches real-world building and road data from OpenStreetMap via the Overpass API,
- * then converts it into the city's internal format with FULL road geometry.
- * 
- * Arnis-inspired: use REAL geography, render with stylised GLB models.
+ * OSM City Generator v3
+ * Real polygon footprints, accurate scale, full road geometry.
+ * Arnis-level: REAL geography → REAL 3D city.
  */
 
 import type { CityBuilding, BuildingStyle, District, BuildingCustomizations } from "@/types/building";
@@ -30,6 +28,16 @@ export interface OSMStreet {
   width: number;
   type: "main" | "secondary" | "alley";
   name?: string;
+  lanes?: number;
+}
+
+/** Real polygon footprint for a building */
+export interface BuildingPolygon {
+  /** Vertices of the footprint polygon in world coords */
+  vertices: Array<{ x: number; z: number }>;
+  /** Width/depth bounding box for fallback */
+  w: number;
+  d: number;
 }
 
 export interface OSMCityData {
@@ -40,28 +48,36 @@ export interface OSMCityData {
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
 }
 
-// ── Geo projection ──
+// ── Geo projection (Mercator, accurate at city scale) ──
 
 const EARTH_RADIUS = 6371000;
 
-function latLonToLocal(lat: number, lon: number, centerLat: number, centerLon: number): { x: number; z: number } {
+function latLonToMeters(lat: number, lon: number, centerLat: number, centerLon: number): { x: number; z: number } {
   const dLat = ((lat - centerLat) * Math.PI) / 180;
   const dLon = ((lon - centerLon) * Math.PI) / 180;
   const cosCenter = Math.cos((centerLat * Math.PI) / 180);
   return {
     x: dLon * EARTH_RADIUS * cosCenter,
-    z: -dLat * EARTH_RADIUS,
+    z: -dLat * EARTH_RADIUS, // Negative because +z is south in Three.js
   };
 }
 
-/** Scale: 1 city unit ≈ 3 meters (denser than before) */
-const METERS_TO_UNITS = 1 / 3;
+/**
+ * Scale: 1 world unit = 1 meter (TRUE SCALE).
+ * This gives real proportions. Buildings at real height in meters.
+ * We then scale down by a factor for navigability.
+ */
+const WORLD_SCALE = 1 / 5; // 1 unit = 5 meters → a 50m building = 10 units
 
-function toCity(meters: { x: number; z: number }): { x: number; z: number } {
+function toWorld(meters: { x: number; z: number }): { x: number; z: number } {
   return {
-    x: Math.round(meters.x * METERS_TO_UNITS * 100) / 100,
-    z: Math.round(meters.z * METERS_TO_UNITS * 100) / 100,
+    x: Math.round(meters.x * WORLD_SCALE * 100) / 100,
+    z: Math.round(meters.z * WORLD_SCALE * 100) / 100,
   };
+}
+
+function metersToUnits(m: number): number {
+  return m * WORLD_SCALE;
 }
 
 // ── Deterministic helpers ──
@@ -111,38 +127,40 @@ function osmTagsToDistrict(tags: Record<string, string>): District {
   return "central";
 }
 
-function osmHeightFromTags(tags: Record<string, string>, seed: number): number {
+function osmHeightMeters(tags: Record<string, string>, seed: number): number {
+  // Return height in METERS (real scale)
   if (tags.height) {
     const h = parseFloat(tags.height);
-    if (!isNaN(h)) return Math.max(3, Math.min(h * METERS_TO_UNITS, 30));
+    if (!isNaN(h)) return Math.max(4, Math.min(h, 300));
   }
   if (tags["building:levels"]) {
     const levels = parseInt(tags["building:levels"]);
-    if (!isNaN(levels)) return Math.max(2, Math.min(levels * 1.2, 30));
+    if (!isNaN(levels)) return Math.max(4, Math.min(levels * 3.5, 300));
   }
   const building = tags.building || "";
-  if (building === "skyscraper") return 20 + seededRandom(seed) * 10;
-  if (building === "tower") return 14 + seededRandom(seed) * 6;
-  if (building === "office" || building === "commercial") return 6 + seededRandom(seed) * 4;
-  if (building === "apartments") return 5 + seededRandom(seed) * 5;
-  if (building === "house" || building === "detached") return 2.5 + seededRandom(seed);
-  if (building === "industrial" || building === "warehouse") return 3 + seededRandom(seed) * 2;
-  if (building === "church" || building === "cathedral") return 8 + seededRandom(seed) * 4;
+  if (building === "skyscraper") return 80 + seededRandom(seed) * 120;
+  if (building === "tower") return 40 + seededRandom(seed) * 30;
+  if (building === "office" || building === "commercial") return 15 + seededRandom(seed) * 25;
+  if (building === "apartments") return 15 + seededRandom(seed) * 20;
+  if (building === "house" || building === "detached") return 6 + seededRandom(seed) * 4;
+  if (building === "industrial" || building === "warehouse") return 8 + seededRandom(seed) * 6;
+  if (building === "church" || building === "cathedral") return 20 + seededRandom(seed) * 15;
 
-  return 3 + seededRandom(seed) * 5;
+  // Default: 3-6 stories
+  return 8 + seededRandom(seed) * 15;
 }
 
-// ── Color palettes ──
+// ── Color palettes (richer, per-zone) ──
 
 const STYLE_COLORS: Record<BuildingStyle, string[]> = {
-  corporate: ["#6B8FC5", "#5B8DB8", "#82B4E0", "#4A6FA5", "#7AAFDF", "#3A5A8A", "#5878B0", "#4A7AC0"],
-  creative: ["#D4845A", "#C87A50", "#E09570", "#B06840", "#C49075", "#9A6A3A", "#B87A4A", "#D09060"],
-  startup: ["#40C88A", "#2AAA70", "#55DDA5", "#30BB80", "#1A8A55", "#28A868", "#3BBB78", "#50CC90"],
-  tech: ["#4A5A8A", "#6B5DAA", "#8A56B5", "#3A4A7A", "#5B4D9A", "#5A6AAA", "#4A5090", "#6B60B5"],
-  agency: ["#CD853F", "#B4D4E8", "#8B4513", "#A0522D", "#E4B050", "#C49030", "#D4A040", "#B89050"],
-  minimal: ["#D4C5A9", "#B8E8B4", "#E8D4B4", "#C4B08B", "#BFA980", "#D0C090", "#C8B8A0", "#E0D0B0"],
-  futuristic: ["#2AAA70", "#6E55B5", "#40C8E0", "#4A9FE0", "#00E890", "#30B0D0", "#5080E0", "#40D0A0"],
-  industrial: ["#7A6B8A", "#8A7B6A", "#6B8A7A", "#9A7A6A", "#6A9A8A", "#5A5A5A", "#6A6A7A", "#7A7A6A"],
+  corporate: ["#8A9BB5", "#7A8DA8", "#96AACC", "#6B7F9A", "#B0BDD0", "#5A6E85", "#A0ADC0", "#748AA0"],
+  creative: ["#C4896A", "#B87A5A", "#D49A7A", "#A06848", "#C89A80", "#8A5838", "#B88A60", "#D0A070"],
+  startup: ["#50C88A", "#3AAA70", "#65DDA5", "#40BB80", "#2A8A55", "#38A868", "#4BBB78", "#60CC90"],
+  tech: ["#5A6A9A", "#7B6DAA", "#9A66B5", "#4A5A8A", "#6B5D9A", "#6A7AAA", "#5A60A0", "#7B70B5"],
+  agency: ["#CD853F", "#B4A490", "#8B6540", "#A0724D", "#D4B080", "#C4A060", "#B89870", "#A08860"],
+  minimal: ["#E0D8C8", "#C8D0B8", "#E8DCC0", "#D4C8A0", "#CFC0A0", "#E0D0A8", "#D8C8B0", "#F0E0C0"],
+  futuristic: ["#3AAA80", "#7E65B5", "#50C8E0", "#5A9FE0", "#10E890", "#40B0D0", "#6090E0", "#50D0A0"],
+  industrial: ["#8A7B8A", "#9A8B7A", "#7B8A8A", "#A08A7A", "#7AAA9A", "#6A6A6A", "#7A7A8A", "#8A8A7A"],
 };
 
 // ── Road type mapping ──
@@ -156,13 +174,26 @@ function osmHighwayToType(highway: string): "main" | "secondary" | "alley" | nul
   }
 }
 
-function osmHighwayToWidth(highway: string): number {
+function osmHighwayToWidthMeters(highway: string): number {
   switch (highway) {
-    case "motorway": case "trunk": return 5;
-    case "primary": case "secondary": return 4;
-    case "tertiary": case "residential": return 2.8;
-    case "service": case "pedestrian": return 1.8;
-    default: return 1.5;
+    case "motorway": case "trunk": return 20;
+    case "primary": return 14;
+    case "secondary": return 12;
+    case "tertiary": return 10;
+    case "residential": return 8;
+    case "service": return 5;
+    case "pedestrian": case "footway": return 3;
+    default: return 6;
+  }
+}
+
+function osmHighwayToLanes(highway: string): number {
+  switch (highway) {
+    case "motorway": case "trunk": return 4;
+    case "primary": return 3;
+    case "secondary": return 2;
+    case "tertiary": case "residential": return 2;
+    default: return 1;
   }
 }
 
@@ -176,8 +207,6 @@ function buildOverpassQuery(lat: number, lon: number, radiusMeters: number): str
 (
   way["building"](around:${radiusMeters},${lat},${lon});
   way["highway"](around:${radiusMeters},${lat},${lon});
-  way["landuse"](around:${radiusMeters},${lat},${lon});
-  way["natural"](around:${radiusMeters},${lat},${lon});
 );
 out body geom;
   `.trim();
@@ -197,7 +226,7 @@ export async function fetchOSMData(lat: number, lon: number, radiusMeters: numbe
 }
 
 /**
- * Convert OSM response into city buildings and streets with FULL road geometry.
+ * Convert OSM response into city buildings (with polygon footprints) and streets.
  */
 export function convertOSMToCity(
   osmData: OSMResponse,
@@ -207,62 +236,50 @@ export function convertOSMToCity(
   const buildings: CityBuilding[] = [];
   const streets: OSMStreet[] = [];
   const occupiedCells = new Set<string>();
-  let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
 
   for (const el of osmData.elements) {
     if (el.type !== "way") continue;
     const tags = el.tags || {};
 
-    // ── Buildings ──
+    // ── Buildings with REAL polygon footprints ──
     if (tags.building) {
-      // Compute centroid from geometry if available
-      let cx = 0, cz = 0;
-      if (el.geometry && el.geometry.length > 0) {
-        let sumLat = 0, sumLon = 0;
-        for (const pt of el.geometry) {
-          sumLat += pt.lat;
-          sumLon += pt.lon;
-        }
-        sumLat /= el.geometry.length;
-        sumLon /= el.geometry.length;
-        const local = latLonToLocal(sumLat, sumLon, centerLat, centerLon);
-        const city = toCity(local);
-        cx = city.x;
-        cz = city.z;
-      } else if (el.center) {
-        const local = latLonToLocal(el.center.lat, el.center.lon, centerLat, centerLon);
-        const city = toCity(local);
-        cx = city.x;
-        cz = city.z;
-      } else {
-        continue;
+      if (!el.geometry || el.geometry.length < 3) continue;
+
+      // Convert all polygon vertices to world coords
+      const vertices: Array<{ x: number; z: number }> = [];
+      let sumX = 0, sumZ = 0;
+      let gMinX = Infinity, gMaxX = -Infinity, gMinZ = Infinity, gMaxZ = -Infinity;
+
+      for (const pt of el.geometry) {
+        const meters = latLonToMeters(pt.lat, pt.lon, centerLat, centerLon);
+        const world = toWorld(meters);
+        vertices.push(world);
+        sumX += world.x;
+        sumZ += world.z;
+        gMinX = Math.min(gMinX, world.x);
+        gMaxX = Math.max(gMaxX, world.x);
+        gMinZ = Math.min(gMinZ, world.z);
+        gMaxZ = Math.max(gMaxZ, world.z);
       }
 
-      // Compute footprint size from geometry
-      let footprintW = 2.5, footprintD = 2.5;
-      if (el.geometry && el.geometry.length >= 3) {
-        let gMinX = Infinity, gMaxX = -Infinity, gMinZ = Infinity, gMaxZ = -Infinity;
-        for (const pt of el.geometry) {
-          const local = latLonToLocal(pt.lat, pt.lon, centerLat, centerLon);
-          const city = toCity(local);
-          gMinX = Math.min(gMinX, city.x);
-          gMaxX = Math.max(gMaxX, city.x);
-          gMinZ = Math.min(gMinZ, city.z);
-          gMaxZ = Math.max(gMaxZ, city.z);
-        }
-        footprintW = Math.max(1.5, Math.min(gMaxX - gMinX, 8));
-        footprintD = Math.max(1.5, Math.min(gMaxZ - gMinZ, 8));
-      }
+      const cx = sumX / vertices.length;
+      const cz = sumZ / vertices.length;
+      const footprintW = gMaxX - gMinX;
+      const footprintD = gMaxZ - gMinZ;
 
-      // De-duplicate by grid cell (2 unit grid)
-      const cellKey = `${Math.round(cx / 2)}_${Math.round(cz / 2)}`;
+      // Skip tiny buildings
+      if (footprintW < 0.3 && footprintD < 0.3) continue;
+
+      // De-duplicate by grid cell
+      const cellKey = `${Math.round(cx / 1.5)}_${Math.round(cz / 1.5)}`;
       if (occupiedCells.has(cellKey)) continue;
       occupiedCells.add(cellKey);
 
       const seed = hash(`osm-${el.id}`);
       const style = osmTagsToStyle(tags);
       const district = osmTagsToDistrict(tags);
-      const height = osmHeightFromTags(tags, seed);
+      const heightMeters = osmHeightMeters(tags, seed);
+      const heightUnits = metersToUnits(heightMeters);
       const colors = STYLE_COLORS[style];
       const primaryColor = colors[seed % colors.length];
 
@@ -277,10 +294,11 @@ export function convertOSMToCity(
 
       const name = tags.name || generateBuildingName(style, seed);
 
-      minX = Math.min(minX, cx);
-      maxX = Math.max(maxX, cx);
-      minZ = Math.min(minZ, cz);
-      maxZ = Math.max(maxZ, cz);
+      // Store polygon vertices relative to centroid for ExtrudeGeometry
+      const relativeVertices = vertices.map(v => ({
+        x: v.x - cx,
+        z: v.z - cz,
+      }));
 
       buildings.push({
         id: `osm-${el.id}`,
@@ -288,8 +306,8 @@ export function convertOSMToCity(
         ownerName: tags.operator || tags["addr:housename"] || "City",
         district,
         style,
-        floors: Math.max(1, Math.ceil(height / 1.2)),
-        height,
+        floors: Math.max(1, Math.ceil(heightMeters / 3.5)),
+        height: heightUnits,
         primaryColor,
         secondaryColor: "#1A2030",
         bio: tags.description || "",
@@ -299,9 +317,9 @@ export function convertOSMToCity(
         coordinates: { x: cx, z: cz },
         claimed: true,
         ownerId: "osm",
-        // Store footprint for accurate rendering
-        footprint: { w: footprintW, d: footprintD },
-      } as CityBuilding & { footprint: { w: number; d: number } });
+        // Real polygon data
+        polygon: { vertices: relativeVertices, w: footprintW, d: footprintD },
+      } as CityBuilding & { polygon: BuildingPolygon });
     }
 
     // ── Roads with FULL geometry ──
@@ -312,20 +330,19 @@ export function convertOSMToCity(
 
       const segments: Array<{ x: number; z: number }> = [];
       for (const pt of el.geometry) {
-        const local = latLonToLocal(pt.lat, pt.lon, centerLat, centerLon);
-        const city = toCity(local);
-        segments.push(city);
-        minX = Math.min(minX, city.x);
-        maxX = Math.max(maxX, city.x);
-        minZ = Math.min(minZ, city.z);
-        maxZ = Math.max(maxZ, city.z);
+        const meters = latLonToMeters(pt.lat, pt.lon, centerLat, centerLon);
+        const world = toWorld(meters);
+        segments.push(world);
       }
+
+      const widthMeters = osmHighwayToWidthMeters(tags.highway);
 
       streets.push({
         segments,
-        width: osmHighwayToWidth(tags.highway),
+        width: metersToUnits(widthMeters),
         type: streetType,
         name: tags.name,
+        lanes: osmHighwayToLanes(tags.highway),
       });
     }
   }
@@ -356,6 +373,14 @@ export async function generateCityFromOSM(
     maxX = Math.max(maxX, b.coordinates.x);
     minZ = Math.min(minZ, b.coordinates.z);
     maxZ = Math.max(maxZ, b.coordinates.z);
+  }
+  for (const s of streets) {
+    for (const pt of s.segments) {
+      minX = Math.min(minX, pt.x);
+      maxX = Math.max(maxX, pt.x);
+      minZ = Math.min(minZ, pt.z);
+      maxZ = Math.max(maxZ, pt.z);
+    }
   }
 
   return {
