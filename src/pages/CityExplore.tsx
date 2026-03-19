@@ -79,6 +79,9 @@ export default function CityExplore() {
   const [userStatus, setUserStatus] = useState<UserStatus>("available");
   const [focusMode, setFocusMode] = useState<FocusModeType>("normal");
 
+  // OSM real-world city hook
+  const osmCity = useOSMCity();
+
   const userName = useMemo(() => {
     try {
       const stored = localStorage.getItem("agentoffice_user");
