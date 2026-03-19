@@ -792,29 +792,27 @@ function CameraOcclusion({
   onOccludedBuildings: (ids: Set<string>) => void;
 }) {
   const { camera } = useThree();
-  const raycaster = useRef(new THREE.Raycaster());
   const frameCount = useRef(0);
 
   useFrame(() => {
     frameCount.current++;
-    if (frameCount.current % 10 !== 0) return; // Check every 10 frames
+    if (frameCount.current % 30 !== 0) return; // Check every 30 frames (was 10)
 
     const playerVec = new THREE.Vector3(playerPos[0], 0.5, playerPos[2]);
     const camPos = camera.position.clone();
     const dir = playerVec.clone().sub(camPos).normalize();
     const dist = camPos.distanceTo(playerVec);
 
-    raycaster.current.set(camPos, dir);
-    raycaster.current.far = dist;
-
-    // Check which buildings are between camera and player
     const occluded = new Set<string>();
 
+    // Only check nearby buildings (within 30 units) for occlusion
     for (const b of CITY_BUILDINGS) {
+      const bDist = Math.abs(b.x - playerPos[0]) + Math.abs(b.z - playerPos[2]);
+      if (bDist > 30) continue;
+      
       const bCenter = new THREE.Vector3(b.x, b.h / 2, b.z);
-      const bDist = camPos.distanceTo(bCenter);
-      if (bDist < dist && bDist > 2) {
-        // Simple check: is building roughly between camera and player?
+      const camDist = camPos.distanceTo(bCenter);
+      if (camDist < dist && camDist > 2) {
         const toB = bCenter.clone().sub(camPos).normalize();
         const dot = dir.dot(toB);
         if (dot > 0.7) {
