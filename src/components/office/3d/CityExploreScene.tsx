@@ -1040,6 +1040,75 @@ function CameraFollow({ target, controlsRef, active }: {
   return null;
 }
 
+// ── OSM Building renderer ──
+function OSMBuildingRenderer({ building, onClick }: { building: CityBuilding; onClick?: () => void }) {
+  const [hovered, setHovered] = useState(false);
+  const h = building.height;
+
+  return (
+    <group
+      position={[building.coordinates.x, 0, building.coordinates.z]}
+      onClick={(e) => { e.stopPropagation(); onClick?.(); }}
+      onPointerOver={() => setHovered(true)}
+      onPointerOut={() => setHovered(false)}
+    >
+      <GLBBuildingModel
+        buildingId={building.id}
+        height={h}
+        primaryColor={building.primaryColor}
+        isSkyscraper={h > 7}
+      />
+      {hovered && (
+        <Html position={[0, h + 1, 0]} center>
+          <div className="px-2 py-1 rounded-lg bg-background/90 border border-border text-foreground text-[10px] whitespace-nowrap pointer-events-none backdrop-blur-sm">
+            <span className="font-bold">{building.name}</span>
+            <span className="text-muted-foreground ml-1">• {building.style}</span>
+          </div>
+        </Html>
+      )}
+    </group>
+  );
+}
+
+// ── OSM Streets renderer ──
+function OSMStreetRenderer({ streets }: { streets: Array<{ start: { x: number; z: number }; end: { x: number; z: number }; width: number; type: string }> }) {
+  return (
+    <group>
+      {streets.map((st, idx) => {
+        const dx = st.end.x - st.start.x;
+        const dz = st.end.z - st.start.z;
+        const len = Math.sqrt(dx * dx + dz * dz);
+        if (len < 0.5) return null;
+        const mx = (st.start.x + st.end.x) / 2;
+        const mz = (st.start.z + st.end.z) / 2;
+        const angle = Math.atan2(dx, dz);
+        const roadColor = st.type === "main" ? "#2A2A30" : st.type === "secondary" ? "#252530" : "#222228";
+
+        return (
+          <group key={`osm-st-${idx}`}>
+            <mesh rotation={[-Math.PI / 2, 0, angle]} position={[mx, -0.013, mz]}>
+              <planeGeometry args={[st.width, len]} />
+              <meshStandardMaterial color={roadColor} roughness={0.85} />
+            </mesh>
+            {/* Center line for main roads */}
+            {st.type === "main" && Array.from({ length: Math.floor(len / 3) }).map((_, i) => {
+              const t = (i + 0.5) / Math.floor(len / 3);
+              const px = st.start.x + dx * t;
+              const pz = st.start.z + dz * t;
+              return (
+                <mesh key={i} rotation={[-Math.PI / 2, 0, angle]} position={[px, -0.01, pz]}>
+                  <planeGeometry args={[0.06, 0.8]} />
+                  <meshStandardMaterial color="#FFD060" transparent opacity={0.35} />
+                </mesh>
+              );
+            })}
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
 // ── Main Export ──
 interface CityExploreSceneProps {
   playerName: string;
@@ -1050,9 +1119,15 @@ interface CityExploreSceneProps {
   onVehicleToggle?: (val: boolean) => void;
   onReady?: () => void;
   onBuildingClick?: (buildingId: string) => void;
+  /** OSM buildings from real-world data */
+  osmBuildings?: CityBuilding[];
+  /** OSM streets from real-world data */
+  osmStreets?: Array<{ start: { x: number; z: number }; end: { x: number; z: number }; width: number; type: string }>;
+  /** Whether OSM mode is active */
+  isOSMMode?: boolean;
 }
 
-export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, vehicleColor, onVehicleToggle, onReady, onBuildingClick }: CityExploreSceneProps) {
+export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, vehicleColor, onVehicleToggle, onReady, onBuildingClick, osmBuildings, osmStreets, isOSMMode }: CityExploreSceneProps) {
   const controlsRef = useRef<any>(null);
   const dn = useDayNight();
 
@@ -1377,6 +1452,19 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
             occluded={false}
           />
         ))}
+
+
+        {/* OSM real-world buildings */}
+        {isOSMMode && osmBuildings && osmBuildings.map(b => (
+          <OSMBuildingRenderer
+            key={b.id}
+            building={b}
+            onClick={() => onBuildingClick?.(b.id)}
+          />
+        ))}
+
+        {/* OSM real-world streets */}
+        {isOSMMode && osmStreets && <OSMStreetRenderer streets={osmStreets} />}
 
         {/* User building vehicle */}
         {userBuilding && dynamicBuildings.filter(b => b.id === userBuilding.id).map(b => {

@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Building2, Users2, Trophy, Megaphone, Plane, Search, ShoppingBag, MessageCircle, Target, Car, Award, Briefcase, Dna, Users, Zap, Bot, Globe, Monitor, Video, Hash, Eye, BarChart3, Calendar, Gamepad2, Link2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { CityExploreScene } from "@/components/office/3d/CityExploreScene";
+import { useOSMCity } from "@/hooks/useOSMCity";
+import { CityLocationSelector } from "@/components/city/CityLocationSelector";
 import { CityLeaderboard } from "@/components/city/CityLeaderboard";
 import { CityRanking } from "@/components/city/CityRanking";
 import { CityAdPlacement } from "@/components/city/CityAdPlacement";
@@ -76,6 +78,9 @@ export default function CityExplore() {
   const [cityReady, setCityReady] = useState(false);
   const [userStatus, setUserStatus] = useState<UserStatus>("available");
   const [focusMode, setFocusMode] = useState<FocusModeType>("normal");
+
+  // OSM real-world city hook
+  const osmCity = useOSMCity();
 
   const userName = useMemo(() => {
     try {
@@ -152,6 +157,9 @@ export default function CityExplore() {
           onVehicleToggle={setInVehicle}
           onBuildingClick={(id) => navigate(`/building/${id}`)}
           onReady={handleCityReady}
+          osmBuildings={osmCity.data?.buildings}
+          osmStreets={osmCity.data?.streets}
+          isOSMMode={osmCity.isOSMMode}
         />
       </Suspense>
 
@@ -173,6 +181,19 @@ export default function CityExplore() {
                   <img src={logo} alt="" className="w-5 h-5" />
                   <span className="text-sm font-bold text-white">{cityData.flag} {cityData.name}</span>
                   <span className="text-[10px] text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded-full">Live</span>
+                </div>
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-amber-700/30">
+                  <CityLocationSelector
+                    loading={osmCity.loading}
+                    error={osmCity.error}
+                    activePreset={osmCity.activePreset}
+                    isOSMMode={osmCity.isOSMMode}
+                    onSelectPreset={osmCity.loadPreset}
+                    onCustomLocation={osmCity.loadCustomLocation}
+                    onSwitchToProcedural={osmCity.switchToProcedural}
+                    buildingCount={osmCity.data?.buildings.length || 0}
+                    streetCount={osmCity.data?.streets.length || 0}
+                  />
                 </div>
                 <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-amber-700/30">
                   <span className="text-xs">🪙</span>
