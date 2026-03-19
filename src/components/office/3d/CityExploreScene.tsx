@@ -4,6 +4,7 @@ import { OrbitControls, Html, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import { WorldTerrain } from "@/components/city/WorldTerrain";
 import { WorldChunkRenderer } from "@/components/city/WorldChunkRenderer";
+import { OSMWorldRenderer } from "@/components/city/OSMWorldRenderer";
 import { getTerrainHeight } from "@/systems/city/WorldGenerator";
 import { useDayNight } from "@/hooks/useDayNight";
 import { useCityBuildings } from "@/hooks/useCityBuildings";
@@ -13,6 +14,7 @@ import type { CityBuilding } from "@/types/building";
 import { STYLE_TRANSPORT_MAP } from "@/types/building";
 import { useCityLod } from "@/systems/city/useCityLod";
 import { QUALITY_PRESETS, type QualityLevel } from "@/systems/city/QualitySettings";
+import type { OSMStreet } from "@/systems/city/OSMCityGenerator";
 
 // Preload GLB models on module load
 preloadBuildingModels();
