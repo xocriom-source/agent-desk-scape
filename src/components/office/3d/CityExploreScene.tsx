@@ -4,6 +4,7 @@ import { OrbitControls, Html, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import { WorldTerrain } from "@/components/city/WorldTerrain";
 import { WorldChunkRenderer } from "@/components/city/WorldChunkRenderer";
+import { OSMWorldRenderer } from "@/components/city/OSMWorldRenderer";
 import { getTerrainHeight } from "@/systems/city/WorldGenerator";
 import { useDayNight } from "@/hooks/useDayNight";
 import { useCityBuildings } from "@/hooks/useCityBuildings";
@@ -13,6 +14,7 @@ import type { CityBuilding } from "@/types/building";
 import { STYLE_TRANSPORT_MAP } from "@/types/building";
 import { useCityLod } from "@/systems/city/useCityLod";
 import { QUALITY_PRESETS, type QualityLevel } from "@/systems/city/QualitySettings";
+import type { OSMStreet } from "@/systems/city/OSMCityGenerator";
 
 // Preload GLB models on module load
 preloadBuildingModels();
@@ -1025,12 +1027,14 @@ interface CityExploreSceneProps {
   /** OSM buildings from real-world data */
   osmBuildings?: CityBuilding[];
   /** OSM streets from real-world data */
-  osmStreets?: Array<{ start: { x: number; z: number }; end: { x: number; z: number }; width: number; type: string }>;
+  osmStreets?: OSMStreet[];
+  /** OSM bounds */
+  osmBounds?: { minX: number; maxX: number; minZ: number; maxZ: number };
   /** Whether OSM mode is active */
   isOSMMode?: boolean;
 }
 
-export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, vehicleColor, onVehicleToggle, onReady, onBuildingClick, osmBuildings, osmStreets, isOSMMode }: CityExploreSceneProps) {
+export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, vehicleColor, onVehicleToggle, onReady, onBuildingClick, osmBuildings, osmStreets, osmBounds, isOSMMode }: CityExploreSceneProps) {
   const controlsRef = useRef<any>(null);
   const dn = useDayNight();
 
@@ -1313,29 +1317,43 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
           <meshBasicMaterial visible={false} />
         </mesh>
 
-        {/* World Terrain with elevation */}
-        <WorldTerrain size={400} resolution={80} />
+        {/* === OSM MODE: Real-world city === */}
+        {isOSMMode && osmBuildings && osmStreets && osmBounds && (
+          <OSMWorldRenderer
+            buildings={osmBuildings}
+            streets={osmStreets}
+            bounds={osmBounds}
+            playerX={playerPos[0]}
+            playerZ={playerPos[2]}
+            userBuildings={dynamicBuildings}
+            maxGLBBuildings={Math.min(lodConfig.maxFullDetailBuildings, 20)}
+          />
+        )}
 
-        {/* World Chunk-based building renderer (massive city) */}
-        <WorldChunkRenderer
-          playerX={playerPos[0]}
-          playerZ={playerPos[2]}
-          loadRadius={Math.min(lodConfig.chunkLoadRadius + 1, 4)}
-          maxGLBBuildings={Math.min(lodConfig.maxFullDetailBuildings, 15)}
-        />
+        {/* === PROCEDURAL MODE: World generator === */}
+        {!isOSMMode && (
+          <>
+            <WorldTerrain size={400} resolution={80} />
+            <WorldChunkRenderer
+              playerX={playerPos[0]}
+              playerZ={playerPos[2]}
+              loadRadius={Math.min(lodConfig.chunkLoadRadius + 1, 4)}
+              maxGLBBuildings={Math.min(lodConfig.maxFullDetailBuildings, 15)}
+            />
+            <CityGround />
+          </>
+        )}
 
-        <CityGround />
         <CityPlaza />
         <StreetLights />
         {lodConfig.enableLandscaping && <CityLandscaping />}
         {lodConfig.enableVehicles && <VoxelParkedCars />}
 
-        {/* Click marker */}
         <ClickMarker position={clickTarget} />
 
-        {/* Static buildings — only render nearby ones as GLB, skip far ones (WorldChunkRenderer covers them) */}
-        {lodFrame.lodBuildings
-          .filter(lb => lb.lod <= 1) // Only render HD and Med LOD — far buildings handled by WorldChunkRenderer
+        {/* Static buildings — only in procedural mode */}
+        {!isOSMMode && lodFrame.lodBuildings
+          .filter(lb => lb.lod <= 1)
           .map((lb) => {
             const posSeed = Math.abs(((lb.def.x * 73856093) ^ (lb.def.z * 19349663)) | 0) + lb.index * 37;
             const bDef = CITY_BUILDINGS[lb.index];
@@ -1353,8 +1371,8 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
             );
           })}
 
-        {/* Dynamic buildings */}
-        {dynamicBuildings.map(b => (
+        {/* Dynamic user buildings (both modes) */}
+        {!isOSMMode && dynamicBuildings.map(b => (
           <LightBuilding3D
             key={b.id}
             building={b}
@@ -1363,19 +1381,6 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
             occluded={false}
           />
         ))}
-
-
-        {/* OSM real-world buildings */}
-        {isOSMMode && osmBuildings && osmBuildings.map(b => (
-          <OSMBuildingRenderer
-            key={b.id}
-            building={b}
-            onClick={() => onBuildingClick?.(b.id)}
-          />
-        ))}
-
-        {/* OSM real-world streets */}
-        {isOSMMode && osmStreets && <OSMStreetRenderer streets={osmStreets} />}
 
         {/* User building vehicle */}
         {userBuilding && dynamicBuildings.filter(b => b.id === userBuilding.id).map(b => {
