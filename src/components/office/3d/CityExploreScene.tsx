@@ -1215,7 +1215,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
             setPlayerRot(Math.atan2(dx, dz));
             updateCameraCenter(fx * 2.5, fz * 2.5);
           }
-          return [fx, 0, fz];
+          return [fx, terrainY, fz] as [number, number, number];
         });
       }
     }, 33);
