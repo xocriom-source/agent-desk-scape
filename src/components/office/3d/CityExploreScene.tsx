@@ -1453,6 +1453,19 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
           />
         ))}
 
+
+        {/* OSM real-world buildings */}
+        {isOSMMode && osmBuildings && osmBuildings.map(b => (
+          <OSMBuildingRenderer
+            key={b.id}
+            building={b}
+            onClick={() => onBuildingClick?.(b.id)}
+          />
+        ))}
+
+        {/* OSM real-world streets */}
+        {isOSMMode && osmStreets && <OSMStreetRenderer streets={osmStreets} />}
+
         {/* User building vehicle */}
         {userBuilding && dynamicBuildings.filter(b => b.id === userBuilding.id).map(b => {
           const transport = b.transportType || STYLE_TRANSPORT_MAP[b.style] || "car";
