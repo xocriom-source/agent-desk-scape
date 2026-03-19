@@ -1027,7 +1027,9 @@ interface CityExploreSceneProps {
   /** OSM buildings from real-world data */
   osmBuildings?: CityBuilding[];
   /** OSM streets from real-world data */
-  osmStreets?: Array<{ start: { x: number; z: number }; end: { x: number; z: number }; width: number; type: string }>;
+  osmStreets?: OSMStreet[];
+  /** OSM bounds */
+  osmBounds?: { minX: number; maxX: number; minZ: number; maxZ: number };
   /** Whether OSM mode is active */
   isOSMMode?: boolean;
 }
