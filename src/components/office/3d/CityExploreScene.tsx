@@ -1229,13 +1229,8 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         <color attach="background" args={[dn.bgColor]} />
         <fog attach="fog" args={[dn.fogColor, lodConfig.fogNear * 2, lodConfig.fogFar * 2]} />
 
-        {/* Cinematic dual-layer lighting: warm interior vs cool exterior */}
-        <ambientLight intensity={dn.ambientIntensity * 0.7} color={dn.isNight ? "#4466AA" : dn.ambientColor} />
-        
-        {/* Warm overhead fill — diorama key light */}
-        <pointLight position={[0, 25, 0]} intensity={0.6} color="#FFD0A0" distance={70} decay={1.2} />
-        {/* Cool rim fill from opposite side — cinematic contrast */}
-        <pointLight position={[-15, 18, -15]} intensity={0.25} color="#8899CC" distance={50} decay={1.5} />
+        {/* Simplified lighting — fewer lights = more FPS */}
+        <ambientLight intensity={dn.ambientIntensity * 0.8} color={dn.isNight ? "#4466AA" : dn.ambientColor} />
         
         <directionalLight
           position={dn.sunPosition}
