@@ -1157,11 +1157,13 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
 
         setPlayerPos(prev => {
           const playerRadius = inVehicle ? 0.4 : 0.25;
-          const [nx, nz] = moveWithCollision(prev[0], prev[2], dx, dz, playerRadius, aabbs);
-          // Clamp to expanded world bounds
-          const fx = Math.max(-150, Math.min(150, nx));
-          const fz = Math.max(-150, Math.min(150, nz));
-          const terrainY = getTerrainHeight(fx, fz);
+          const worldLimit = isOSMMode ? 500 : 150;
+          const [nx, nz] = isOSMMode
+            ? [prev[0] + dx, prev[2] + dz] // No collision in OSM mode (real streets)
+            : moveWithCollision(prev[0], prev[2], dx, dz, playerRadius, aabbs);
+          const fx = Math.max(-worldLimit, Math.min(worldLimit, nx));
+          const fz = Math.max(-worldLimit, Math.min(worldLimit, nz));
+          const terrainY = isOSMMode ? 0 : getTerrainHeight(fx, fz);
           if (fx !== prev[0] || fz !== prev[2]) {
             setPlayerRot(Math.atan2(dx, dz));
             updateCameraCenter(fx * 2.5, fz * 2.5);
