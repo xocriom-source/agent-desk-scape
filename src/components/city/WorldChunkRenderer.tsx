@@ -15,10 +15,10 @@ import {
   type WorldBuilding,
 } from "@/systems/city/WorldGenerator";
 
-// ── LOD thresholds ──
-const LOD_GLB = 35;      // Within 35 units → full GLB
-const LOD_BOX = 80;      // Within 80 → colored box
-// Beyond 80 → instanced block
+// ── LOD thresholds (tightened for FPS) ──
+const LOD_GLB = 20;      // Within 20 units → full GLB (was 35)
+const LOD_BOX = 55;      // Within 55 → colored box (was 80)
+// Beyond 55 → instanced block
 
 // ── Chunk cache ──
 const chunkCache = new Map<string, WorldChunk>();

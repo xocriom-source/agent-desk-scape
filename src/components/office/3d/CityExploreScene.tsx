@@ -1217,9 +1217,9 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
       <Canvas
         shadows
         style={{ touchAction: "none", width: "100%", height: "100%", display: "block" }}
-        camera={{ position: [12, 25, 30], fov: 45, near: 0.5, far: Math.max(lodConfig.cameraFar, 800) }}
-        gl={{ antialias: false, powerPreference: "high-performance" }}
-        dpr={lodConfig.dpr}
+        camera={{ position: [12, 25, 30], fov: 45, near: 0.5, far: Math.min(lodConfig.cameraFar, 500) }}
+        gl={{ antialias: false, powerPreference: "high-performance", stencil: false, depth: true }}
+        dpr={Math.min(Array.isArray(lodConfig.dpr) ? lodConfig.dpr[1] : lodConfig.dpr, 1.5)}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
           gl.toneMappingExposure = dn.exposure;
@@ -1320,8 +1320,8 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         <WorldChunkRenderer
           playerX={playerPos[0]}
           playerZ={playerPos[2]}
-          loadRadius={lodConfig.chunkLoadRadius + 2}
-          maxGLBBuildings={lodConfig.maxFullDetailBuildings}
+          loadRadius={Math.min(lodConfig.chunkLoadRadius + 1, 4)}
+          maxGLBBuildings={Math.min(lodConfig.maxFullDetailBuildings, 15)}
         />
 
         <CityGround />
@@ -1333,24 +1333,25 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         {/* Click marker */}
         <ClickMarker position={clickTarget} />
 
-        {/* Static buildings with chunk-based LoD */}
-        {lodFrame.lodBuildings.map((lb) => {
-          // Position-based seed for much more variety than index-based
-          const posSeed = Math.abs(((lb.def.x * 73856093) ^ (lb.def.z * 19349663)) | 0) + lb.index * 37;
-          const bDef = CITY_BUILDINGS[lb.index];
-          return (
-            <StaticBuildingOccludable
-              key={lb.index}
-              x={lb.def.x} z={lb.def.z} w={lb.def.w} d={lb.def.d} h={lb.def.h} color={lb.def.color}
-              seed={posSeed}
-              occluded={occludedBuildings.has(`static-${lb.def.x}-${lb.def.z}`)}
-              lod={lb.lod}
-              rotation={bDef?.rot || 0}
-              mirror={bDef?.mirror || false}
-              forceClass={(bDef as any)?.forceClass}
-            />
-          );
-        })}
+        {/* Static buildings — only render nearby ones as GLB, skip far ones (WorldChunkRenderer covers them) */}
+        {lodFrame.lodBuildings
+          .filter(lb => lb.lod <= 1) // Only render HD and Med LOD — far buildings handled by WorldChunkRenderer
+          .map((lb) => {
+            const posSeed = Math.abs(((lb.def.x * 73856093) ^ (lb.def.z * 19349663)) | 0) + lb.index * 37;
+            const bDef = CITY_BUILDINGS[lb.index];
+            return (
+              <StaticBuildingOccludable
+                key={lb.index}
+                x={lb.def.x} z={lb.def.z} w={lb.def.w} d={lb.def.d} h={lb.def.h} color={lb.def.color}
+                seed={posSeed}
+                occluded={occludedBuildings.has(`static-${lb.def.x}-${lb.def.z}`)}
+                lod={lb.lod}
+                rotation={bDef?.rot || 0}
+                mirror={bDef?.mirror || false}
+                forceClass={(bDef as any)?.forceClass}
+              />
+            );
+          })}
 
         {/* Dynamic buildings */}
         {dynamicBuildings.map(b => (
