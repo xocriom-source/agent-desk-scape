@@ -1024,17 +1024,15 @@ interface CityExploreSceneProps {
   onVehicleToggle?: (val: boolean) => void;
   onReady?: () => void;
   onBuildingClick?: (buildingId: string) => void;
-  /** OSM buildings from real-world data */
   osmBuildings?: CityBuilding[];
-  /** OSM streets from real-world data */
   osmStreets?: OSMStreet[];
-  /** OSM bounds */
+  osmTrees?: OSMTreeData[];
+  osmGreenAreas?: OSMGreenArea[];
   osmBounds?: { minX: number; maxX: number; minZ: number; maxZ: number };
-  /** Whether OSM mode is active */
   isOSMMode?: boolean;
 }
 
-export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, vehicleColor, onVehicleToggle, onReady, onBuildingClick, osmBuildings, osmStreets, osmBounds, isOSMMode }: CityExploreSceneProps) {
+export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, vehicleColor, onVehicleToggle, onReady, onBuildingClick, osmBuildings, osmStreets, osmTrees, osmGreenAreas, osmBounds, isOSMMode }: CityExploreSceneProps) {
   const controlsRef = useRef<any>(null);
   const dn = useDayNight();
 
