@@ -159,6 +159,8 @@ export default function CityExplore() {
           onReady={handleCityReady}
           osmBuildings={osmCity.data?.buildings}
           osmStreets={osmCity.data?.streets}
+          osmTrees={osmCity.data?.trees}
+          osmGreenAreas={osmCity.data?.greenAreas}
           osmBounds={osmCity.data?.bounds}
           isOSMMode={osmCity.isOSMMode}
         />
