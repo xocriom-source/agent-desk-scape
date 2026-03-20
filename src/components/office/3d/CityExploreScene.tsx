@@ -14,7 +14,7 @@ import type { CityBuilding } from "@/types/building";
 import { STYLE_TRANSPORT_MAP } from "@/types/building";
 import { useCityLod } from "@/systems/city/useCityLod";
 import { QUALITY_PRESETS, type QualityLevel } from "@/systems/city/QualitySettings";
-import type { OSMStreet } from "@/systems/city/OSMCityGenerator";
+import type { OSMStreet, OSMTreeData, OSMGreenArea } from "@/systems/city/OSMCityGenerator";
 
 // Preload GLB models on module load
 preloadBuildingModels();
@@ -1024,17 +1024,15 @@ interface CityExploreSceneProps {
   onVehicleToggle?: (val: boolean) => void;
   onReady?: () => void;
   onBuildingClick?: (buildingId: string) => void;
-  /** OSM buildings from real-world data */
   osmBuildings?: CityBuilding[];
-  /** OSM streets from real-world data */
   osmStreets?: OSMStreet[];
-  /** OSM bounds */
+  osmTrees?: OSMTreeData[];
+  osmGreenAreas?: OSMGreenArea[];
   osmBounds?: { minX: number; maxX: number; minZ: number; maxZ: number };
-  /** Whether OSM mode is active */
   isOSMMode?: boolean;
 }
 
-export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, vehicleColor, onVehicleToggle, onReady, onBuildingClick, osmBuildings, osmStreets, osmBounds, isOSMMode }: CityExploreSceneProps) {
+export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, vehicleColor, onVehicleToggle, onReady, onBuildingClick, osmBuildings, osmStreets, osmTrees, osmGreenAreas, osmBounds, isOSMMode }: CityExploreSceneProps) {
   const controlsRef = useRef<any>(null);
   const dn = useDayNight();
 
@@ -1324,11 +1322,13 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
           <OSMWorldRenderer
             buildings={osmBuildings}
             streets={osmStreets}
+            trees={osmTrees}
+            greenAreas={osmGreenAreas}
             bounds={osmBounds}
             playerX={playerPos[0]}
             playerZ={playerPos[2]}
             userBuildings={dynamicBuildings}
-            maxGLBBuildings={40}
+            maxGLBBuildings={120}
           />
         )}
 
