@@ -1223,7 +1223,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
       <Canvas
         shadows
         style={{ touchAction: "none", width: "100%", height: "100%", display: "block" }}
-        camera={{ position: isOSMMode ? [20, 40, 50] : [12, 25, 30], fov: 45, near: 0.5, far: isOSMMode ? 800 : Math.min(lodConfig.cameraFar, 500) }}
+        camera={{ position: isOSMMode ? [20, 50, 60] : [12, 25, 30], fov: 45, near: 0.5, far: isOSMMode ? 1200 : Math.min(lodConfig.cameraFar, 500) }}
         gl={{ antialias: false, powerPreference: "high-performance", stencil: false, depth: true }}
         dpr={Math.min(Array.isArray(lodConfig.dpr) ? lodConfig.dpr[1] : lodConfig.dpr, 1.5)}
         onCreated={({ gl }) => {
