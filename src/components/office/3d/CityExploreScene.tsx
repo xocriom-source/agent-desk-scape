@@ -912,9 +912,9 @@ function FlightCamera({ active, playerPos }: { active: boolean; playerPos: [numb
     if (keys.has("control")) s.y = Math.max(1, s.y - speed * dt);
 
     // Clamp to world bounds
-    s.x = Math.max(-200, Math.min(200, s.x));
-    s.z = Math.max(-200, Math.min(200, s.z));
-    s.y = Math.max(1, Math.min(120, s.y));
+    s.x = Math.max(-500, Math.min(500, s.x));
+    s.z = Math.max(-500, Math.min(500, s.z));
+    s.y = Math.max(1, Math.min(200, s.y));
 
     camera.position.set(s.x, s.y, s.z);
     const lookDir = new THREE.Vector3(
@@ -1138,7 +1138,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
     window.addEventListener("keydown", onDown);
     window.addEventListener("keyup", onUp);
 
-    const baseSpeed = isOSMMode ? (inVehicle ? 1.5 : 0.6) : (inVehicle ? 0.45 : 0.2);
+    const baseSpeed = isOSMMode ? (inVehicle ? 3.0 : 1.2) : (inVehicle ? 0.45 : 0.2);
     const interval = setInterval(() => {
       let dx = 0, dz = 0;
       if (keys.has("arrowup") || keys.has("w")) dz -= baseSpeed;
@@ -1223,7 +1223,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
       <Canvas
         shadows
         style={{ touchAction: "none", width: "100%", height: "100%", display: "block" }}
-        camera={{ position: isOSMMode ? [20, 40, 50] : [12, 25, 30], fov: 45, near: 0.5, far: isOSMMode ? 800 : Math.min(lodConfig.cameraFar, 500) }}
+        camera={{ position: isOSMMode ? [20, 50, 60] : [12, 25, 30], fov: 45, near: 0.5, far: isOSMMode ? 1200 : Math.min(lodConfig.cameraFar, 500) }}
         gl={{ antialias: false, powerPreference: "high-performance", stencil: false, depth: true }}
         dpr={Math.min(Array.isArray(lodConfig.dpr) ? lodConfig.dpr[1] : lodConfig.dpr, 1.5)}
         onCreated={({ gl }) => {
@@ -1233,7 +1233,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         }}
       >
         <color attach="background" args={[dn.bgColor]} />
-        <fog attach="fog" args={[dn.fogColor, isOSMMode ? 30 : lodConfig.fogNear * 2, isOSMMode ? 350 : lodConfig.fogFar * 2]} />
+        <fog attach="fog" args={[dn.fogColor, isOSMMode ? 40 : lodConfig.fogNear * 2, isOSMMode ? 500 : lodConfig.fogFar * 2]} />
 
         {/* Simplified lighting — fewer lights = more FPS */}
         <ambientLight intensity={dn.ambientIntensity * 0.8} color={dn.isNight ? "#4466AA" : dn.ambientColor} />
