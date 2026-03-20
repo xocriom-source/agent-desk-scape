@@ -14,7 +14,7 @@ import type { CityBuilding } from "@/types/building";
 import { STYLE_TRANSPORT_MAP } from "@/types/building";
 import { useCityLod } from "@/systems/city/useCityLod";
 import { QUALITY_PRESETS, type QualityLevel } from "@/systems/city/QualitySettings";
-import type { OSMStreet } from "@/systems/city/OSMCityGenerator";
+import type { OSMStreet, OSMTreeData, OSMGreenArea } from "@/systems/city/OSMCityGenerator";
 
 // Preload GLB models on module load
 preloadBuildingModels();
