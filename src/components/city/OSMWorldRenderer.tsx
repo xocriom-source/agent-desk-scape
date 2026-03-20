@@ -1,5 +1,5 @@
 /**
- * OSMWorldRenderer v4 — Arnis-level real world engine.
+ * OSMWorldRenderer v5 — Arnis-level real world engine.
  * Real ExtrudeGeometry footprints, physical street meshes with lane markings,
  * procedural terrain with noise, 3-tier LOD, ambient occlusion, zone color variation.
  */
@@ -9,10 +9,10 @@ import * as THREE from "three";
 import type { CityBuilding } from "@/types/building";
 import type { OSMStreet, BuildingPolygon } from "@/systems/city/OSMCityGenerator";
 
-// ── LOD thresholds ──
-const LOD_POLYGON = 60;   // Near: full extruded polygon with details
-const LOD_BOX = 120;      // Mid: simplified box with windows
-const LOD_INST = 250;     // Far: instanced silhouette
+// ── LOD thresholds (much more generous) ──
+const LOD_POLYGON = 120;  // Near: full extruded polygon with details
+const LOD_BOX = 200;      // Mid: simplified box with windows
+const LOD_INST = 400;     // Far: instanced silhouette
 
 // ── Create ExtrudeGeometry from real polygon vertices ──
 function createBuildingGeometry(polygon: BuildingPolygon, height: number): THREE.BufferGeometry {
@@ -81,30 +81,41 @@ function getBuildingMaterial(color: string, lod: number): THREE.MeshStandardMate
     const baseColor = new THREE.Color(color);
     const mat = new THREE.MeshStandardMaterial({
       color: baseColor,
-      roughness: lod === 0 ? 0.55 : 0.75,
-      metalness: lod === 0 ? 0.12 : 0.05,
-      flatShading: lod > 0,
+      roughness: lod === 0 ? 0.5 : 0.7,
+      metalness: lod === 0 ? 0.15 : 0.05,
+      flatShading: false,
     });
     materialCache.set(key, mat);
   }
   return materialCache.get(key)!;
 }
 
-// ── Shared window material ──
+// ── Shared materials (created once) ──
 const windowMaterial = new THREE.MeshStandardMaterial({
   color: "#FFDD88",
   emissive: "#FFCC66",
-  emissiveIntensity: 0.6,
+  emissiveIntensity: 0.7,
   transparent: true,
-  opacity: 0.55,
+  opacity: 0.6,
 });
 
-// ── Shared AO ground material ──
 const aoGroundMaterial = new THREE.MeshBasicMaterial({
   color: "#000000",
   transparent: true,
-  opacity: 0.2,
+  opacity: 0.25,
+  depthWrite: false,
 });
+
+const sidewalkMaterial = new THREE.MeshStandardMaterial({
+  color: "#666670",
+  roughness: 0.75,
+});
+
+const roadMainMaterial = new THREE.MeshStandardMaterial({ color: "#2C2C32", roughness: 0.9 });
+const roadSecondaryMaterial = new THREE.MeshStandardMaterial({ color: "#262630", roughness: 0.9 });
+const roadAlleyMaterial = new THREE.MeshStandardMaterial({ color: "#202028", roughness: 0.92 });
+const laneMaterial = new THREE.MeshStandardMaterial({ color: "#FFD060", transparent: true, opacity: 0.5 });
+const edgeLineMaterial = new THREE.MeshStandardMaterial({ color: "#888", transparent: true, opacity: 0.35 });
 
 // ── LOD 0: Full extruded polygon building ──
 const PolygonBuilding = memo(function PolygonBuilding({ b }: { b: CityBuilding }) {
@@ -120,8 +131,17 @@ const PolygonBuilding = memo(function PolygonBuilding({ b }: { b: CityBuilding }
 
   const material = useMemo(() => getBuildingMaterial(b.primaryColor, 0), [b.primaryColor]);
 
-  // Darker variant for roof/sides
-  const roofColor = useMemo(() => new THREE.Color(b.primaryColor).multiplyScalar(0.65).getStyle(), [b.primaryColor]);
+  // Darker roof material
+  const roofMaterial = useMemo(() => {
+    const key = `roof-${b.primaryColor}`;
+    if (!materialCache.has(key)) {
+      materialCache.set(key, new THREE.MeshStandardMaterial({
+        color: new THREE.Color(b.primaryColor).multiplyScalar(0.55),
+        roughness: 0.8,
+      }));
+    }
+    return materialCache.get(key)!;
+  }, [b.primaryColor]);
 
   if (!hasPolygon || !geometry) {
     // Fallback to box with proper dimensions
@@ -131,13 +151,12 @@ const PolygonBuilding = memo(function PolygonBuilding({ b }: { b: CityBuilding }
           <boxGeometry args={[Math.max(fw, 1), b.height, Math.max(fd, 1)]} />
           <primitive object={material} attach="material" />
         </mesh>
-        {/* Fake AO on ground */}
         <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <planeGeometry args={[fw + 0.5, fd + 0.5]} />
+          <planeGeometry args={[fw + 0.8, fd + 0.8]} />
           <primitive object={aoGroundMaterial} attach="material" />
         </mesh>
-        <RoofDetail height={b.height} w={fw} d={fd} color={b.primaryColor} />
         {b.height > 4 && <WindowStrips height={b.height} w={fw} d={fd} />}
+        <RoofDetail height={b.height} w={fw} d={fd} roofMaterial={roofMaterial} />
       </group>
     );
   }
@@ -149,42 +168,40 @@ const PolygonBuilding = memo(function PolygonBuilding({ b }: { b: CityBuilding }
 
       {/* Fake AO shadow on ground */}
       <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[fw + 0.8, fd + 0.8]} />
+        <planeGeometry args={[fw + 1, fd + 1]} />
         <primitive object={aoGroundMaterial} attach="material" />
       </mesh>
 
       {/* Window strips on multiple faces */}
-      {b.height > 4 && <WindowStrips height={b.height} w={fw} d={fd} />}
+      {b.height > 3 && <WindowStrips height={b.height} w={fw} d={fd} />}
 
       {/* Roof detail */}
-      <RoofDetail height={b.height} w={fw} d={fd} color={b.primaryColor} />
+      <RoofDetail height={b.height} w={fw} d={fd} roofMaterial={roofMaterial} />
     </group>
   );
 });
 
 // ── Window strips on building faces ──
 function WindowStrips({ height, w, d }: { height: number; w: number; d: number }) {
-  const windowRows = Math.max(1, Math.floor(height / 3));
-
   return (
     <group>
       {/* Front face */}
-      <mesh position={[0, height * 0.45, d / 2 + 0.03]}>
-        <planeGeometry args={[w * 0.8, height * 0.7]} />
+      <mesh position={[0, height * 0.45, d / 2 + 0.04]}>
+        <planeGeometry args={[w * 0.8, height * 0.75]} />
         <primitive object={windowMaterial} attach="material" />
       </mesh>
       {/* Right face */}
-      <mesh position={[w / 2 + 0.03, height * 0.45, 0]} rotation={[0, Math.PI / 2, 0]}>
-        <planeGeometry args={[d * 0.8, height * 0.7]} />
+      <mesh position={[w / 2 + 0.04, height * 0.45, 0]} rotation={[0, Math.PI / 2, 0]}>
+        <planeGeometry args={[d * 0.8, height * 0.75]} />
         <primitive object={windowMaterial} attach="material" />
       </mesh>
       {/* Back face */}
-      <mesh position={[0, height * 0.45, -d / 2 - 0.03]} rotation={[0, Math.PI, 0]}>
+      <mesh position={[0, height * 0.45, -d / 2 - 0.04]} rotation={[0, Math.PI, 0]}>
         <planeGeometry args={[w * 0.7, height * 0.65]} />
         <primitive object={windowMaterial} attach="material" />
       </mesh>
       {/* Left face */}
-      <mesh position={[-w / 2 - 0.03, height * 0.45, 0]} rotation={[0, -Math.PI / 2, 0]}>
+      <mesh position={[-w / 2 - 0.04, height * 0.45, 0]} rotation={[0, -Math.PI / 2, 0]}>
         <planeGeometry args={[d * 0.7, height * 0.65]} />
         <primitive object={windowMaterial} attach="material" />
       </mesh>
@@ -193,27 +210,26 @@ function WindowStrips({ height, w, d }: { height: number; w: number; d: number }
 }
 
 // ── Roof details ──
-function RoofDetail({ height, w, d, color }: { height: number; w: number; d: number; color: string }) {
-  if (height < 5) return null;
-  const roofColor = new THREE.Color(color).multiplyScalar(0.6).getStyle();
+function RoofDetail({ height, w, d, roofMaterial }: { height: number; w: number; d: number; roofMaterial: THREE.MeshStandardMaterial }) {
+  if (height < 4) return null;
   return (
     <group>
       {/* Parapet/ledge */}
-      <mesh position={[0, height + 0.08, 0]}>
-        <boxGeometry args={[w + 0.15, 0.16, d + 0.15]} />
-        <meshStandardMaterial color={roofColor} roughness={0.75} />
+      <mesh position={[0, height + 0.1, 0]}>
+        <boxGeometry args={[w + 0.2, 0.2, d + 0.2]} />
+        <primitive object={roofMaterial} attach="material" />
       </mesh>
       {/* AC unit on tall buildings */}
-      {height > 10 && (
-        <mesh position={[w * 0.2, height + 0.35, d * 0.15]}>
-          <boxGeometry args={[0.6, 0.4, 0.5]} />
+      {height > 8 && (
+        <mesh position={[w * 0.2, height + 0.4, d * 0.15]}>
+          <boxGeometry args={[0.7, 0.5, 0.6]} />
           <meshStandardMaterial color="#555" roughness={0.9} metalness={0.3} />
         </mesh>
       )}
       {/* Antenna on very tall buildings */}
-      {height > 20 && (
-        <mesh position={[0, height + 1.5, 0]}>
-          <cylinderGeometry args={[0.03, 0.05, 3, 4]} />
+      {height > 18 && (
+        <mesh position={[0, height + 2, 0]}>
+          <cylinderGeometry args={[0.04, 0.06, 4, 4]} />
           <meshStandardMaterial color="#444" metalness={0.7} roughness={0.3} />
         </mesh>
       )}
@@ -224,27 +240,33 @@ function RoofDetail({ height, w, d, color }: { height: number; w: number; d: num
 // ── LOD 1: Simplified box with window strip ──
 const BoxBuilding = memo(function BoxBuilding({ b }: { b: CityBuilding }) {
   const polygon = (b as any).polygon as BuildingPolygon | undefined;
-  const fw = polygon?.w || 2;
-  const fd = polygon?.d || 2;
+  const fw = Math.max(polygon?.w || 2, 1);
+  const fd = Math.max(polygon?.d || 2, 1);
   const material = useMemo(() => getBuildingMaterial(b.primaryColor, 1), [b.primaryColor]);
 
   return (
     <group position={[b.coordinates.x, 0, b.coordinates.z]}>
       <mesh position={[0, b.height / 2, 0]} castShadow>
-        <boxGeometry args={[Math.max(fw, 1), b.height, Math.max(fd, 1)]} />
+        <boxGeometry args={[fw, b.height, fd]} />
         <primitive object={material} attach="material" />
       </mesh>
-      {/* Single window strip */}
+      {/* Single window strip per face */}
       {b.height > 3 && (
-        <mesh position={[fw / 2 + 0.02, b.height * 0.45, 0]}>
-          <planeGeometry args={[0.01, b.height * 0.6]} />
-          <meshStandardMaterial color="#FFDD88" emissive="#FFDD88" emissiveIntensity={0.4} transparent opacity={0.5} />
-        </mesh>
+        <>
+          <mesh position={[fw / 2 + 0.02, b.height * 0.45, 0]}>
+            <planeGeometry args={[0.01, b.height * 0.6]} />
+            <primitive object={windowMaterial} attach="material" />
+          </mesh>
+          <mesh position={[0, b.height * 0.45, fd / 2 + 0.02]}>
+            <planeGeometry args={[fw * 0.6, b.height * 0.5]} />
+            <primitive object={windowMaterial} attach="material" />
+          </mesh>
+        </>
       )}
       {/* Ground AO */}
       <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[fw + 0.3, fd + 0.3]} />
-        <meshBasicMaterial color="#000" transparent opacity={0.12} />
+        <planeGeometry args={[fw + 0.4, fd + 0.4]} />
+        <primitive object={aoGroundMaterial} attach="material" />
       </mesh>
     </group>
   );
@@ -270,7 +292,7 @@ function FarBuildingInstances({ buildings }: { buildings: CityBuilding[] }) {
       dummy.rotation.set(0, 0, 0);
       dummy.updateMatrix();
       meshRef.current.setMatrixAt(i, dummy.matrix);
-      color.set(b.primaryColor).multiplyScalar(0.7);
+      color.set(b.primaryColor).multiplyScalar(0.6);
       meshRef.current.setColorAt(i, color);
     }
 
@@ -298,7 +320,7 @@ const OSMStreetMeshes = memo(function OSMStreetMeshes({
   playerX: number;
   playerZ: number;
 }) {
-  const viewDist = 150;
+  const viewDist = 250;
   const chunkX = Math.round(playerX / 20);
   const chunkZ = Math.round(playerZ / 20);
 
@@ -325,7 +347,7 @@ const OSMStreetMeshes = memo(function OSMStreetMeshes({
 
 // ── Individual street with all segments ──
 function StreetSegments({ street: st }: { street: OSMStreet }) {
-  const roadColor = st.type === "main" ? "#333338" : st.type === "secondary" ? "#2A2A30" : "#222228";
+  const roadMaterial = st.type === "main" ? roadMainMaterial : st.type === "secondary" ? roadSecondaryMaterial : roadAlleyMaterial;
 
   return (
     <group>
@@ -343,31 +365,29 @@ function StreetSegments({ street: st }: { street: OSMStreet }) {
         return (
           <group key={pi}>
             {/* Road surface */}
-            <mesh position={[mx, 0.03, mz]} rotation={[-Math.PI / 2, 0, angle]}>
+            <mesh position={[mx, 0.04, mz]} rotation={[-Math.PI / 2, 0, angle]}>
               <planeGeometry args={[st.width, len]} />
-              <meshStandardMaterial color={roadColor} roughness={0.92} />
+              <primitive object={roadMaterial} attach="material" />
             </mesh>
 
             {/* Sidewalks (raised edges) */}
             {st.type !== "alley" && (
               <>
-                {/* Right sidewalk */}
                 <mesh position={[
-                  mx + Math.cos(angle) * (st.width / 2 + 0.2),
-                  0.06,
-                  mz - Math.sin(angle) * (st.width / 2 + 0.2)
+                  mx + Math.cos(angle) * (st.width / 2 + 0.3),
+                  0.08,
+                  mz - Math.sin(angle) * (st.width / 2 + 0.3)
                 ]} rotation={[-Math.PI / 2, 0, angle]}>
-                  <planeGeometry args={[0.4, len]} />
-                  <meshStandardMaterial color="#555560" roughness={0.8} />
+                  <planeGeometry args={[0.6, len]} />
+                  <primitive object={sidewalkMaterial} attach="material" />
                 </mesh>
-                {/* Left sidewalk */}
                 <mesh position={[
-                  mx - Math.cos(angle) * (st.width / 2 + 0.2),
-                  0.06,
-                  mz + Math.sin(angle) * (st.width / 2 + 0.2)
+                  mx - Math.cos(angle) * (st.width / 2 + 0.3),
+                  0.08,
+                  mz + Math.sin(angle) * (st.width / 2 + 0.3)
                 ]} rotation={[-Math.PI / 2, 0, angle]}>
-                  <planeGeometry args={[0.4, len]} />
-                  <meshStandardMaterial color="#555560" roughness={0.8} />
+                  <planeGeometry args={[0.6, len]} />
+                  <primitive object={sidewalkMaterial} attach="material" />
                 </mesh>
               </>
             )}
@@ -380,9 +400,9 @@ function StreetSegments({ street: st }: { street: OSMStreet }) {
                   const lx = prev.x + dx * t;
                   const lz = prev.z + dz * t;
                   return (
-                    <mesh key={li} position={[lx, 0.035, lz]} rotation={[-Math.PI / 2, 0, angle]}>
-                      <planeGeometry args={[0.08, 0.8]} />
-                      <meshStandardMaterial color="#FFD060" transparent opacity={0.5} />
+                    <mesh key={li} position={[lx, 0.045, lz]} rotation={[-Math.PI / 2, 0, angle]}>
+                      <planeGeometry args={[0.1, 0.9]} />
+                      <primitive object={laneMaterial} attach="material" />
                     </mesh>
                   );
                 })}
@@ -391,9 +411,9 @@ function StreetSegments({ street: st }: { street: OSMStreet }) {
 
             {/* Edge lines for secondary roads */}
             {st.type === "secondary" && len > 2 && (
-              <mesh position={[mx, 0.035, mz]} rotation={[-Math.PI / 2, 0, angle]}>
-                <planeGeometry args={[0.05, len]} />
-                <meshStandardMaterial color="#666" transparent opacity={0.3} />
+              <mesh position={[mx, 0.045, mz]} rotation={[-Math.PI / 2, 0, angle]}>
+                <planeGeometry args={[0.06, len]} />
+                <primitive object={edgeLineMaterial} attach="material" />
               </mesh>
             )}
           </group>
@@ -409,14 +429,14 @@ const OSMTerrain = memo(function OSMTerrain({
 }: {
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
 }) {
-  const padding = 60;
+  const padding = 80;
   const w = (bounds.maxX - bounds.minX) + padding * 2;
   const d = (bounds.maxZ - bounds.minZ) + padding * 2;
   const cx = (bounds.minX + bounds.maxX) / 2;
   const cz = (bounds.minZ + bounds.maxZ) / 2;
 
   const geometry = useMemo(() => {
-    const res = 80;
+    const res = 100;
     const geo = new THREE.PlaneGeometry(w, d, res, res);
     geo.rotateX(-Math.PI / 2);
     const positions = geo.attributes.position;
@@ -425,15 +445,15 @@ const OSMTerrain = memo(function OSMTerrain({
       const x = positions.getX(i);
       const z = positions.getZ(i);
       const distFromCenter = Math.sqrt(x * x + z * z);
-      const cityRadius = Math.max(w, d) * 0.25;
+      const cityRadius = Math.max(w, d) * 0.2;
       // Flat in city center, gentle hills at edges
-      const edgeFactor = Math.max(0, (distFromCenter - cityRadius) / (Math.max(w, d) * 0.25));
+      const edgeFactor = Math.max(0, (distFromCenter - cityRadius) / (Math.max(w, d) * 0.2));
       const clampedEdge = Math.min(1, edgeFactor);
       const noise =
-        Math.sin(x * 0.02) * Math.cos(z * 0.03) * 1.2 +
-        Math.sin(x * 0.06 + 3) * Math.cos(z * 0.05 + 5) * 0.6 +
-        Math.sin(x * 0.12 + 7) * Math.sin(z * 0.1 + 2) * 0.3;
-      positions.setY(i, noise * clampedEdge);
+        Math.sin(x * 0.015) * Math.cos(z * 0.02) * 2.0 +
+        Math.sin(x * 0.05 + 3) * Math.cos(z * 0.04 + 5) * 0.8 +
+        Math.sin(x * 0.1 + 7) * Math.sin(z * 0.08 + 2) * 0.4;
+      positions.setY(i, noise * clampedEdge * clampedEdge);
     }
 
     positions.needsUpdate = true;
@@ -445,27 +465,45 @@ const OSMTerrain = memo(function OSMTerrain({
     <group position={[cx, -0.05, cz]}>
       {/* Main terrain */}
       <mesh geometry={geometry} receiveShadow>
-        <meshStandardMaterial color="#1A1E24" roughness={0.95} flatShading />
+        <meshStandardMaterial color="#181C22" roughness={0.92} />
       </mesh>
       {/* Extended ground plane */}
-      <mesh position={[0, -0.15, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[w * 5, d * 5]} />
-        <meshStandardMaterial color="#111418" roughness={1} />
+      <mesh position={[0, -0.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[w * 6, d * 6]} />
+        <meshStandardMaterial color="#0E1118" roughness={1} />
       </mesh>
       {/* Horizon hills */}
-      {Array.from({ length: 24 }).map((_, i) => {
-        const angle = (i / 24) * Math.PI * 2;
-        const dist = Math.max(w, d) * 0.8;
-        const hh = 10 + Math.sin(i * 1.3) * 8;
-        const hw = 40 + Math.sin(i * 0.7) * 25;
+      {Array.from({ length: 30 }).map((_, i) => {
+        const angle = (i / 30) * Math.PI * 2;
+        const dist = Math.max(w, d) * 0.9;
+        const hh = 12 + Math.sin(i * 1.3) * 10;
+        const hw = 50 + Math.sin(i * 0.7) * 30;
         return (
-          <mesh key={i} position={[Math.cos(angle) * dist, hh / 2 - 4, Math.sin(angle) * dist]}>
+          <mesh key={i} position={[Math.cos(angle) * dist, hh / 2 - 5, Math.sin(angle) * dist]}>
             <sphereGeometry args={[hw, 6, 4, 0, Math.PI * 2, 0, Math.PI / 2]} />
-            <meshStandardMaterial color="#0A0F0A" roughness={1} />
+            <meshStandardMaterial color="#080C08" roughness={1} />
           </mesh>
         );
       })}
     </group>
+  );
+});
+
+// ── Ground plane for urban blocks ──
+const UrbanGround = memo(function UrbanGround({
+  bounds,
+}: {
+  bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
+}) {
+  const cx = (bounds.minX + bounds.maxX) / 2;
+  const cz = (bounds.minZ + bounds.maxZ) / 2;
+  const w = bounds.maxX - bounds.minX + 20;
+  const d = bounds.maxZ - bounds.minZ + 20;
+  return (
+    <mesh position={[cx, 0.01, cz]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      <planeGeometry args={[w, d]} />
+      <meshStandardMaterial color="#1A1E26" roughness={0.88} />
+    </mesh>
   );
 });
 
@@ -487,10 +525,10 @@ export const OSMWorldRenderer = memo(function OSMWorldRenderer({
   playerX,
   playerZ,
   userBuildings = [],
-  maxGLBBuildings = 40,
+  maxGLBBuildings = 120,
 }: OSMWorldRendererProps) {
-  const chunkX = Math.round(playerX / 10);
-  const chunkZ = Math.round(playerZ / 10);
+  const chunkX = Math.round(playerX / 15);
+  const chunkZ = Math.round(playerZ / 15);
 
   const { polygonBuildings, boxBuildings, farBuildings } = useMemo(() => {
     const poly: CityBuilding[] = [];
@@ -501,16 +539,18 @@ export const OSMWorldRenderer = memo(function OSMWorldRenderer({
       userBuildings.map(ub => `${Math.round(ub.coordinates.x / 3)}_${Math.round(ub.coordinates.z / 3)}`)
     );
 
-    for (const b of buildings) {
-      const cellKey = `${Math.round(b.coordinates.x / 3)}_${Math.round(b.coordinates.z / 3)}`;
-      if (userPositions.has(cellKey)) continue;
-
+    // Sort by distance for better LOD allocation
+    const withDist = buildings.map(b => {
       const dx = b.coordinates.x - playerX;
       const dz = b.coordinates.z - playerZ;
-      const dist = Math.sqrt(dx * dx + dz * dz);
+      return { b, dist: Math.sqrt(dx * dx + dz * dz) };
+    }).filter(({ b, dist }) => {
+      if (dist > LOD_INST) return false;
+      const cellKey = `${Math.round(b.coordinates.x / 3)}_${Math.round(b.coordinates.z / 3)}`;
+      return !userPositions.has(cellKey);
+    }).sort((a, b) => a.dist - b.dist);
 
-      if (dist > LOD_INST) continue;
-
+    for (const { b, dist } of withDist) {
       if (dist < LOD_POLYGON && poly.length < maxGLBBuildings) {
         poly.push(b);
       } else if (dist < LOD_BOX) {
@@ -525,13 +565,16 @@ export const OSMWorldRenderer = memo(function OSMWorldRenderer({
 
   return (
     <group>
-      {/* Terrain */}
+      {/* Terrain with hills at horizon */}
       <OSMTerrain bounds={bounds} />
+
+      {/* Urban ground plane (flat base for the city core) */}
+      <UrbanGround bounds={bounds} />
 
       {/* Streets with lane markings */}
       <OSMStreetMeshes streets={streets} playerX={playerX} playerZ={playerZ} />
 
-      {/* Real polygon buildings (nearest) */}
+      {/* Real polygon buildings (nearest — up to 120) */}
       {polygonBuildings.map(b => (
         <PolygonBuilding key={b.id} b={b} />
       ))}
