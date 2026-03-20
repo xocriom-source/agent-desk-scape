@@ -1324,11 +1324,13 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
           <OSMWorldRenderer
             buildings={osmBuildings}
             streets={osmStreets}
+            trees={osmTrees}
+            greenAreas={osmGreenAreas}
             bounds={osmBounds}
             playerX={playerPos[0]}
             playerZ={playerPos[2]}
             userBuildings={dynamicBuildings}
-            maxGLBBuildings={40}
+            maxGLBBuildings={120}
           />
         )}
 
