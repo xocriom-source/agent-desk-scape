@@ -1138,7 +1138,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
     window.addEventListener("keydown", onDown);
     window.addEventListener("keyup", onUp);
 
-    const baseSpeed = isOSMMode ? (inVehicle ? 1.5 : 0.6) : (inVehicle ? 0.45 : 0.2);
+    const baseSpeed = isOSMMode ? (inVehicle ? 3.0 : 1.2) : (inVehicle ? 0.45 : 0.2);
     const interval = setInterval(() => {
       let dx = 0, dz = 0;
       if (keys.has("arrowup") || keys.has("w")) dz -= baseSpeed;
