@@ -1,6 +1,7 @@
 /**
- * OSM City Generator v4 — Arnis-level real world engine.
+ * OSM City Generator v5 — Arnis-level real world engine.
  * Real polygon footprints, accurate Mercator projection, full road geometry.
+ * Properly spaced buildings with clear street visibility.
  */
 
 import type { CityBuilding, BuildingStyle, District, BuildingCustomizations } from "@/types/building";
@@ -59,7 +60,7 @@ function latLonToMeters(lat: number, lon: number, centerLat: number, centerLon: 
   };
 }
 
-// Scale: 1 unit = 2 meters for better navigability and visual density
+// Scale: 1 unit = 2 meters
 const WORLD_SCALE = 1 / 2;
 
 function toWorld(meters: { x: number; z: number }): { x: number; z: number } {
@@ -140,17 +141,17 @@ function osmHeightMeters(tags: Record<string, string>, seed: number): number {
   return 8 + seededRandom(seed) * 15;
 }
 
-// ── Color palettes ──
+// ── Color palettes — NATURAL, MUTED, REALISTIC (Arnis-like) ──
 
 const STYLE_COLORS: Record<BuildingStyle, string[]> = {
-  corporate: ["#8A9BB5", "#7A8DA8", "#96AACC", "#6B7F9A", "#B0BDD0", "#5A6E85", "#A0ADC0", "#748AA0"],
-  creative: ["#C4896A", "#B87A5A", "#D49A7A", "#A06848", "#C89A80", "#8A5838", "#B88A60", "#D0A070"],
-  startup: ["#50C88A", "#3AAA70", "#65DDA5", "#40BB80", "#2A8A55", "#38A868", "#4BBB78", "#60CC90"],
-  tech: ["#5A6A9A", "#7B6DAA", "#9A66B5", "#4A5A8A", "#6B5D9A", "#6A7AAA", "#5A60A0", "#7B70B5"],
-  agency: ["#CD853F", "#B4A490", "#8B6540", "#A0724D", "#D4B080", "#C4A060", "#B89870", "#A08860"],
-  minimal: ["#E0D8C8", "#C8D0B8", "#E8DCC0", "#D4C8A0", "#CFC0A0", "#E0D0A8", "#D8C8B0", "#F0E0C0"],
-  futuristic: ["#3AAA80", "#7E65B5", "#50C8E0", "#5A9FE0", "#10E890", "#40B0D0", "#6090E0", "#50D0A0"],
-  industrial: ["#8A7B8A", "#9A8B7A", "#7B8A8A", "#A08A7A", "#7AAA9A", "#6A6A6A", "#7A7A8A", "#8A8A7A"],
+  corporate: ["#C8C0B0", "#B0A898", "#D8D0C0", "#A8A090", "#E0D8C8", "#BEB8A8", "#CCC4B4", "#B8B0A0"],
+  creative: ["#D4B896", "#C4A886", "#E4C8A6", "#B89876", "#D0B090", "#C8A880", "#DCC0A0", "#C0A070"],
+  startup: ["#B8C8A0", "#A8B890", "#C8D8B0", "#98A880", "#B0C098", "#A0B088", "#C0D0A8", "#90A078"],
+  tech: ["#A0A8B8", "#909AA8", "#B0B8C8", "#808898", "#A8B0C0", "#889098", "#B8C0D0", "#98A0B0"],
+  agency: ["#D0B898", "#C0A888", "#E0C8A8", "#B09878", "#C8B090", "#B8A080", "#D8C0A0", "#A89068"],
+  minimal: ["#E8E0D0", "#D8D0C0", "#F0E8D8", "#D0C8B0", "#E0D8C8", "#C8C0A8", "#EDE4D4", "#DCD4C4"],
+  futuristic: ["#B0B8C0", "#A0A8B0", "#C0C8D0", "#9098A0", "#B8C0C8", "#8890A0", "#C8D0D8", "#A8B0B8"],
+  industrial: ["#A89890", "#988880", "#B8A8A0", "#887870", "#A09088", "#908078", "#B0A098", "#807068"],
 };
 
 // ── Road mapping ──
@@ -198,6 +199,10 @@ function buildOverpassQuery(lat: number, lon: number, radiusMeters: number): str
   way["building"](around:${radiusMeters},${lat},${lon});
   relation["building"](around:${radiusMeters},${lat},${lon});
   way["highway"](around:${radiusMeters},${lat},${lon});
+  way["natural"="tree_row"](around:${radiusMeters},${lat},${lon});
+  way["landuse"="grass"](around:${radiusMeters},${lat},${lon});
+  way["leisure"="park"](around:${radiusMeters},${lat},${lon});
+  node["natural"="tree"](around:${radiusMeters},${lat},${lon});
 );
 out body geom;
   `.trim();
@@ -227,11 +232,9 @@ function extractPolygonGeometry(
   centerLat: number,
   centerLon: number
 ): Array<{ x: number; z: number }> | null {
-  // Way with geometry
   if (el.type === "way" && el.geometry && el.geometry.length >= 3) {
     return el.geometry.map(pt => toWorld(latLonToMeters(pt.lat, pt.lon, centerLat, centerLon)));
   }
-  // Relation — use outer member geometry
   if (el.type === "relation" && el.members) {
     for (const member of el.members) {
       if (member.role === "outer" && member.geometry && member.geometry.length >= 3) {
@@ -242,16 +245,45 @@ function extractPolygonGeometry(
   return null;
 }
 
+/** Tree position data extracted from OSM */
+export interface OSMTreeData {
+  x: number;
+  z: number;
+  size: number; // 0.5-1.5 scale factor
+}
+
+/** Park/green area data */
+export interface OSMGreenArea {
+  vertices: Array<{ x: number; z: number }>;
+  cx: number;
+  cz: number;
+  w: number;
+  d: number;
+}
+
+/** Extended city data with vegetation */
+export interface OSMCityData {
+  buildings: CityBuilding[];
+  streets: OSMStreet[];
+  trees: OSMTreeData[];
+  greenAreas: OSMGreenArea[];
+  center: { lat: number; lon: number };
+  radiusMeters: number;
+  bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
+}
+
 /**
- * Convert OSM response into city buildings (with polygon footprints) and streets.
+ * Convert OSM response into city buildings, streets, trees, and green areas.
  */
 export function convertOSMToCity(
   osmData: OSMResponse,
   centerLat: number,
   centerLon: number
-): { buildings: CityBuilding[]; streets: OSMStreet[] } {
+): { buildings: CityBuilding[]; streets: OSMStreet[]; trees: OSMTreeData[]; greenAreas: OSMGreenArea[] } {
   const buildings: CityBuilding[] = [];
   const streets: OSMStreet[] = [];
+  const trees: OSMTreeData[] = [];
+  const greenAreas: OSMGreenArea[] = [];
   const occupiedCells = new Set<string>();
 
   let buildingCount = 0;
@@ -261,6 +293,51 @@ export function convertOSMToCity(
 
   for (const el of osmData.elements) {
     const tags = el.tags || {};
+
+    // ── Trees (individual nodes) ──
+    if (tags.natural === "tree" && el.type === "node" && el.lat && el.lon) {
+      const pos = toWorld(latLonToMeters(el.lat, el.lon, centerLat, centerLon));
+      const seed = hash(`tree-${el.id}`);
+      trees.push({ x: pos.x, z: pos.z, size: 0.6 + seededRandom(seed) * 0.8 });
+      continue;
+    }
+
+    // ── Tree rows ──
+    if (tags.natural === "tree_row" && el.geometry) {
+      for (const pt of el.geometry) {
+        const pos = toWorld(latLonToMeters(pt.lat, pt.lon, centerLat, centerLon));
+        const seed = hash(`treerow-${el.id}-${pt.lat}`);
+        trees.push({ x: pos.x, z: pos.z, size: 0.5 + seededRandom(seed) * 0.7 });
+      }
+      continue;
+    }
+
+    // ── Parks and green areas ──
+    if ((tags.landuse === "grass" || tags.leisure === "park") && el.type === "way" && el.geometry && el.geometry.length >= 3) {
+      const verts = el.geometry.map(pt => toWorld(latLonToMeters(pt.lat, pt.lon, centerLat, centerLon)));
+      let sx = 0, sz = 0, mnx = Infinity, mxx = -Infinity, mnz = Infinity, mxz = -Infinity;
+      for (const v of verts) {
+        sx += v.x; sz += v.z;
+        mnx = Math.min(mnx, v.x); mxx = Math.max(mxx, v.x);
+        mnz = Math.min(mnz, v.z); mxz = Math.max(mxz, v.z);
+      }
+      greenAreas.push({
+        vertices: verts,
+        cx: sx / verts.length,
+        cz: sz / verts.length,
+        w: mxx - mnx,
+        d: mxz - mnz,
+      });
+      // Scatter trees inside parks
+      const parkSeed = hash(`park-${el.id}`);
+      const numTrees = Math.min(20, Math.floor((mxx - mnx) * (mxz - mnz) * 0.02));
+      for (let t = 0; t < numTrees; t++) {
+        const tx = mnx + seededRandom(parkSeed + t * 2) * (mxx - mnx);
+        const tz = mnz + seededRandom(parkSeed + t * 2 + 1) * (mxz - mnz);
+        trees.push({ x: tx, z: tz, size: 0.7 + seededRandom(parkSeed + t) * 0.8 });
+      }
+      continue;
+    }
 
     // ── Buildings with REAL polygon footprints ──
     if (tags.building) {
@@ -287,14 +364,16 @@ export function convertOSMToCity(
       const footprintW = gMaxX - gMinX;
       const footprintD = gMaxZ - gMinZ;
 
-      // Skip tiny buildings (< 2m real size = 1 unit)
-      if (footprintW < 0.5 && footprintD < 0.5) {
+      // Skip tiny buildings (< 3m real size)
+      if (footprintW < 0.8 && footprintD < 0.8) {
         skippedTiny++;
         continue;
       }
 
-      // De-duplicate by grid cell (smaller cell = higher density)
-      const cellKey = `${Math.round(cx)}_${Math.round(cz)}`;
+      // De-duplicate by grid cell — NO overlap allowed
+      // Cell size = 2 units = 4m — ensures buildings don't stack on top of each other
+      const cellSize = 2;
+      const cellKey = `${Math.round(cx / cellSize)}_${Math.round(cz / cellSize)}`;
       if (occupiedCells.has(cellKey)) continue;
       occupiedCells.add(cellKey);
 
@@ -372,8 +451,42 @@ export function convertOSMToCity(
     }
   }
 
-  console.log(`[OSM] Converted: ${buildingCount} buildings, ${streetCount} streets (skipped: ${skippedNoGeom} no-geom, ${skippedTiny} tiny)`);
-  return { buildings, streets };
+  // Generate procedural street trees along roads if we got few from OSM
+  if (trees.length < 50) {
+    for (const st of streets) {
+      if (st.type === "alley") continue;
+      for (let i = 0; i < st.segments.length - 1; i++) {
+        const a = st.segments[i];
+        const b = st.segments[i + 1];
+        const dx = b.x - a.x;
+        const dz = b.z - a.z;
+        const len = Math.sqrt(dx * dx + dz * dz);
+        if (len < 3) continue;
+        const nx = -dz / len;
+        const nz = dx / len;
+        const spacing = 4 + seededRandom(hash(`st-${i}`)) * 3;
+        const numTrees = Math.floor(len / spacing);
+        for (let t = 0; t < numTrees; t++) {
+          const frac = (t + 0.5) / numTrees;
+          const px = a.x + dx * frac + nx * (st.width / 2 + 1.5);
+          const pz = a.z + dz * frac + nz * (st.width / 2 + 1.5);
+          const seed = hash(`stree-${i}-${t}`);
+          trees.push({ x: px, z: pz, size: 0.5 + seededRandom(seed) * 0.6 });
+          // Other side
+          if (seededRandom(seed + 1) > 0.3) {
+            trees.push({
+              x: a.x + dx * frac - nx * (st.width / 2 + 1.5),
+              z: a.z + dz * frac - nz * (st.width / 2 + 1.5),
+              size: 0.5 + seededRandom(seed + 2) * 0.6,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  console.log(`[OSM] Converted: ${buildingCount} buildings, ${streetCount} streets, ${trees.length} trees, ${greenAreas.length} parks (skipped: ${skippedNoGeom} no-geom, ${skippedTiny} tiny)`);
+  return { buildings, streets, trees, greenAreas };
 }
 
 /**
@@ -387,7 +500,7 @@ export async function generateCityFromOSM(
   console.log(`[OSM] === Starting city generation for ${lat.toFixed(4)}, ${lon.toFixed(4)} (r=${radiusMeters}m) ===`);
 
   const osmData = await fetchOSMData(lat, lon, radiusMeters);
-  const { buildings, streets } = convertOSMToCity(osmData, lat, lon);
+  const { buildings, streets, trees, greenAreas } = convertOSMToCity(osmData, lat, lon);
 
   // Compute bounds
   let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
@@ -406,15 +519,16 @@ export async function generateCityFromOSM(
     }
   }
 
-  // Handle empty data
   if (!isFinite(minX)) { minX = -50; maxX = 50; minZ = -50; maxZ = 50; }
 
   console.log(`[OSM] World bounds: X[${minX.toFixed(0)}..${maxX.toFixed(0)}] Z[${minZ.toFixed(0)}..${maxZ.toFixed(0)}]`);
-  console.log(`[OSM] === Generation complete: ${buildings.length} buildings, ${streets.length} streets ===`);
+  console.log(`[OSM] === Generation complete: ${buildings.length} buildings, ${streets.length} streets, ${trees.length} trees ===`);
 
   return {
     buildings,
     streets,
+    trees,
+    greenAreas,
     center: { lat, lon },
     radiusMeters,
     bounds: { minX, maxX, minZ, maxZ },
