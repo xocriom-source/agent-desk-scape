@@ -10,9 +10,9 @@ import type { CityBuilding } from "@/types/building";
 import type { OSMStreet, BuildingPolygon, OSMTreeData, OSMGreenArea } from "@/systems/city/OSMCityGenerator";
 
 // ── LOD thresholds ──
-const LOD_POLYGON = 100;
-const LOD_BOX = 200;
-const LOD_INST = 400;
+const LOD_POLYGON = 80;
+const LOD_BOX = 180;
+const LOD_INST = 350;
 
 // ── Create ExtrudeGeometry from real polygon vertices ──
 function createBuildingGeometry(polygon: BuildingPolygon, height: number): THREE.BufferGeometry {
@@ -279,7 +279,7 @@ const OSMStreetMeshes = memo(function OSMStreetMeshes({ streets, playerX, player
 function TreeInstances({ trees, playerX, playerZ }: { trees: OSMTreeData[]; playerX: number; playerZ: number }) {
   const trunkRef = useRef<THREE.InstancedMesh>(null);
   const canopyRef = useRef<THREE.InstancedMesh>(null);
-  const viewDist = 120;
+  const viewDist = 90;
   const chunkKey = `${Math.round(playerX / 20)}_${Math.round(playerZ / 20)}`;
 
   const visibleTrees = useMemo(() => {
@@ -287,7 +287,7 @@ function TreeInstances({ trees, playerX, playerZ }: { trees: OSMTreeData[]; play
       const dx = t.x - playerX;
       const dz = t.z - playerZ;
       return dx * dx + dz * dz < viewDist * viewDist;
-    }).slice(0, 500); // Cap for performance
+    }).slice(0, 300); // Cap for performance
   }, [trees, chunkKey]);
 
   const count = visibleTrees.length;
@@ -430,7 +430,7 @@ interface OSMWorldRendererProps {
 }
 
 export const OSMWorldRenderer = memo(function OSMWorldRenderer({
-  buildings, streets, trees = [], greenAreas = [], bounds, playerX, playerZ, userBuildings = [], maxGLBBuildings = 120,
+  buildings, streets, trees = [], greenAreas = [], bounds, playerX, playerZ, userBuildings = [], maxGLBBuildings = 80,
 }: OSMWorldRendererProps) {
   const chunkX = Math.round(playerX / 15);
   const chunkZ = Math.round(playerZ / 15);

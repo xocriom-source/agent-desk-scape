@@ -1328,7 +1328,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
             playerX={playerPos[0]}
             playerZ={playerPos[2]}
             userBuildings={dynamicBuildings}
-            maxGLBBuildings={120}
+            maxGLBBuildings={80}
           />
         )}
 
@@ -1346,10 +1346,15 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
           </>
         )}
 
-        <CityPlaza />
-        <StreetLights />
-        {lodConfig.enableLandscaping && <CityLandscaping />}
-        {lodConfig.enableVehicles && <VoxelParkedCars />}
+        {/* Procedural-only elements — hidden in OSM mode */}
+        {!isOSMMode && (
+          <>
+            <CityPlaza />
+            <StreetLights />
+            {lodConfig.enableLandscaping && <CityLandscaping />}
+            {lodConfig.enableVehicles && <VoxelParkedCars />}
+          </>
+        )}
 
         <ClickMarker position={clickTarget} />
 
