@@ -1346,10 +1346,15 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
           </>
         )}
 
-        <CityPlaza />
-        <StreetLights />
-        {lodConfig.enableLandscaping && <CityLandscaping />}
-        {lodConfig.enableVehicles && <VoxelParkedCars />}
+        {/* Procedural-only elements — hidden in OSM mode */}
+        {!isOSMMode && (
+          <>
+            <CityPlaza />
+            <StreetLights />
+            {lodConfig.enableLandscaping && <CityLandscaping />}
+            {lodConfig.enableVehicles && <VoxelParkedCars />}
+          </>
+        )}
 
         <ClickMarker position={clickTarget} />
 

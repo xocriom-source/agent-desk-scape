@@ -38,13 +38,7 @@ export interface BuildingPolygon {
   d: number;
 }
 
-export interface OSMCityData {
-  buildings: CityBuilding[];
-  streets: OSMStreet[];
-  center: { lat: number; lon: number };
-  radiusMeters: number;
-  bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
-}
+// OSMCityData defined below with trees/greenAreas support
 
 // ── Geo projection ──
 
