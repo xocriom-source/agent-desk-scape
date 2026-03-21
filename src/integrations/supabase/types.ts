@@ -50,6 +50,36 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_logs: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string
+          entity: string
+          entity_id: string | null
+          id: string
+          metadata: Json | null
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string
+          entity: string
+          entity_id?: string | null
+          id?: string
+          metadata?: Json | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string
+          entity?: string
+          entity_id?: string | null
+          id?: string
+          metadata?: Json | null
+        }
+        Relationships: []
+      }
       agent_activity_log: {
         Row: {
           action_type: string
@@ -650,6 +680,298 @@ export type Database = {
         }
         Relationships: []
       }
+      asset_categories: {
+        Row: {
+          created_at: string
+          icon: string | null
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      asset_competitors: {
+        Row: {
+          asset_id: string
+          competitor_id: string
+          id: string
+        }
+        Insert: {
+          asset_id: string
+          competitor_id: string
+          id?: string
+        }
+        Update: {
+          asset_id?: string
+          competitor_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_competitors_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_competitors_competitor_id_fkey"
+            columns: ["competitor_id"]
+            isOneToOne: false
+            referencedRelation: "competitors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asset_custom_fields: {
+        Row: {
+          asset_id: string
+          field_key: string
+          field_value: string | null
+          id: string
+        }
+        Insert: {
+          asset_id: string
+          field_key: string
+          field_value?: string | null
+          id?: string
+        }
+        Update: {
+          asset_id?: string
+          field_key?: string
+          field_value?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_custom_fields_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asset_interest: {
+        Row: {
+          action: string
+          asset_id: string
+          created_at: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          action?: string
+          asset_id: string
+          created_at?: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          asset_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_interest_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asset_last_metrics: {
+        Row: {
+          asset_id: string
+          growth_rate: number | null
+          id: string
+          last_month_profit: number | null
+          last_month_revenue: number | null
+          ttm_profit: number | null
+          ttm_revenue: number | null
+          updated_at: string
+        }
+        Insert: {
+          asset_id: string
+          growth_rate?: number | null
+          id?: string
+          last_month_profit?: number | null
+          last_month_revenue?: number | null
+          ttm_profit?: number | null
+          ttm_revenue?: number | null
+          updated_at?: string
+        }
+        Update: {
+          asset_id?: string
+          growth_rate?: number | null
+          id?: string
+          last_month_profit?: number | null
+          last_month_revenue?: number | null
+          ttm_profit?: number | null
+          ttm_revenue?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_last_metrics_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: true
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asset_metrics: {
+        Row: {
+          asset_id: string
+          customers: number | null
+          expenses: number | null
+          growth_rate: number | null
+          id: string
+          profit: number | null
+          revenue: number | null
+          year: number
+        }
+        Insert: {
+          asset_id: string
+          customers?: number | null
+          expenses?: number | null
+          growth_rate?: number | null
+          id?: string
+          profit?: number | null
+          revenue?: number | null
+          year: number
+        }
+        Update: {
+          asset_id?: string
+          customers?: number | null
+          expenses?: number | null
+          growth_rate?: number | null
+          id?: string
+          profit?: number | null
+          revenue?: number | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_metrics_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asset_subcategories: {
+        Row: {
+          category_id: string
+          id: string
+          name: string
+        }
+        Insert: {
+          category_id: string
+          id?: string
+          name: string
+        }
+        Update: {
+          category_id?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "asset_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asset_tags: {
+        Row: {
+          asset_id: string
+          id: string
+          tag_id: string
+        }
+        Insert: {
+          asset_id: string
+          id?: string
+          tag_id: string
+        }
+        Update: {
+          asset_id?: string
+          id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_tags_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asset_technologies: {
+        Row: {
+          asset_id: string
+          id: string
+          technology_id: string
+        }
+        Insert: {
+          asset_id: string
+          id?: string
+          technology_id: string
+        }
+        Update: {
+          asset_id?: string
+          id?: string
+          technology_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_technologies_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "asset_technologies_technology_id_fkey"
+            columns: ["technology_id"]
+            isOneToOne: false
+            referencedRelation: "technologies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       asset_views: {
         Row: {
           business_id: string
@@ -678,6 +1000,85 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "digital_businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assets: {
+        Row: {
+          business_id: string | null
+          business_model: string | null
+          category_id: string | null
+          country: string | null
+          created_at: string
+          description: string | null
+          founded_at: string | null
+          id: string
+          owner_id: string
+          price: number | null
+          slug: string
+          status: string
+          subcategory_id: string | null
+          team_size: number | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          business_id?: string | null
+          business_model?: string | null
+          category_id?: string | null
+          country?: string | null
+          created_at?: string
+          description?: string | null
+          founded_at?: string | null
+          id?: string
+          owner_id: string
+          price?: number | null
+          slug: string
+          status?: string
+          subcategory_id?: string | null
+          team_size?: number | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string | null
+          business_model?: string | null
+          category_id?: string | null
+          country?: string | null
+          created_at?: string
+          description?: string | null
+          founded_at?: string | null
+          id?: string
+          owner_id?: string
+          price?: number | null
+          slug?: string
+          status?: string
+          subcategory_id?: string | null
+          team_size?: number | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assets_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "digital_businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assets_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "asset_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assets_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "asset_subcategories"
             referencedColumns: ["id"]
           },
         ]
@@ -717,6 +1118,42 @@ export type Database = {
           system_prompt?: string
         }
         Relationships: []
+      }
+      building_assets: {
+        Row: {
+          asset_id: string
+          building_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          asset_id: string
+          building_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          asset_id?: string
+          building_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "building_assets_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "building_assets_building_id_fkey"
+            columns: ["building_id"]
+            isOneToOne: false
+            referencedRelation: "city_buildings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       building_transactions: {
         Row: {
@@ -1039,6 +1476,192 @@ export type Database = {
         }
         Relationships: []
       }
+      competitors: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          website: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          website?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
+      conversation_messages: {
+        Row: {
+          attachment_url: string | null
+          conversation_id: string
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          sender_id: string
+        }
+        Insert: {
+          attachment_url?: string | null
+          conversation_id: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          sender_id: string
+        }
+        Update: {
+          attachment_url?: string | null
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          asset_id: string | null
+          buyer_id: string
+          created_at: string
+          id: string
+          seller_id: string
+          updated_at: string
+        }
+        Insert: {
+          asset_id?: string | null
+          buyer_id: string
+          created_at?: string
+          id?: string
+          seller_id: string
+          updated_at?: string
+        }
+        Update: {
+          asset_id?: string | null
+          buyer_id?: string
+          created_at?: string
+          id?: string
+          seller_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_milestones: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          deal_id: string
+          id: string
+          name: string
+          sort_order: number
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          deal_id: string
+          id?: string
+          name: string
+          sort_order?: number
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          deal_id?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_milestones_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deals: {
+        Row: {
+          asset_id: string
+          buyer_id: string
+          created_at: string
+          id: string
+          offer_id: string | null
+          price: number
+          seller_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          asset_id: string
+          buyer_id: string
+          created_at?: string
+          id?: string
+          offer_id?: string | null
+          price: number
+          seller_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          asset_id?: string
+          buyer_id?: string
+          created_at?: string
+          id?: string
+          offer_id?: string | null
+          price?: number
+          seller_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deals_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       digital_businesses: {
         Row: {
           building_id: string | null
@@ -1128,6 +1751,76 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      document_access: {
+        Row: {
+          document_id: string
+          granted_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          document_id: string
+          granted_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          document_id?: string
+          granted_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_access_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          asset_id: string
+          created_at: string
+          file_url: string | null
+          id: string
+          name: string
+          type: string
+          uploaded_by: string
+          visibility: string
+        }
+        Insert: {
+          asset_id: string
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          name: string
+          type?: string
+          uploaded_by: string
+          visibility?: string
+        }
+        Update: {
+          asset_id?: string
+          created_at?: string
+          file_url?: string | null
+          id?: string
+          name?: string
+          type?: string
+          uploaded_by?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       emergent_terms: {
         Row: {
@@ -1453,6 +2146,38 @@ export type Database = {
         }
         Relationships: []
       }
+      growth_opportunities: {
+        Row: {
+          asset_id: string
+          created_at: string
+          description: string
+          id: string
+          impact_score: number
+        }
+        Insert: {
+          asset_id: string
+          created_at?: string
+          description: string
+          id?: string
+          impact_score?: number
+        }
+        Update: {
+          asset_id?: string
+          created_at?: string
+          description?: string
+          id?: string
+          impact_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "growth_opportunities_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integration_logs: {
         Row: {
           created_at: string
@@ -1760,6 +2485,108 @@ export type Database = {
         }
         Relationships: []
       }
+      moderation_actions: {
+        Row: {
+          action: string
+          admin_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          report_id: string
+        }
+        Insert: {
+          action: string
+          admin_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          report_id: string
+        }
+        Update: {
+          action?: string
+          admin_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          report_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moderation_actions_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nda_signatures: {
+        Row: {
+          buyer_id: string
+          id: string
+          ip_address: string | null
+          nda_id: string
+          signed_at: string
+        }
+        Insert: {
+          buyer_id: string
+          id?: string
+          ip_address?: string | null
+          nda_id: string
+          signed_at?: string
+        }
+        Update: {
+          buyer_id?: string
+          id?: string
+          ip_address?: string | null
+          nda_id?: string
+          signed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nda_signatures_nda_id_fkey"
+            columns: ["nda_id"]
+            isOneToOne: false
+            referencedRelation: "ndas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ndas: {
+        Row: {
+          asset_id: string
+          content: string | null
+          created_at: string
+          created_by: string
+          id: string
+          template: string
+        }
+        Insert: {
+          asset_id: string
+          content?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          template?: string
+        }
+        Update: {
+          asset_id?: string
+          content?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          template?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ndas_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
@@ -1792,6 +2619,85 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      offer_negotiations: {
+        Row: {
+          counter_price: number | null
+          created_at: string
+          id: string
+          message: string | null
+          offer_id: string
+          sender_id: string
+        }
+        Insert: {
+          counter_price?: number | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          offer_id: string
+          sender_id: string
+        }
+        Update: {
+          counter_price?: number | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          offer_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offer_negotiations_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      offers: {
+        Row: {
+          asset_id: string
+          buyer_id: string
+          created_at: string
+          id: string
+          message: string | null
+          offer_price: number
+          offer_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          asset_id: string
+          buyer_id: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          offer_price: number
+          offer_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          asset_id?: string
+          buyer_id?: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          offer_price?: number
+          offer_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offers_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       office_agents: {
         Row: {
@@ -2067,6 +2973,65 @@ export type Database = {
         }
         Relationships: []
       }
+      reports: {
+        Row: {
+          asset_id: string
+          created_at: string
+          id: string
+          reason: string
+          reported_by: string
+          status: string
+        }
+        Insert: {
+          asset_id: string
+          created_at?: string
+          id?: string
+          reason: string
+          reported_by: string
+          status?: string
+        }
+        Update: {
+          asset_id?: string
+          created_at?: string
+          id?: string
+          reason?: string
+          reported_by?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saved_searches: {
+        Row: {
+          created_at: string
+          filters: Json
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          filters?: Json
+          id?: string
+          name?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          filters?: Json
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       stripe_accounts: {
         Row: {
           charges_enabled: boolean | null
@@ -2166,6 +3131,45 @@ export type Database = {
           message?: string
           metadata?: Json | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      tags: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      technologies: {
+        Row: {
+          category: string | null
+          icon: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          category?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          category?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
         }
         Relationships: []
       }
@@ -2269,6 +3273,21 @@ export type Database = {
         }
         Relationships: []
       }
+      user_permissions: {
+        Row: {
+          id: string
+          permission: string
+        }
+        Insert: {
+          id?: string
+          permission: string
+        }
+        Update: {
+          id?: string
+          permission?: string
+        }
+        Relationships: []
+      }
       user_plans: {
         Row: {
           activated_at: string | null
@@ -2343,6 +3362,32 @@ export type Database = {
         }
         Relationships: []
       }
+      user_role_permissions: {
+        Row: {
+          id: string
+          permission_id: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          id?: string
+          permission_id: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          id?: string
+          permission_id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_role_permissions_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "user_permissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -2360,6 +3405,190 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_verifications: {
+        Row: {
+          created_at: string
+          funds_verified: boolean
+          id: string
+          identity_verified: boolean
+          kyc_status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          funds_verified?: boolean
+          id?: string
+          identity_verified?: boolean
+          kyc_status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          funds_verified?: boolean
+          id?: string
+          identity_verified?: boolean
+          kyc_status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_wallets: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          user_id: string
+          wallet_address: string | null
+          wallet_type: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          user_id: string
+          wallet_address?: string | null
+          wallet_type?: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          user_id?: string
+          wallet_address?: string | null
+          wallet_type?: string
+        }
+        Relationships: []
+      }
+      valuation_factors: {
+        Row: {
+          factor: string
+          id: string
+          score: number | null
+          valuation_id: string
+          weight: number
+        }
+        Insert: {
+          factor: string
+          id?: string
+          score?: number | null
+          valuation_id: string
+          weight?: number
+        }
+        Update: {
+          factor?: string
+          id?: string
+          score?: number | null
+          valuation_id?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "valuation_factors_valuation_id_fkey"
+            columns: ["valuation_id"]
+            isOneToOne: false
+            referencedRelation: "valuations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      valuations: {
+        Row: {
+          asset_id: string
+          created_at: string
+          created_by: string | null
+          estimated_value: number
+          id: string
+          method: string
+          multiple: number | null
+        }
+        Insert: {
+          asset_id: string
+          created_at?: string
+          created_by?: string | null
+          estimated_value: number
+          id?: string
+          method?: string
+          multiple?: number | null
+        }
+        Update: {
+          asset_id?: string
+          created_at?: string
+          created_by?: string | null
+          estimated_value?: number
+          id?: string
+          method?: string
+          multiple?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "valuations_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      watchlist_items: {
+        Row: {
+          added_at: string
+          asset_id: string
+          id: string
+          watchlist_id: string
+        }
+        Insert: {
+          added_at?: string
+          asset_id: string
+          id?: string
+          watchlist_id: string
+        }
+        Update: {
+          added_at?: string
+          asset_id?: string
+          id?: string
+          watchlist_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watchlist_items_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "watchlist_items_watchlist_id_fkey"
+            columns: ["watchlist_id"]
+            isOneToOne: false
+            referencedRelation: "watchlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      watchlists: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
           user_id?: string
         }
         Relationships: []
