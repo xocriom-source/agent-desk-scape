@@ -430,7 +430,7 @@ interface OSMWorldRendererProps {
 }
 
 export const OSMWorldRenderer = memo(function OSMWorldRenderer({
-  buildings, streets, trees = [], greenAreas = [], bounds, playerX, playerZ, userBuildings = [], maxGLBBuildings = 120,
+  buildings, streets, trees = [], greenAreas = [], bounds, playerX, playerZ, userBuildings = [], maxGLBBuildings = 80,
 }: OSMWorldRendererProps) {
   const chunkX = Math.round(playerX / 15);
   const chunkZ = Math.round(playerZ / 15);
