@@ -279,7 +279,7 @@ const OSMStreetMeshes = memo(function OSMStreetMeshes({ streets, playerX, player
 function TreeInstances({ trees, playerX, playerZ }: { trees: OSMTreeData[]; playerX: number; playerZ: number }) {
   const trunkRef = useRef<THREE.InstancedMesh>(null);
   const canopyRef = useRef<THREE.InstancedMesh>(null);
-  const viewDist = 90;
+  const viewDist = 60;
   const chunkKey = `${Math.round(playerX / 20)}_${Math.round(playerZ / 20)}`;
 
   const visibleTrees = useMemo(() => {
@@ -287,7 +287,7 @@ function TreeInstances({ trees, playerX, playerZ }: { trees: OSMTreeData[]; play
       const dx = t.x - playerX;
       const dz = t.z - playerZ;
       return dx * dx + dz * dz < viewDist * viewDist;
-    }).slice(0, 300); // Cap for performance
+    }).slice(0, 150); // Cap for performance
   }, [trees, chunkKey]);
 
   const count = visibleTrees.length;
