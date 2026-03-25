@@ -397,7 +397,7 @@ const OSMTerrain = memo(function OSMTerrain({ bounds }: { bounds: { minX: number
       </mesh>
       {/* Far ground */}
       <mesh position={[0, -0.3, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[w * 5, d * 5]} />
+        <planeGeometry args={[w * 3, d * 3]} />
         <meshStandardMaterial color="#3A6A30" roughness={1} />
       </mesh>
       {/* Horizon hills — reduced count */}
