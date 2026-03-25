@@ -7,7 +7,6 @@ import * as THREE from "three";
 import type { OSMBuildingData } from "@/data/OSMService";
 import { metersToUnits, hash, seededRandom } from "@/utils/GeoProjection";
 
-// Muted, realistic color palettes
 const PALETTES = [
   ["#C8C0B0", "#B0A898", "#D8D0C0", "#A8A090"],
   ["#D4B896", "#C4A886", "#E4C8A6", "#B89876"],
@@ -22,16 +21,11 @@ function pickColor(seed: number): string {
   return palette[seed % palette.length];
 }
 
-/**
- * Generate a single building mesh from OSM polygon data.
- * Returns a Mesh with ExtrudeGeometry positioned at the building centroid.
- */
 export function createBuildingMesh(building: OSMBuildingData): THREE.Mesh {
   const shape = new THREE.Shape();
   const verts = building.vertices;
 
   if (verts.length < 3) {
-    // Fallback: tiny shape (should not happen with proper filtering)
     shape.moveTo(-0.5, -0.5);
     shape.lineTo(0.5, -0.5);
     shape.lineTo(0.5, 0.5);
@@ -45,14 +39,14 @@ export function createBuildingMesh(building: OSMBuildingData): THREE.Mesh {
     shape.closePath();
   }
 
-  const heightUnits = metersToUnits(building.heightMeters);
+  // Ensure minimum height so buildings are always visible
+  const heightUnits = Math.max(metersToUnits(10), metersToUnits(building.heightMeters));
 
   const geometry = new THREE.ExtrudeGeometry(shape, {
     depth: heightUnits,
     bevelEnabled: false,
   });
 
-  // Rotate so extrusion goes upward (Y axis)
   geometry.rotateX(-Math.PI / 2);
 
   const seed = hash(building.id);
@@ -74,10 +68,6 @@ export function createBuildingMesh(building: OSMBuildingData): THREE.Mesh {
   return mesh;
 }
 
-/**
- * Generate all building meshes from OSM data.
- * Returns a Group containing all buildings.
- */
 export function generateAllBuildings(buildings: OSMBuildingData[]): THREE.Group {
   const group = new THREE.Group();
   group.name = "Buildings";

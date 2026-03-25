@@ -1,6 +1,6 @@
 /**
  * OSMService — Standalone Overpass API service for fetching real-world building/road/vegetation data.
- * No React dependencies.
+ * No React dependencies. Includes polygon validation.
  */
 
 import { latLonToWorld, metersToUnits, hash, seededRandom } from "@/utils/GeoProjection";
@@ -22,7 +22,7 @@ export interface OSMElement {
 
 export interface OSMBuildingData {
   id: string;
-  vertices: WorldPoint[];  // polygon footprint in world units
+  vertices: WorldPoint[];
   cx: number;
   cz: number;
   width: number;
@@ -80,6 +80,12 @@ export async function fetchOSMRaw(lat: number, lon: number, radius: number = 600
   return data.elements || [];
 }
 
+// ── Polygon validation ──
+
+function isValidPolygon(vertices: Array<{ lat: number; lon: number }> | undefined): boolean {
+  return !!vertices && vertices.length >= 3;
+}
+
 // ── Height estimation ──
 
 function estimateHeight(tags: Record<string, string>, seed: number): number {
@@ -117,16 +123,16 @@ function roadWidth(type: OSMRoadData["type"]): number {
   }
 }
 
-// ── Polygon extraction ──
+// ── Polygon extraction with validation ──
 
 function extractVertices(el: OSMElement, center: GeoCenter): WorldPoint[] | null {
-  if (el.type === "way" && el.geometry && el.geometry.length >= 3) {
-    return el.geometry.map(pt => latLonToWorld(pt.lat, pt.lon, center));
+  if (el.type === "way" && isValidPolygon(el.geometry)) {
+    return el.geometry!.map(pt => latLonToWorld(pt.lat, pt.lon, center));
   }
   if (el.type === "relation" && el.members) {
     for (const m of el.members) {
-      if (m.role === "outer" && m.geometry && m.geometry.length >= 3) {
-        return m.geometry.map(pt => latLonToWorld(pt.lat, pt.lon, center));
+      if (m.role === "outer" && isValidPolygon(m.geometry)) {
+        return m.geometry!.map(pt => latLonToWorld(pt.lat, pt.lon, center));
       }
     }
   }
@@ -142,6 +148,8 @@ export function convertOSMElements(elements: OSMElement[], center: GeoCenter): O
   const greenAreas: OSMGreenArea[] = [];
   const occupied = new Set<string>();
   const cellSize = 2;
+
+  let skippedBuildings = 0;
 
   for (const el of elements) {
     const tags = el.tags || {};
@@ -163,8 +171,8 @@ export function convertOSMElements(elements: OSMElement[], center: GeoCenter): O
     }
 
     // Parks
-    if ((tags.landuse === "grass" || tags.leisure === "park") && el.type === "way" && el.geometry && el.geometry.length >= 3) {
-      const verts = el.geometry.map(pt => latLonToWorld(pt.lat, pt.lon, center));
+    if ((tags.landuse === "grass" || tags.leisure === "park") && el.type === "way" && isValidPolygon(el.geometry)) {
+      const verts = el.geometry!.map(pt => latLonToWorld(pt.lat, pt.lon, center));
       let sx = 0, sz = 0;
       for (const v of verts) { sx += v.x; sz += v.z; }
       greenAreas.push({ vertices: verts, cx: sx / verts.length, cz: sz / verts.length });
@@ -178,10 +186,13 @@ export function convertOSMElements(elements: OSMElement[], center: GeoCenter): O
       continue;
     }
 
-    // Buildings
+    // Buildings — with polygon validation
     if (tags.building) {
       const verts = extractVertices(el, center);
-      if (!verts || verts.length < 3) continue;
+      if (!verts || verts.length < 3) {
+        skippedBuildings++;
+        continue;
+      }
       let sx = 0, sz = 0, mnx = Infinity, mxx = -Infinity, mnz = Infinity, mxz = -Infinity;
       for (const v of verts) {
         sx += v.x; sz += v.z;
@@ -192,7 +203,11 @@ export function convertOSMElements(elements: OSMElement[], center: GeoCenter): O
       const cz = sz / verts.length;
       const w = mxx - mnx;
       const d = mxz - mnz;
-      if (w < 0.8 && d < 0.8) continue;
+      if (w < 0.8 && d < 0.8) { skippedBuildings++; continue; }
+
+      // Check for NaN/Infinity coordinates
+      if (!isFinite(cx) || !isFinite(cz)) { skippedBuildings++; continue; }
+
       const key = `${Math.round(cx / cellSize)}_${Math.round(cz / cellSize)}`;
       if (occupied.has(key)) continue;
       occupied.add(key);
@@ -226,7 +241,7 @@ export function convertOSMElements(elements: OSMElement[], center: GeoCenter): O
   for (const r of roads) { for (const s of r.segments) { minX = Math.min(minX, s.x); maxX = Math.max(maxX, s.x); minZ = Math.min(minZ, s.z); maxZ = Math.max(maxZ, s.z); } }
   if (!isFinite(minX)) { minX = -50; maxX = 50; minZ = -50; maxZ = 50; }
 
-  console.log(`[OSMService] Converted: ${buildings.length} buildings, ${roads.length} roads, ${trees.length} trees, ${greenAreas.length} parks`);
+  console.log(`[OSMService] Converted: ${buildings.length} buildings (${skippedBuildings} skipped), ${roads.length} roads, ${trees.length} trees, ${greenAreas.length} parks`);
   return { buildings, roads, trees, greenAreas, bounds: { minX, maxX, minZ, maxZ } };
 }
 

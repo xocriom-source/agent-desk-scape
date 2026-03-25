@@ -1,5 +1,6 @@
 /**
  * AssetMatcher — Matches OSM buildings to GLB models based on footprint area and typology.
+ * GLB loading is non-blocking to prevent freezing the render loop.
  */
 
 import * as THREE from "three";
@@ -9,7 +10,6 @@ import { metersToUnits } from "@/utils/GeoProjection";
 
 export type BuildingSize = "small" | "medium" | "large";
 
-// GLB model paths by size category (from existing project assets)
 const MODEL_PATHS: Record<BuildingSize, string[]> = {
   small: [
     "/models/small-buildingA.glb",
@@ -28,21 +28,13 @@ const MODEL_PATHS: Record<BuildingSize, string[]> = {
   ],
 };
 
-/**
- * Classify building by footprint area (in real meters²).
- */
 export function classifyBuilding(building: OSMBuildingData): BuildingSize {
-  // Width/depth are in world units (1 unit = 2m), convert back to meters
   const areaM2 = (building.width * 2) * (building.depth * 2);
   if (areaM2 < 200) return "small";
   if (areaM2 < 1000) return "medium";
   return "large";
 }
 
-/**
- * Try to load and fit a GLB model for a building.
- * Returns null if no models are available.
- */
 export async function matchAndLoadGLB(
   building: OSMBuildingData,
   seed: number
@@ -57,19 +49,16 @@ export async function matchAndLoadGLB(
   try {
     const model = await loadModelClone(modelPath);
 
-    // Fit model to building footprint
     const box = new THREE.Box3().setFromObject(model);
     const modelSize = new THREE.Vector3();
     box.getSize(modelSize);
 
     if (modelSize.y < 0.01) return null;
 
-    // Scale to match building height
     const targetHeight = metersToUnits(building.heightMeters);
     const scale = targetHeight / modelSize.y;
     model.scale.setScalar(scale);
 
-    // Recompute bounds after scaling
     box.setFromObject(model);
     const minY = box.min.y;
     model.position.set(building.cx, -minY, building.cz);
@@ -77,14 +66,13 @@ export async function matchAndLoadGLB(
     model.userData = { buildingId: building.id, glbModel: modelPath };
     return model;
   } catch {
-    // Model not found — return null for fallback to extrude
     return null;
   }
 }
 
 /**
  * Apply GLB models to a subset of buildings.
- * Buildings that fail to load get skipped (caller should use extruded fallback).
+ * Each model loads via setTimeout to avoid blocking the main thread.
  */
 export async function applyGLBModels(
   buildings: OSMBuildingData[],
@@ -94,19 +82,30 @@ export async function applyGLBModels(
   glbGroup.name = "GLB_Buildings";
   const matched = new Set<string>();
 
-  // Only try GLB for a subset to maintain performance
   const candidates = buildings.slice(0, maxGLB);
   let count = 0;
 
-  for (const b of candidates) {
-    const seed = b.id.charCodeAt(4) || 0;
-    const model = await matchAndLoadGLB(b, seed);
-    if (model) {
-      glbGroup.add(model);
-      matched.add(b.id);
-      count++;
-    }
-  }
+  // Load each model non-blocking
+  const loadPromises = candidates.map((b) => {
+    return new Promise<void>((resolve) => {
+      setTimeout(async () => {
+        try {
+          const seed = b.id.charCodeAt(4) || 0;
+          const model = await matchAndLoadGLB(b, seed);
+          if (model) {
+            glbGroup.add(model);
+            matched.add(b.id);
+            count++;
+          }
+        } catch (e) {
+          // skip silently
+        }
+        resolve();
+      }, 0);
+    });
+  });
+
+  await Promise.all(loadPromises);
 
   console.log(`[AssetMatcher] Matched ${count}/${candidates.length} buildings to GLB models`);
   return { glbGroup, matched };
