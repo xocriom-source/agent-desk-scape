@@ -452,8 +452,8 @@ export const OSMWorldRenderer = memo(function OSMWorldRenderer({
     }).sort((a, b) => a.dist - b.dist);
 
     for (const { b, dist } of sorted) {
-      if (dist < LOD_POLYGON && poly.length < maxGLBBuildings) poly.push(b);
-      else if (dist < LOD_BOX) box.push(b);
+      if (dist < LOD_POLYGON * LOD_POLYGON && poly.length < maxGLBBuildings) poly.push(b);
+      else if (dist < LOD_BOX * LOD_BOX && box.length < 120) box.push(b);
       else far.push(b);
     }
     return { polygonBuildings: poly, boxBuildings: box, farBuildings: far };
