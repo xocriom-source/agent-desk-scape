@@ -445,9 +445,9 @@ export const OSMWorldRenderer = memo(function OSMWorldRenderer({
     const sorted = buildings.map(b => {
       const dx = b.coordinates.x - playerX;
       const dz = b.coordinates.z - playerZ;
-      return { b, dist: Math.sqrt(dx * dx + dz * dz) };
+      return { b, dist: dx * dx + dz * dz }; // squared distance — skip sqrt
     }).filter(({ b, dist }) => {
-      if (dist > LOD_INST) return false;
+      if (dist > LOD_INST * LOD_INST) return false;
       return !userPos.has(`${Math.round(b.coordinates.x / 3)}_${Math.round(b.coordinates.z / 3)}`);
     }).sort((a, b) => a.dist - b.dist);
 
