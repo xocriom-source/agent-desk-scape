@@ -1310,8 +1310,8 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         {/* Flight mode */}
         <FlightCamera active={!!flyMode} playerPos={playerPos} />
 
-        {/* Camera occlusion */}
-        <CameraOcclusion playerPos={playerPos} onOccludedBuildings={setOccludedBuildings} />
+        {/* Camera occlusion — only in procedural mode */}
+        {!isOSMMode && <CameraOcclusion playerPos={playerPos} onOccludedBuildings={setOccludedBuildings} />}
 
         {/* Clickable ground (extended for larger world) */}
         <mesh position={[0, -0.025, 0]} rotation={[-Math.PI / 2, 0, 0]} onPointerDown={handleFloorClick}>
