@@ -369,7 +369,7 @@ const OSMTerrain = memo(function OSMTerrain({ bounds }: { bounds: { minX: number
   const cz = (bounds.minZ + bounds.maxZ) / 2;
 
   const geometry = useMemo(() => {
-    const res = 80;
+    const res = 40;
     const geo = new THREE.PlaneGeometry(w, d, res, res);
     geo.rotateX(-Math.PI / 2);
     const positions = geo.attributes.position;
