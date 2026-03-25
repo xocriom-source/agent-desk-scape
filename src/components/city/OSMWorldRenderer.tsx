@@ -362,7 +362,7 @@ function GreenAreas({ areas, playerX, playerZ }: { areas: OSMGreenArea[]; player
 
 // ── Terrain ──
 const OSMTerrain = memo(function OSMTerrain({ bounds }: { bounds: { minX: number; maxX: number; minZ: number; maxZ: number } }) {
-  const padding = 60;
+  const padding = 30;
   const w = (bounds.maxX - bounds.minX) + padding * 2;
   const d = (bounds.maxZ - bounds.minZ) + padding * 2;
   const cx = (bounds.minX + bounds.maxX) / 2;
