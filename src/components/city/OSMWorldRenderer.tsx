@@ -338,14 +338,15 @@ function TreeInstances({ trees, playerX, playerZ }: { trees: OSMTreeData[]; play
 
 // ── Green areas (parks) ──
 function GreenAreas({ areas, playerX, playerZ }: { areas: OSMGreenArea[]; playerX: number; playerZ: number }) {
-  const viewDist = 150;
+  const viewDist = 80;
+  const chunkKey = `${Math.round(playerX / 25)}_${Math.round(playerZ / 25)}`;
   const visible = useMemo(() => {
     return areas.filter(a => {
       const dx = a.cx - playerX;
       const dz = a.cz - playerZ;
       return dx * dx + dz * dz < viewDist * viewDist;
     });
-  }, [areas, playerX, playerZ]);
+  }, [areas, chunkKey]);
 
   return (
     <group>
