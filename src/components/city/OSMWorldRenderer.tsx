@@ -400,8 +400,8 @@ const OSMTerrain = memo(function OSMTerrain({ bounds }: { bounds: { minX: number
         <planeGeometry args={[w * 5, d * 5]} />
         <meshStandardMaterial color="#3A6A30" roughness={1} />
       </mesh>
-      {/* Horizon hills */}
-      {Array.from({ length: 24 }).map((_, i) => {
+      {/* Horizon hills — reduced count */}
+      {Array.from({ length: 12 }).map((_, i) => {
         const angle = (i / 24) * Math.PI * 2;
         const dist = Math.max(w, d) * 0.85;
         const hh = 10 + Math.sin(i * 1.3) * 8;
