@@ -252,7 +252,7 @@ function StreetSegments({ street: st }: { street: OSMStreet }) {
 }
 
 const OSMStreetMeshes = memo(function OSMStreetMeshes({ streets, playerX, playerZ }: { streets: OSMStreet[]; playerX: number; playerZ: number }) {
-  const viewDist = 200;
+  const viewDist = 120;
   const chunkX = Math.round(playerX / 25);
   const chunkZ = Math.round(playerZ / 25);
 
