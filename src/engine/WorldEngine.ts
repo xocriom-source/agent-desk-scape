@@ -1,15 +1,16 @@
 /**
- * WorldEngine — Main orchestrator that unifies all city generation systems.
- * Phases: OSM fetch → Terrain → Roads → Buildings → GLB → LOD
- * RENDER LOOP STARTS IMMEDIATELY — data loads progressively.
+ * WorldEngine — Hybrid pipeline orchestrator.
+ * Pipeline: OSM fetch → Terrain → Roads → Buildings (progressive) → Instancing → LOD → GLB (async)
+ * Render loop starts IMMEDIATELY. All generation is non-blocking.
  */
 
 import * as THREE from "three";
 import { SceneManager } from "@/renderer/SceneManager";
 import { fetchAndConvertCity, type OSMCityResult } from "@/data/OSMService";
-import { generateAllBuildings } from "@/engine/BuildingGenerator";
+import { generateBuildingsProgressive } from "@/engine/DensityController";
 import { generateAllRoads } from "@/engine/RoadGenerator";
 import { createTerrain, generateTrees } from "@/engine/Terrain";
+import { createInstancedBuildings } from "@/engine/InstancedBuildingSystem";
 import { applyGLBModels } from "@/engine/AssetMatcher";
 import { LODManager } from "@/engine/LODManager";
 
@@ -35,12 +36,12 @@ export class WorldEngine {
     this.sceneManager = new SceneManager({ container: opts.container });
     this.lodManager = new LODManager();
 
-    // Register LOD update in render loop
+    // LOD update in render loop
     this.sceneManager.onUpdate(() => {
       this.lodManager.update(this.sceneManager.camera.position);
     });
 
-    // START RENDER LOOP IMMEDIATELY — never block this
+    // START RENDER LOOP IMMEDIATELY
     this.sceneManager.start();
     this.setStatus("idle");
     console.log("[WorldEngine] Ready — render loop active");
@@ -61,17 +62,15 @@ export class WorldEngine {
   }
 
   /**
-   * Load and generate a city from real-world coordinates.
-   * NON-BLOCKING: render loop stays alive throughout.
+   * Load city — non-blocking, render loop stays alive.
    */
   async loadCity(lat: number, lon: number, radius: number = 600): Promise<void> {
-    // Don't await — let it run in background
     this.loadCityAsync(lat, lon, radius);
   }
 
   private async loadCityAsync(lat: number, lon: number, radius: number): Promise<void> {
     try {
-      // Phase 1: Fetch OSM data
+      // ── Phase 1: Fetch OSM data ──
       this.setStatus("loading");
       console.log(`[WorldEngine] Loading city: ${lat.toFixed(4)}, ${lon.toFixed(4)}`);
       this.cityData = await fetchAndConvertCity(lat, lon, radius);
@@ -79,13 +78,19 @@ export class WorldEngine {
       console.log(`[OSM] roads: ${this.cityData.roads.length}`);
       console.log(`[OSM] trees: ${this.cityData.trees.length}`);
 
-      // Phase 2: Generate terrain IMMEDIATELY (lightweight)
+      const bounds = this.cityData.bounds;
+      const cx = (bounds.minX + bounds.maxX) / 2;
+      const cz = (bounds.minZ + bounds.maxZ) / 2;
+      const span = Math.max(bounds.maxX - bounds.minX, bounds.maxZ - bounds.minZ);
+
       this.setStatus("generating");
+
+      // ── Phase 2: Terrain (instant, lightweight) ──
       const terrain = createTerrain({ size: 2000 });
       this.sceneManager.scene.add(terrain);
       console.log("[WorldEngine] Terrain added");
 
-      // Phase 3: Generate roads — non-blocking via setTimeout
+      // ── Phase 3: Roads (deferred) ──
       const cityData = this.cityData;
       setTimeout(() => {
         try {
@@ -98,39 +103,33 @@ export class WorldEngine {
         }
       }, 0);
 
-      // Phase 4: Generate buildings — non-blocking via setTimeout
+      // ── Phase 4: Buildings PROGRESSIVE (chunked, non-blocking) ──
+      const buildingsGroup = generateBuildingsProgressive(
+        cityData.buildings,
+        cx, cz,
+        (generated, total) => {
+          console.log(`[GEN] buildings: ${generated}/${total}`);
+        }
+      );
+      this.sceneManager.scene.add(buildingsGroup);
+      this.lodManager.registerExtrudeGroup(buildingsGroup);
+
+      // ── Phase 5: Instanced buildings for far distance ──
       setTimeout(() => {
         try {
-          console.log("[GEN] generating buildings...");
-          const buildings = generateAllBuildings(cityData.buildings);
-          this.sceneManager.scene.add(buildings);
-          this.lodManager.registerGroup(buildings);
-          console.log(`[GEN] ${buildings.children.length} buildings added`);
-
-          // Phase 5: Try GLB models (non-blocking)
-          setTimeout(async () => {
-            try {
-              const { glbGroup, matched } = await applyGLBModels(cityData.buildings, 30);
-              if (matched.size > 0) {
-                for (const child of buildings.children) {
-                  if (child.userData?.buildingId && matched.has(child.userData.buildingId)) {
-                    child.visible = false;
-                  }
-                }
-                this.sceneManager.scene.add(glbGroup);
-                this.lodManager.registerGroup(glbGroup);
-                console.log(`[GEN] ${matched.size} GLB models applied`);
-              }
-            } catch (e) {
-              console.warn("[WorldEngine] GLB loading skipped:", e);
-            }
-          }, 0);
+          console.log("[GEN] creating instanced buildings...");
+          const instanced = createInstancedBuildings(cityData.buildings);
+          this.sceneManager.scene.add(instanced);
+          this.lodManager.registerInstancedGroup(instanced);
+          // Disable LOD initially so everything is visible
+          // Enable after GLBs are loaded
+          console.log("[GEN] instanced buildings added");
         } catch (e) {
-          console.warn("[WorldEngine] Building generation failed:", e);
+          console.warn("[WorldEngine] Instancing failed:", e);
         }
-      }, 0);
+      }, 100);
 
-      // Phase 6: Trees — non-blocking
+      // ── Phase 6: Trees (deferred) ──
       setTimeout(() => {
         try {
           const trees = generateTrees(cityData.trees, 300);
@@ -139,18 +138,39 @@ export class WorldEngine {
         } catch (e) {
           console.warn("[WorldEngine] Tree generation failed:", e);
         }
-      }, 10);
+      }, 200);
 
-      // Center camera on city
-      const bounds = this.cityData.bounds;
-      const cx = (bounds.minX + bounds.maxX) / 2;
-      const cz = (bounds.minZ + bounds.maxZ) / 2;
-      const span = Math.max(bounds.maxX - bounds.minX, bounds.maxZ - bounds.minZ);
+      // ── Phase 7: GLB models (async, delayed — bonus not base) ──
+      setTimeout(async () => {
+        try {
+          console.log("[GEN] loading GLB models...");
+          const { glbGroup, matched } = await applyGLBModels(cityData.buildings, 30);
+          if (matched.size > 0) {
+            this.sceneManager.scene.add(glbGroup);
+            this.lodManager.registerGLBGroup(glbGroup);
+
+            // Now enable LOD since we have all tiers
+            this.lodManager.setEnabled(true);
+
+            // Hide extruded versions of matched buildings
+            for (const child of buildingsGroup.children) {
+              if (child.userData?.buildingId && matched.has(child.userData.buildingId)) {
+                child.visible = false;
+              }
+            }
+            console.log(`[GEN] ${matched.size} GLB models applied`);
+          }
+        } catch (e) {
+          console.warn("[WorldEngine] GLB loading skipped:", e);
+        }
+      }, 1000);
+
+      // ── Center camera ──
       this.sceneManager.camera.position.set(cx + span * 0.4, span * 0.5, cz + span * 0.4);
       this.sceneManager.controls.target.set(cx, 0, cz);
 
       this.setStatus("ready");
-      console.log(`[WorldEngine] City generation dispatched! ${this.cityData.buildings.length} buildings, ${this.cityData.roads.length} roads`);
+      console.log(`[WorldEngine] City dispatched! ${cityData.buildings.length} buildings, ${cityData.roads.length} roads`);
     } catch (error) {
       console.error("[WorldEngine] Failed to load city:", error);
       this.setStatus("error");
