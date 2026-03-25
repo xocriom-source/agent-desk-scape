@@ -10,9 +10,9 @@ import type { CityBuilding } from "@/types/building";
 import type { OSMStreet, BuildingPolygon, OSMTreeData, OSMGreenArea } from "@/systems/city/OSMCityGenerator";
 
 // ── LOD thresholds ──
-const LOD_POLYGON = 80;
-const LOD_BOX = 180;
-const LOD_INST = 350;
+const LOD_POLYGON = 50;
+const LOD_BOX = 120;
+const LOD_INST = 250;
 
 // ── Create ExtrudeGeometry from real polygon vertices ──
 function createBuildingGeometry(polygon: BuildingPolygon, height: number): THREE.BufferGeometry {
@@ -252,7 +252,7 @@ function StreetSegments({ street: st }: { street: OSMStreet }) {
 }
 
 const OSMStreetMeshes = memo(function OSMStreetMeshes({ streets, playerX, playerZ }: { streets: OSMStreet[]; playerX: number; playerZ: number }) {
-  const viewDist = 200;
+  const viewDist = 120;
   const chunkX = Math.round(playerX / 25);
   const chunkZ = Math.round(playerZ / 25);
 
@@ -279,7 +279,7 @@ const OSMStreetMeshes = memo(function OSMStreetMeshes({ streets, playerX, player
 function TreeInstances({ trees, playerX, playerZ }: { trees: OSMTreeData[]; playerX: number; playerZ: number }) {
   const trunkRef = useRef<THREE.InstancedMesh>(null);
   const canopyRef = useRef<THREE.InstancedMesh>(null);
-  const viewDist = 90;
+  const viewDist = 60;
   const chunkKey = `${Math.round(playerX / 20)}_${Math.round(playerZ / 20)}`;
 
   const visibleTrees = useMemo(() => {
@@ -287,7 +287,7 @@ function TreeInstances({ trees, playerX, playerZ }: { trees: OSMTreeData[]; play
       const dx = t.x - playerX;
       const dz = t.z - playerZ;
       return dx * dx + dz * dz < viewDist * viewDist;
-    }).slice(0, 300); // Cap for performance
+    }).slice(0, 150); // Cap for performance
   }, [trees, chunkKey]);
 
   const count = visibleTrees.length;
@@ -338,14 +338,15 @@ function TreeInstances({ trees, playerX, playerZ }: { trees: OSMTreeData[]; play
 
 // ── Green areas (parks) ──
 function GreenAreas({ areas, playerX, playerZ }: { areas: OSMGreenArea[]; playerX: number; playerZ: number }) {
-  const viewDist = 150;
+  const viewDist = 80;
+  const chunkKey = `${Math.round(playerX / 25)}_${Math.round(playerZ / 25)}`;
   const visible = useMemo(() => {
     return areas.filter(a => {
       const dx = a.cx - playerX;
       const dz = a.cz - playerZ;
       return dx * dx + dz * dz < viewDist * viewDist;
     });
-  }, [areas, playerX, playerZ]);
+  }, [areas, chunkKey]);
 
   return (
     <group>
@@ -361,14 +362,14 @@ function GreenAreas({ areas, playerX, playerZ }: { areas: OSMGreenArea[]; player
 
 // ── Terrain ──
 const OSMTerrain = memo(function OSMTerrain({ bounds }: { bounds: { minX: number; maxX: number; minZ: number; maxZ: number } }) {
-  const padding = 60;
+  const padding = 30;
   const w = (bounds.maxX - bounds.minX) + padding * 2;
   const d = (bounds.maxZ - bounds.minZ) + padding * 2;
   const cx = (bounds.minX + bounds.maxX) / 2;
   const cz = (bounds.minZ + bounds.maxZ) / 2;
 
   const geometry = useMemo(() => {
-    const res = 80;
+    const res = 40;
     const geo = new THREE.PlaneGeometry(w, d, res, res);
     geo.rotateX(-Math.PI / 2);
     const positions = geo.attributes.position;
@@ -396,12 +397,12 @@ const OSMTerrain = memo(function OSMTerrain({ bounds }: { bounds: { minX: number
       </mesh>
       {/* Far ground */}
       <mesh position={[0, -0.3, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[w * 5, d * 5]} />
+        <planeGeometry args={[w * 3, d * 3]} />
         <meshStandardMaterial color="#3A6A30" roughness={1} />
       </mesh>
-      {/* Horizon hills */}
-      {Array.from({ length: 24 }).map((_, i) => {
-        const angle = (i / 24) * Math.PI * 2;
+      {/* Horizon hills — reduced count */}
+      {Array.from({ length: 12 }).map((_, i) => {
+        const angle = (i / 12) * Math.PI * 2;
         const dist = Math.max(w, d) * 0.85;
         const hh = 10 + Math.sin(i * 1.3) * 8;
         const hw = 45 + Math.sin(i * 0.7) * 25;
@@ -430,7 +431,7 @@ interface OSMWorldRendererProps {
 }
 
 export const OSMWorldRenderer = memo(function OSMWorldRenderer({
-  buildings, streets, trees = [], greenAreas = [], bounds, playerX, playerZ, userBuildings = [], maxGLBBuildings = 80,
+  buildings, streets, trees = [], greenAreas = [], bounds, playerX, playerZ, userBuildings = [], maxGLBBuildings = 40,
 }: OSMWorldRendererProps) {
   const chunkX = Math.round(playerX / 15);
   const chunkZ = Math.round(playerZ / 15);
@@ -444,15 +445,15 @@ export const OSMWorldRenderer = memo(function OSMWorldRenderer({
     const sorted = buildings.map(b => {
       const dx = b.coordinates.x - playerX;
       const dz = b.coordinates.z - playerZ;
-      return { b, dist: Math.sqrt(dx * dx + dz * dz) };
+      return { b, dist: dx * dx + dz * dz }; // squared distance — skip sqrt
     }).filter(({ b, dist }) => {
-      if (dist > LOD_INST) return false;
+      if (dist > LOD_INST * LOD_INST) return false;
       return !userPos.has(`${Math.round(b.coordinates.x / 3)}_${Math.round(b.coordinates.z / 3)}`);
     }).sort((a, b) => a.dist - b.dist);
 
     for (const { b, dist } of sorted) {
-      if (dist < LOD_POLYGON && poly.length < maxGLBBuildings) poly.push(b);
-      else if (dist < LOD_BOX) box.push(b);
+      if (dist < LOD_POLYGON * LOD_POLYGON && poly.length < maxGLBBuildings) poly.push(b);
+      else if (dist < LOD_BOX * LOD_BOX && box.length < 120) box.push(b);
       else far.push(b);
     }
     return { polygonBuildings: poly, boxBuildings: box, farBuildings: far };

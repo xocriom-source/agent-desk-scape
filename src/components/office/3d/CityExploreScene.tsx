@@ -1221,9 +1221,11 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
       <Canvas
         shadows
         style={{ touchAction: "none", width: "100%", height: "100%", display: "block" }}
-        camera={{ position: isOSMMode ? [20, 50, 60] : [12, 25, 30], fov: 45, near: 0.5, far: isOSMMode ? 1200 : Math.min(lodConfig.cameraFar, 500) }}
+        camera={{ position: isOSMMode ? [20, 50, 60] : [12, 25, 30], fov: 45, near: 1, far: isOSMMode ? 400 : Math.min(lodConfig.cameraFar, 300) }}
         gl={{ antialias: false, powerPreference: "high-performance", stencil: false, depth: true }}
-        dpr={Math.min(Array.isArray(lodConfig.dpr) ? lodConfig.dpr[1] : lodConfig.dpr, 1.5)}
+        dpr={[0.75, 1]}
+        frameloop="always"
+        performance={{ min: 0.5 }}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
           gl.toneMappingExposure = dn.exposure;
@@ -1231,7 +1233,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         }}
       >
         <color attach="background" args={[dn.bgColor]} />
-        <fog attach="fog" args={[dn.fogColor, isOSMMode ? 40 : lodConfig.fogNear * 2, isOSMMode ? 500 : lodConfig.fogFar * 2]} />
+        <fog attach="fog" args={[dn.fogColor, isOSMMode ? 30 : lodConfig.fogNear * 2, isOSMMode ? 250 : lodConfig.fogFar * 2]} />
 
         {/* Simplified lighting — fewer lights = more FPS */}
         <ambientLight intensity={dn.ambientIntensity * 0.8} color={dn.isNight ? "#4466AA" : dn.ambientColor} />
@@ -1240,13 +1242,13 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
           position={dn.sunPosition}
           intensity={dn.sunIntensity * 0.9}
           castShadow
-          shadow-mapSize-width={lodConfig.shadowMapSize}
-          shadow-mapSize-height={lodConfig.shadowMapSize}
-          shadow-camera-far={40}
-          shadow-camera-left={-20}
-          shadow-camera-right={20}
-          shadow-camera-top={20}
-          shadow-camera-bottom={-20}
+          shadow-mapSize-width={256}
+          shadow-mapSize-height={256}
+          shadow-camera-far={30}
+          shadow-camera-left={-15}
+          shadow-camera-right={15}
+          shadow-camera-top={15}
+          shadow-camera-bottom={-15}
           shadow-bias={-0.001}
           color={dn.sunColor}
         />
@@ -1281,7 +1283,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
           </group>
         )}
 
-        {lodConfig.enableStars && dn.showStars && <Stars radius={100} depth={50} count={1500} factor={4} saturation={0.3} fade speed={0.5} />}
+        {lodConfig.enableStars && dn.showStars && <Stars radius={80} depth={30} count={500} factor={3} saturation={0.2} fade speed={0.3} />}
 
         {/* Ground mode controls */}
         {!flyMode && (
@@ -1308,8 +1310,8 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         {/* Flight mode */}
         <FlightCamera active={!!flyMode} playerPos={playerPos} />
 
-        {/* Camera occlusion */}
-        <CameraOcclusion playerPos={playerPos} onOccludedBuildings={setOccludedBuildings} />
+        {/* Camera occlusion — only in procedural mode */}
+        {!isOSMMode && <CameraOcclusion playerPos={playerPos} onOccludedBuildings={setOccludedBuildings} />}
 
         {/* Clickable ground (extended for larger world) */}
         <mesh position={[0, -0.025, 0]} rotation={[-Math.PI / 2, 0, 0]} onPointerDown={handleFloorClick}>
@@ -1405,8 +1407,8 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
           );
         })}
 
-        {/* NPCs with collision awareness (quality-gated) */}
-        {lodConfig.enableNPCs && NPC_DATA.map((npc, i) => (
+        {/* NPCs — disabled in OSM mode for performance */}
+        {!isOSMMode && lodConfig.enableNPCs && NPC_DATA.map((npc, i) => (
           <CityNPC key={i} startX={npc.x} startZ={npc.z} color={npc.color} aabbs={aabbs} />
         ))}
 
