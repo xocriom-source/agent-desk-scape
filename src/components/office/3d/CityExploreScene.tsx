@@ -1283,7 +1283,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
           </group>
         )}
 
-        {lodConfig.enableStars && dn.showStars && <Stars radius={100} depth={50} count={1500} factor={4} saturation={0.3} fade speed={0.5} />}
+        {lodConfig.enableStars && dn.showStars && <Stars radius={80} depth={30} count={500} factor={3} saturation={0.2} fade speed={0.3} />}
 
         {/* Ground mode controls */}
         {!flyMode && (
