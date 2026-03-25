@@ -1242,13 +1242,13 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
           position={dn.sunPosition}
           intensity={dn.sunIntensity * 0.9}
           castShadow
-          shadow-mapSize-width={lodConfig.shadowMapSize}
-          shadow-mapSize-height={lodConfig.shadowMapSize}
-          shadow-camera-far={40}
-          shadow-camera-left={-20}
-          shadow-camera-right={20}
-          shadow-camera-top={20}
-          shadow-camera-bottom={-20}
+          shadow-mapSize-width={256}
+          shadow-mapSize-height={256}
+          shadow-camera-far={30}
+          shadow-camera-left={-15}
+          shadow-camera-right={15}
+          shadow-camera-top={15}
+          shadow-camera-bottom={-15}
           shadow-bias={-0.001}
           color={dn.sunColor}
         />
