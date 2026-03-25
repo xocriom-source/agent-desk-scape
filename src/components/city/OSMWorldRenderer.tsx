@@ -10,9 +10,9 @@ import type { CityBuilding } from "@/types/building";
 import type { OSMStreet, BuildingPolygon, OSMTreeData, OSMGreenArea } from "@/systems/city/OSMCityGenerator";
 
 // ── LOD thresholds ──
-const LOD_POLYGON = 80;
-const LOD_BOX = 180;
-const LOD_INST = 350;
+const LOD_POLYGON = 50;
+const LOD_BOX = 120;
+const LOD_INST = 250;
 
 // ── Create ExtrudeGeometry from real polygon vertices ──
 function createBuildingGeometry(polygon: BuildingPolygon, height: number): THREE.BufferGeometry {
