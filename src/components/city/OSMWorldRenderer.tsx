@@ -402,7 +402,7 @@ const OSMTerrain = memo(function OSMTerrain({ bounds }: { bounds: { minX: number
       </mesh>
       {/* Horizon hills — reduced count */}
       {Array.from({ length: 12 }).map((_, i) => {
-        const angle = (i / 24) * Math.PI * 2;
+        const angle = (i / 12) * Math.PI * 2;
         const dist = Math.max(w, d) * 0.85;
         const hh = 10 + Math.sin(i * 1.3) * 8;
         const hw = 45 + Math.sin(i * 0.7) * 25;
