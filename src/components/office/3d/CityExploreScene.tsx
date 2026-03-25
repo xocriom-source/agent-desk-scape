@@ -1407,8 +1407,8 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
           );
         })}
 
-        {/* NPCs with collision awareness (quality-gated) */}
-        {lodConfig.enableNPCs && NPC_DATA.map((npc, i) => (
+        {/* NPCs — disabled in OSM mode for performance */}
+        {!isOSMMode && lodConfig.enableNPCs && NPC_DATA.map((npc, i) => (
           <CityNPC key={i} startX={npc.x} startZ={npc.z} color={npc.color} aabbs={aabbs} />
         ))}
 
