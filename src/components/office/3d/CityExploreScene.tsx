@@ -1233,7 +1233,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         }}
       >
         <color attach="background" args={[dn.bgColor]} />
-        <fog attach="fog" args={[dn.fogColor, isOSMMode ? 40 : lodConfig.fogNear * 2, isOSMMode ? 500 : lodConfig.fogFar * 2]} />
+        <fog attach="fog" args={[dn.fogColor, isOSMMode ? 30 : lodConfig.fogNear * 2, isOSMMode ? 250 : lodConfig.fogFar * 2]} />
 
         {/* Simplified lighting — fewer lights = more FPS */}
         <ambientLight intensity={dn.ambientIntensity * 0.8} color={dn.isNight ? "#4466AA" : dn.ambientColor} />
