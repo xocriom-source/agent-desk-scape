@@ -1,20 +1,20 @@
 /**
  * LODManager — Camera-based level-of-detail for city buildings.
- * Near: full detail | Mid: simplified | Far: instanced boxes
+ * DEBUG: LOD culling disabled to ensure all geometry is visible.
  */
 
 import * as THREE from "three";
 
 export interface LODConfig {
-  nearDistance: number;   // Full detail threshold
-  midDistance: number;    // Simplified threshold
-  farDistance: number;    // Max visibility
+  nearDistance: number;
+  midDistance: number;
+  farDistance: number;
 }
 
 const DEFAULT_CONFIG: LODConfig = {
   nearDistance: 100,
   midDistance: 300,
-  farDistance: 600,
+  farDistance: 800,
 };
 
 export class LODManager {
@@ -23,40 +23,22 @@ export class LODManager {
 
   constructor(config: Partial<LODConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
-    console.log("[LODManager] Initialized with config:", this.config);
+    console.log("[LODManager] Initialized (culling DISABLED for debug)");
   }
 
-  /**
-   * Register a group of objects for LOD management.
-   */
   registerGroup(group: THREE.Group) {
     this.groups.push(group);
   }
 
   /**
-   * Update visibility based on camera position.
-   * Call this every frame.
+   * DEBUG: LOD update disabled — all objects remain visible.
+   * Re-enable distance culling once city renders correctly.
    */
-  update(cameraPosition: THREE.Vector3) {
-    for (const group of this.groups) {
-      for (const child of group.children) {
-        if (!(child instanceof THREE.Mesh || child instanceof THREE.Group)) continue;
-
-        const pos = new THREE.Vector3();
-        child.getWorldPosition(pos);
-        const dist = cameraPosition.distanceTo(pos);
-
-        if (dist > this.config.farDistance) {
-          child.visible = false;
-        } else {
-          child.visible = true;
-          // Could swap detail levels here in the future
-        }
-      }
-    }
+  update(_cameraPosition: THREE.Vector3) {
+    // LOD disabled for debugging — everything stays visible
+    return;
   }
 
-  /** Get config for external use */
   getConfig(): LODConfig {
     return { ...this.config };
   }
