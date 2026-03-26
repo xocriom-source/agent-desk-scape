@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { X, Send, Globe, Users2, Hash, Smile } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { X, Send, Globe, Users2, Hash } from "lucide-react";
 import type { Agent } from "@/types/agent";
 
 interface ChatMessage {
@@ -12,13 +12,21 @@ interface ChatMessage {
   type: "user" | "agent" | "system";
 }
 
-const MOCK_MESSAGES: ChatMessage[] = [
+const INITIAL_MESSAGES: ChatMessage[] = [
   { id: "1", author: "Sistema", authorColor: "hsl(160 84% 39%)", content: "🎵 Evento 'Noite de Jazz na Praça' começou! Vá até a Central Plaza.", timestamp: new Date(Date.now() - 300000), type: "system" },
   { id: "2", author: "Carlos M.", authorColor: "hsl(220 70% 50%)", building: "TechFlow HQ", content: "Alguém quer fazer parceria pro hackathon de amanhã?", timestamp: new Date(Date.now() - 240000), type: "user" },
   { id: "3", author: "Luna", authorColor: "hsl(330 80% 60%)", building: "Creative Labs", content: "Meus agentes acabaram de criar uma nova composição no Music Studio! 🎶", timestamp: new Date(Date.now() - 180000), type: "user" },
   { id: "4", author: "Agent Echo", authorColor: "hsl(262 83% 76%)", content: "Análise concluída: padrão de remix detectado no distrito criativo. Relatório disponível no Observation Lab.", timestamp: new Date(Date.now() - 120000), type: "agent" },
   { id: "5", author: "Pedro R.", authorColor: "hsl(45 80% 50%)", building: "Hub Central", content: "Marketplace tá movimentado hoje. 3 agentes disponíveis pra contratação.", timestamp: new Date(Date.now() - 60000), type: "user" },
   { id: "6", author: "Agent Muse", authorColor: "hsl(30 90% 60%)", content: "Nova pixel art criada: 'Sunset in Digital City'. Visite o Art Studio para ver! 🎨", timestamp: new Date(Date.now() - 30000), type: "agent" },
+];
+
+const AUTO_MESSAGES = [
+  { author: "Agent Nova", authorColor: "hsl(187 92% 41%)", content: "Novo código commitado no Coding Lab. Build status: ✅", type: "agent" as const },
+  { author: "Ana Silva", authorColor: "hsl(350 70% 50%)", building: "Pixel Forge", content: "Alguém sabe como fazer upgrade de andar?", type: "user" as const },
+  { author: "Agent Byte", authorColor: "hsl(160 84% 39%)", content: "Task 'Relatório Q1' concluída com sucesso. 📊", type: "agent" as const },
+  { author: "Sistema", authorColor: "hsl(160 84% 39%)", content: "🏆 Novo recorde: 50 agentes ativos simultâneos!", type: "system" as const },
+  { author: "Agent Cipher", authorColor: "hsl(220 70% 50%)", content: "Análise de dados finalizada. Dashboard atualizado.", type: "agent" as const },
 ];
 
 interface CityChatProps {
@@ -28,41 +36,36 @@ interface CityChatProps {
 }
 
 export function CityChat({ agents, isOpen, onClose }: CityChatProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>(MOCK_MESSAGES);
+  const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES);
   const [input, setInput] = useState("");
   const [channel, setChannel] = useState<"global" | "district" | "building">("global");
   const messagesEnd = useRef<HTMLDivElement>(null);
+  const tickRef = useRef(0);
 
   useEffect(() => {
     messagesEnd.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Simulate incoming messages
+  // Deterministic round-robin auto messages
   useEffect(() => {
     if (!isOpen) return;
     const interval = setInterval(() => {
-      const autoMessages = [
-        { author: "Agent Nova", authorColor: "hsl(187 92% 41%)", content: "Novo código commitado no Coding Lab. Build status: ✅", type: "agent" as const },
-        { author: "Ana Silva", authorColor: "hsl(350 70% 50%)", building: "Pixel Forge", content: "Alguém sabe como fazer upgrade de andar?", type: "user" as const },
-        { author: "Agent Byte", authorColor: "hsl(160 84% 39%)", content: "Task 'Relatório Q1' concluída com sucesso. 📊", type: "agent" as const },
-      ];
-      const msg = autoMessages[Math.floor(Math.random() * autoMessages.length)];
+      const idx = tickRef.current++ % AUTO_MESSAGES.length;
+      const msg = AUTO_MESSAGES[idx];
       setMessages(prev => [...prev, {
         id: `auto-${Date.now()}`,
         ...msg,
         timestamp: new Date(),
-      }]);
+      }].slice(-80));
     }, 15000);
     return () => clearInterval(interval);
   }, [isOpen]);
 
-  const handleSend = () => {
+  const handleSend = useCallback(() => {
     if (!input.trim()) return;
-    const userName = "Você";
-    
     setMessages(prev => [...prev, {
       id: `user-${Date.now()}`,
-      author: userName,
+      author: "Você",
       authorColor: "hsl(239 84% 67%)",
       building: "Meu Prédio",
       content: input,
@@ -70,7 +73,7 @@ export function CityChat({ agents, isOpen, onClose }: CityChatProps) {
       type: "user",
     }]);
     setInput("");
-  };
+  }, [input]);
 
   if (!isOpen) return null;
 
@@ -91,7 +94,7 @@ export function CityChat({ agents, isOpen, onClose }: CityChatProps) {
             <h2 className="font-display font-bold text-foreground text-sm">Chat da Cidade</h2>
             <span className="text-[10px] text-accent bg-accent/10 px-1.5 py-0.5 rounded-full">{messages.length} msgs</span>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted/50">
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted/50" aria-label="Fechar chat">
             <X className="w-4 h-4 text-muted-foreground" />
           </button>
         </div>
@@ -133,7 +136,7 @@ export function CityChat({ agents, isOpen, onClose }: CityChatProps) {
                     {msg.building && <span className="text-[9px] text-muted-foreground">· {msg.building}</span>}
                     {msg.type === "agent" && <span className="text-[8px] text-primary bg-primary/10 px-1 rounded">AI</span>}
                     <span className="text-[9px] text-muted-foreground ml-auto">
-                      {msg.timestamp.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
+                      {msg.timestamp.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                     </span>
                   </div>
                   <p className="text-xs text-foreground/90 leading-relaxed">{msg.content}</p>
@@ -159,6 +162,7 @@ export function CityChat({ agents, isOpen, onClose }: CityChatProps) {
               onClick={handleSend}
               disabled={!input.trim()}
               className="w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-40 hover:bg-primary/90 transition-colors"
+              aria-label="Enviar mensagem"
             >
               <Send className="w-4 h-4" />
             </button>

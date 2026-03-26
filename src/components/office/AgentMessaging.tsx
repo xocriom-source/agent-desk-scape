@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Bot, ArrowRight, MessageSquare, Radio } from "lucide-react";
+import { X, Send, Bot, ArrowRight, Radio } from "lucide-react";
 import type { Agent } from "@/types/agent";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 export interface AgentMessage {
   id: string;
@@ -29,6 +29,23 @@ const MSG_TEMPLATES = [
   { from: 6, to: 5, content: "Spark, monitor de uptime detectou latência alta na API. Investigar.", type: "system" as const },
 ];
 
+const LIVE_CONTENTS = [
+  "Terminei aquela parte. Pode revisar?",
+  "Recebi os dados. Vou processar e te aviso.",
+  "Boa ideia! Vamos colaborar nisso amanhã.",
+  "Preciso de ajuda com a integração do módulo.",
+  "Resultados prontos. Compartilhando no canal geral.",
+  "Ciclo de treinamento concluído. Aprendi algo novo.",
+];
+
+const RESPONSE_POOL = [
+  "Entendido, Chefe! Vou começar imediatamente.",
+  "Recebido! Vou priorizar isso agora.",
+  "Pode deixar! Já estou trabalhando nisso.",
+  "Combinado! Vou precisar de uns 30 min.",
+  "Ok! Vou coordenar com a equipe.",
+];
+
 const TYPE_COLORS = {
   chat: "border-l-primary/50",
   task: "border-l-accent/50",
@@ -50,8 +67,8 @@ interface AgentMessagingProps {
 }
 
 export function AgentMessaging({ agents, isOpen, onClose }: AgentMessagingProps) {
-  const [messages, setMessages] = useState<AgentMessage[]>(() => {
-    return MSG_TEMPLATES.map((t, i) => ({
+  const [messages, setMessages] = useState<AgentMessage[]>(() =>
+    MSG_TEMPLATES.map((t, i) => ({
       id: `msg-${i}`,
       from: agents[t.from]?.name || "Agente",
       fromColor: agents[t.from]?.color || "#666",
@@ -60,40 +77,32 @@ export function AgentMessaging({ agents, isOpen, onClose }: AgentMessagingProps)
       content: t.content,
       timestamp: new Date(Date.now() - (MSG_TEMPLATES.length - i) * 45000),
       type: t.type,
-    }));
-  });
+    }))
+  );
 
   const [bossMessage, setBossMessage] = useState("");
   const [bossTarget, setBossTarget] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const tickRef = useRef(0);
 
-  // Simulate new inter-agent messages
+  // Deterministic round-robin message generation instead of Math.random
   useEffect(() => {
     if (!isOpen) return;
     const interval = setInterval(() => {
-      const fromIdx = Math.floor(Math.random() * agents.length);
-      let toIdx = Math.floor(Math.random() * agents.length);
-      while (toIdx === fromIdx) toIdx = Math.floor(Math.random() * agents.length);
-
-      const contents = [
-        `Ei ${agents[toIdx]?.name}, terminei aquela parte. Pode revisar?`,
-        `Recebi os dados. Vou processar e te aviso.`,
-        `Boa ideia! Vamos colaborar nisso amanhã.`,
-        `Preciso de ajuda com a integração do módulo.`,
-        `Resultados prontos. Compartilhando no canal geral.`,
-        `Ciclo de treinamento concluído. Aprendi algo novo.`,
-      ];
-
+      const tick = tickRef.current++;
+      const fromIdx = tick % agents.length;
+      const toIdx = (fromIdx + 1 + (tick % (agents.length - 1))) % agents.length;
       const types: AgentMessage["type"][] = ["chat", "task", "collab", "system"];
+
       const newMsg: AgentMessage = {
         id: `msg-live-${Date.now()}`,
         from: agents[fromIdx]?.name || "Agente",
         fromColor: agents[fromIdx]?.color || "#666",
         to: agents[toIdx]?.name || "Agente",
         toColor: agents[toIdx]?.color || "#666",
-        content: contents[Math.floor(Math.random() * contents.length)],
+        content: LIVE_CONTENTS[tick % LIVE_CONTENTS.length],
         timestamp: new Date(),
-        type: types[Math.floor(Math.random() * types.length)],
+        type: types[tick % types.length],
       };
 
       setMessages((prev) => [...prev, newMsg].slice(-50));
@@ -108,7 +117,7 @@ export function AgentMessaging({ agents, isOpen, onClose }: AgentMessagingProps)
     }
   }, [messages]);
 
-  const sendBossMessage = () => {
+  const sendBossMessage = useCallback(() => {
     if (!bossMessage.trim() || !bossTarget) return;
     const target = agents.find((a) => a.name === bossTarget);
     const newMsg: AgentMessage = {
@@ -124,28 +133,23 @@ export function AgentMessaging({ agents, isOpen, onClose }: AgentMessagingProps)
     setMessages((prev) => [...prev, newMsg]);
     setBossMessage("");
 
-    // Simulate response
+    // Deterministic response based on target agent index
+    const targetIdx = agents.findIndex((a) => a.name === bossTarget);
+    const responseIdx = Math.abs(targetIdx) % RESPONSE_POOL.length;
     setTimeout(() => {
-      const responses = [
-        `Entendido, Chefe! Vou começar imediatamente.`,
-        `Recebido! Vou priorizar isso agora.`,
-        `Pode deixar! Já estou trabalhando nisso.`,
-        `Combinado! Vou precisar de uns 30 min.`,
-        `Ok! Vou coordenar com a equipe.`,
-      ];
       const reply: AgentMessage = {
         id: `msg-reply-${Date.now()}`,
         from: bossTarget,
         fromColor: target?.color || "#666",
         to: "Chefe",
         toColor: "#4F46E5",
-        content: responses[Math.floor(Math.random() * responses.length)],
+        content: RESPONSE_POOL[responseIdx],
         timestamp: new Date(),
         type: "chat",
       };
       setMessages((prev) => [...prev, reply]);
-    }, 1500 + Math.random() * 2000);
-  };
+    }, 2000);
+  }, [bossMessage, bossTarget, agents]);
 
   return (
     <AnimatePresence>
@@ -179,7 +183,7 @@ export function AgentMessaging({ agents, isOpen, onClose }: AgentMessagingProps)
                 <span className="text-[10px] bg-[#4ECDC4]/20 text-[#4ECDC4] px-2 py-0.5 rounded-full font-medium animate-pulse">
                   🔴 LIVE
                 </span>
-                <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors">
+                <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors" aria-label="Fechar">
                   <X className="w-4 h-4 text-muted-foreground" />
                 </button>
               </div>
@@ -225,6 +229,7 @@ export function AgentMessaging({ agents, isOpen, onClose }: AgentMessagingProps)
                   value={bossTarget}
                   onChange={(e) => setBossTarget(e.target.value)}
                   className="text-xs bg-muted/30 rounded-xl px-3 py-2 text-foreground border-0 outline-none w-32"
+                  aria-label="Selecionar agente"
                 >
                   <option value="">Para...</option>
                   {agents.map((a) => (
@@ -243,6 +248,7 @@ export function AgentMessaging({ agents, isOpen, onClose }: AgentMessagingProps)
                   onClick={sendBossMessage}
                   disabled={!bossMessage.trim() || !bossTarget}
                   className="p-2 bg-primary/20 hover:bg-primary/30 rounded-xl transition-colors disabled:opacity-40"
+                  aria-label="Enviar mensagem"
                 >
                   <Send className="w-3.5 h-3.5 text-primary" />
                 </button>
