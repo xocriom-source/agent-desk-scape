@@ -274,6 +274,12 @@ interface RoadSegmentBuffer {
   halfWidth: number;
 }
 
+/** Intersection / junction zone (circle around a road node with many connections) */
+interface JunctionZone {
+  x: number; z: number;
+  radius: number;
+}
+
 /** Check if a point is within a buffered road segment (capsule test) */
 function pointNearRoadSegment(px: number, pz: number, seg: RoadSegmentBuffer): boolean {
   const dx = seg.bx - seg.ax;
@@ -288,18 +294,40 @@ function pointNearRoadSegment(px: number, pz: number, seg: RoadSegmentBuffer): b
   return distSq < seg.halfWidth * seg.halfWidth;
 }
 
-/** Check if a building AABB overlaps any road buffer */
+/** Robust building-road overlap: test center + 8 perimeter points + 4 edge midpoints */
 function buildingOverlapsRoads(
   cx: number, cz: number, fw: number, fd: number,
-  roadBuffers: RoadSegmentBuffer[]
+  roadBuffers: RoadSegmentBuffer[],
+  junctions: JunctionZone[]
 ): boolean {
-  // Test the centroid and 4 corners
+  // Check junction zones first (fast circle test)
+  for (const j of junctions) {
+    const dx = cx - j.x;
+    const dz = cz - j.z;
+    const maxR = j.radius + Math.max(fw, fd) * 0.5;
+    if (dx * dx + dz * dz < maxR * maxR) return true;
+  }
+
+  // 13-point sampling: center + 4 corners + 4 edge midpoints + 4 inner points
+  const hw = fw * 0.48;
+  const hd = fd * 0.48;
   const testPoints = [
     { x: cx, z: cz },
-    { x: cx - fw * 0.4, z: cz - fd * 0.4 },
-    { x: cx + fw * 0.4, z: cz - fd * 0.4 },
-    { x: cx - fw * 0.4, z: cz + fd * 0.4 },
-    { x: cx + fw * 0.4, z: cz + fd * 0.4 },
+    // Corners
+    { x: cx - hw, z: cz - hd },
+    { x: cx + hw, z: cz - hd },
+    { x: cx - hw, z: cz + hd },
+    { x: cx + hw, z: cz + hd },
+    // Edge midpoints
+    { x: cx, z: cz - hd },
+    { x: cx, z: cz + hd },
+    { x: cx - hw, z: cz },
+    { x: cx + hw, z: cz },
+    // Inner quarter points
+    { x: cx - hw * 0.5, z: cz - hd * 0.5 },
+    { x: cx + hw * 0.5, z: cz - hd * 0.5 },
+    { x: cx - hw * 0.5, z: cz + hd * 0.5 },
+    { x: cx + hw * 0.5, z: cz + hd * 0.5 },
   ];
   for (const pt of testPoints) {
     for (const seg of roadBuffers) {
@@ -309,11 +337,11 @@ function buildingOverlapsRoads(
   return false;
 }
 
-/** Check if two building AABBs overlap */
+/** Check if two building AABBs overlap with margin */
 function buildingsOverlap(
   ax: number, az: number, aw: number, ad: number,
   bx: number, bz: number, bw: number, bd: number,
-  margin: number = 0.3
+  margin: number = 0.5
 ): boolean {
   return (
     ax - aw / 2 - margin < bx + bw / 2 &&
@@ -321,6 +349,17 @@ function buildingsOverlap(
     az - ad / 2 - margin < bz + bd / 2 &&
     az + ad / 2 + margin > bz - bd / 2
   );
+}
+
+/** Compute signed area of polygon (positive = CCW) */
+function polygonArea(vertices: Array<{ x: number; z: number }>): number {
+  let area = 0;
+  for (let i = 0; i < vertices.length; i++) {
+    const j = (i + 1) % vertices.length;
+    area += vertices[i].x * vertices[j].z;
+    area -= vertices[j].x * vertices[i].z;
+  }
+  return Math.abs(area) / 2;
 }
 
 /**
