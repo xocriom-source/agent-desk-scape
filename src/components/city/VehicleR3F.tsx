@@ -43,6 +43,9 @@ export const VehicleR3F = memo(function VehicleR3F({ aabbs, playerName }: Vehicl
     steering: 0,
   });
 
+  // Vehicle scale — OSM world is in meters, vehicle needs proper size
+  const vScale = 2.5;
+
   // Sync initial position and heading when entering vehicle
   useEffect(() => {
     if (vehicle.isInVehicle) {
