@@ -80,22 +80,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const fetchProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
-    if (data) {
-      setProfile(data as Profile);
-      // Sync to localStorage for existing components
-      // Use the userId to get email from current session instead of stale `user` state
-      const { data: sessionData } = await supabase.auth.getSession();
-      const email = sessionData?.session?.user?.email || "";
-      localStorage.setItem("agentoffice_user", JSON.stringify({
-        email,
-        name: data.display_name,
-        companyName: data.company_name,
-      }));
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+      if (error) {
+        console.warn("[AuthContext:fetchProfile] Error:", error.message);
+        return;
+      }
+      if (data) {
+        setProfile(data as Profile);
+      }
+    } catch (err) {
+      console.warn("[AuthContext:fetchProfile] Unexpected error:", err);
     }
   };
 
@@ -117,8 +116,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    localStorage.removeItem("agentoffice_user");
     setProfile(null);
+    setIsAdmin(false);
   };
 
   const updateProfile = async (data: Partial<Profile>) => {

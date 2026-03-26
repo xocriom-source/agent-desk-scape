@@ -55,7 +55,7 @@ export default function Spaces() {
         name: b.name,
         city: b.city || "São Paulo",
         type: b.style || "corporate",
-        agents: Math.floor(Math.random() * 12) + 1,
+        agents: 0,
         lastVisit: new Date(b.created_at).toLocaleDateString("pt-BR"),
         color: b.primary_color || TYPE_COLORS[b.style || "corporate"] || "#3b82f6",
         emoji: TYPE_EMOJIS[b.style || "corporate"] || "🏢",
@@ -69,8 +69,6 @@ export default function Spaces() {
   const userName = profile?.display_name || "Usuário";
 
   const handleEnterSpace = (space: SpaceData) => {
-    localStorage.setItem("buildingName", space.name);
-    localStorage.setItem("currentSpaceId", space.id);
     navigate("/lobby");
   };
 

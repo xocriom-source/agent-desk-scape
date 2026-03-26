@@ -58,10 +58,7 @@ export function CityChat({ agents, isOpen, onClose }: CityChatProps) {
 
   const handleSend = () => {
     if (!input.trim()) return;
-    const userName = (() => {
-      const stored = localStorage.getItem("agentoffice_user");
-      return stored ? JSON.parse(stored).name || "Você" : "Você";
-    })();
+    const userName = "Você";
     
     setMessages(prev => [...prev, {
       id: `user-${Date.now()}`,

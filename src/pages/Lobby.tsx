@@ -82,13 +82,12 @@ export default function Lobby() {
   const navigate = useNavigate();
   const { profile } = useAuth();
 
-  // Derive name from auth profile, fall back to localStorage for backwards compat
-  const [name, setName] = useState(() => profile?.display_name || localStorage.getItem("playerName") || "");
+  const [name, setName] = useState(() => profile?.display_name || "");
   const [micOn, setMicOn] = useState(false);
   const [camOn, setCamOn] = useState(false);
   const [skipLobby, setSkipLobby] = useState(false);
 
-  // Load saved config (visual only — no auth data)
+  // Load saved visual config (cosmetic only, safe in localStorage)
   const config = useMemo(() => {
     try {
       const saved = localStorage.getItem("playerConfig");
@@ -97,7 +96,7 @@ export default function Lobby() {
     return { color: "#4F46E5", hairStyle: "spiky", outfitStyle: "suit", skinTone: "medium", accessory: "none" };
   }, []);
 
-  const buildingName = localStorage.getItem("buildingName") || profile?.company_name || "Minha Cidade";
+  const buildingName = profile?.company_name || "Meu Espaço";
 
   // Memoize floating stars so they don't re-generate on every render
   const stars = useMemo(() =>
@@ -111,27 +110,8 @@ export default function Lobby() {
   []);
 
   const handleJoin = () => {
-    if (name.trim()) {
-      localStorage.setItem("playerName", name.trim());
-    }
-    localStorage.setItem("lobbyMic", micOn ? "1" : "0");
-    localStorage.setItem("lobbyCam", camOn ? "1" : "0");
-    if (skipLobby) localStorage.setItem("skipLobby", "1");
     navigate("/office");
   };
-
-  // Skip if user previously checked "skip" — use useMemo to avoid useEffect flash
-  useMemo(() => {
-    if (localStorage.getItem("skipLobby") === "1") {
-      // Will redirect on first render
-    }
-  }, []);
-
-  // Redirect immediately if skip is set (safe in render since navigate is stable)
-  if (localStorage.getItem("skipLobby") === "1") {
-    navigate("/office", { replace: true });
-    return null;
-  }
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden flex flex-col items-center justify-center">

@@ -213,21 +213,21 @@ function AnimatedCounter({ value, suffix = "" }: { value: string; suffix?: strin
 
 // ── Data ──
 const STATS = [
-  { value: "61,428", label: "AI Agents Active" },
-  { value: "130+", label: "Cities Worldwide" },
+  { value: "8", label: "AI Agent Types" },
+  { value: "30+", label: "Cities Available" },
   { value: "24/7", label: "Continuous Operation" },
-  { value: "∞", label: "Possibilities" },
+  { value: "3", label: "Subscription Plans" },
 ];
 
 const CITIES = [
-  { name: "São Paulo", flag: "🇧🇷", population: 1247, buildings: 312 },
-  { name: "New York", flag: "🇺🇸", population: 2891, buildings: 890 },
-  { name: "Tokyo", flag: "🇯🇵", population: 1583, buildings: 445 },
-  { name: "London", flag: "🇬🇧", population: 1120, buildings: 320 },
-  { name: "Seoul", flag: "🇰🇷", population: 980, buildings: 275 },
-  { name: "Dubai", flag: "🇦🇪", population: 650, buildings: 180 },
-  { name: "Paris", flag: "🇫🇷", population: 930, buildings: 290 },
-  { name: "San Francisco", flag: "🇺🇸", population: 1450, buildings: 520 },
+  { name: "São Paulo", flag: "🇧🇷" },
+  { name: "New York", flag: "🇺🇸" },
+  { name: "Tokyo", flag: "🇯🇵" },
+  { name: "London", flag: "🇬🇧" },
+  { name: "Seoul", flag: "🇰🇷" },
+  { name: "Dubai", flag: "🇦🇪" },
+  { name: "Paris", flag: "🇫🇷" },
+  { name: "San Francisco", flag: "🇺🇸" },
 ];
 
 // All platform features grouped
@@ -682,9 +682,9 @@ export default function Landing() {
                   <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
                 </div>
                 <div className="flex gap-3 text-[10px] font-mono text-muted-foreground">
-                  <span>{city.population.toLocaleString()} agents</span>
+                  <span>Available</span>
                   <span>·</span>
-                  <span>{city.buildings} buildings</span>
+                  <span>Explore →</span>
                 </div>
               </motion.button>
             ))}

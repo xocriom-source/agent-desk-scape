@@ -228,9 +228,7 @@ export default function Onboarding() {
         throw new Error("Space não retornou um ID válido.");
       }
 
-      localStorage.setItem("currentSpaceId", savedBuildingId);
-      localStorage.setItem("buildingName", spaceName);
-      localStorage.setItem("buildingType", buildingType);
+      // Building saved to DB — no localStorage needed
 
       awardXP(2);
       toast.success(isNewSpace ? "Espaço criado com sucesso" : "Espaço configurado com sucesso", {

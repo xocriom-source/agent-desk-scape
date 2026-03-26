@@ -1,4 +1,5 @@
 import { useMemo, useState, useCallback, useRef, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Building2, Map, Users2, Search, Compass } from "lucide-react";
 import { motion } from "framer-motion";
@@ -147,15 +148,9 @@ export default function LiveCity() {
   const controlsRef = useRef<any>(null);
   const [cinematicDone, setCinematicDone] = useState(false);
 
-  const userName = useMemo(() => {
-    const stored = localStorage.getItem("agentoffice_user");
-    return stored ? JSON.parse(stored).name || "Chefe" : "Chefe";
-  }, []);
-
-  const userId = useMemo(() => {
-    const stored = localStorage.getItem("agentoffice_user");
-    return stored ? JSON.parse(stored).email || "" : "";
-  }, []);
+  const { profile, user } = useAuth();
+  const userName = profile?.display_name || "Chefe";
+  const userId = user?.email || user?.id || "";
 
   const { visibleBuildings, userBuilding, updateCameraCenter } = useCityBuildings(userId);
 
