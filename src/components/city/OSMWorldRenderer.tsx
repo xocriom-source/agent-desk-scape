@@ -72,7 +72,25 @@ function getMat(color: string, roughness: number, metalness: number = 0.05): THR
   return matCache.get(key)!;
 }
 
-// ── Color variation: deterministic subtle shift per building ──
+// ── Urban color palettes — sophisticated readable tones ──
+const FACADE_PALETTES = [
+  { body: "#B8B0A8", base: "#8A8278", roof: "#6A6258" },
+  { body: "#A0A8B0", base: "#707880", roof: "#505860" },
+  { body: "#C0B8A8", base: "#908878", roof: "#686058" },
+  { body: "#98A0A8", base: "#687078", roof: "#485058" },
+  { body: "#B0A898", base: "#807868", roof: "#605848" },
+  { body: "#A8B0B8", base: "#788088", roof: "#586068" },
+  { body: "#B8B8B0", base: "#888880", roof: "#686860" },
+  { body: "#A0988E", base: "#706860", roof: "#504840" },
+  { body: "#9AA8B0", base: "#6A7880", roof: "#4A5860" },
+  { body: "#B0B0A0", base: "#808070", roof: "#606050" },
+];
+
+function getBuildingPalette(seed: number) {
+  return FACADE_PALETTES[seed % FACADE_PALETTES.length];
+}
+
+// ── Color variation ──
 function varyColor(base: string, seed: number): string {
   const c = new THREE.Color(base);
   const hsl = { h: 0, s: 0, l: 0 };
