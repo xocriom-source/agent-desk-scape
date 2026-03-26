@@ -183,6 +183,7 @@ export const useGameStore = create<GameStore>()(
       hudVisible: true,
       selectedBuildingId: null,
       selectedAgentId: null,
+      cityViewMode: "canvas" as CityViewMode,
     },
     openPanel: (panel) => set((s) => ({ ui: { ...s.ui, activePanel: panel } })),
     closePanel: () => set((s) => ({ ui: { ...s.ui, activePanel: null } })),
