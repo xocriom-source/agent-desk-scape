@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { Plus, Search, Calendar, MoreVertical, Globe, Star, Trash2 } from "lucide-react";
 import { LoadingState, EmptyState } from "@/components/ui/LoadingState";
+import { SEOHead } from "@/components/SEOHead";
 import { fetchUserBuildings, type BuildingSummary } from "@/services/buildingService";
 import logoOriginal from "@/assets/logo-original.svg";
 
