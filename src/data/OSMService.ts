@@ -317,9 +317,12 @@ export function convertOSMElements(elements: OSMElement[], center: GeoCenter): O
     const d = mxz - mnz;
     if (w < 0.8 && d < 0.8) { skippedBuildings++; continue; }
     if (!isFinite(cx) || !isFinite(cz)) { skippedBuildings++; continue; }
+    // Validate polygon area
+    const area = polygonArea(verts);
+    if (area < 0.5) { skippedBuildings++; continue; }
 
     // Road collision check
-    if (footprintOverlapsRoad(cx, cz, w, d, roadBuffers)) { skippedOnRoad++; continue; }
+    if (footprintOverlapsRoad(cx, cz, w, d, roadBuffers, junctions)) { skippedOnRoad++; continue; }
 
     // Building overlap check
     let hasOverlap = false;
