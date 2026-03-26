@@ -72,15 +72,29 @@ function getMat(color: string, roughness: number, metalness: number = 0.05): THR
   return matCache.get(key)!;
 }
 
+// ── Color variation: deterministic subtle shift per building ──
+function varyColor(base: string, seed: number): string {
+  const c = new THREE.Color(base);
+  const hsl = { h: 0, s: 0, l: 0 };
+  c.getHSL(hsl);
+  hsl.l = Math.max(0.15, Math.min(0.85, hsl.l + ((seed % 17) - 8) * 0.012));
+  hsl.s = Math.max(0, Math.min(1, hsl.s + ((seed % 11) - 5) * 0.015));
+  c.setHSL(hsl.h, hsl.s, hsl.l);
+  return `#${c.getHexString()}`;
+}
+
 // ── Shared materials ──
-const windowMat = new THREE.MeshStandardMaterial({ color: "#D0E0FF", emissive: "#88AADD", emissiveIntensity: 0.3, transparent: true, opacity: 0.5 });
-const aoMat = new THREE.MeshBasicMaterial({ color: "#000", transparent: true, opacity: 0.15, depthWrite: false });
-const roadMainMat = new THREE.MeshStandardMaterial({ color: "#505050", roughness: 0.85 });
-const roadSecMat = new THREE.MeshStandardMaterial({ color: "#484848", roughness: 0.85 });
-const roadAlleyMat = new THREE.MeshStandardMaterial({ color: "#404040", roughness: 0.9 });
-const sidewalkMat = new THREE.MeshStandardMaterial({ color: "#909090", roughness: 0.7 });
-const laneMat = new THREE.MeshStandardMaterial({ color: "#FFFFFF", transparent: true, opacity: 0.7 });
-const centerLineMat = new THREE.MeshStandardMaterial({ color: "#FFD030", transparent: true, opacity: 0.6 });
+const windowDayMat = new THREE.MeshStandardMaterial({ color: "#C8D8F0", emissive: "#6688BB", emissiveIntensity: 0.15, transparent: true, opacity: 0.45 });
+const windowNightMat = new THREE.MeshStandardMaterial({ color: "#FFE8A0", emissive: "#FFD060", emissiveIntensity: 0.8, transparent: true, opacity: 0.6 });
+const windowDimMat = new THREE.MeshStandardMaterial({ color: "#556677", emissive: "#334455", emissiveIntensity: 0.05, transparent: true, opacity: 0.3 });
+const aoMat = new THREE.MeshBasicMaterial({ color: "#000", transparent: true, opacity: 0.18, depthWrite: false });
+const roofEdgeMat = new THREE.MeshStandardMaterial({ color: "#888", roughness: 0.6, metalness: 0.3 });
+const roadMainMat = new THREE.MeshStandardMaterial({ color: "#484848", roughness: 0.82 });
+const roadSecMat = new THREE.MeshStandardMaterial({ color: "#424242", roughness: 0.85 });
+const roadAlleyMat = new THREE.MeshStandardMaterial({ color: "#3A3A3A", roughness: 0.9 });
+const sidewalkMat = new THREE.MeshStandardMaterial({ color: "#8A8A8A", roughness: 0.65 });
+const laneMat = new THREE.MeshStandardMaterial({ color: "#FFFFFF", transparent: true, opacity: 0.6 });
+const centerLineMat = new THREE.MeshStandardMaterial({ color: "#FFD030", transparent: true, opacity: 0.5 });
 const grassMat = new THREE.MeshStandardMaterial({ color: "#4A8B3F", roughness: 0.9 });
 const trunkMat = new THREE.MeshStandardMaterial({ color: "#5A3A1A", roughness: 0.9 });
 
