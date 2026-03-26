@@ -255,6 +255,7 @@ export default function Onboarding() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
+      <SEOHead title="Onboarding" description="Configure seu espaço virtual no The Good City." path="/onboarding" />
       <div className="w-full max-w-4xl">
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-8">
