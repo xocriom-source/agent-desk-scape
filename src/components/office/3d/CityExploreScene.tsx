@@ -735,8 +735,8 @@ export function CityExploreScene({
         <color attach="background" args={[dn.bgColor]} />
         <fog attach="fog" args={[
           dn.isNight ? "#0A1020" : dn.isSunset ? "#C8906A" : "#B8C8D8",
-          isOSMMode ? 40 : lodConfig.fogNear * 2,
-          isOSMMode ? 450 : lodConfig.fogFar * 2
+          isOSMMode ? 20 : lodConfig.fogNear * 2,
+          isOSMMode ? 350 : lodConfig.fogFar * 2
         ]} />
 
         {/* Lighting — richer, more directional */}
