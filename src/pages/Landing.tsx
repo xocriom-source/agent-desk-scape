@@ -484,7 +484,7 @@ export default function Landing() {
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-accent/30 bg-accent/10 mb-8"
             >
               <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-              <span className="text-[10px] font-mono tracking-wider text-accent uppercase">84 users online agora</span>
+              <span className="text-[10px] font-mono tracking-wider text-accent uppercase">Plataforma ativa 24/7</span>
             </motion.div>
 
             <motion.img
