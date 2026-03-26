@@ -1295,8 +1295,8 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
               enablePan={false}
               enableZoom
               enableRotate
-              minDistance={8}
-              maxDistance={60}
+              minDistance={isOSMMode ? 15 : 8}
+              maxDistance={isOSMMode ? 200 : 60}
               minPolarAngle={Math.PI / 8}
               maxPolarAngle={Math.PI / 2.8}
               zoomSpeed={0.8}
