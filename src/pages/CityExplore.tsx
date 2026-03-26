@@ -186,7 +186,7 @@ export default function CityExplore() {
           </motion.div>
 
           {/* Activity Ticker */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} className="absolute bottom-14 left-1/2 -translate-x-1/2 z-30">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} className="absolute bottom-12 left-1/2 -translate-x-1/2 z-30">
             <CityActivityTicker />
           </motion.div>
 
