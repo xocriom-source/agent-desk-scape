@@ -1,5 +1,9 @@
 /**
- * WorldEngine — Hybrid pipeline orchestrator.
+ * @deprecated WorldEngine is deprecated. Use CityExploreScene (React Three Fiber) instead.
+ * This file is kept for reference only. All active city rendering now goes through
+ * the R3F pipeline in src/components/office/3d/CityExploreScene.tsx.
+ * 
+ * Previous: Hybrid pipeline orchestrator.
  * Pipeline: OSM fetch → Terrain → Roads → Buildings (progressive) → Instancing → LOD → GLB (async)
  * Render loop starts IMMEDIATELY. All generation is non-blocking.
  */
