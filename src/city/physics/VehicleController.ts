@@ -27,14 +27,14 @@ export interface VehiclePhysicsState {
 
 export const VEHICLE_CONFIGS: Record<string, VehicleConfig> = {
   car: {
-    maxSpeed: 12,
-    acceleration: 8,
-    brakeForce: 15,
-    friction: 3,
-    steeringSpeed: 2.5,
-    maxSteeringAngle: Math.PI / 5,
-    wheelBase: 0.6,
-    mass: 1,
+    maxSpeed: 14,
+    acceleration: 6,
+    brakeForce: 18,
+    friction: 2.2,
+    steeringSpeed: 2.0,
+    maxSteeringAngle: Math.PI / 5.5,
+    wheelBase: 0.65,
+    mass: 1.2,
   },
   motorcycle: {
     maxSpeed: 16,
@@ -106,32 +106,35 @@ export function stepVehiclePhysics(
     }
   }
 
-  // ── Acceleration / braking ──
+  // ── Acceleration / braking with weight feel ──
+  const massFactor = 1 / Math.max(config.mass, 0.3);
   if (throttle > 0.01) {
-    // Accelerating forward
     if (velocity < 0) {
       // Braking from reverse
-      velocity += config.brakeForce * dt;
+      velocity += config.brakeForce * massFactor * dt;
       if (velocity > 0) velocity = 0;
     } else {
-      velocity += throttle * config.acceleration * dt;
+      // Progressive acceleration (slower at high speed)
+      const speedRatio = Math.abs(velocity) / config.maxSpeed;
+      const accCurve = 1 - speedRatio * speedRatio * 0.6;
+      velocity += throttle * config.acceleration * massFactor * accCurve * dt;
     }
   } else if (throttle < -0.01) {
-    // Braking or reversing
     if (velocity > 0.5) {
-      // Brake
-      velocity -= config.brakeForce * dt;
+      // Brake with weight
+      velocity -= config.brakeForce * massFactor * dt;
       if (velocity < 0) velocity = 0;
     } else {
-      // Reverse (slower)
-      velocity += throttle * config.acceleration * 0.4 * dt;
+      // Reverse (slower, heavier)
+      velocity += throttle * config.acceleration * 0.3 * massFactor * dt;
     }
   } else {
-    // Friction (coast to stop)
-    if (Math.abs(velocity) < 0.1) {
+    // Friction (coast to stop) — heavier = slower coast
+    const frictionForce = config.friction * (0.5 + 0.5 * massFactor);
+    if (Math.abs(velocity) < 0.15) {
       velocity = 0;
     } else {
-      velocity -= Math.sign(velocity) * config.friction * dt;
+      velocity -= Math.sign(velocity) * frictionForce * dt;
     }
   }
 
@@ -139,9 +142,13 @@ export function stepVehiclePhysics(
   velocity = Math.max(-config.maxSpeed * 0.3, Math.min(config.maxSpeed, velocity));
 
   // ── Bicycle model kinematics ──
+  // Reduce steering authority at high speed for stability
+  const speedFactor = Math.min(1, 3 / (1 + Math.abs(velocity)));
+  const effectiveSteering = steeringAngle * (0.4 + 0.6 * speedFactor);
+
   if (Math.abs(velocity) > 0.01) {
-    if (Math.abs(steeringAngle) > 0.001) {
-      const turnRadius = config.wheelBase / Math.tan(steeringAngle);
+    if (Math.abs(effectiveSteering) > 0.001) {
+      const turnRadius = config.wheelBase / Math.tan(effectiveSteering);
       const angularVelocity = velocity / turnRadius;
       heading += angularVelocity * dt;
     }
@@ -149,10 +156,12 @@ export function stepVehiclePhysics(
     const newX = x + Math.sin(heading) * velocity * dt;
     const newZ = z + Math.cos(heading) * velocity * dt;
 
-    // Collision check
+    // Collision check — absorb impact proportionally
     if (collisionCheck && collisionCheck(newX, newZ, 0.4)) {
-      // Bounce back slightly
-      velocity *= -0.2;
+      velocity *= -0.15;
+      // Nudge away from wall
+      x -= Math.sin(heading) * 0.05;
+      z -= Math.cos(heading) * 0.05;
     } else {
       x = newX;
       z = newZ;

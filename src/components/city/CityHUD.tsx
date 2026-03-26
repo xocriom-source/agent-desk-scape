@@ -70,17 +70,17 @@ function GroupMenu({ group, onSelect, isOpen, onToggle }: {
       >
         <Icon className="w-3.5 h-3.5" />
         <span className="hidden sm:inline">{group.label}</span>
-        <ChevronUp className={`w-3 h-3 transition-transform ${isOpen ? "" : "rotate-180"}`} />
+        <ChevronUp className={`w-3 h-3 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
 
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.95 }}
+            initial={{ opacity: 0, y: -8, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.95 }}
+            exit={{ opacity: 0, y: -8, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-full mt-1.5 left-0 min-w-[140px] rounded-xl bg-black/80 backdrop-blur-lg border border-white/10 overflow-hidden z-50"
+            className="absolute bottom-full mb-1.5 left-0 min-w-[140px] rounded-xl bg-black/80 backdrop-blur-lg border border-white/10 overflow-hidden z-50"
           >
             {group.items.map((item) => {
               const ItemIcon = item.icon;
