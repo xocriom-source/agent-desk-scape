@@ -184,8 +184,10 @@ export function inputToVehicleControls(keys: Set<string>): { throttle: number; s
 
   if (keys.has("w") || keys.has("arrowup")) throttle = 1;
   if (keys.has("s") || keys.has("arrowdown")) throttle = throttle > 0 ? 0 : -1;
-  if (keys.has("a") || keys.has("arrowleft")) steering = -1;
-  if (keys.has("d") || keys.has("arrowright")) steering = steering < 0 ? 0 : 1;
+  // Steering: A=left(+1), D=right(-1) — matches heading convention where
+  // heading increases = turn left when facing -Z (standard camera view)
+  if (keys.has("a") || keys.has("arrowleft")) steering = 1;
+  if (keys.has("d") || keys.has("arrowright")) steering = steering > 0 ? 0 : -1;
 
   return { throttle, steering };
 }

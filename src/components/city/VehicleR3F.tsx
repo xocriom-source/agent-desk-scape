@@ -43,13 +43,16 @@ export const VehicleR3F = memo(function VehicleR3F({ aabbs, playerName }: Vehicl
     steering: 0,
   });
 
-  // Sync initial position when entering vehicle
+  // Sync initial position and heading when entering vehicle
   useEffect(() => {
     if (vehicle.isInVehicle) {
-      physicsState.current.x = playerPos[0];
-      physicsState.current.z = playerPos[2];
+      const state = useGameStore.getState();
+      physicsState.current.x = state.player.position[0];
+      physicsState.current.z = state.player.position[2];
+      physicsState.current.heading = state.player.rotation; // Match player's facing direction
       physicsState.current.velocity = 0;
       physicsState.current.steeringAngle = 0;
+      console.log("[VehicleR3F:enter] heading=", state.player.rotation.toFixed(2));
     }
   }, [vehicle.isInVehicle]);
 
