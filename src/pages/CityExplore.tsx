@@ -156,7 +156,7 @@ export default function CityExplore() {
         <>
           {/* Location selector (top left, next to back button) */}
           <div className="absolute top-14 left-4 z-40">
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-amber-700/30">
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl glass-panel border border-border">
               <CityLocationSelector
                 loading={osmCity.loading}
                 error={osmCity.error}
