@@ -291,7 +291,13 @@ const BoxBuilding = memo(function BoxBuilding({ b }: { b: CityBuilding }) {
   const polygon = (b as any).polygon as BuildingPolygon | undefined;
   const fw = Math.max(polygon?.w || 2, 1);
   const fd = Math.max(polygon?.d || 2, 1);
-  const material = useMemo(() => getMat(b.primaryColor, 0.65), [b.primaryColor]);
+  const seed = useMemo(() => {
+    let s = 0;
+    for (let i = 0; i < Math.min(b.id.length, 6); i++) s += b.id.charCodeAt(i) * (i + 1);
+    return Math.abs(s);
+  }, [b.id]);
+  const palette = getBuildingPalette(seed);
+  const material = useMemo(() => getMat(varyColor(palette.body, seed), 0.6, 0.06), [palette.body, seed]);
 
   return (
     <group position={[b.coordinates.x, 0, b.coordinates.z]}>
@@ -299,6 +305,13 @@ const BoxBuilding = memo(function BoxBuilding({ b }: { b: CityBuilding }) {
         <boxGeometry args={[fw, b.height, fd]} />
         <primitive object={material} attach="material" />
       </mesh>
+      {/* Cornice */}
+      {b.height > 3 && (
+        <mesh position={[0, b.height + 0.05, 0]}>
+          <boxGeometry args={[fw + 0.15, 0.1, fd + 0.15]} />
+          <primitive object={roofEdgeMat} attach="material" />
+        </mesh>
+      )}
     </group>
   );
 });
