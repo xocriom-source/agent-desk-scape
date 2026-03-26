@@ -14,7 +14,7 @@ const SCALE = 4; // pixels per tile
 const W = MAP_COLS * SCALE;
 const H = MAP_ROWS * SCALE;
 
-export function MiniMap({ player, agents, rooms }: MiniMapProps) {
+export const MiniMap = memo(function MiniMap({ player, agents, rooms }: MiniMapProps) {
   const roomRects = useMemo(
     () =>
       rooms.map((r) => ({
