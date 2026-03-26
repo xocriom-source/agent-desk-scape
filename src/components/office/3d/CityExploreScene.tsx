@@ -745,34 +745,34 @@ export function CityExploreScene({
       >
         <color attach="background" args={[dn.bgColor]} />
         <fog attach="fog" args={[
-          dn.isNight ? "#0A1020" : dn.isSunset ? "#C8906A" : "#B8C8D8",
-          isOSMMode ? 20 : lodConfig.fogNear * 2,
-          isOSMMode ? 350 : lodConfig.fogFar * 2
+          dn.fogColor,
+          isOSMMode ? Math.max(dn.fogNear, 60) : lodConfig.fogNear * 2,
+          isOSMMode ? Math.max(dn.fogFar, 300) : lodConfig.fogFar * 2
         ]} />
 
-        {/* Lighting — richer, more directional */}
-        <ambientLight intensity={dn.ambientIntensity * 0.6} color={dn.isNight ? "#2244AA" : dn.ambientColor} />
+        {/* Lighting — bright and readable */}
+        <ambientLight intensity={dn.ambientIntensity} color={dn.ambientColor} />
         <directionalLight
           position={dn.sunPosition}
-          intensity={dn.sunIntensity * 1.1}
+          intensity={dn.sunIntensity * 1.3}
           castShadow
           shadow-mapSize-width={512}
           shadow-mapSize-height={512}
-          shadow-camera-far={40}
-          shadow-camera-left={-20}
-          shadow-camera-right={20}
-          shadow-camera-top={20}
-          shadow-camera-bottom={-20}
+          shadow-camera-far={60}
+          shadow-camera-left={-30}
+          shadow-camera-right={30}
+          shadow-camera-top={30}
+          shadow-camera-bottom={-30}
           shadow-bias={-0.0008}
           color={dn.sunColor}
         />
-        {/* Fill light from opposite side for depth */}
+        {/* Fill light for depth — prevents pitch-black shadows */}
         <directionalLight
-          position={[-dn.sunPosition[0] * 0.5, dn.sunPosition[1] * 0.3, -dn.sunPosition[2] * 0.5]}
-          intensity={dn.sunIntensity * 0.15}
-          color={dn.isNight ? "#334488" : "#B0C0D0"}
+          position={[-dn.sunPosition[0] * 0.6, dn.sunPosition[1] * 0.5, -dn.sunPosition[2] * 0.6]}
+          intensity={dn.sunIntensity * 0.35}
+          color={dn.isNight ? "#4466AA" : "#C0D0E0"}
         />
-        <hemisphereLight args={[dn.isNight ? "#1A2240" : dn.skyColor, dn.isNight ? "#0A0A15" : "#C8B090", dn.hemiIntensity * 1.1]} />
+        <hemisphereLight args={[dn.skyColor, dn.groundColor, dn.hemiIntensity * 1.2]} />
 
         {dn.isNight && (
           <group position={[-20, 30, -15]}>
