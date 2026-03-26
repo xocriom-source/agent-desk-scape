@@ -45,6 +45,8 @@ export type PanelName =
   | "events" | "screenShare" | "integrations" | "engagement"
   | "status" | "objects" | "ads" | "settings";
 
+export type CityViewMode = "canvas" | "flyover";
+
 export interface UIState {
   activePanel: PanelName | null;
   showIntro: boolean;
@@ -53,6 +55,7 @@ export interface UIState {
   hudVisible: boolean;
   selectedBuildingId: string | null;
   selectedAgentId: string | null;
+  cityViewMode: CityViewMode;
 }
 
 // ── Camera Slice ──
@@ -96,6 +99,7 @@ export interface GameStore {
   selectBuilding: (id: string | null) => void;
   selectAgent: (id: string | null) => void;
   setHudVisible: (visible: boolean) => void;
+  setCityViewMode: (mode: CityViewMode) => void;
 
   // Camera
   camera: CameraState;
@@ -179,6 +183,7 @@ export const useGameStore = create<GameStore>()(
       hudVisible: true,
       selectedBuildingId: null,
       selectedAgentId: null,
+      cityViewMode: "canvas" as CityViewMode,
     },
     openPanel: (panel) => set((s) => ({ ui: { ...s.ui, activePanel: panel } })),
     closePanel: () => set((s) => ({ ui: { ...s.ui, activePanel: null } })),
@@ -189,6 +194,7 @@ export const useGameStore = create<GameStore>()(
     selectBuilding: (id) => set((s) => ({ ui: { ...s.ui, selectedBuildingId: id } })),
     selectAgent: (id) => set((s) => ({ ui: { ...s.ui, selectedAgentId: id } })),
     setHudVisible: (visible) => set((s) => ({ ui: { ...s.ui, hudVisible: visible } })),
+    setCityViewMode: (mode) => set((s) => ({ ui: { ...s.ui, cityViewMode: mode } })),
 
     // ── Camera ──
     camera: { distance: 25, polarAngle: Math.PI / 3, azimuthAngle: 0 },

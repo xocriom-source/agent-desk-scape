@@ -1,6 +1,6 @@
 /**
- * CityHUD — Clean, minimal heads-up display.
- * Uses design tokens for visual consistency.
+ * CityHUD — Clean, minimal heads-up display for Flyover mode.
+ * Includes mode toggle to switch back to Canvas view.
  */
 
 import { memo, useState, useCallback } from "react";
@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Car, Plane, MessageCircle, Target, ShoppingBag,
   Bot, Settings, Map, Users,
-  ChevronUp, X, Zap,
+  ChevronUp, X, Zap, LayoutGrid,
 } from "lucide-react";
 import { useGameStore, type PanelName } from "@/stores/gameStore";
 
@@ -100,7 +100,7 @@ export const CityHUD = memo(function CityHUD() {
   const navigate = useNavigate();
   const {
     world, player, vehicle, ui,
-    openPanel, setMovementMode,
+    openPanel, setMovementMode, setCityViewMode,
   } = useGameStore();
 
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -162,6 +162,17 @@ export const CityHUD = memo(function CityHUD() {
 
           {/* Right: Quick actions */}
           <div className="flex items-center gap-1.5">
+            {/* Canvas mode toggle */}
+            <button
+              onClick={() => setCityViewMode("canvas")}
+              className="flex items-center gap-1 px-3 py-2 rounded-xl glass-panel border border-border text-foreground hover:bg-muted/30 transition-all text-xs font-medium"
+              title="City Canvas"
+              aria-label="Voltar ao modo Canvas"
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Canvas</span>
+            </button>
+
             {vehicle.isInVehicle && (
               <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-accent/20 backdrop-blur-md border border-accent/40 text-accent text-xs font-medium">
                 <Car className="w-3.5 h-3.5" />
