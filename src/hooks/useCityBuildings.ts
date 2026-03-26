@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { CityBuilding } from "@/types/building";
 
-const LOAD_RADIUS = 300;
+const LOAD_RADIUS = 500;
 
 /**
  * Fetches REAL buildings from city_buildings table.
