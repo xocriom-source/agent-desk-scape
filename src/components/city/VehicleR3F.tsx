@@ -57,6 +57,7 @@ export const VehicleR3F = memo(function VehicleR3F({ aabbs, playerName }: Vehicl
 
   useFrame((_, delta) => {
     if (!vehicle.isInVehicle || !ref.current) return;
+    const dt = Math.min(delta, 0.05);
 
     const keys = useInputStore.getState().keys;
     const { throttle, steering } = inputToVehicleControls(keys);
