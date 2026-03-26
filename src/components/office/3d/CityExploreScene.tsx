@@ -775,9 +775,9 @@ export function CityExploreScene({
   const lodFrame = useMemo(() => computeFrame(playerPos[0], playerPos[2]), [computeFrame, playerPos]);
   const [occludedBuildings, setOccludedBuildings] = useState<Set<string>>(new Set());
 
-  // Sync camera center for building loading
+  // Sync camera center for building loading — use player position directly
   useEffect(() => {
-    updateCameraCenter(playerPos[0] * 2.5, playerPos[2] * 2.5);
+    updateCameraCenter(playerPos[0], playerPos[2]);
   }, [playerPos, updateCameraCenter]);
 
   return (

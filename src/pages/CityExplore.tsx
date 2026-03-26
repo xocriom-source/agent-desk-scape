@@ -43,6 +43,7 @@ import type { TransportType } from "@/types/building";
 import { useGameStore, type PanelName } from "@/stores/gameStore";
 import { initInputListeners } from "@/stores/inputStore";
 import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function CityExplore() {
   const navigate = useNavigate();
