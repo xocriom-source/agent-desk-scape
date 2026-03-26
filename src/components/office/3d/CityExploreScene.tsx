@@ -319,8 +319,8 @@ function CameraRig({ isOSMMode }: { isOSMMode: boolean }) {
       enablePan={false}
       enableZoom
       enableRotate
-      minDistance={isOSMMode ? 15 : 8}
-      maxDistance={isOSMMode ? 200 : 60}
+      minDistance={isOSMMode ? 5 : 8}
+      maxDistance={isOSMMode ? 120 : 60}
       minPolarAngle={Math.PI / 8}
       maxPolarAngle={Math.PI / 2.8}
       zoomSpeed={0.8}
