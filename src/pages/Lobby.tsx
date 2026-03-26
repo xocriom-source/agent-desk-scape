@@ -8,6 +8,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { PlanBadge } from "@/components/plan/PlanBadge";
 import { LoadingState, EmptyState } from "@/components/ui/LoadingState";
+import { SEOHead } from "@/components/SEOHead";
 import { fetchUserBuildings, fetchRecentActivity, type BuildingSummary } from "@/services/buildingService";
 import logoOriginal from "@/assets/logo-original.svg";
 
@@ -60,6 +61,7 @@ export default function Lobby() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead title="Lobby" description="Gerencie seus prédios e agentes IA no The Good City." path="/spaces" />
       {/* Nav */}
       <nav className="border-b border-border/30 bg-card/80 backdrop-blur-sm sticky top-0 z-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14">

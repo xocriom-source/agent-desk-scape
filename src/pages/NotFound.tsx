@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Home, ArrowLeft, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SEOHead } from "@/components/SEOHead";
 
 const NotFound = () => {
   const location = useLocation();
@@ -13,6 +14,7 @@ const NotFound = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
+      <SEOHead title="404 — Página não encontrada" description="A página que você procura não existe no The Good City." />
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
