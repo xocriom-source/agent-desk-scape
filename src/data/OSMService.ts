@@ -139,18 +139,61 @@ function extractVertices(el: OSMElement, center: GeoCenter): WorldPoint[] | null
   return null;
 }
 
-// ── Main conversion ──
+// ── Road buffer collision helpers ──
+
+interface RoadSegBuffer {
+  ax: number; az: number;
+  bx: number; bz: number;
+  halfWidth: number;
+}
+
+function pointNearRoad(px: number, pz: number, seg: RoadSegBuffer): boolean {
+  const dx = seg.bx - seg.ax;
+  const dz = seg.bz - seg.az;
+  const lenSq = dx * dx + dz * dz;
+  if (lenSq < 0.01) return false;
+  let t = ((px - seg.ax) * dx + (pz - seg.az) * dz) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+  const cx = seg.ax + t * dx;
+  const cz = seg.az + t * dz;
+  return (px - cx) ** 2 + (pz - cz) ** 2 < seg.halfWidth * seg.halfWidth;
+}
+
+function footprintOverlapsRoad(cx: number, cz: number, w: number, d: number, roads: RoadSegBuffer[]): boolean {
+  const pts = [
+    { x: cx, z: cz },
+    { x: cx - w * 0.4, z: cz - d * 0.4 },
+    { x: cx + w * 0.4, z: cz - d * 0.4 },
+    { x: cx - w * 0.4, z: cz + d * 0.4 },
+    { x: cx + w * 0.4, z: cz + d * 0.4 },
+  ];
+  for (const pt of pts) {
+    for (const seg of roads) {
+      if (pointNearRoad(pt.x, pt.z, seg)) return true;
+    }
+  }
+  return false;
+}
+
+function aabbOverlap(ax: number, az: number, aw: number, ad: number, bx: number, bz: number, bw: number, bd: number): boolean {
+  return ax - aw / 2 - 0.3 < bx + bw / 2 && ax + aw / 2 + 0.3 > bx - bw / 2 &&
+    az - ad / 2 - 0.3 < bz + bd / 2 && az + ad / 2 + 0.3 > bz - bd / 2;
+}
+
+// ── Main conversion (two-pass: roads first, then filtered buildings) ──
 
 export function convertOSMElements(elements: OSMElement[], center: GeoCenter): OSMCityResult {
   const buildings: OSMBuildingData[] = [];
   const roads: OSMRoadData[] = [];
   const trees: OSMTreeData[] = [];
   const greenAreas: OSMGreenArea[] = [];
-  const occupied = new Set<string>();
-  const cellSize = 2;
+  const roadBuffers: RoadSegBuffer[] = [];
 
   let skippedBuildings = 0;
+  let skippedOnRoad = 0;
+  let skippedOverlap = 0;
 
+  // ── PASS 1: Non-building elements (roads, trees, parks) ──
   for (const el of elements) {
     const tags = el.tags || {};
 
@@ -186,53 +229,72 @@ export function convertOSMElements(elements: OSMElement[], center: GeoCenter): O
       continue;
     }
 
-    // Buildings — with polygon validation
-    if (tags.building) {
-      const verts = extractVertices(el, center);
-      if (!verts || verts.length < 3) {
-        skippedBuildings++;
-        continue;
-      }
-      let sx = 0, sz = 0, mnx = Infinity, mxx = -Infinity, mnz = Infinity, mxz = -Infinity;
-      for (const v of verts) {
-        sx += v.x; sz += v.z;
-        mnx = Math.min(mnx, v.x); mxx = Math.max(mxx, v.x);
-        mnz = Math.min(mnz, v.z); mxz = Math.max(mxz, v.z);
-      }
-      const cx = sx / verts.length;
-      const cz = sz / verts.length;
-      const w = mxx - mnx;
-      const d = mxz - mnz;
-      if (w < 0.8 && d < 0.8) { skippedBuildings++; continue; }
-
-      // Check for NaN/Infinity coordinates
-      if (!isFinite(cx) || !isFinite(cz)) { skippedBuildings++; continue; }
-
-      const key = `${Math.round(cx / cellSize)}_${Math.round(cz / cellSize)}`;
-      if (occupied.has(key)) continue;
-      occupied.add(key);
-      const seed = hash(`osm-${el.id}`);
-      buildings.push({
-        id: `osm-${el.id}`,
-        vertices: verts.map(v => ({ x: v.x - cx, z: v.z - cz })),
-        cx, cz, width: w, depth: d,
-        heightMeters: estimateHeight(tags, seed),
-        tags,
-      });
-    }
-
-    // Roads
+    // Roads — collect with buffers
     if (tags.highway && el.type === "way" && el.geometry && el.geometry.length >= 2) {
       const type = classifyRoad(tags.highway);
       if (!type) continue;
-      roads.push({
-        id: `road-${el.id}`,
-        segments: el.geometry.map(pt => latLonToWorld(pt.lat, pt.lon, center)),
-        widthMeters: roadWidth(type),
-        type,
-        name: tags.name,
-      });
+      const segments = el.geometry.map(pt => latLonToWorld(pt.lat, pt.lon, center));
+      const widthM = roadWidth(type);
+      roads.push({ id: `road-${el.id}`, segments, widthMeters: widthM, type, name: tags.name });
+
+      // Build road buffer (half-width + 1.5 unit margin)
+      const bufferHW = metersToUnits(widthM) / 2 + 1.5;
+      for (let i = 0; i < segments.length - 1; i++) {
+        roadBuffers.push({
+          ax: segments[i].x, az: segments[i].z,
+          bx: segments[i + 1].x, bz: segments[i + 1].z,
+          halfWidth: bufferHW,
+        });
+      }
     }
+  }
+
+  // ── PASS 2: Buildings filtered against roads and each other ──
+  const placedBuildings: Array<{ cx: number; cz: number; w: number; d: number }> = [];
+
+  for (const el of elements) {
+    const tags = el.tags || {};
+    if (!tags.building) continue;
+
+    const verts = extractVertices(el, center);
+    if (!verts || verts.length < 3) { skippedBuildings++; continue; }
+
+    let sx = 0, sz = 0, mnx = Infinity, mxx = -Infinity, mnz = Infinity, mxz = -Infinity;
+    for (const v of verts) {
+      sx += v.x; sz += v.z;
+      mnx = Math.min(mnx, v.x); mxx = Math.max(mxx, v.x);
+      mnz = Math.min(mnz, v.z); mxz = Math.max(mxz, v.z);
+    }
+    const cx = sx / verts.length;
+    const cz = sz / verts.length;
+    const w = mxx - mnx;
+    const d = mxz - mnz;
+    if (w < 0.8 && d < 0.8) { skippedBuildings++; continue; }
+    if (!isFinite(cx) || !isFinite(cz)) { skippedBuildings++; continue; }
+
+    // Road collision check
+    if (footprintOverlapsRoad(cx, cz, w, d, roadBuffers)) { skippedOnRoad++; continue; }
+
+    // Building overlap check
+    let hasOverlap = false;
+    for (const placed of placedBuildings) {
+      if (aabbOverlap(cx, cz, w, d, placed.cx, placed.cz, placed.w, placed.d)) {
+        hasOverlap = true;
+        break;
+      }
+    }
+    if (hasOverlap) { skippedOverlap++; continue; }
+
+    placedBuildings.push({ cx, cz, w, d });
+
+    const seed = hash(`osm-${el.id}`);
+    buildings.push({
+      id: `osm-${el.id}`,
+      vertices: verts.map(v => ({ x: v.x - cx, z: v.z - cz })),
+      cx, cz, width: w, depth: d,
+      heightMeters: estimateHeight(tags, seed),
+      tags,
+    });
   }
 
   // Bounds
@@ -241,7 +303,8 @@ export function convertOSMElements(elements: OSMElement[], center: GeoCenter): O
   for (const r of roads) { for (const s of r.segments) { minX = Math.min(minX, s.x); maxX = Math.max(maxX, s.x); minZ = Math.min(minZ, s.z); maxZ = Math.max(maxZ, s.z); } }
   if (!isFinite(minX)) { minX = -50; maxX = 50; minZ = -50; maxZ = 50; }
 
-  console.log(`[OSMService] Converted: ${buildings.length} buildings (${skippedBuildings} skipped), ${roads.length} roads, ${trees.length} trees, ${greenAreas.length} parks`);
+  console.log(`[OSMService] Converted: ${buildings.length} buildings, ${roads.length} roads, ${trees.length} trees, ${greenAreas.length} parks`);
+  console.log(`[OSMService] Filtered: ${skippedBuildings} invalid, ${skippedOnRoad} on-road, ${skippedOverlap} overlap`);
   return { buildings, roads, trees, greenAreas, bounds: { minX, maxX, minZ, maxZ } };
 }
 
