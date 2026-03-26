@@ -161,7 +161,7 @@ function buildFeed(agents: Agent[]): FeedItem[] {
 
 type FilterType = "all" | FeedItemType;
 
-export function SocialFeed({ agents, isOpen, onClose, onAgentClick }: SocialFeedProps) {
+export const SocialFeed = memo(function SocialFeed({ agents, isOpen, onClose, onAgentClick }: SocialFeedProps) {
   const [filter, setFilter] = useState<FilterType>("all");
   const [dbItems, setDbItems] = useState<FeedItem[]>([]);
 
