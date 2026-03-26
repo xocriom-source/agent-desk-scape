@@ -486,7 +486,7 @@ export function convertOSMToCity(
     }
   }
 
-  console.log(`[OSM] Pass 1 complete: ${streetCount} streets, ${roadBuffers.length} road buffer segments, ${trees.length} trees, ${greenAreas.length} parks`);
+  console.log(`[OSM] Pass 1 complete: ${streetCount} streets, ${roadBuffers.length} road segments, ${junctions.length} junctions, ${trees.length} trees, ${greenAreas.length} parks`);
 
   // ── PASS 2: Collect buildings, filtered against road buffers ──
   let buildingCount = 0;
