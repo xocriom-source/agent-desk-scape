@@ -251,13 +251,13 @@ function PlayerVisual({ name, scale = 1 }: { name: string; scale?: number }) {
   return (
     <group ref={ref} position={playerPos} scale={[s, s, s]}>
       {/* Feet */}
-      <mesh position={[-0.15, 0.06, 0.05]}><boxGeometry args={[0.15, 0.12, 0.25]} /><meshStandardMaterial color="#333" /></mesh>
-      <mesh position={[0.15, 0.06, 0.05]}><boxGeometry args={[0.15, 0.12, 0.25]} /><meshStandardMaterial color="#333" /></mesh>
+      <mesh position={[-0.15, 0.06, 0.05]}><boxGeometry args={[0.15, 0.12, 0.25]} /><meshStandardMaterial color="#2A2A2A" /></mesh>
+      <mesh position={[0.15, 0.06, 0.05]}><boxGeometry args={[0.15, 0.12, 0.25]} /><meshStandardMaterial color="#2A2A2A" /></mesh>
       {/* Legs */}
-      <mesh position={[-0.15, 0.3, 0]}><boxGeometry args={[0.18, 0.35, 0.2]} /><meshStandardMaterial color="#4A90D9" /></mesh>
-      <mesh position={[0.15, 0.3, 0]}><boxGeometry args={[0.18, 0.35, 0.2]} /><meshStandardMaterial color="#4A90D9" /></mesh>
+      <mesh position={[-0.15, 0.3, 0]}><boxGeometry args={[0.18, 0.35, 0.2]} /><meshStandardMaterial color="#3B6DAA" /></mesh>
+      <mesh position={[0.15, 0.3, 0]}><boxGeometry args={[0.18, 0.35, 0.2]} /><meshStandardMaterial color="#3B6DAA" /></mesh>
       {/* Body / Torso */}
-      <mesh position={[0, 0.7, 0]} castShadow><boxGeometry args={[0.6, 0.55, 0.35]} /><meshStandardMaterial color="#2E8B57" /></mesh>
+      <mesh position={[0, 0.7, 0]} castShadow><boxGeometry args={[0.6, 0.55, 0.35]} /><meshStandardMaterial color="#10B981" /></mesh>
       {/* Arms */}
       <mesh position={[-0.42, 0.65, 0]}><boxGeometry args={[0.15, 0.5, 0.18]} /><meshStandardMaterial color="#F5DEB3" /></mesh>
       <mesh position={[0.42, 0.65, 0]}><boxGeometry args={[0.15, 0.5, 0.18]} /><meshStandardMaterial color="#F5DEB3" /></mesh>
@@ -266,15 +266,22 @@ function PlayerVisual({ name, scale = 1 }: { name: string; scale?: number }) {
       {/* Eyes */}
       <mesh position={[-0.1, 1.18, 0.21]}><boxGeometry args={[0.1, 0.08, 0.02]} /><meshStandardMaterial color="#FFF" /></mesh>
       <mesh position={[0.1, 1.18, 0.21]}><boxGeometry args={[0.1, 0.08, 0.02]} /><meshStandardMaterial color="#FFF" /></mesh>
+      <mesh position={[-0.1, 1.19, 0.22]}><boxGeometry args={[0.05, 0.04, 0.01]} /><meshStandardMaterial color="#222" /></mesh>
+      <mesh position={[0.1, 1.19, 0.22]}><boxGeometry args={[0.05, 0.04, 0.01]} /><meshStandardMaterial color="#222" /></mesh>
       {/* Hair */}
       <mesh position={[0, 1.4, -0.02]}><boxGeometry args={[0.48, 0.12, 0.44]} /><meshStandardMaterial color="#4A3020" /></mesh>
+      {/* Ground glow ring */}
+      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.3, 0.45, 16]} />
+        <meshBasicMaterial color="#10B981" transparent opacity={0.25} />
+      </mesh>
       {/* Shadow */}
-      <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.35, 8]} /><meshBasicMaterial color="#000" transparent opacity={0.18} /></mesh>
+      <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.35, 8]} /><meshBasicMaterial color="#000" transparent opacity={0.2} /></mesh>
       {/* Name label */}
       <Html position={[0, 1.8, 0]} center>
-        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full whitespace-nowrap pointer-events-none select-none bg-emerald-700 shadow-lg">
-          <div className="w-2 h-2 rounded-full bg-emerald-400" />
-          <span className="text-[11px] text-white font-bold">{name}</span>
+        <div className="flex items-center gap-1 px-2.5 py-1 rounded-full whitespace-nowrap pointer-events-none select-none shadow-lg" style={{ background: "rgba(16, 185, 129, 0.9)" }}>
+          <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+          <span className="text-[11px] text-white font-bold tracking-wide">{name}</span>
         </div>
       </Html>
     </group>

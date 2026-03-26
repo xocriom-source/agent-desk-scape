@@ -110,11 +110,24 @@ const PolygonBuilding = memo(function PolygonBuilding({ b }: { b: CityBuilding }
     return getCachedGeometry(b.id, polygon, b.height);
   }, [b.id, hasPolygon, polygon, b.height]);
 
-  const material = useMemo(() => getMat(b.primaryColor, 0.55, 0.1), [b.primaryColor]);
+  // Vary color per building for visual interest
+  const buildingColor = useMemo(() => {
+    const seed = b.id.charCodeAt(0) + b.id.charCodeAt(b.id.length - 1) * 7;
+    return varyColor(b.primaryColor, seed);
+  }, [b.primaryColor, b.id]);
+
+  const material = useMemo(() => getMat(buildingColor, 0.55, 0.1), [buildingColor]);
   const roofMat = useMemo(() => {
-    const c = new THREE.Color(b.primaryColor).multiplyScalar(0.7);
-    return getMat(c.getStyle(), 0.75);
-  }, [b.primaryColor]);
+    const c = new THREE.Color(buildingColor).multiplyScalar(0.65);
+    return getMat(c.getStyle(), 0.7, 0.1);
+  }, [buildingColor]);
+
+  // Deterministic window lighting pattern
+  const windowSeed = useMemo(() => b.id.charCodeAt(2) || 0, [b.id]);
+  const getWindowMat = (faceIndex: number) => {
+    const lit = ((windowSeed + faceIndex * 3) % 5) > 1;
+    return lit ? windowDayMat : windowDimMat;
+  };
 
   const mainMesh = hasPolygon && geometry ? (
     <mesh geometry={geometry} material={material} castShadow receiveShadow />
@@ -125,31 +138,53 @@ const PolygonBuilding = memo(function PolygonBuilding({ b }: { b: CityBuilding }
     </mesh>
   );
 
+  const windowH = b.height * 0.65;
+  const windowY = b.height * 0.45;
+
   return (
     <group position={[b.coordinates.x, 0, b.coordinates.z]}>
       {mainMesh}
       {/* AO shadow */}
       <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[fw + 0.6, fd + 0.6]} />
+        <planeGeometry args={[fw + 0.8, fd + 0.8]} />
         <primitive object={aoMat} attach="material" />
       </mesh>
-      {/* Windows */}
-      {b.height > 3 && (
+      {/* Windows on all 4 faces for taller buildings */}
+      {b.height > 2.5 && (
         <>
-          <mesh position={[0, b.height * 0.45, fd / 2 + 0.05]}>
-            <planeGeometry args={[fw * 0.8, b.height * 0.7]} />
-            <primitive object={windowMat} attach="material" />
+          {/* Front */}
+          <mesh position={[0, windowY, fd / 2 + 0.04]}>
+            <planeGeometry args={[fw * 0.75, windowH]} />
+            <primitive object={getWindowMat(0)} attach="material" />
           </mesh>
-          <mesh position={[fw / 2 + 0.05, b.height * 0.45, 0]} rotation={[0, Math.PI / 2, 0]}>
-            <planeGeometry args={[fd * 0.8, b.height * 0.7]} />
-            <primitive object={windowMat} attach="material" />
+          {/* Back */}
+          <mesh position={[0, windowY, -fd / 2 - 0.04]} rotation={[0, Math.PI, 0]}>
+            <planeGeometry args={[fw * 0.75, windowH]} />
+            <primitive object={getWindowMat(1)} attach="material" />
+          </mesh>
+          {/* Right */}
+          <mesh position={[fw / 2 + 0.04, windowY, 0]} rotation={[0, Math.PI / 2, 0]}>
+            <planeGeometry args={[fd * 0.75, windowH]} />
+            <primitive object={getWindowMat(2)} attach="material" />
+          </mesh>
+          {/* Left */}
+          <mesh position={[-fw / 2 - 0.04, windowY, 0]} rotation={[0, -Math.PI / 2, 0]}>
+            <planeGeometry args={[fd * 0.75, windowH]} />
+            <primitive object={getWindowMat(3)} attach="material" />
           </mesh>
         </>
       )}
-      {/* Roof ledge */}
-      {b.height > 4 && (
-        <mesh position={[0, b.height + 0.1, 0]}>
-          <boxGeometry args={[fw + 0.15, 0.2, fd + 0.15]} />
+      {/* Roof ledge for taller buildings */}
+      {b.height > 3.5 && (
+        <mesh position={[0, b.height + 0.08, 0]}>
+          <boxGeometry args={[fw + 0.12, 0.16, fd + 0.12]} />
+          <primitive object={roofEdgeMat} attach="material" />
+        </mesh>
+      )}
+      {/* Roof accent for mid buildings */}
+      {b.height > 5 && b.height < 12 && (
+        <mesh position={[0, b.height + 0.2, 0]}>
+          <boxGeometry args={[fw * 0.4, 0.3, fd * 0.4]} />
           <primitive object={roofMat} attach="material" />
         </mesh>
       )}
