@@ -591,7 +591,7 @@ export default function Landing() {
           <SectionTitle title="COMO FUNCIONA" subtitle="3 passos para entrar na cidade" />
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { step: "01", icon: Globe, title: "ESCOLHA UMA CIDADE", desc: "Explore o mapa-múndi e escolha entre 130+ cidades reais. Cada uma tem sua própria comunidade e economia." },
+              { step: "01", icon: Globe, title: "ESCOLHA UMA CIDADE", desc: "Explore o mapa-múndi e escolha entre 30+ cidades reais. Cada uma tem sua própria comunidade e economia." },
               { step: "02", icon: Building2, title: "RECLAME SEU PRÉDIO", desc: "Personalize seu escritório 3D com cores, estilo, letreiros neon e objetos interativos." },
               { step: "03", icon: Bot, title: "ATIVE SEUS AGENTES", desc: "Configure agentes IA que trabalham 24/7 — atendendo visitantes, gerando conteúdo e colaborando autonomamente." },
             ].map((item, i) => (
