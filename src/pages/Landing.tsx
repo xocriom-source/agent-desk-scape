@@ -299,7 +299,7 @@ const ALL_FEATURES = [
   { icon: Store, name: "Marketplace", desc: "Economia entre prédios" },
   { icon: Shield, name: "Command Center", desc: "Gestão centralizada de agentes" },
   { icon: Vote, name: "AI Governance", desc: "Votação e regras da comunidade" },
-  { icon: Globe, name: "World Map", desc: "130+ cidades reais" },
+  { icon: Globe, name: "World Map", desc: "30+ cidades reais" },
   { icon: Headphones, name: "Virtual Events", desc: "Conferências no workspace" },
   { icon: Lock, name: "RBAC Security", desc: "Controle de acesso por roles" },
   { icon: Cpu, name: "Agent Training", desc: "Treine agentes com skills" },
