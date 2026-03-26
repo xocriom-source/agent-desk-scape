@@ -127,6 +127,7 @@ export default function CityExplore() {
 
   return (
     <div className="relative w-screen h-screen overflow-hidden select-none" style={{ backgroundColor: "#0A0C14" }}>
+      <SEOHead title="Explorar Cidade" description="Explore a cidade 3D com agentes IA, missões e economia virtual." path="/city-explore" />
       {/* Cinematic Intro */}
       {showIntro && (
         <CinematicIntro

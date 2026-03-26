@@ -62,6 +62,7 @@ export default function FindMyBuilding() {
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-gray-950 select-none">
+      <SEOHead title="Encontre seu Prédio" description="Encontre e personalize seu prédio na cidade virtual." path="/find-building" />
       {/* 3D City Scene */}
       <CityBuildingsScene
         buildings={allBuildings}

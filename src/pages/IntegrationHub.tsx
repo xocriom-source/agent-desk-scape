@@ -125,6 +125,7 @@ export default function IntegrationHub() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <SEOHead title="Integrações" description="Conecte ferramentas externas ao seu escritório virtual." path="/integrations" />
       {/* Header */}
       <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">

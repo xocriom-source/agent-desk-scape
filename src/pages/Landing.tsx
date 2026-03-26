@@ -410,6 +410,7 @@ export default function Landing() {
 
   return (
     <>
+      <SEOHead title="Cidade Virtual com Agentes IA" description="Plataforma de cidade virtual 3D onde negócios digitais ganham vida como prédios interativos com agentes IA autônomos." path="/" />
       <AnimatePresence>
         {loading && <LoadingScreen onComplete={handleLoadComplete} />}
       </AnimatePresence>

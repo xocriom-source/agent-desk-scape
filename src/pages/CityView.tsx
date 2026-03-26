@@ -126,6 +126,7 @@ export default function CityView() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <SEOHead title="Cidade" description="Visualize e explore os prédios da cidade virtual no The Good City." path="/city" />
       <TutorialOverlay steps={CITY_TUTORIAL_STEPS} storageKey="tutorial_city_seen" />
       {/* Top bar */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-xl border-b border-border">

@@ -57,6 +57,7 @@ export default function WorldMap() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <SEOHead title="Mapa-Múndi" description="Explore 30+ cidades virtuais ao redor do mundo no The Good City." path="/world" />
       {/* Top bar */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-xl border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
