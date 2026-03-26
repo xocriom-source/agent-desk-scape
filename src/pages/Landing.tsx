@@ -220,14 +220,14 @@ const STATS = [
 ];
 
 const CITIES = [
-  { name: "São Paulo", flag: "🇧🇷", population: 1247, buildings: 312 },
-  { name: "New York", flag: "🇺🇸", population: 2891, buildings: 890 },
-  { name: "Tokyo", flag: "🇯🇵", population: 1583, buildings: 445 },
-  { name: "London", flag: "🇬🇧", population: 1120, buildings: 320 },
-  { name: "Seoul", flag: "🇰🇷", population: 980, buildings: 275 },
-  { name: "Dubai", flag: "🇦🇪", population: 650, buildings: 180 },
-  { name: "Paris", flag: "🇫🇷", population: 930, buildings: 290 },
-  { name: "San Francisco", flag: "🇺🇸", population: 1450, buildings: 520 },
+  { name: "São Paulo", flag: "🇧🇷" },
+  { name: "New York", flag: "🇺🇸" },
+  { name: "Tokyo", flag: "🇯🇵" },
+  { name: "London", flag: "🇬🇧" },
+  { name: "Seoul", flag: "🇰🇷" },
+  { name: "Dubai", flag: "🇦🇪" },
+  { name: "Paris", flag: "🇫🇷" },
+  { name: "San Francisco", flag: "🇺🇸" },
 ];
 
 // All platform features grouped
