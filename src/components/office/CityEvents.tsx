@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { X, Calendar, MapPin, Users2, Clock, Flame, Music, Code, Palette, Trophy, Megaphone, Star, Sparkles, ArrowRight, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
