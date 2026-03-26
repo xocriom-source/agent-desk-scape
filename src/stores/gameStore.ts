@@ -45,6 +45,8 @@ export type PanelName =
   | "events" | "screenShare" | "integrations" | "engagement"
   | "status" | "objects" | "ads" | "settings";
 
+export type CityViewMode = "canvas" | "flyover";
+
 export interface UIState {
   activePanel: PanelName | null;
   showIntro: boolean;
@@ -53,6 +55,7 @@ export interface UIState {
   hudVisible: boolean;
   selectedBuildingId: string | null;
   selectedAgentId: string | null;
+  cityViewMode: CityViewMode;
 }
 
 // ── Camera Slice ──
