@@ -102,6 +102,11 @@ export default function Features() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <SEOHead
+        title="Features"
+        description="Explore os 24+ módulos da plataforma The Good City: workspace virtual, agentes IA, marketplace, cidade 3D e colaboração em tempo real."
+        path="/features"
+      />
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 sm:px-6 py-3 bg-background/80 backdrop-blur-xl border-b border-primary/10">
         <Link to="/" className="flex items-center gap-3">
