@@ -13,6 +13,8 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 const Landing = lazy(() => import("./pages/Landing"));
 const Login = lazy(() => import("./pages/Login"));
 const Signup = lazy(() => import("./pages/Signup"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const Lobby = lazy(() => import("./pages/Lobby"));
 const Spaces = lazy(() => import("./pages/Spaces"));
