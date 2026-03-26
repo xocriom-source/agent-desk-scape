@@ -142,9 +142,13 @@ export function stepVehiclePhysics(
   velocity = Math.max(-config.maxSpeed * 0.3, Math.min(config.maxSpeed, velocity));
 
   // ── Bicycle model kinematics ──
+  // Reduce steering authority at high speed for stability
+  const speedFactor = Math.min(1, 3 / (1 + Math.abs(velocity)));
+  const effectiveSteering = steeringAngle * (0.4 + 0.6 * speedFactor);
+
   if (Math.abs(velocity) > 0.01) {
-    if (Math.abs(steeringAngle) > 0.001) {
-      const turnRadius = config.wheelBase / Math.tan(steeringAngle);
+    if (Math.abs(effectiveSteering) > 0.001) {
+      const turnRadius = config.wheelBase / Math.tan(effectiveSteering);
       const angularVelocity = velocity / turnRadius;
       heading += angularVelocity * dt;
     }
@@ -152,10 +156,12 @@ export function stepVehiclePhysics(
     const newX = x + Math.sin(heading) * velocity * dt;
     const newZ = z + Math.cos(heading) * velocity * dt;
 
-    // Collision check
+    // Collision check — absorb impact proportionally
     if (collisionCheck && collisionCheck(newX, newZ, 0.4)) {
-      // Bounce back slightly
-      velocity *= -0.2;
+      velocity *= -0.15;
+      // Nudge away from wall
+      x -= Math.sin(heading) * 0.05;
+      z -= Math.cos(heading) * 0.05;
     } else {
       x = newX;
       z = newZ;

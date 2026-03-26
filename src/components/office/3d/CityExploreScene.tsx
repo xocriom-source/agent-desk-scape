@@ -318,7 +318,6 @@ function CameraRig({ isOSMMode }: { isOSMMode: boolean }) {
 function FlightCamera({ playerPos }: { playerPos: [number, number, number] }) {
   const { camera, gl } = useThree();
   const flyState = useRef({ yaw: 0, pitch: -0.3, x: 0, y: 15, z: 0, initialized: false });
-  const keysRef = useRef(new Set<string>());
 
   useEffect(() => {
     const s = flyState.current;
