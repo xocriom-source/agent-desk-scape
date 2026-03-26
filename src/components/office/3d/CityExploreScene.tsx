@@ -754,12 +754,9 @@ export function CityExploreScene({
     console.log("[CityScene:spawn:osm]", { cx, cz, bounds: osmBounds });
   }, [isOSMMode, osmBounds]);
 
-  // Dynamic buildings (mapped to city scale)
+  // Dynamic buildings — use coordinates as stored (no scaling)
   const dynamicBuildings = useMemo(() => {
-    return visibleBuildings.slice(0, 20).map(b => ({
-      ...b,
-      coordinates: { ...b.coordinates, x: b.coordinates.x * 0.4, z: b.coordinates.z * 0.4 },
-    }));
+    return visibleBuildings.slice(0, 20);
   }, [visibleBuildings]);
 
   // Build unified AABBs
