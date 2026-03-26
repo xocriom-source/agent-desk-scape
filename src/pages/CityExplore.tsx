@@ -127,8 +127,8 @@ export default function CityExplore() {
       {!showIntro && !cityReady && (
         <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none" id="city-loader">
           <div className="text-center">
-            <div className="w-8 h-8 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-xs text-gray-500 font-mono tracking-wider">LOADING CITY...</p>
+            <div className="w-8 h-8 border-2 border-accent/30 border-t-accent rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-xs text-muted-foreground font-mono tracking-wider">LOADING CITY...</p>
           </div>
         </div>
       )}
