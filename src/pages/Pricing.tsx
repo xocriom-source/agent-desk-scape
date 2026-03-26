@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription, PLAN_DETAILS } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { SEOHead } from "@/components/SEOHead";
 
 const PLANS = [
   {
