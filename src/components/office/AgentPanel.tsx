@@ -1,9 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Zap, Clock, ListTodo, Terminal, Send, MessageCircle, Eye, Brain, Star, Target } from "lucide-react";
+import { X, Zap, Clock, ListTodo, Terminal, Send, MessageCircle, Eye, Brain, Star, Target, AlertCircle } from "lucide-react";
 import type { Agent } from "@/types/agent";
 import { useState, useRef, useEffect, useCallback } from "react";
-
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-chat`;
+import { streamAgentChat, AgentChatError, type ChatMessage } from "@/services/agentChatService";
 
 const statusLabels: Record<string, string> = {
   active: "Ativo", idle: "Ocioso", thinking: "Pensando...", busy: "Ocupado",
@@ -22,19 +21,24 @@ interface AgentPanelProps {
   onViewProfile?: (agent: Agent) => void;
 }
 
-type Msg = { role: "user" | "assistant"; content: string };
-
 export function AgentPanel({ agent, onClose, onViewProfile }: AgentPanelProps) {
   const [chatMessage, setChatMessage] = useState("");
-  const [chatHistory, setChatHistory] = useState<Msg[]>([]);
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   // Reset chat when agent changes
   useEffect(() => {
     setChatHistory([]);
     setChatMessage("");
+    setChatError(null);
+    abortRef.current?.abort();
   }, [agent?.id]);
+
+  // Cleanup on unmount
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   const scrollToBottom = useCallback(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -44,14 +48,15 @@ export function AgentPanel({ agent, onClose, onViewProfile }: AgentPanelProps) {
 
   const sendMessage = async () => {
     if (!chatMessage.trim() || !agent || isLoading) return;
-    const userMsg: Msg = { role: "user", content: chatMessage };
+    setChatError(null);
+
+    const userMsg: ChatMessage = { role: "user", content: chatMessage };
     const allMessages = [...chatHistory, userMsg];
     setChatHistory(prev => [...prev, userMsg]);
     setChatMessage("");
     setIsLoading(true);
 
     let assistantSoFar = "";
-
     const upsertAssistant = (chunk: string) => {
       assistantSoFar += chunk;
       setChatHistory(prev => {
@@ -63,61 +68,40 @@ export function AgentPanel({ agent, onClose, onViewProfile }: AgentPanelProps) {
       });
     };
 
+    abortRef.current = new AbortController();
+
     try {
-      const resp = await fetch(CHAT_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({
-          messages: allMessages,
+      await streamAgentChat(
+        allMessages,
+        {
           agent_id: agent.id,
           agent_name: agent.name,
           agent_type: agent.identity,
           agent_soul: agent.soul,
           agent_mission: agent.mission,
           agent_room: agent.room,
-        }),
-      });
+        },
+        upsertAssistant,
+        abortRef.current.signal,
+      );
 
-      if (!resp.ok || !resp.body) {
-        upsertAssistant("Desculpe, estou temporariamente indisponível. Tente novamente em breve.");
-        setIsLoading(false);
-        return;
-      }
-
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let textBuffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        textBuffer += decoder.decode(value, { stream: true });
-
-        let newlineIndex: number;
-        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
-          let line = textBuffer.slice(0, newlineIndex);
-          textBuffer = textBuffer.slice(newlineIndex + 1);
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (line.startsWith(":") || line.trim() === "") continue;
-          if (!line.startsWith("data: ")) continue;
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") break;
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content;
-            if (content) upsertAssistant(content);
-          } catch {
-            textBuffer = line + "\n" + textBuffer;
-            break;
-          }
-        }
+      // If no content was streamed, show fallback
+      if (!assistantSoFar) {
+        upsertAssistant("Hmm, não consegui formular uma resposta. Pode tentar novamente? 🤔");
       }
     } catch (e) {
-      console.error("Agent chat error:", e);
-      upsertAssistant("Erro de conexão. Tente novamente.");
+      if (e instanceof AgentChatError) {
+        setChatError(e.userMessage);
+        if (!assistantSoFar) {
+          upsertAssistant(e.userMessage);
+        }
+      } else {
+        console.error("[AgentPanel:sendMessage]", e);
+        setChatError("Erro inesperado. Tente novamente.");
+        if (!assistantSoFar) {
+          upsertAssistant("Erro de conexão. Tente novamente em breve. 🔄");
+        }
+      }
     }
 
     setIsLoading(false);
@@ -213,13 +197,25 @@ export function AgentPanel({ agent, onClose, onViewProfile }: AgentPanelProps) {
               <p className="text-[10px] text-muted-foreground line-clamp-2">{agent.mission}</p>
             </div>
 
-            {/* Chat - Now with REAL AI */}
+            {/* Chat - REAL AI with improved error handling */}
             <div className="flex-1 flex flex-col min-h-0">
               <div className="flex items-center gap-2 px-4 py-2 border-b border-border/10">
                 <MessageCircle className="w-3.5 h-3.5 text-primary" />
                 <span className="text-[11px] font-display font-semibold text-foreground">Chat</span>
                 <span className="text-[9px] bg-accent/20 text-accent px-1.5 py-0.5 rounded-full ml-auto">IA Real</span>
               </div>
+
+              {/* Error banner */}
+              {chatError && (
+                <div className="px-3 py-2 bg-destructive/10 border-b border-destructive/20 flex items-center gap-2">
+                  <AlertCircle className="w-3 h-3 text-destructive shrink-0" />
+                  <p className="text-[10px] text-destructive">{chatError}</p>
+                  <button onClick={() => setChatError(null)} className="ml-auto text-destructive/60 hover:text-destructive">
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+
               <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
                 {chatHistory.length === 0 && (
                   <p className="text-[10px] text-muted-foreground text-center py-4">
