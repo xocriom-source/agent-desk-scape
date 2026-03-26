@@ -234,13 +234,13 @@ function PlayerVisual({ name, scale = 1 }: { name: string; scale?: number }) {
     if (!ref.current || isInVehicle) return;
     const terrainY = getTerrainHeight(playerPos[0], playerPos[2]);
     const targetPos = new THREE.Vector3(playerPos[0], terrainY, playerPos[2]);
-    smoothPos.current.lerp(targetPos, 0.18);
+    smoothPos.current.lerp(targetPos, 0.25);
     ref.current.position.copy(smoothPos.current);
-    ref.current.position.y += Math.sin(Date.now() * 0.003) * 0.02 * scale;
+    // Rotation: snap faster to avoid "spinning on its own" feel
     let diff = playerRot - ref.current.rotation.y;
     while (diff > Math.PI) diff -= Math.PI * 2;
     while (diff < -Math.PI) diff += Math.PI * 2;
-    ref.current.rotation.y += diff * 0.15;
+    ref.current.rotation.y += diff * 0.3;
   });
 
   if (isInVehicle) return null;
