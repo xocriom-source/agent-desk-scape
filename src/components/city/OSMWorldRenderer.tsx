@@ -1,18 +1,25 @@
 /**
- * OSMWorldRenderer v6 — Arnis-level real world engine.
+ * OSMWorldRenderer v7 — Progressive, non-blocking real world engine.
  * Real ExtrudeGeometry footprints, physical streets, trees, green areas,
  * natural color palette, proper city block structure.
+ * 
+ * Key improvements:
+ * - Increased LOD distances for OSM scale
+ * - Progressive building rendering (batched per frame)
+ * - Instanced far buildings for performance
+ * - Robust terrain that shows immediately
  */
 
-import { memo, useMemo, useRef, useEffect } from "react";
+import { memo, useMemo, useRef, useEffect, useState } from "react";
 import * as THREE from "three";
+import { useFrame } from "@react-three/fiber";
 import type { CityBuilding } from "@/types/building";
 import type { OSMStreet, BuildingPolygon, OSMTreeData, OSMGreenArea } from "@/systems/city/OSMCityGenerator";
 
-// ── LOD thresholds ──
-const LOD_POLYGON = 50;
-const LOD_BOX = 120;
-const LOD_INST = 250;
+// ── LOD thresholds (in world units, 1 unit = 2m) ──
+const LOD_POLYGON = 120;  // < 240m: full extrude
+const LOD_BOX = 300;      // < 600m: simple box
+const LOD_INST = 600;     // < 1200m: instanced
 
 // ── Create ExtrudeGeometry from real polygon vertices ──
 function createBuildingGeometry(polygon: BuildingPolygon, height: number): THREE.BufferGeometry {
@@ -252,9 +259,9 @@ function StreetSegments({ street: st }: { street: OSMStreet }) {
 }
 
 const OSMStreetMeshes = memo(function OSMStreetMeshes({ streets, playerX, playerZ }: { streets: OSMStreet[]; playerX: number; playerZ: number }) {
-  const viewDist = 120;
-  const chunkX = Math.round(playerX / 25);
-  const chunkZ = Math.round(playerZ / 25);
+  const viewDist = 250;
+  const chunkX = Math.round(playerX / 40);
+  const chunkZ = Math.round(playerZ / 40);
 
   const visible = useMemo(() => {
     return streets.filter(st => {
@@ -279,15 +286,15 @@ const OSMStreetMeshes = memo(function OSMStreetMeshes({ streets, playerX, player
 function TreeInstances({ trees, playerX, playerZ }: { trees: OSMTreeData[]; playerX: number; playerZ: number }) {
   const trunkRef = useRef<THREE.InstancedMesh>(null);
   const canopyRef = useRef<THREE.InstancedMesh>(null);
-  const viewDist = 60;
-  const chunkKey = `${Math.round(playerX / 20)}_${Math.round(playerZ / 20)}`;
+  const viewDist = 120;
+  const chunkKey = `${Math.round(playerX / 30)}_${Math.round(playerZ / 30)}`;
 
   const visibleTrees = useMemo(() => {
     return trees.filter(t => {
       const dx = t.x - playerX;
       const dz = t.z - playerZ;
       return dx * dx + dz * dz < viewDist * viewDist;
-    }).slice(0, 150); // Cap for performance
+    }).slice(0, 300);
   }, [trees, chunkKey]);
 
   const count = visibleTrees.length;
@@ -300,17 +307,14 @@ function TreeInstances({ trees, playerX, playerZ }: { trees: OSMTreeData[]; play
     for (let i = 0; i < count; i++) {
       const t = visibleTrees[i];
       const s = t.size;
-      // Trunk
       dummy.position.set(t.x, s * 0.8, t.z);
       dummy.scale.set(s * 0.15, s * 1.6, s * 0.15);
       dummy.updateMatrix();
       trunkRef.current.setMatrixAt(i, dummy.matrix);
-      // Canopy
       dummy.position.set(t.x, s * 1.8, t.z);
       dummy.scale.set(s * 1.2, s * 1.4, s * 1.2);
       dummy.updateMatrix();
       canopyRef.current.setMatrixAt(i, dummy.matrix);
-      // Vary green
       const g = 0.35 + (i % 7) * 0.05;
       color.setRGB(0.15 + (i % 3) * 0.05, g, 0.1 + (i % 5) * 0.03);
       canopyRef.current.setColorAt(i, color);
@@ -338,8 +342,8 @@ function TreeInstances({ trees, playerX, playerZ }: { trees: OSMTreeData[]; play
 
 // ── Green areas (parks) ──
 function GreenAreas({ areas, playerX, playerZ }: { areas: OSMGreenArea[]; playerX: number; playerZ: number }) {
-  const viewDist = 80;
-  const chunkKey = `${Math.round(playerX / 25)}_${Math.round(playerZ / 25)}`;
+  const viewDist = 150;
+  const chunkKey = `${Math.round(playerX / 40)}_${Math.round(playerZ / 40)}`;
   const visible = useMemo(() => {
     return areas.filter(a => {
       const dx = a.cx - playerX;
@@ -362,7 +366,7 @@ function GreenAreas({ areas, playerX, playerZ }: { areas: OSMGreenArea[]; player
 
 // ── Terrain ──
 const OSMTerrain = memo(function OSMTerrain({ bounds }: { bounds: { minX: number; maxX: number; minZ: number; maxZ: number } }) {
-  const padding = 30;
+  const padding = 60;
   const w = (bounds.maxX - bounds.minX) + padding * 2;
   const d = (bounds.maxZ - bounds.minZ) + padding * 2;
   const cx = (bounds.minX + bounds.maxX) / 2;
@@ -391,16 +395,13 @@ const OSMTerrain = memo(function OSMTerrain({ bounds }: { bounds: { minX: number
 
   return (
     <group position={[cx, -0.02, cz]}>
-      {/* Green base ground (like grass) */}
       <mesh geometry={geometry} receiveShadow>
         <meshStandardMaterial color="#5A8A48" roughness={0.92} />
       </mesh>
-      {/* Far ground */}
       <mesh position={[0, -0.3, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[w * 3, d * 3]} />
         <meshStandardMaterial color="#3A6A30" roughness={1} />
       </mesh>
-      {/* Horizon hills — reduced count */}
       {Array.from({ length: 12 }).map((_, i) => {
         const angle = (i / 12) * Math.PI * 2;
         const dist = Math.max(w, d) * 0.85;
@@ -417,6 +418,60 @@ const OSMTerrain = memo(function OSMTerrain({ bounds }: { bounds: { minX: number
   );
 });
 
+// ── Progressive building loader — renders buildings in batches over frames ──
+function useProgressiveBuildings(
+  buildings: CityBuilding[],
+  playerX: number,
+  playerZ: number,
+  maxGLBBuildings: number
+) {
+  const [renderedCount, setRenderedCount] = useState(0);
+  const BATCH_SIZE = 30;
+  const totalBuildings = buildings.length;
+
+  // Reset when buildings change
+  useEffect(() => {
+    setRenderedCount(0);
+    console.log(`[OSMWorldRenderer] Progressive load started: ${totalBuildings} buildings`);
+  }, [totalBuildings]);
+
+  // Progressively add more buildings each frame
+  useFrame(() => {
+    if (renderedCount < totalBuildings) {
+      setRenderedCount(prev => Math.min(prev + BATCH_SIZE, totalBuildings));
+    }
+  });
+
+  const chunkX = Math.round(playerX / 20);
+  const chunkZ = Math.round(playerZ / 20);
+
+  const result = useMemo(() => {
+    const poly: CityBuilding[] = [];
+    const box: CityBuilding[] = [];
+    const far: CityBuilding[] = [];
+    
+    // Only process buildings up to renderedCount
+    const activeBuildings = buildings.slice(0, renderedCount);
+
+    const sorted = activeBuildings.map(b => {
+      const dx = b.coordinates.x - playerX;
+      const dz = b.coordinates.z - playerZ;
+      return { b, dist: dx * dx + dz * dz };
+    }).filter(({ dist }) => {
+      return dist < LOD_INST * LOD_INST;
+    }).sort((a, b) => a.dist - b.dist);
+
+    for (const { b, dist } of sorted) {
+      if (dist < LOD_POLYGON * LOD_POLYGON && poly.length < maxGLBBuildings) poly.push(b);
+      else if (dist < LOD_BOX * LOD_BOX && box.length < 200) box.push(b);
+      else far.push(b);
+    }
+    return { polygonBuildings: poly, boxBuildings: box, farBuildings: far };
+  }, [buildings, renderedCount, playerX, playerZ, maxGLBBuildings, chunkX, chunkZ]);
+
+  return { ...result, renderedCount, totalBuildings };
+}
+
 // ── Main renderer ──
 interface OSMWorldRendererProps {
   buildings: CityBuilding[];
@@ -431,33 +486,19 @@ interface OSMWorldRendererProps {
 }
 
 export const OSMWorldRenderer = memo(function OSMWorldRenderer({
-  buildings, streets, trees = [], greenAreas = [], bounds, playerX, playerZ, userBuildings = [], maxGLBBuildings = 40,
+  buildings, streets, trees = [], greenAreas = [], bounds, playerX, playerZ, userBuildings = [], maxGLBBuildings = 80,
 }: OSMWorldRendererProps) {
-  const chunkX = Math.round(playerX / 15);
-  const chunkZ = Math.round(playerZ / 15);
 
-  const { polygonBuildings, boxBuildings, farBuildings } = useMemo(() => {
-    const poly: CityBuilding[] = [];
-    const box: CityBuilding[] = [];
-    const far: CityBuilding[] = [];
-    const userPos = new Set(userBuildings.map(ub => `${Math.round(ub.coordinates.x / 3)}_${Math.round(ub.coordinates.z / 3)}`));
+  const { polygonBuildings, boxBuildings, farBuildings, renderedCount, totalBuildings } = useProgressiveBuildings(
+    buildings, playerX, playerZ, maxGLBBuildings
+  );
 
-    const sorted = buildings.map(b => {
-      const dx = b.coordinates.x - playerX;
-      const dz = b.coordinates.z - playerZ;
-      return { b, dist: dx * dx + dz * dz }; // squared distance — skip sqrt
-    }).filter(({ b, dist }) => {
-      if (dist > LOD_INST * LOD_INST) return false;
-      return !userPos.has(`${Math.round(b.coordinates.x / 3)}_${Math.round(b.coordinates.z / 3)}`);
-    }).sort((a, b) => a.dist - b.dist);
-
-    for (const { b, dist } of sorted) {
-      if (dist < LOD_POLYGON * LOD_POLYGON && poly.length < maxGLBBuildings) poly.push(b);
-      else if (dist < LOD_BOX * LOD_BOX && box.length < 120) box.push(b);
-      else far.push(b);
+  // Log progress
+  useEffect(() => {
+    if (renderedCount > 0 && renderedCount >= totalBuildings) {
+      console.log(`[OSMWorldRenderer] All ${totalBuildings} buildings rendered. Poly: ${polygonBuildings.length}, Box: ${boxBuildings.length}, Far: ${farBuildings.length}`);
     }
-    return { polygonBuildings: poly, boxBuildings: box, farBuildings: far };
-  }, [buildings, playerX, playerZ, maxGLBBuildings, userBuildings, chunkX, chunkZ]);
+  }, [renderedCount, totalBuildings, polygonBuildings.length, boxBuildings.length, farBuildings.length]);
 
   return (
     <group>

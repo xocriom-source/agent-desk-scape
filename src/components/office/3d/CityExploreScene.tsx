@@ -1221,7 +1221,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
       <Canvas
         shadows
         style={{ touchAction: "none", width: "100%", height: "100%", display: "block" }}
-        camera={{ position: isOSMMode ? [20, 50, 60] : [12, 25, 30], fov: 45, near: 1, far: isOSMMode ? 400 : Math.min(lodConfig.cameraFar, 300) }}
+        camera={{ position: isOSMMode ? [40, 80, 100] : [12, 25, 30], fov: 45, near: 0.5, far: isOSMMode ? 1500 : Math.min(lodConfig.cameraFar, 300) }}
         gl={{ antialias: false, powerPreference: "high-performance", stencil: false, depth: true }}
         dpr={[0.75, 1]}
         frameloop="always"
@@ -1233,7 +1233,7 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
         }}
       >
         <color attach="background" args={[dn.bgColor]} />
-        <fog attach="fog" args={[dn.fogColor, isOSMMode ? 30 : lodConfig.fogNear * 2, isOSMMode ? 250 : lodConfig.fogFar * 2]} />
+        <fog attach="fog" args={[dn.fogColor, isOSMMode ? 60 : lodConfig.fogNear * 2, isOSMMode ? 600 : lodConfig.fogFar * 2]} />
 
         {/* Simplified lighting — fewer lights = more FPS */}
         <ambientLight intensity={dn.ambientIntensity * 0.8} color={dn.isNight ? "#4466AA" : dn.ambientColor} />
@@ -1295,8 +1295,8 @@ export function CityExploreScene({ playerName, flyMode, inVehicle, vehicleType, 
               enablePan={false}
               enableZoom
               enableRotate
-              minDistance={8}
-              maxDistance={60}
+              minDistance={isOSMMode ? 15 : 8}
+              maxDistance={isOSMMode ? 200 : 60}
               minPolarAngle={Math.PI / 8}
               maxPolarAngle={Math.PI / 2.8}
               zoomSpeed={0.8}
