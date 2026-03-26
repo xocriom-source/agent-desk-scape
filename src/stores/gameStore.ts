@@ -194,6 +194,7 @@ export const useGameStore = create<GameStore>()(
     selectBuilding: (id) => set((s) => ({ ui: { ...s.ui, selectedBuildingId: id } })),
     selectAgent: (id) => set((s) => ({ ui: { ...s.ui, selectedAgentId: id } })),
     setHudVisible: (visible) => set((s) => ({ ui: { ...s.ui, hudVisible: visible } })),
+    setCityViewMode: (mode) => set((s) => ({ ui: { ...s.ui, cityViewMode: mode } })),
 
     // ── Camera ──
     camera: { distance: 25, polarAngle: Math.PI / 3, azimuthAngle: 0 },
