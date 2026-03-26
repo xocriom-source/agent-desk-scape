@@ -89,10 +89,10 @@ const windowNightMat = new THREE.MeshStandardMaterial({ color: "#FFE8A0", emissi
 const windowDimMat = new THREE.MeshStandardMaterial({ color: "#556677", emissive: "#334455", emissiveIntensity: 0.05, transparent: true, opacity: 0.3 });
 const aoMat = new THREE.MeshBasicMaterial({ color: "#000", transparent: true, opacity: 0.18, depthWrite: false });
 const roofEdgeMat = new THREE.MeshStandardMaterial({ color: "#888", roughness: 0.6, metalness: 0.3 });
-const roadMainMat = new THREE.MeshStandardMaterial({ color: "#484848", roughness: 0.82 });
-const roadSecMat = new THREE.MeshStandardMaterial({ color: "#424242", roughness: 0.85 });
-const roadAlleyMat = new THREE.MeshStandardMaterial({ color: "#3A3A3A", roughness: 0.9 });
-const sidewalkMat = new THREE.MeshStandardMaterial({ color: "#8A8A8A", roughness: 0.65 });
+const roadMainMat = new THREE.MeshStandardMaterial({ color: "#606060", roughness: 0.82 });
+const roadSecMat = new THREE.MeshStandardMaterial({ color: "#585858", roughness: 0.85 });
+const roadAlleyMat = new THREE.MeshStandardMaterial({ color: "#505050", roughness: 0.9 });
+const sidewalkMat = new THREE.MeshStandardMaterial({ color: "#A0A0A0", roughness: 0.65 });
 const laneMat = new THREE.MeshStandardMaterial({ color: "#FFFFFF", transparent: true, opacity: 0.6 });
 const centerLineMat = new THREE.MeshStandardMaterial({ color: "#FFD030", transparent: true, opacity: 0.5 });
 const grassMat = new THREE.MeshStandardMaterial({ color: "#4A8B3F", roughness: 0.9 });
@@ -445,11 +445,11 @@ const OSMTerrain = memo(function OSMTerrain({ bounds }: { bounds: { minX: number
   return (
     <group position={[cx, -0.02, cz]}>
       <mesh geometry={geometry} receiveShadow>
-        <meshStandardMaterial color="#5A8A48" roughness={0.92} />
+        <meshStandardMaterial color="#6A9A58" roughness={0.88} />
       </mesh>
       <mesh position={[0, -0.3, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[w * 3, d * 3]} />
-        <meshStandardMaterial color="#3A6A30" roughness={1} />
+        <meshStandardMaterial color="#4A7A3A" roughness={0.95} />
       </mesh>
       {Array.from({ length: 12 }).map((_, i) => {
         const angle = (i / 12) * Math.PI * 2;

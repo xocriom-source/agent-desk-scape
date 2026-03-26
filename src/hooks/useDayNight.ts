@@ -86,68 +86,68 @@ export function useDayNight(): DayNightConfig {
     let fogNear: number, fogFar: number, exposure: number;
 
     if (isNight) {
-      bgColor = "#06080E";
-      fogColor = "#06080E";
-      ambientIntensity = 0.15;
-      ambientColor = "#4466AA";
-      sunIntensity = 0.05;
+      bgColor = "#0E1525";
+      fogColor = "#0E1525";
+      ambientIntensity = 0.45;
+      ambientColor = "#6688CC";
+      sunIntensity = 0.2;
       sunColor = "#AABBEE";
-      skyColor = "#0A0A20";
-      groundColor = "#1A1A2A";
-      hemiIntensity = 0.1;
+      skyColor = "#1A1A40";
+      groundColor = "#2A2A3A";
+      hemiIntensity = 0.3;
       showStars = true;
       starOpacity = 1;
-      fogNear = 20;
-      fogFar = 50;
-      exposure = 0.7;
+      fogNear = 60;
+      fogFar = 300;
+      exposure = 1.1;
     } else if (isSunrise) {
       const t = (hour - 5.5) / 2; // 0 to 1
-      bgColor = lerpColor("#0A0C18", "#FFE8D0", t);
-      fogColor = lerpColor("#0A0C18", "#FFD0A0", t);
-      ambientIntensity = lerp(0.2, 0.6, t);
+      bgColor = lerpColor("#1A1C30", "#FFE8D0", t);
+      fogColor = lerpColor("#1A1C30", "#FFD0A0", t);
+      ambientIntensity = lerp(0.4, 0.7, t);
       ambientColor = lerpColor("#6688BB", "#FFE0C0", t);
-      sunIntensity = lerp(0.1, 0.7, t);
+      sunIntensity = lerp(0.3, 0.8, t);
       sunColor = "#FF9040";
-      skyColor = lerpColor("#1A1A30", "#87CEEB", t);
-      groundColor = lerpColor("#2A2A3A", "#8B7355", t);
-      hemiIntensity = lerp(0.1, 0.3, t);
+      skyColor = lerpColor("#2A2A50", "#87CEEB", t);
+      groundColor = lerpColor("#3A3A4A", "#8B7355", t);
+      hemiIntensity = lerp(0.25, 0.4, t);
       showStars = t < 0.5;
       starOpacity = Math.max(0, 1 - t * 2);
-      fogNear = lerp(20, 30, t);
-      fogFar = lerp(50, 70, t);
-      exposure = lerp(0.7, 1.2, t);
+      fogNear = lerp(50, 80, t);
+      fogFar = lerp(250, 400, t);
+      exposure = lerp(1.0, 1.4, t);
     } else if (isDay) {
       bgColor = "#87CEEB";
       fogColor = "#B0D8F0";
-      ambientIntensity = 0.7;
+      ambientIntensity = 0.8;
       ambientColor = "#FFF8F0";
-      sunIntensity = 1.0;
+      sunIntensity = 1.2;
       sunColor = "#FFF0D0";
       skyColor = "#87CEEB";
       groundColor = "#8B7355";
-      hemiIntensity = 0.4;
+      hemiIntensity = 0.5;
       showStars = false;
       starOpacity = 0;
-      fogNear = 35;
-      fogFar = 80;
-      exposure = 1.3;
+      fogNear = 80;
+      fogFar = 450;
+      exposure = 1.4;
     } else {
       // Sunset
       const t = (hour - 17.5) / 2.5; // 0 to 1
-      bgColor = lerpColor("#FF8040", "#0A0C18", t);
-      fogColor = lerpColor("#FF6030", "#06080E", t);
-      ambientIntensity = lerp(0.5, 0.15, t);
-      ambientColor = lerpColor("#FFD0A0", "#4466AA", t);
-      sunIntensity = lerp(0.6, 0.05, t);
+      bgColor = lerpColor("#FF8040", "#0E1525", t);
+      fogColor = lerpColor("#FF6030", "#0E1525", t);
+      ambientIntensity = lerp(0.6, 0.45, t);
+      ambientColor = lerpColor("#FFD0A0", "#6688CC", t);
+      sunIntensity = lerp(0.7, 0.2, t);
       sunColor = "#FF6020";
-      skyColor = lerpColor("#FF8040", "#0A0A20", t);
-      groundColor = lerpColor("#8B5A30", "#1A1A2A", t);
-      hemiIntensity = lerp(0.3, 0.1, t);
+      skyColor = lerpColor("#FF8040", "#1A1A40", t);
+      groundColor = lerpColor("#8B5A30", "#2A2A3A", t);
+      hemiIntensity = lerp(0.4, 0.3, t);
       showStars = t > 0.5;
       starOpacity = Math.max(0, (t - 0.5) * 2);
-      fogNear = lerp(30, 20, t);
-      fogFar = lerp(70, 50, t);
-      exposure = lerp(1.1, 0.7, t);
+      fogNear = lerp(70, 60, t);
+      fogFar = lerp(400, 300, t);
+      exposure = lerp(1.3, 1.1, t);
     }
 
     return {
