@@ -18,7 +18,6 @@ import { GLBBuildingModel, preloadBuildingModels } from "@/components/buildings/
 import type { CityBuilding } from "@/types/building";
 import { STYLE_TRANSPORT_MAP } from "@/types/building";
 import { useCityLod } from "@/systems/city/useCityLod";
-import { QUALITY_PRESETS, type QualityLevel } from "@/systems/city/QualitySettings";
 import type { OSMStreet, OSMTreeData, OSMGreenArea } from "@/systems/city/OSMCityGenerator";
 import { useGameStore } from "@/stores/gameStore";
 import { useInputStore } from "@/stores/inputStore";
@@ -224,7 +223,7 @@ function VehicleToggleHandler() {
 }
 
 // ── Player Visual ──
-function PlayerVisual({ name }: { name: string }) {
+function PlayerVisual({ name, scale = 1 }: { name: string; scale?: number }) {
   const ref = useRef<THREE.Group>(null);
   const playerPos = useGameStore(s => s.player.position);
   const playerRot = useGameStore(s => s.player.rotation);
@@ -237,8 +236,7 @@ function PlayerVisual({ name }: { name: string }) {
     const targetPos = new THREE.Vector3(playerPos[0], terrainY, playerPos[2]);
     smoothPos.current.lerp(targetPos, 0.18);
     ref.current.position.copy(smoothPos.current);
-    ref.current.position.y += Math.sin(Date.now() * 0.003) * 0.008;
-    // Smooth rotation
+    ref.current.position.y += Math.sin(Date.now() * 0.003) * 0.02 * scale;
     let diff = playerRot - ref.current.rotation.y;
     while (diff > Math.PI) diff -= Math.PI * 2;
     while (diff < -Math.PI) diff += Math.PI * 2;
@@ -247,25 +245,36 @@ function PlayerVisual({ name }: { name: string }) {
 
   if (isInVehicle) return null;
 
+  // Scale factor for visibility — OSM buildings are in meters, player needs to match
+  const s = scale;
+
   return (
-    <group ref={ref} position={playerPos}>
-      <mesh position={[-0.055, 0.02, 0.02]}><boxGeometry args={[0.07, 0.04, 0.1]} /><meshStandardMaterial color="#333" /></mesh>
-      <mesh position={[0.055, 0.02, 0.02]}><boxGeometry args={[0.07, 0.04, 0.1]} /><meshStandardMaterial color="#333" /></mesh>
-      <mesh position={[-0.055, 0.1, 0]}><boxGeometry args={[0.07, 0.12, 0.08]} /><meshStandardMaterial color="#4A90D9" /></mesh>
-      <mesh position={[0.055, 0.1, 0]}><boxGeometry args={[0.07, 0.12, 0.08]} /><meshStandardMaterial color="#4A90D9" /></mesh>
-      <mesh position={[0, 0.27, 0]} castShadow><boxGeometry args={[0.26, 0.24, 0.15]} /><meshStandardMaterial color="#2E8B57" /></mesh>
-      <mesh position={[-0.165, 0.26, 0]}><boxGeometry args={[0.06, 0.2, 0.08]} /><meshStandardMaterial color="#F5DEB3" /></mesh>
-      <mesh position={[0.165, 0.26, 0]}><boxGeometry args={[0.06, 0.2, 0.08]} /><meshStandardMaterial color="#F5DEB3" /></mesh>
-      <mesh position={[0, 0.48, 0]} castShadow><boxGeometry args={[0.24, 0.22, 0.2]} /><meshStandardMaterial color="#F5DEB3" /></mesh>
-      <mesh position={[-0.08, 0.72, 0]}><boxGeometry args={[0.06, 0.28, 0.05]} /><meshStandardMaterial color="#F5DEB3" /></mesh>
-      <mesh position={[0.08, 0.72, 0]}><boxGeometry args={[0.06, 0.28, 0.05]} /><meshStandardMaterial color="#F5DEB3" /></mesh>
-      <mesh position={[-0.055, 0.50, 0.101]}><boxGeometry args={[0.06, 0.05, 0.01]} /><meshStandardMaterial color="#FFF" /></mesh>
-      <mesh position={[0.055, 0.50, 0.101]}><boxGeometry args={[0.06, 0.05, 0.01]} /><meshStandardMaterial color="#FFF" /></mesh>
-      <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.16, 8]} /><meshBasicMaterial color="#000" transparent opacity={0.18} /></mesh>
-      <Html position={[0, 1.05, 0]} center>
-        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full whitespace-nowrap pointer-events-none select-none bg-emerald-700">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-          <span className="text-[9px] text-white font-bold">{name}</span>
+    <group ref={ref} position={playerPos} scale={[s, s, s]}>
+      {/* Feet */}
+      <mesh position={[-0.15, 0.06, 0.05]}><boxGeometry args={[0.15, 0.12, 0.25]} /><meshStandardMaterial color="#333" /></mesh>
+      <mesh position={[0.15, 0.06, 0.05]}><boxGeometry args={[0.15, 0.12, 0.25]} /><meshStandardMaterial color="#333" /></mesh>
+      {/* Legs */}
+      <mesh position={[-0.15, 0.3, 0]}><boxGeometry args={[0.18, 0.35, 0.2]} /><meshStandardMaterial color="#4A90D9" /></mesh>
+      <mesh position={[0.15, 0.3, 0]}><boxGeometry args={[0.18, 0.35, 0.2]} /><meshStandardMaterial color="#4A90D9" /></mesh>
+      {/* Body / Torso */}
+      <mesh position={[0, 0.7, 0]} castShadow><boxGeometry args={[0.6, 0.55, 0.35]} /><meshStandardMaterial color="#2E8B57" /></mesh>
+      {/* Arms */}
+      <mesh position={[-0.42, 0.65, 0]}><boxGeometry args={[0.15, 0.5, 0.18]} /><meshStandardMaterial color="#F5DEB3" /></mesh>
+      <mesh position={[0.42, 0.65, 0]}><boxGeometry args={[0.15, 0.5, 0.18]} /><meshStandardMaterial color="#F5DEB3" /></mesh>
+      {/* Head */}
+      <mesh position={[0, 1.15, 0]} castShadow><boxGeometry args={[0.45, 0.45, 0.4]} /><meshStandardMaterial color="#F5DEB3" /></mesh>
+      {/* Eyes */}
+      <mesh position={[-0.1, 1.18, 0.21]}><boxGeometry args={[0.1, 0.08, 0.02]} /><meshStandardMaterial color="#FFF" /></mesh>
+      <mesh position={[0.1, 1.18, 0.21]}><boxGeometry args={[0.1, 0.08, 0.02]} /><meshStandardMaterial color="#FFF" /></mesh>
+      {/* Hair */}
+      <mesh position={[0, 1.4, -0.02]}><boxGeometry args={[0.48, 0.12, 0.44]} /><meshStandardMaterial color="#4A3020" /></mesh>
+      {/* Shadow */}
+      <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.35, 8]} /><meshBasicMaterial color="#000" transparent opacity={0.18} /></mesh>
+      {/* Name label */}
+      <Html position={[0, 1.8, 0]} center>
+        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full whitespace-nowrap pointer-events-none select-none bg-emerald-700 shadow-lg">
+          <div className="w-2 h-2 rounded-full bg-emerald-400" />
+          <span className="text-[11px] text-white font-bold">{name}</span>
         </div>
       </Html>
     </group>
@@ -629,8 +638,7 @@ export function CityExploreScene({
 
   // LoD system
   const buildingDefs = useMemo(() => CITY_BUILDINGS.map(b => ({ x: b.x, z: b.z, w: b.w, d: b.d, h: b.h, color: b.color, rot: b.rot, mirror: b.mirror, forceClass: (b as any).forceClass })), []);
-  const { quality, config: lodConfig, changeQuality, computeFrame } = useCityLod(buildingDefs);
-  const [showQualityMenu, setShowQualityMenu] = useState(false);
+  const { config: lodConfig, computeFrame } = useCityLod(buildingDefs);
 
   const userId = useMemo(() => {
     try {
@@ -690,35 +698,6 @@ export function CityExploreScene({
 
   return (
     <div className="absolute inset-0 w-full h-full">
-      {/* Quality UI */}
-      <div className="absolute top-2 right-2 z-20 flex flex-col items-end gap-1">
-        <button
-          onClick={() => setShowQualityMenu(!showQualityMenu)}
-          className="px-2 py-1 text-[10px] rounded bg-background/80 border border-border text-foreground backdrop-blur-sm hover:bg-accent transition-colors"
-        >
-          ⚙ {quality.toUpperCase()}
-        </button>
-        {showQualityMenu && (
-          <div className="flex flex-col gap-0.5 p-1.5 rounded-lg bg-background/90 border border-border backdrop-blur-sm">
-            {(["low", "medium", "high", "ultra"] as QualityLevel[]).map(q => (
-              <button
-                key={q}
-                onClick={() => { changeQuality(q); setShowQualityMenu(false); }}
-                className={`px-3 py-1 text-[10px] rounded transition-colors ${quality === q ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-accent"}`}
-              >
-                {q.toUpperCase()}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* LoD Stats */}
-      <div className="absolute bottom-2 left-2 z-20 px-2 py-1 text-[9px] rounded bg-background/60 text-muted-foreground backdrop-blur-sm pointer-events-none">
-        LOD: {lodFrame.lodBuildings.filter(b => b.lod === 0).length} HD |{" "}
-        {lodFrame.lodBuildings.filter(b => b.lod === 1).length} Med |{" "}
-        {lodFrame.lodBuildings.filter(b => b.lod >= 2).length} Low
-      </div>
 
       <Canvas
         shadows
@@ -771,21 +750,23 @@ export function CityExploreScene({
         {!isOSMMode && <CameraOcclusion onOccludedBuildings={setOccludedBuildings} />}
 
         {/* ── VEHICLE ── */}
-        <VehicleR3F aabbs={aabbs} playerName={playerName} />
+        <group scale={isOSMMode ? [4, 4, 4] : [1, 1, 1]}>
+          <VehicleR3F aabbs={aabbs} playerName={playerName} />
+        </group>
 
         {/* ── PLAYER VISUAL ── */}
-        <PlayerVisual name={playerName} />
+        <PlayerVisual name={playerName} scale={isOSMMode ? 4 : 1} />
 
-        {/* ── NPCs (new system, proximity-based) ── */}
-        {!isOSMMode && lodConfig.enableNPCs && (
+        {/* ── NPCs (proximity-based, both modes) ── */}
+        <group scale={isOSMMode ? [4, 4, 4] : [1, 1, 1]}>
           <CityNPCSystem
-            playerX={playerPos[0]}
-            playerZ={playerPos[2]}
-            aabbs={aabbs}
-            maxNPCs={12}
-            spawnRadius={40}
+            playerX={isOSMMode ? playerPos[0] / 4 : playerPos[0]}
+            playerZ={isOSMMode ? playerPos[2] / 4 : playerPos[2]}
+            aabbs={isOSMMode ? [] : aabbs}
+            maxNPCs={isOSMMode ? 16 : 12}
+            spawnRadius={isOSMMode ? 60 : 40}
           />
-        )}
+        </group>
 
         {/* ── WORLD: OSM ── */}
         {isOSMMode && osmBuildings && osmStreets && osmBounds && (
