@@ -554,11 +554,11 @@ const OSMTerrain = memo(function OSMTerrain({ bounds }: { bounds: { minX: number
   return (
     <group position={[cx, -0.02, cz]}>
       <mesh geometry={geometry} receiveShadow>
-        <meshStandardMaterial color="#6A9A58" roughness={0.88} />
+        <meshStandardMaterial color="#78A860" roughness={0.85} />
       </mesh>
       <mesh position={[0, -0.3, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[w * 3, d * 3]} />
-        <meshStandardMaterial color="#4A7A3A" roughness={0.95} />
+        <meshStandardMaterial color="#5A8A42" roughness={0.92} />
       </mesh>
       {Array.from({ length: 12 }).map((_, i) => {
         const angle = (i / 12) * Math.PI * 2;
