@@ -15,15 +15,32 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   const { user, loading } = useAuth();
   const [roleChecked, setRoleChecked] = useState(!requiredRole);
   const [hasRole, setHasRole] = useState(false);
+  const [roleError, setRoleError] = useState(false);
 
   useEffect(() => {
     if (!requiredRole || !user) return;
+    
+    let cancelled = false;
+    
     supabase
       .rpc("has_role", { _user_id: user.id, _role: requiredRole })
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) {
+          console.warn("[ProtectedRoute] Role check failed:", error.message);
+          setRoleError(true);
+        }
         setHasRole(!!data);
         setRoleChecked(true);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setRoleError(true);
+          setRoleChecked(true);
+        }
       });
+
+    return () => { cancelled = true; };
   }, [user, requiredRole]);
 
   if (loading || (requiredRole && !roleChecked)) {
@@ -41,8 +58,8 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     return <Navigate to="/login" replace />;
   }
 
-  if (requiredRole && !hasRole) {
-    return <Navigate to="/" replace />;
+  if (requiredRole && (!hasRole || roleError)) {
+    return <Navigate to="/lobby" replace />;
   }
 
   return <>{children}</>;

@@ -41,9 +41,23 @@ export default function Spaces() {
 
   const handleDeleteSpace = async (id: string) => {
     if (buildings.length <= 1) return;
-    const { supabase } = await import("@/integrations/supabase/client");
-    await supabase.from("city_buildings").delete().eq("id", id).eq("owner_id", user!.id);
-    setBuildings(prev => prev.filter(s => s.id !== id));
+    const confirmed = window.confirm("Tem certeza que deseja excluir este espaço? Esta ação não pode ser desfeita.");
+    if (!confirmed) {
+      setMenuOpen(null);
+      return;
+    }
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { error } = await supabase.from("city_buildings").delete().eq("id", id).eq("owner_id", user!.id);
+      if (error) throw error;
+      setBuildings(prev => prev.filter(s => s.id !== id));
+      const { toast } = await import("sonner");
+      toast.success("Espaço excluído com sucesso");
+    } catch (err) {
+      const { toast } = await import("sonner");
+      toast.error("Erro ao excluir espaço");
+      console.error("[Spaces:deleteSpace]", err);
+    }
     setMenuOpen(null);
   };
 
