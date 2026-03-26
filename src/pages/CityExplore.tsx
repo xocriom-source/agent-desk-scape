@@ -110,7 +110,7 @@ export default function CityExplore() {
   const isPanelOpen = (panel: PanelName) => activePanel === panel;
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden select-none" style={{ backgroundColor: "#0A0C14" }}>
+    <div className="relative w-screen h-screen overflow-hidden select-none bg-background">
       <SEOHead title="Explorar Cidade" description="Explore a cidade 3D com agentes IA, missões e economia virtual." path="/city-explore" />
 
       {/* Cinematic Intro */}
@@ -127,8 +127,8 @@ export default function CityExplore() {
       {!showIntro && !cityReady && (
         <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none" id="city-loader">
           <div className="text-center">
-            <div className="w-8 h-8 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin mx-auto mb-3" />
-            <p className="text-xs text-gray-500 font-mono tracking-wider">LOADING CITY...</p>
+            <div className="w-8 h-8 border-2 border-accent/30 border-t-accent rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-xs text-muted-foreground font-mono tracking-wider">LOADING CITY...</p>
           </div>
         </div>
       )}
@@ -156,7 +156,7 @@ export default function CityExplore() {
         <>
           {/* Location selector (top left, next to back button) */}
           <div className="absolute top-14 left-4 z-40">
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-amber-700/30">
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl glass-panel border border-border">
               <CityLocationSelector
                 loading={osmCity.loading}
                 error={osmCity.error}
@@ -186,7 +186,7 @@ export default function CityExplore() {
           </motion.div>
 
           {/* Activity Ticker */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} className="absolute bottom-14 left-1/2 -translate-x-1/2 z-30">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} className="absolute bottom-12 left-1/2 -translate-x-1/2 z-30">
             <CityActivityTicker />
           </motion.div>
 
