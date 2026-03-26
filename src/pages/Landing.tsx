@@ -682,9 +682,9 @@ export default function Landing() {
                   <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
                 </div>
                 <div className="flex gap-3 text-[10px] font-mono text-muted-foreground">
-                  <span>{city.population.toLocaleString()} agents</span>
+                  <span>Available</span>
                   <span>·</span>
-                  <span>{city.buildings} buildings</span>
+                  <span>Explore →</span>
                 </div>
               </motion.button>
             ))}
