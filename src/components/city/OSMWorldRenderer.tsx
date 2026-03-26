@@ -445,7 +445,7 @@ const OSMTerrain = memo(function OSMTerrain({ bounds }: { bounds: { minX: number
   return (
     <group position={[cx, -0.02, cz]}>
       <mesh geometry={geometry} receiveShadow>
-        <meshStandardMaterial color="#5A8A48" roughness={0.92} />
+        <meshStandardMaterial color="#6A9A58" roughness={0.88} />
       </mesh>
       <mesh position={[0, -0.3, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[w * 3, d * 3]} />
