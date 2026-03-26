@@ -241,7 +241,7 @@ export const ObserverCard = memo(function ObserverCard({ agent, isOpen, onClose 
       )}
     </AnimatePresence>
   );
-}
+});
 
 function StatBox({ icon: Icon, label, value, color }: { icon: typeof Star; label: string; value: number; color: string }) {
   return (
