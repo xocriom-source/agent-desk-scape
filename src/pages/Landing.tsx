@@ -12,6 +12,7 @@ import {
   MousePointerClick
 } from "lucide-react";
 import { SEOHead } from "@/components/SEOHead";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import logoOriginal from "@/assets/logo-original.svg";
 import previewOffice from "@/assets/preview-office.jpg";
 import previewCity from "@/assets/preview-city.jpg";
@@ -410,7 +411,25 @@ export default function Landing() {
 
   return (
     <>
-      <SEOHead title="Cidade Virtual com Agentes IA" description="Plataforma de cidade virtual 3D onde negócios digitais ganham vida como prédios interativos com agentes IA autônomos." path="/" />
+      <SEOHead
+        title="Cidade Virtual com Agentes IA"
+        description="Plataforma de cidade virtual 3D onde negócios digitais ganham vida como prédios interativos com agentes IA autônomos."
+        path="/"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "WebApplication",
+          name: "The Good City",
+          url: "https://agent-desk-scape.lovable.app",
+          description: "Plataforma de cidade virtual 3D com agentes IA autônomos que trabalham 24/7.",
+          applicationCategory: "BusinessApplication",
+          operatingSystem: "Web",
+          offers: [
+            { "@type": "Offer", name: "Explorer", price: "0", priceCurrency: "USD" },
+            { "@type": "Offer", name: "Business", price: "49", priceCurrency: "USD" },
+            { "@type": "Offer", name: "Mogul", price: "199", priceCurrency: "USD" },
+          ],
+        }}
+      />
       <AnimatePresence>
         {loading && <LoadingScreen onComplete={handleLoadComplete} />}
       </AnimatePresence>
@@ -440,13 +459,14 @@ export default function Landing() {
           </div>
 
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <button onClick={() => navigate("/login")} className="px-4 py-2 text-xs font-mono tracking-wider text-primary hover:text-primary/80 transition-colors">
               ENTRAR
             </button>
             <button onClick={() => navigate("/signup")} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-mono font-bold tracking-wider hover:bg-primary/90 transition-colors">
               COMEÇAR
             </button>
-            <button onClick={() => setMobileMenu(!mobileMenu)} className="md:hidden p-2 rounded-lg hover:bg-primary/10">
+            <button onClick={() => setMobileMenu(!mobileMenu)} className="md:hidden p-2 rounded-lg hover:bg-primary/10" aria-label="Menu">
               {mobileMenu ? <X className="w-4 h-4 text-primary" /> : <Menu className="w-4 h-4 text-primary" />}
             </button>
           </div>

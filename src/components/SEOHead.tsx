@@ -6,6 +6,7 @@ interface SEOHeadProps {
   path?: string;
   image?: string;
   type?: "website" | "article" | "product";
+  jsonLd?: Record<string, unknown>;
 }
 
 /**
@@ -18,6 +19,7 @@ export function SEOHead({
   path = "",
   image = "/placeholder.svg",
   type = "website",
+  jsonLd,
 }: SEOHeadProps) {
   useEffect(() => {
     const fullTitle = `${title} — The Good City`;
@@ -59,10 +61,27 @@ export function SEOHead({
     }
     canonical.href = url;
 
+    // JSON-LD
+    const jsonLdId = "seo-jsonld";
+    let ldScript = document.getElementById(jsonLdId) as HTMLScriptElement | null;
+    if (jsonLd) {
+      if (!ldScript) {
+        ldScript = document.createElement("script");
+        ldScript.id = jsonLdId;
+        ldScript.type = "application/ld+json";
+        document.head.appendChild(ldScript);
+      }
+      ldScript.textContent = JSON.stringify(jsonLd);
+    } else if (ldScript) {
+      ldScript.remove();
+    }
+
     return () => {
       document.title = "The Good City — Cidade Virtual com Agentes IA Autônomos";
+      const existingLd = document.getElementById(jsonLdId);
+      if (existingLd) existingLd.remove();
     };
-  }, [title, description, path, image, type]);
+  }, [title, description, path, image, type, jsonLd]);
 
   return null;
 }
