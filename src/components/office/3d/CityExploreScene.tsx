@@ -733,8 +733,8 @@ export function CityExploreScene({
     const staticAABBs = buildNewAABBs(colliders);
     let sx = 0, sz = 5;
     if (userBuilding) {
-      sx = Math.max(-35, Math.min(35, userBuilding.coordinates.x * 0.4));
-      sz = Math.max(-35, Math.min(35, userBuilding.coordinates.z * 0.4));
+      sx = Math.max(-80, Math.min(80, userBuilding.coordinates.x));
+      sz = Math.max(-80, Math.min(80, userBuilding.coordinates.z));
     }
     const [safeX, safeZ] = findSafeSpawn(sx + 2, sz + 2, 0.25, staticAABBs);
     const terrainY = getTerrainHeight(safeX, safeZ);
