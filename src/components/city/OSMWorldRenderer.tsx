@@ -449,7 +449,7 @@ const OSMTerrain = memo(function OSMTerrain({ bounds }: { bounds: { minX: number
       </mesh>
       <mesh position={[0, -0.3, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[w * 3, d * 3]} />
-        <meshStandardMaterial color="#3A6A30" roughness={1} />
+        <meshStandardMaterial color="#4A7A3A" roughness={0.95} />
       </mesh>
       {Array.from({ length: 12 }).map((_, i) => {
         const angle = (i / 12) * Math.PI * 2;

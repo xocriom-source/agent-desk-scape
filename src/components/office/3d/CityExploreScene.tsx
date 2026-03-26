@@ -738,9 +738,9 @@ export function CityExploreScene({
         performance={{ min: 0.5 }}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = dn.exposure;
+          gl.toneMappingExposure = Math.max(dn.exposure, 1.1);
           onReady?.();
-          console.log("[CityScene:ready] Canvas initialized");
+          console.log("[CityScene:ready] Canvas initialized, exposure:", dn.exposure);
         }}
       >
         <color attach="background" args={[dn.bgColor]} />
