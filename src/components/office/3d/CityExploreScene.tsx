@@ -782,7 +782,7 @@ export function CityExploreScene({
         <VehicleR3F aabbs={isOSMMode ? [] : aabbs} playerName={playerName} />
 
         {/* ── PLAYER VISUAL ── */}
-        <PlayerVisual name={playerName} scale={isOSMMode ? 4 : 1} />
+        <PlayerVisual name={playerName} scale={isOSMMode ? 2 : 1} />
 
         {/* ── NPCs (proximity-based, both modes) ── */}
         <group scale={isOSMMode ? [4, 4, 4] : [1, 1, 1]}>
