@@ -144,4 +144,4 @@ export const CityEvents = memo(function CityEvents({ isOpen, onClose }: CityEven
       </div>
     </div>
   );
-}
+});

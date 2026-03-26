@@ -144,4 +144,4 @@ export const DistrictInfo = memo(function DistrictInfo({ isOpen, onClose }: { is
       </motion.div>
     </AnimatePresence>
   );
-}
+});
