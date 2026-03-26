@@ -720,12 +720,8 @@ export function CityExploreScene({
   const buildingDefs = useMemo(() => CITY_BUILDINGS.map(b => ({ x: b.x, z: b.z, w: b.w, d: b.d, h: b.h, color: b.color, rot: b.rot, mirror: b.mirror, forceClass: (b as any).forceClass })), []);
   const { config: lodConfig, computeFrame } = useCityLod(buildingDefs);
 
-  const userId = useMemo(() => {
-    try {
-      const stored = localStorage.getItem("agentoffice_user");
-      return stored ? JSON.parse(stored).email || "" : "";
-    } catch { return ""; }
-  }, []);
+  // userId is no longer needed here - buildings are passed from parent
+  const userId = "";
 
   const { visibleBuildings, userBuilding, updateCameraCenter } = useCityBuildings(userId);
 
