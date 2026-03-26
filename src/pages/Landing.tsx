@@ -12,6 +12,7 @@ import {
   MousePointerClick
 } from "lucide-react";
 import { SEOHead } from "@/components/SEOHead";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import logoOriginal from "@/assets/logo-original.svg";
 import previewOffice from "@/assets/preview-office.jpg";
 import previewCity from "@/assets/preview-city.jpg";
