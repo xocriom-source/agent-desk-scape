@@ -793,48 +793,54 @@ export function CityExploreScene({
       <Canvas
         shadows
         style={{ touchAction: "none", width: "100%", height: "100%", display: "block" }}
-        camera={{ position: isOSMMode ? [15, 30, 35] : [12, 25, 30], fov: 50, near: 0.5, far: isOSMMode ? 1500 : Math.min(lodConfig.cameraFar, 300) }}
-        gl={{ antialias: false, powerPreference: "high-performance", stencil: false, depth: true }}
-        dpr={[0.75, 1]}
+        camera={{ position: isOSMMode ? [15, 30, 35] : [12, 25, 30], fov: 50, near: 0.5, far: isOSMMode ? 2000 : Math.min(lodConfig.cameraFar, 400) }}
+        gl={{ antialias: true, powerPreference: "high-performance", stencil: false, depth: true }}
+        dpr={[0.85, 1.25]}
         frameloop="always"
         performance={{ min: 0.5 }}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = Math.max(dn.exposure, 1.1);
+          gl.toneMappingExposure = Math.max(dn.exposure, 1.2);
           onReady?.();
-          console.log("[CityScene:ready] Canvas initialized, exposure:", dn.exposure);
+          console.log("[CityScene:ready] Canvas initialized");
         }}
       >
         <color attach="background" args={[dn.bgColor]} />
         <fog attach="fog" args={[
           dn.fogColor,
-          isOSMMode ? Math.max(dn.fogNear, 60) : lodConfig.fogNear * 2,
-          isOSMMode ? Math.max(dn.fogFar, 300) : lodConfig.fogFar * 2
+          isOSMMode ? Math.max(dn.fogNear, 80) : lodConfig.fogNear * 2.5,
+          isOSMMode ? Math.max(dn.fogFar, 500) : lodConfig.fogFar * 2.5
         ]} />
 
-        {/* Lighting — bright and readable */}
-        <ambientLight intensity={dn.ambientIntensity} color={dn.ambientColor} />
+        {/* Lighting — bright, warm, readable */}
+        <ambientLight intensity={Math.max(dn.ambientIntensity, 0.5)} color={dn.ambientColor} />
         <directionalLight
           position={dn.sunPosition}
-          intensity={dn.sunIntensity * 1.3}
+          intensity={dn.sunIntensity * 1.5}
           castShadow
-          shadow-mapSize-width={512}
-          shadow-mapSize-height={512}
-          shadow-camera-far={60}
-          shadow-camera-left={-30}
-          shadow-camera-right={30}
-          shadow-camera-top={30}
-          shadow-camera-bottom={-30}
-          shadow-bias={-0.0008}
+          shadow-mapSize-width={1024}
+          shadow-mapSize-height={1024}
+          shadow-camera-far={80}
+          shadow-camera-left={-40}
+          shadow-camera-right={40}
+          shadow-camera-top={40}
+          shadow-camera-bottom={-40}
+          shadow-bias={-0.0005}
           color={dn.sunColor}
         />
-        {/* Fill light for depth — prevents pitch-black shadows */}
+        {/* Fill light — prevents pitch-black shadows */}
         <directionalLight
           position={[-dn.sunPosition[0] * 0.6, dn.sunPosition[1] * 0.5, -dn.sunPosition[2] * 0.6]}
-          intensity={dn.sunIntensity * 0.35}
-          color={dn.isNight ? "#4466AA" : "#C0D0E0"}
+          intensity={dn.sunIntensity * 0.45}
+          color={dn.isNight ? "#4466AA" : "#D0DDE8"}
         />
-        <hemisphereLight args={[dn.skyColor, dn.groundColor, dn.hemiIntensity * 1.2]} />
+        {/* Rim/back light for depth */}
+        <directionalLight
+          position={[dn.sunPosition[0] * 0.3, dn.sunPosition[1] * 0.8, dn.sunPosition[2] * -1]}
+          intensity={dn.sunIntensity * 0.2}
+          color="#E8D8C8"
+        />
+        <hemisphereLight args={[dn.skyColor, dn.groundColor, dn.hemiIntensity * 1.4]} />
 
         {dn.isNight && (
           <group position={[-20, 30, -15]}>
