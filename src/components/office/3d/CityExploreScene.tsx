@@ -643,6 +643,17 @@ export function CityExploreScene({
 }: CityExploreSceneProps) {
   const dn = useDayNight();
 
+  // Debug: log OSM data when it arrives
+  useEffect(() => {
+    if (isOSMMode && osmBuildings) {
+      console.log(`[CityScene:osm] ${osmBuildings.length} buildings, bounds:`, osmBounds);
+      if (osmBuildings.length > 0) {
+        const b0 = osmBuildings[0];
+        console.log(`[CityScene:osm] First building at (${b0.coordinates.x.toFixed(1)}, ${b0.coordinates.z.toFixed(1)}), height=${b0.height}`);
+      }
+    }
+  }, [isOSMMode, osmBuildings, osmBounds]);
+
   // LoD system
   const buildingDefs = useMemo(() => CITY_BUILDINGS.map(b => ({ x: b.x, z: b.z, w: b.w, d: b.d, h: b.h, color: b.color, rot: b.rot, mirror: b.mirror, forceClass: (b as any).forceClass })), []);
   const { config: lodConfig, computeFrame } = useCityLod(buildingDefs);
