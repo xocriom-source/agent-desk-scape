@@ -451,8 +451,8 @@ export function convertOSMToCity(
       });
 
       // Build road buffer segments for building collision checks
-      // Buffer = road half-width + sidewalk + margin (1.5 units extra)
-      const bufferHalfWidth = widthUnits / 2 + 1.5;
+      // Buffer = road half-width + sidewalk + margin (2.0 units extra for safety)
+      const bufferHalfWidth = widthUnits / 2 + 2.0;
       for (let i = 0; i < segments.length - 1; i++) {
         roadBuffers.push({
           ax: segments[i].x, az: segments[i].z,
@@ -461,6 +461,28 @@ export function convertOSMToCity(
         });
       }
       streetCount++;
+    }
+  }
+
+  // ── Build junction zones from road intersection points ──
+  const junctions: JunctionZone[] = [];
+  const nodeMap = new Map<string, number>();
+  for (const st of streets) {
+    for (const pt of st.segments) {
+      const key = `${Math.round(pt.x * 2)}_${Math.round(pt.z * 2)}`;
+      nodeMap.set(key, (nodeMap.get(key) || 0) + 1);
+    }
+  }
+  for (const st of streets) {
+    for (const pt of st.segments) {
+      const key = `${Math.round(pt.x * 2)}_${Math.round(pt.z * 2)}`;
+      if ((nodeMap.get(key) || 0) >= 2) {
+        // Junction: clear a larger area at intersections
+        const existing = junctions.find(j => Math.abs(j.x - pt.x) < 2 && Math.abs(j.z - pt.z) < 2);
+        if (!existing) {
+          junctions.push({ x: pt.x, z: pt.z, radius: st.width / 2 + 3.0 });
+        }
+      }
     }
   }
 
