@@ -158,14 +158,8 @@ function PlayerRig({ aabbs, isOSMMode }: { aabbs: AABB[]; isOSMMode: boolean }) 
     const dt = Math.min(delta, 0.05);
     const keys = useInputStore.getState().keys;
 
-    // Vehicle toggle
-    if (keys.has("e")) {
-      // Debounce handled by keydown listener in inputStore
-    }
-
     let dx = 0, dz = 0;
-    const baseSpeed = isOSMMode ? 1.2 : 0.2;
-    const speed = baseSpeed / dt * 0.033; // normalize to ~30fps equivalent
+    const speed = isOSMMode ? 8 : 4; // units/sec, frame-independent
 
     if (keys.has("w") || keys.has("arrowup")) dz -= speed * dt;
     if (keys.has("s") || keys.has("arrowdown")) dz += speed * dt;
