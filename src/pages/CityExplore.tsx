@@ -1,10 +1,15 @@
-import { useMemo, useState, useCallback, Suspense, useReducer } from "react";
+/**
+ * CityExplore — Main city exploration page.
+ * Uses gameStore for all central state, CityHUD for UI, inputStore for input.
+ * No more 20+ useState calls — everything flows through the centralized stores.
+ */
+
+import { useMemo, useCallback, Suspense, useEffect } from "react";
 import { SEOHead } from "@/components/SEOHead";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Building2, Users2, Trophy, Megaphone, Plane, Search, ShoppingBag, MessageCircle, Target, Car, Award, Briefcase, Dna, Users, Zap, Bot, Globe, Monitor, Video, Hash, Eye, BarChart3, Calendar, Gamepad2, Link2 } from "lucide-react";
-import { motion } from "framer-motion";
 import { CityExploreScene } from "@/components/office/3d/CityExploreScene";
 import { useOSMCity } from "@/hooks/useOSMCity";
+import { CityHUD } from "@/components/city/CityHUD";
 import { CityLocationSelector } from "@/components/city/CityLocationSelector";
 import { CityLeaderboard } from "@/components/city/CityLeaderboard";
 import { CityRanking } from "@/components/city/CityRanking";
@@ -19,7 +24,7 @@ import { CityMarketplace } from "@/components/city/CityMarketplace";
 import { useCityBuildings } from "@/hooks/useCityBuildings";
 import { ProximityChat } from "@/components/collaboration/ProximityChat";
 import { InteractiveObjects } from "@/components/collaboration/InteractiveObjects";
-import { UserStatusSystem, type UserStatus } from "@/components/collaboration/UserStatusSystem";
+import { UserStatusSystem } from "@/components/collaboration/UserStatusSystem";
 import { TeleportSystem } from "@/components/collaboration/TeleportSystem";
 import { PersonalAgent } from "@/components/collaboration/PersonalAgent";
 import { TeamAgents } from "@/components/collaboration/TeamAgents";
@@ -28,59 +33,42 @@ import { MessengerHub } from "@/components/collaboration/MessengerHub";
 import { AgentTraining } from "@/components/collaboration/AgentTraining";
 import { MeetingSystem } from "@/components/workspace/MeetingSystem";
 import { TeamChatSystem } from "@/components/workspace/TeamChatSystem";
-import { FocusMode, type FocusModeType } from "@/components/workspace/FocusMode";
+import { FocusMode } from "@/components/workspace/FocusMode";
 import { TeamAnalytics } from "@/components/workspace/TeamAnalytics";
 import { VirtualEvents } from "@/components/workspace/VirtualEvents";
 import { ScreenSharing } from "@/components/workspace/ScreenSharing";
 import { ToolIntegrations } from "@/components/workspace/ToolIntegrations";
 import { TeamEngagement } from "@/components/workspace/TeamEngagement";
 import type { TransportType } from "@/types/building";
-import logo from "@/assets/logo.png";
-
-// Panel state reducer — replaces 20+ useState calls
-type PanelName = "leaderboard" | "ranking" | "ads" | "vehicleShop" | "chat" | "missions" | "marketplace" |
-  "proximity" | "objects" | "status" | "teleport" | "personalAgent" | "teamAgents" | "publicSpaces" |
-  "messenger" | "training" | "meeting" | "teamChat" | "focusMode" | "analytics" | "events" |
-  "screenShare" | "integrations" | "engagement";
-
-type PanelAction = { type: "toggle"; panel: PanelName } | { type: "open"; panel: PanelName } | { type: "close"; panel: PanelName };
-type PanelState = Record<PanelName, boolean>;
-
-const initialPanels: PanelState = {
-  leaderboard: false, ranking: false, ads: false, vehicleShop: false, chat: false,
-  missions: false, marketplace: false, proximity: false, objects: false, status: false,
-  teleport: false, personalAgent: false, teamAgents: false, publicSpaces: false,
-  messenger: false, training: false, meeting: false, teamChat: false, focusMode: false,
-  analytics: false, events: false, screenShare: false, integrations: false, engagement: false,
-};
-
-function panelReducer(state: PanelState, action: PanelAction): PanelState {
-  switch (action.type) {
-    case "toggle": return { ...state, [action.panel]: !state[action.panel] };
-    case "open": return { ...state, [action.panel]: true };
-    case "close": return { ...state, [action.panel]: false };
-    default: return state;
-  }
-}
+import { useGameStore, type PanelName } from "@/stores/gameStore";
+import { initInputListeners } from "@/stores/inputStore";
+import { motion } from "framer-motion";
 
 export default function CityExplore() {
   const navigate = useNavigate();
-  const [panels, dispatch] = useReducer(panelReducer, initialPanels);
-  const open = useCallback((p: PanelName) => dispatch({ type: "open", panel: p }), []);
-  const close = useCallback((p: PanelName) => dispatch({ type: "close", panel: p }), []);
-  const toggle = useCallback((p: PanelName) => dispatch({ type: "toggle", panel: p }), []);
 
-  const [flyMode, setFlyMode] = useState(false);
-  const [inVehicle, setInVehicle] = useState(false);
-  const [currentVehicle, setCurrentVehicle] = useState<TransportType>("car");
-  const [vehicleColor, setVehicleColor] = useState("#4A90D9");
-  const [playerPos, setPlayerPos] = useState<[number, number, number]>([0, 0, 5]);
-  const [showIntro, setShowIntro] = useState(true);
-  const [cityReady, setCityReady] = useState(false);
-  const [userStatus, setUserStatus] = useState<UserStatus>("available");
-  const [focusMode, setFocusMode] = useState<FocusModeType>("normal");
+  // ── Centralized state from gameStore ──
+  const activePanel = useGameStore(s => s.ui.activePanel);
+  const showIntro = useGameStore(s => s.ui.showIntro);
+  const cityReady = useGameStore(s => s.world.cityReady);
+  const playerPos = useGameStore(s => s.player.position);
+  const vehicle = useGameStore(s => s.vehicle);
+  const world = useGameStore(s => s.world);
+  const closePanel = useGameStore(s => s.closePanel);
+  const openPanel = useGameStore(s => s.openPanel);
+  const setShowIntro = useGameStore(s => s.setShowIntro);
+  const setCityReady = useGameStore(s => s.setCityReady);
+  const setPlayerPosition = useGameStore(s => s.setPlayerPosition);
+  const enterVehicle = useGameStore(s => s.enterVehicle);
 
-  // OSM real-world city hook
+  // ── Init global input listeners once ──
+  useEffect(() => {
+    const cleanup = initInputListeners();
+    console.log("[CityExplore:init] Input listeners initialized");
+    return cleanup;
+  }, []);
+
+  // ── OSM real-world city hook ──
   const osmCity = useOSMCity();
 
   const userName = useMemo(() => {
@@ -88,13 +76,6 @@ export default function CityExplore() {
       const stored = localStorage.getItem("agentoffice_user");
       return stored ? JSON.parse(stored).name || "Chefe" : "Chefe";
     } catch { return "Chefe"; }
-  }, []);
-
-  const cityData = useMemo(() => {
-    try {
-      const stored = localStorage.getItem("agentoffice_city");
-      return stored ? JSON.parse(stored) : { name: "São Paulo", flag: "🇧🇷" };
-    } catch { return { name: "São Paulo", flag: "🇧🇷" }; }
   }, []);
 
   const userId = useMemo(() => {
@@ -111,35 +92,39 @@ export default function CityExplore() {
   const { visibleBuildings, userBuilding } = useCityBuildings(userId);
 
   const handleVehicleSelect = useCallback((type: TransportType, color: string) => {
-    setCurrentVehicle(type);
-    setVehicleColor(color);
-  }, []);
+    enterVehicle(type, color);
+  }, [enterVehicle]);
 
   const handleIntroComplete = useCallback(() => {
     setShowIntro(false);
-  }, []);
+  }, [setShowIntro]);
 
   const handleCityReady = useCallback(() => {
     setCityReady(true);
     const el = document.getElementById("city-loader");
     if (el) el.style.display = "none";
-  }, []);
+    console.log("[CityExplore:ready] City loaded");
+  }, [setCityReady]);
+
+  // Helper to check if a specific panel is open
+  const isPanelOpen = (panel: PanelName) => activePanel === panel;
 
   return (
     <div className="relative w-screen h-screen overflow-hidden select-none" style={{ backgroundColor: "#0A0C14" }}>
       <SEOHead title="Explorar Cidade" description="Explore a cidade 3D com agentes IA, missões e economia virtual." path="/city-explore" />
+
       {/* Cinematic Intro */}
       {showIntro && (
         <CinematicIntro
-          cityName={cityData.name}
-          cityFlag={cityData.flag}
+          cityName={world.currentCity.name}
+          cityFlag={world.currentCity.flag}
           playerName={userName}
           onComplete={handleIntroComplete}
         />
       )}
 
       {/* Loading overlay */}
-      {!showIntro && (
+      {!showIntro && !cityReady && (
         <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none" id="city-loader">
           <div className="text-center">
             <div className="w-8 h-8 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin mx-auto mb-3" />
@@ -152,11 +137,6 @@ export default function CityExplore() {
       <Suspense fallback={null}>
         <CityExploreScene
           playerName={userName}
-          flyMode={flyMode}
-          inVehicle={inVehicle}
-          vehicleType={currentVehicle}
-          vehicleColor={vehicleColor}
-          onVehicleToggle={setInVehicle}
           onBuildingClick={(id) => navigate(`/building/${id}`)}
           onReady={handleCityReady}
           osmBuildings={osmCity.data?.buildings}
@@ -168,243 +148,77 @@ export default function CityExplore() {
         />
       </Suspense>
 
-      {/* HUD - only show after intro */}
+      {/* ── NEW UNIFIED HUD (replaces all old buttons) ── */}
+      <CityHUD />
+
+      {/* HUD additions that live outside the HUD component */}
       {!showIntro && (
         <>
-          {/* Top HUD */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="absolute top-0 left-0 right-0 z-40"
-          >
-            <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <button onClick={() => navigate("/city")} className="p-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all">
-                  <ArrowLeft className="w-4 h-4" />
-                </button>
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50">
-                  <img src={logo} alt="" className="w-5 h-5" />
-                  <span className="text-sm font-bold text-white">{cityData.flag} {cityData.name}</span>
-                  <span className="text-[10px] text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded-full">Live</span>
-                </div>
-                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-amber-700/30">
-                  <CityLocationSelector
-                    loading={osmCity.loading}
-                    error={osmCity.error}
-                    activePreset={osmCity.activePreset}
-                    isOSMMode={osmCity.isOSMMode}
-                    onSelectPreset={osmCity.loadPreset}
-                    onCustomLocation={osmCity.loadCustomLocation}
-                    onSwitchToProcedural={osmCity.switchToProcedural}
-                    buildingCount={osmCity.data?.buildings.length || 0}
-                    streetCount={osmCity.data?.streets.length || 0}
-                  />
-                </div>
-                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-amber-700/30">
-                  <span className="text-xs">🪙</span>
-                  <span className="text-xs font-bold text-amber-400 font-mono">1,250</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1.5">
-                {inVehicle && (
-                  <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-400/20 backdrop-blur-md border border-emerald-400/50 text-emerald-400 text-xs font-medium font-mono">
-                    <Car className="w-3.5 h-3.5" />
-                    <span className="text-[8px] bg-black/40 px-1 py-0.5 rounded">[E]</span>
-                  </div>
-                )}
-
-                <button onClick={() => setFlyMode(!flyMode)} className={`flex items-center gap-1 px-2.5 py-2 rounded-xl backdrop-blur-md border text-xs font-medium transition-all ${flyMode ? "bg-emerald-400/20 border-emerald-400/50 text-emerald-400" : "bg-black/60 border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80"}`}>
-                  <Plane className="w-3.5 h-3.5" />
-                </button>
-
-                <button onClick={() => open("missions")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
-                  <Target className="w-3.5 h-3.5" />
-                  <span className="text-[8px] bg-red-500 text-white px-1 rounded-sm font-bold">3</span>
-                </button>
-
-                <button onClick={() => toggle("chat")} className={`flex items-center gap-1 px-2.5 py-2 rounded-xl backdrop-blur-md border text-xs font-medium transition-all ${panels.chat ? "bg-emerald-400/20 border-emerald-400/50 text-emerald-400" : "bg-black/60 border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80"}`}>
-                  <MessageCircle className="w-3.5 h-3.5" />
-                </button>
-
-                <button onClick={() => toggle("proximity")} className={`flex items-center gap-1 px-2.5 py-2 rounded-xl backdrop-blur-md border text-xs font-medium transition-all ${panels.proximity ? "bg-emerald-400/20 border-emerald-400/50 text-emerald-400" : "bg-black/60 border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80"}`}>
-                  <Users className="w-3.5 h-3.5" />
-                </button>
-
-                <button onClick={() => open("teleport")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-cyan-700/30 text-cyan-400 hover:bg-cyan-400/10 transition-all text-xs font-medium">
-                  <Zap className="w-3.5 h-3.5" />
-                </button>
-
-                <button onClick={() => toggle("personalAgent")} className={`flex items-center gap-1 px-2.5 py-2 rounded-xl backdrop-blur-md border text-xs font-medium transition-all ${panels.personalAgent ? "bg-violet-400/20 border-violet-400/50 text-violet-400" : "bg-black/60 border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80"}`}>
-                  <Bot className="w-3.5 h-3.5" />
-                </button>
-
-                <button onClick={() => open("publicSpaces")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
-                  <Globe className="w-3.5 h-3.5" />
-                </button>
-
-                <button onClick={() => toggle("status")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
-                  <div className={`w-2.5 h-2.5 rounded-full ${userStatus === "available" ? "bg-emerald-400" : userStatus === "focused" ? "bg-amber-400" : userStatus === "in-meeting" ? "bg-red-400" : "bg-gray-500"}`} />
-                </button>
-
-                <button onClick={() => open("vehicleShop")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
-                  <ShoppingBag className="w-3.5 h-3.5" />
-                </button>
-
-                <button onClick={() => open("marketplace")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-amber-700/30 text-amber-400 hover:bg-amber-400/10 transition-all text-xs font-medium">
-                  <Briefcase className="w-3.5 h-3.5" />
-                </button>
-                <button onClick={() => open("ranking")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
-                  <Award className="w-3.5 h-3.5" />
-                </button>
-                {/* Workspace tools */}
-                <button onClick={() => open("meeting")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-red-700/30 text-red-400 hover:bg-red-400/10 transition-all text-xs font-medium" title="Reuniões">
-                  <Video className="w-3.5 h-3.5" />
-                </button>
-                <button onClick={() => open("teamChat")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Team Chat">
-                  <Hash className="w-3.5 h-3.5" />
-                </button>
-                <button onClick={() => open("focusMode")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Foco">
-                  <Eye className="w-3.5 h-3.5" />
-                </button>
-                <button onClick={() => open("analytics")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Analytics">
-                  <BarChart3 className="w-3.5 h-3.5" />
-                </button>
-                <button onClick={() => open("events")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Eventos">
-                  <Calendar className="w-3.5 h-3.5" />
-                </button>
-                <button onClick={() => open("screenShare")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Compartilhar">
-                  <Monitor className="w-3.5 h-3.5" />
-                </button>
-                <button onClick={() => open("integrations")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Integrações">
-                  <Link2 className="w-3.5 h-3.5" />
-                </button>
-                <button onClick={() => open("engagement")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium" title="Engajamento">
-                  <Gamepad2 className="w-3.5 h-3.5" />
-                </button>
-
-                <button onClick={() => navigate("/ecosystem")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-violet-700/30 text-violet-400 hover:bg-violet-400/10 transition-all text-xs font-medium" title="Ecosystem">
-                  <Dna className="w-3.5 h-3.5" />
-                </button>
-
-                <button onClick={() => open("leaderboard")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
-                  <Trophy className="w-3.5 h-3.5" />
-                </button>
-
-                <button onClick={() => open("ads")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
-                  <Megaphone className="w-3.5 h-3.5" />
-                </button>
-
-                <button onClick={() => navigate("/find-building")} className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium">
-                  <Search className="w-3.5 h-3.5" />
-                </button>
-
-                <button onClick={() => navigate("/office")} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary/80 backdrop-blur-md border border-primary/50 text-white hover:bg-primary transition-all text-xs font-medium">
-                  <Building2 className="w-3.5 h-3.5" />
-                  Prédio
-                </button>
-              </div>
+          {/* Location selector (top left, next to back button) */}
+          <div className="absolute top-14 left-4 z-40">
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-amber-700/30">
+              <CityLocationSelector
+                loading={osmCity.loading}
+                error={osmCity.error}
+                activePreset={osmCity.activePreset}
+                isOSMMode={osmCity.isOSMMode}
+                onSelectPreset={osmCity.loadPreset}
+                onCustomLocation={osmCity.loadCustomLocation}
+                onSwitchToProcedural={osmCity.switchToProcedural}
+                buildingCount={osmCity.data?.buildings.length || 0}
+                streetCount={osmCity.data?.streets.length || 0}
+              />
             </div>
-          </motion.div>
-
-          {/* Flight mode popup */}
-          {flyMode && (
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50">
-              <div className="bg-gray-950/95 backdrop-blur-xl border border-gray-700/50 rounded-2xl px-8 py-6 text-center shadow-2xl">
-                <h3 className="text-sm font-bold text-gray-300 tracking-widest mb-4 font-mono">FLIGHT CONTROLS</h3>
-                <p className="text-[10px] text-gray-500 mb-3 font-mono">CLICK THE SCREEN TO LOCK MOUSE</p>
-                <div className="space-y-2 text-xs font-mono">
-                  {[["W A S D", "MOVE"], ["MOUSE", "LOOK"], ["SPACE", "UP"], ["CTRL", "DOWN"], ["SHIFT", "BOOST"]].map(([k, a]) => (
-                    <div key={k} className="flex justify-between gap-8">
-                      <span className="text-white font-bold">{k}</span>
-                      <span className="text-gray-500">{a}</span>
-                    </div>
-                  ))}
-                </div>
-                <button onClick={() => setFlyMode(false)} className="mt-4 px-6 py-2.5 bg-primary text-white text-xs font-bold tracking-wider rounded-lg hover:bg-primary/80 transition-colors font-mono">
-                  LET'S FLY!
-                </button>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Chat panel */}
-          <CityChat isOpen={panels.chat} onClose={() => close("chat")} />
+          </div>
 
           {/* Mini Map */}
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.6 }}
-            className="absolute top-20 left-4 z-40"
+            className="absolute top-28 left-4 z-40"
           >
             <CityMiniMap
-              playerPos={playerPos}
+              playerPos={[playerPos[0], playerPos[1], playerPos[2]]}
               buildings={visibleBuildings}
               userBuildingId={userBuilding?.id}
             />
           </motion.div>
 
           {/* Activity Ticker */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} className="absolute bottom-14 left-1/2 -translate-x-1/2 z-40">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} className="absolute bottom-14 left-1/2 -translate-x-1/2 z-30">
             <CityActivityTicker />
           </motion.div>
 
-          {/* Bottom controls */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40">
-            <div className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-black/60 backdrop-blur-md border border-gray-700/50">
-              {[["WASD", "andar"], ["CLICK", "ir"], ["SCROLL", "zoom"], ["E", "veículo"], ["DRAG", "câmera"]].map(([k, a], i) => (
-                <span key={k} className="text-[10px] text-gray-400 flex items-center gap-1">
-                  {i > 0 && <span className="text-gray-600 mr-1">•</span>}
-                  <span className="text-white font-bold">{k}</span> {a}
-                </span>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Building count */}
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="absolute bottom-4 left-4 z-40">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50">
-              <Users2 className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="text-[10px] text-gray-300">{visibleBuildings.length} prédios</span>
-            </div>
-          </motion.div>
-
-          {/* Lo-fi */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }} className="absolute bottom-4 right-4 z-40">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 cursor-pointer hover:bg-black/80 transition-all">
-              <span className="text-[10px] text-gray-400">▶ LO-FI</span>
-            </div>
-          </motion.div>
-
-          {/* Overlay Panels */}
-          <CityLeaderboard isOpen={panels.leaderboard} onClose={() => close("leaderboard")} />
-          <CityRanking isOpen={panels.ranking} onClose={() => close("ranking")} />
-          <CityAdPlacement isOpen={panels.ads} onClose={() => close("ads")} />
-          <VehicleShop isOpen={panels.vehicleShop} onClose={() => close("vehicleShop")} currentVehicle={currentVehicle} onSelect={handleVehicleSelect} />
-          <DailyMissions isOpen={panels.missions} onClose={() => close("missions")} />
-          <CityMarketplace isOpen={panels.marketplace} onClose={() => close("marketplace")} />
+          {/* ── Overlay Panels (driven by gameStore.ui.activePanel) ── */}
+          <CityLeaderboard isOpen={isPanelOpen("leaderboard")} onClose={closePanel} />
+          <CityRanking isOpen={isPanelOpen("ranking")} onClose={closePanel} />
+          <CityAdPlacement isOpen={isPanelOpen("ads")} onClose={closePanel} />
+          <VehicleShop isOpen={isPanelOpen("vehicleShop")} onClose={closePanel} currentVehicle={vehicle.currentType} onSelect={handleVehicleSelect} />
+          <DailyMissions isOpen={isPanelOpen("missions")} onClose={closePanel} />
+          <CityMarketplace isOpen={isPanelOpen("marketplace")} onClose={closePanel} />
+          <CityChat isOpen={isPanelOpen("chat")} onClose={closePanel} />
 
           {/* Collaboration Panels */}
-          <ProximityChat isOpen={panels.proximity} onClose={() => close("proximity")} playerPos={playerPos} />
-          <InteractiveObjects isOpen={panels.objects} onClose={() => close("objects")} />
-          <UserStatusSystem isOpen={panels.status} onClose={() => close("status")} currentStatus={userStatus} onStatusChange={setUserStatus} userName={userName} />
-          <TeleportSystem isOpen={panels.teleport} onClose={() => close("teleport")} onTeleport={setPlayerPos} />
-          <PersonalAgent isOpen={panels.personalAgent} onClose={() => close("personalAgent")} />
-          <TeamAgents isOpen={panels.teamAgents} onClose={() => close("teamAgents")} />
-          <PublicWorkspaces isOpen={panels.publicSpaces} onClose={() => close("publicSpaces")} />
-          <MessengerHub isOpen={panels.messenger} onClose={() => close("messenger")} />
-          <AgentTraining isOpen={panels.training} onClose={() => close("training")} />
+          <ProximityChat isOpen={isPanelOpen("proximity")} onClose={closePanel} playerPos={[playerPos[0], playerPos[1], playerPos[2]]} />
+          <InteractiveObjects isOpen={isPanelOpen("objects")} onClose={closePanel} />
+          <UserStatusSystem isOpen={isPanelOpen("status")} onClose={closePanel} currentStatus="available" onStatusChange={() => {}} userName={userName} />
+          <TeleportSystem isOpen={isPanelOpen("teleport")} onClose={closePanel} onTeleport={(pos) => setPlayerPosition(pos)} />
+          <PersonalAgent isOpen={isPanelOpen("personalAgent")} onClose={closePanel} />
+          <TeamAgents isOpen={isPanelOpen("teamAgents")} onClose={closePanel} />
+          <PublicWorkspaces isOpen={isPanelOpen("publicSpaces")} onClose={closePanel} />
+          <MessengerHub isOpen={isPanelOpen("messenger")} onClose={closePanel} />
+          <AgentTraining isOpen={isPanelOpen("training")} onClose={closePanel} />
 
           {/* Workspace Panels */}
-          <MeetingSystem isOpen={panels.meeting} onClose={() => close("meeting")} />
-          <TeamChatSystem isOpen={panels.teamChat} onClose={() => close("teamChat")} />
-          <FocusMode isOpen={panels.focusMode} onClose={() => close("focusMode")} currentMode={focusMode} onModeChange={setFocusMode} />
-          <TeamAnalytics isOpen={panels.analytics} onClose={() => close("analytics")} />
-          <VirtualEvents isOpen={panels.events} onClose={() => close("events")} />
-          <ScreenSharing isOpen={panels.screenShare} onClose={() => close("screenShare")} />
-          <ToolIntegrations isOpen={panels.integrations} onClose={() => close("integrations")} />
-          <TeamEngagement isOpen={panels.engagement} onClose={() => close("engagement")} />
+          <MeetingSystem isOpen={isPanelOpen("meeting")} onClose={closePanel} />
+          <TeamChatSystem isOpen={isPanelOpen("teamChat")} onClose={closePanel} />
+          <FocusMode isOpen={isPanelOpen("focusMode")} onClose={closePanel} currentMode="normal" onModeChange={() => {}} />
+          <TeamAnalytics isOpen={isPanelOpen("analytics")} onClose={closePanel} />
+          <VirtualEvents isOpen={isPanelOpen("events")} onClose={closePanel} />
+          <ScreenSharing isOpen={isPanelOpen("screenShare")} onClose={closePanel} />
+          <ToolIntegrations isOpen={isPanelOpen("integrations")} onClose={closePanel} />
+          <TeamEngagement isOpen={isPanelOpen("engagement")} onClose={closePanel} />
         </>
       )}
     </div>
