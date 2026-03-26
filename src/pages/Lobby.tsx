@@ -8,6 +8,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { PlanBadge } from "@/components/plan/PlanBadge";
 import { LoadingState, EmptyState } from "@/components/ui/LoadingState";
+import { SEOHead } from "@/components/SEOHead";
 import { fetchUserBuildings, fetchRecentActivity, type BuildingSummary } from "@/services/buildingService";
 import logoOriginal from "@/assets/logo-original.svg";
 
