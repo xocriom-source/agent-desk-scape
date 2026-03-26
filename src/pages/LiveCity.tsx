@@ -1,4 +1,5 @@
 import { useMemo, useState, useCallback, useRef, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Building2, Map, Users2, Search, Compass } from "lucide-react";
 import { motion } from "framer-motion";
