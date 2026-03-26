@@ -351,21 +351,31 @@ function CameraRig({ isOSMMode }: { isOSMMode: boolean }) {
     const dt = Math.min(delta, 0.05);
     const s = cameraState.current;
 
-    // Chase: lerp target to player
-    const followSpeed = isInVehicle ? 8 : 10;
+    // Snap camera to player on first frame
+    if (!s.initialized) {
+      s.targetX = playerPos[0];
+      s.targetY = playerPos[1] + (isOSMMode ? 1 : 0.5);
+      s.targetZ = playerPos[2];
+      s.initialized = true;
+    }
+
+    // Chase: lerp target to player — vehicle needs FAST follow to avoid drift
+    const followSpeed = isInVehicle ? 18 : 10;
     const factor = 1 - Math.exp(-followSpeed * dt);
     s.targetX += (playerPos[0] - s.targetX) * factor;
     s.targetZ += (playerPos[2] - s.targetZ) * factor;
     s.targetY += ((playerPos[1] + (isOSMMode ? 1 : 0.5)) - s.targetY) * factor;
 
-    // Vehicle: gently pull azimuth toward vehicle heading
+    // Vehicle: pull azimuth toward vehicle heading more aggressively
     if (isInVehicle) {
       const targetAzimuth = playerRot + Math.PI;
       let azDiff = targetAzimuth - s.azimuth;
       while (azDiff > Math.PI) azDiff -= Math.PI * 2;
       while (azDiff < -Math.PI) azDiff += Math.PI * 2;
-      s.azimuth += azDiff * 0.03;
-      s.distance += ((isOSMMode ? 35 : 22) - s.distance) * factor * 0.3;
+      s.azimuth += azDiff * 0.08;
+      // Converge distance quickly
+      const targetDist = isOSMMode ? 30 : 22;
+      s.distance += (targetDist - s.distance) * factor;
     }
 
     // Compute camera position from spherical coords
@@ -378,10 +388,11 @@ function CameraRig({ isOSMMode }: { isOSMMode: boolean }) {
     const camY = Math.max(1, s.targetY + offY);
     const camZ = s.targetZ + offZ;
 
-    // Smooth camera position
-    camera.position.x += (camX - camera.position.x) * factor;
-    camera.position.y += (camY - camera.position.y) * factor;
-    camera.position.z += (camZ - camera.position.z) * factor;
+    // Smooth camera position — vehicle uses tighter smoothing
+    const posFactor = isInVehicle ? factor : factor * 0.8;
+    camera.position.x += (camX - camera.position.x) * posFactor;
+    camera.position.y += (camY - camera.position.y) * posFactor;
+    camera.position.z += (camZ - camera.position.z) * posFactor;
     camera.lookAt(s.targetX, s.targetY, s.targetZ);
   });
 
