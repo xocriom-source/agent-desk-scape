@@ -74,16 +74,18 @@ function getMat(color: string, roughness: number, metalness: number = 0.05): THR
 
 // ── Urban color palettes — sophisticated readable tones ──
 const FACADE_PALETTES = [
-  { body: "#B8B0A8", base: "#8A8278", roof: "#6A6258" },
-  { body: "#A0A8B0", base: "#707880", roof: "#505860" },
-  { body: "#C0B8A8", base: "#908878", roof: "#686058" },
-  { body: "#98A0A8", base: "#687078", roof: "#485058" },
-  { body: "#B0A898", base: "#807868", roof: "#605848" },
+  { body: "#C8C0B8", base: "#9A9288", roof: "#787068" },
+  { body: "#B0B8C0", base: "#808890", roof: "#606870" },
+  { body: "#D0C8B8", base: "#A09888", roof: "#787068" },
   { body: "#A8B0B8", base: "#788088", roof: "#586068" },
-  { body: "#B8B8B0", base: "#888880", roof: "#686860" },
-  { body: "#A0988E", base: "#706860", roof: "#504840" },
-  { body: "#9AA8B0", base: "#6A7880", roof: "#4A5860" },
-  { body: "#B0B0A0", base: "#808070", roof: "#606050" },
+  { body: "#C0B8A8", base: "#908878", roof: "#706858" },
+  { body: "#B8C0C8", base: "#8890A0", roof: "#687080" },
+  { body: "#C8C8C0", base: "#989890", roof: "#787870" },
+  { body: "#B8B0A0", base: "#887870", roof: "#685850" },
+  { body: "#A8B8C0", base: "#788898", roof: "#587080" },
+  { body: "#C0C0B0", base: "#909080", roof: "#707060" },
+  { body: "#D0D0C8", base: "#A0A098", roof: "#808078" },
+  { body: "#B8B0B8", base: "#888088", roof: "#686068" },
 ];
 
 function getBuildingPalette(seed: number) {
