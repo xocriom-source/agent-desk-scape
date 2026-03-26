@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { SEOHead } from "@/components/SEOHead";
 import { DISTRICTS, BUILDING_STYLES } from "@/types/building";
 import { AIReceptionistChat } from "@/components/building/AIReceptionistChat";
 import { BuildingSettings } from "@/components/building/BuildingSettings";

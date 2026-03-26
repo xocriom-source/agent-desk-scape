@@ -129,20 +129,20 @@ export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onRo
         </div>
 
         {onRoomEditor && (
-          <button onClick={onRoomEditor} className="glass-panel rounded-2xl p-2 hover:bg-muted/30 transition-colors shadow-lg" title="Editor de Salas">
+          <button onClick={onRoomEditor} className="glass-panel rounded-2xl p-2 hover:bg-muted/30 transition-colors shadow-lg" title="Editor de Salas" aria-label="Editor de Salas">
             <Home className="w-4 h-4 text-foreground" />
           </button>
         )}
         {onCustomize && (
-          <button onClick={onCustomize} className="glass-panel rounded-2xl p-2 hover:bg-muted/30 transition-colors shadow-lg" title="Personalizar">
+          <button onClick={onCustomize} className="glass-panel rounded-2xl p-2 hover:bg-muted/30 transition-colors shadow-lg" title="Personalizar" aria-label="Personalizar">
             <Palette className="w-4 h-4 text-foreground" />
           </button>
         )}
-        <button className="glass-panel rounded-2xl p-2 hover:bg-muted/30 transition-colors shadow-lg">
+        <button className="glass-panel rounded-2xl p-2 hover:bg-muted/30 transition-colors shadow-lg" aria-label="Configurações" title="Configurações">
           <Settings className="w-4 h-4 text-foreground" />
         </button>
         {onLogout && (
-          <button onClick={onLogout} className="glass-panel rounded-2xl p-2 hover:bg-destructive/20 transition-colors shadow-lg" title="Sair">
+          <button onClick={onLogout} className="glass-panel rounded-2xl p-2 hover:bg-destructive/20 transition-colors shadow-lg" title="Sair" aria-label="Sair do escritório">
             <LogOut className="w-4 h-4 text-foreground" />
           </button>
         )}

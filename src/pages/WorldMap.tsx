@@ -6,6 +6,7 @@ import {
   ChevronRight, Signal, ChevronDown, MapPin
 } from "lucide-react";
 import { WORLD_DATA, getAllCities, getBestServer, type City, type Continent, type Country } from "@/data/worldData";
+import { SEOHead } from "@/components/SEOHead";
 import logo from "@/assets/logo.png";
 
 type ViewLevel = "world" | "continent" | "country" | "city";
