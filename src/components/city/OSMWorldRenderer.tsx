@@ -95,18 +95,33 @@ function varyColor(base: string, seed: number): string {
   const c = new THREE.Color(base);
   const hsl = { h: 0, s: 0, l: 0 };
   c.getHSL(hsl);
-  hsl.l = Math.max(0.15, Math.min(0.85, hsl.l + ((seed % 17) - 8) * 0.012));
-  hsl.s = Math.max(0, Math.min(1, hsl.s + ((seed % 11) - 5) * 0.015));
+  hsl.l = Math.max(0.2, Math.min(0.85, hsl.l + ((seed % 17) - 8) * 0.015));
+  hsl.s = Math.max(0, Math.min(1, hsl.s + ((seed % 11) - 5) * 0.012));
   c.setHSL(hsl.h, hsl.s, hsl.l);
   return `#${c.getHexString()}`;
 }
 
 // ── Shared materials ──
-const windowDayMat = new THREE.MeshStandardMaterial({ color: "#C8D8F0", emissive: "#6688BB", emissiveIntensity: 0.15, transparent: true, opacity: 0.45 });
-const windowNightMat = new THREE.MeshStandardMaterial({ color: "#FFE8A0", emissive: "#FFD060", emissiveIntensity: 0.8, transparent: true, opacity: 0.6 });
-const windowDimMat = new THREE.MeshStandardMaterial({ color: "#556677", emissive: "#334455", emissiveIntensity: 0.05, transparent: true, opacity: 0.3 });
-const aoMat = new THREE.MeshBasicMaterial({ color: "#000", transparent: true, opacity: 0.18, depthWrite: false });
-const roofEdgeMat = new THREE.MeshStandardMaterial({ color: "#888", roughness: 0.6, metalness: 0.3 });
+const windowLitMat = new THREE.MeshStandardMaterial({
+  color: "#D8E8FF", emissive: "#88AADD", emissiveIntensity: 0.4,
+  transparent: true, opacity: 0.7, roughness: 0.1, metalness: 0.3
+});
+const windowWarmMat = new THREE.MeshStandardMaterial({
+  color: "#FFE8C0", emissive: "#FFCC66", emissiveIntensity: 0.6,
+  transparent: true, opacity: 0.65, roughness: 0.1, metalness: 0.2
+});
+const windowDimMat = new THREE.MeshStandardMaterial({
+  color: "#8090A0", emissive: "#405060", emissiveIntensity: 0.08,
+  transparent: true, opacity: 0.5, roughness: 0.2, metalness: 0.4
+});
+const windowDarkMat = new THREE.MeshStandardMaterial({
+  color: "#506070", emissive: "#203040", emissiveIntensity: 0.03,
+  transparent: true, opacity: 0.6, roughness: 0.15, metalness: 0.5
+});
+const aoMat = new THREE.MeshBasicMaterial({ color: "#000", transparent: true, opacity: 0.15, depthWrite: false });
+const roofEdgeMat = new THREE.MeshStandardMaterial({ color: "#909090", roughness: 0.5, metalness: 0.35 });
+const bandMat = new THREE.MeshStandardMaterial({ color: "#707878", roughness: 0.6, metalness: 0.15 });
+const roofTopMat = new THREE.MeshStandardMaterial({ color: "#606868", roughness: 0.7, metalness: 0.1 });
 const roadMainMat = new THREE.MeshStandardMaterial({ color: "#606060", roughness: 0.82 });
 const roadSecMat = new THREE.MeshStandardMaterial({ color: "#585858", roughness: 0.85 });
 const roadAlleyMat = new THREE.MeshStandardMaterial({ color: "#505050", roughness: 0.9 });
@@ -116,94 +131,155 @@ const centerLineMat = new THREE.MeshStandardMaterial({ color: "#FFD030", transpa
 const grassMat = new THREE.MeshStandardMaterial({ color: "#4A8B3F", roughness: 0.9 });
 const trunkMat = new THREE.MeshStandardMaterial({ color: "#5A3A1A", roughness: 0.9 });
 
-// ── LOD 0: Full extruded polygon ──
+function pickWindowMat(seed: number, row: number, col: number) {
+  const v = (seed + row * 7 + col * 13) % 10;
+  if (v < 3) return windowLitMat;
+  if (v < 5) return windowWarmMat;
+  if (v < 7) return windowDimMat;
+  return windowDarkMat;
+}
+
+// ── LOD 0: Full extruded polygon with architectural detail ──
 const PolygonBuilding = memo(function PolygonBuilding({ b }: { b: CityBuilding }) {
   const polygon = (b as any).polygon as BuildingPolygon | undefined;
   const hasPolygon = !!(polygon?.vertices?.length && polygon.vertices.length >= 3);
   const fw = polygon?.w || 2;
   const fd = polygon?.d || 2;
+  const h = b.height;
 
   const geometry = useMemo(() => {
     if (!hasPolygon || !polygon) return null;
-    return getCachedGeometry(b.id, polygon, b.height);
-  }, [b.id, hasPolygon, polygon, b.height]);
+    return getCachedGeometry(b.id, polygon, h);
+  }, [b.id, hasPolygon, polygon, h]);
 
-  // Vary color per building for visual interest
-  const buildingColor = useMemo(() => {
-    const seed = b.id.charCodeAt(0) + b.id.charCodeAt(b.id.length - 1) * 7;
-    return varyColor(b.primaryColor, seed);
-  }, [b.primaryColor, b.id]);
+  const seed = useMemo(() => {
+    let s = 0;
+    for (let i = 0; i < Math.min(b.id.length, 8); i++) s += b.id.charCodeAt(i) * (i + 1);
+    return Math.abs(s);
+  }, [b.id]);
 
-  const material = useMemo(() => getMat(buildingColor, 0.55, 0.1), [buildingColor]);
-  const roofMat = useMemo(() => {
-    const c = new THREE.Color(buildingColor).multiplyScalar(0.65);
-    return getMat(c.getStyle(), 0.7, 0.1);
-  }, [buildingColor]);
+  const palette = useMemo(() => getBuildingPalette(seed), [seed]);
+  const bodyMat = useMemo(() => getMat(varyColor(palette.body, seed), 0.55, 0.08), [palette.body, seed]);
+  const baseMat = useMemo(() => getMat(palette.base, 0.7, 0.05), [palette.base]);
+  const roofMat = useMemo(() => getMat(palette.roof, 0.65, 0.12), [palette.roof]);
 
-  // Deterministic window lighting pattern
-  const windowSeed = useMemo(() => b.id.charCodeAt(2) || 0, [b.id]);
-  const getWindowMat = (faceIndex: number) => {
-    const lit = ((windowSeed + faceIndex * 3) % 5) > 1;
-    return lit ? windowDayMat : windowDimMat;
-  };
+  const isTall = h > 8;
+  const isMid = h > 4 && h <= 8;
+  const baseH = Math.min(h * 0.15, 1.5);
 
   const mainMesh = hasPolygon && geometry ? (
-    <mesh geometry={geometry} material={material} castShadow receiveShadow />
+    <mesh geometry={geometry} material={bodyMat} castShadow receiveShadow />
   ) : (
-    <mesh position={[0, b.height / 2, 0]} castShadow receiveShadow>
-      <boxGeometry args={[Math.max(fw, 1), b.height, Math.max(fd, 1)]} />
-      <primitive object={material} attach="material" />
+    <mesh position={[0, h / 2, 0]} castShadow receiveShadow>
+      <boxGeometry args={[Math.max(fw, 1), h, Math.max(fd, 1)]} />
+      <primitive object={bodyMat} attach="material" />
     </mesh>
   );
 
-  const windowH = b.height * 0.65;
-  const windowY = b.height * 0.45;
+  const windowRows = useMemo(() => {
+    if (h < 3) return null;
+    const rows: JSX.Element[] = [];
+    const floorH = isTall ? 1.2 : 1.5;
+    const numFloors = Math.max(1, Math.floor((h - baseH - 0.5) / floorH));
+    const wSize = Math.min(fw * 0.12, 0.8);
+    const wHeight = floorH * 0.5;
+    const numW = Math.max(1, Math.floor((fw * 0.7) / (wSize + 0.3)));
+    const numD = Math.max(1, Math.floor((fd * 0.7) / (wSize + 0.3)));
+    const startW = -(numW - 1) * (wSize + 0.3) / 2;
+    const startD = -(numD - 1) * (wSize + 0.3) / 2;
+
+    for (let fl = 0; fl < Math.min(numFloors, 8); fl++) {
+      const y = baseH + 0.4 + fl * floorH + floorH * 0.5;
+      if (y > h - 0.5) break;
+      for (let w = 0; w < numW; w++) {
+        const x = startW + w * (wSize + 0.3);
+        rows.push(
+          <mesh key={`f${fl}w${w}`} position={[x, y, fd / 2 + 0.05]}>
+            <planeGeometry args={[wSize, wHeight]} /><primitive object={pickWindowMat(seed, fl, w)} attach="material" />
+          </mesh>,
+          <mesh key={`b${fl}w${w}`} position={[x, y, -fd / 2 - 0.05]} rotation={[0, Math.PI, 0]}>
+            <planeGeometry args={[wSize, wHeight]} /><primitive object={pickWindowMat(seed, fl, w + 3)} attach="material" />
+          </mesh>
+        );
+      }
+      for (let w = 0; w < numD; w++) {
+        const z = startD + w * (wSize + 0.3);
+        rows.push(
+          <mesh key={`r${fl}w${w}`} position={[fw / 2 + 0.05, y, z]} rotation={[0, Math.PI / 2, 0]}>
+            <planeGeometry args={[wSize, wHeight]} /><primitive object={pickWindowMat(seed, fl, w + 6)} attach="material" />
+          </mesh>,
+          <mesh key={`l${fl}w${w}`} position={[-fw / 2 - 0.05, y, z]} rotation={[0, -Math.PI / 2, 0]}>
+            <planeGeometry args={[wSize, wHeight]} /><primitive object={pickWindowMat(seed, fl, w + 9)} attach="material" />
+          </mesh>
+        );
+      }
+    }
+    return rows;
+  }, [h, fw, fd, baseH, isTall, seed]);
+
+  const bands = useMemo(() => {
+    if (h < 5) return null;
+    const result: JSX.Element[] = [];
+    const floorH = isTall ? 1.2 : 1.5;
+    const numBands = Math.min(Math.floor(h / floorH), 6);
+    for (let i = 1; i <= numBands; i++) {
+      const y = baseH + i * floorH;
+      if (y > h - 0.5) break;
+      result.push(
+        <mesh key={`bf${i}`} position={[0, y, fd / 2 + 0.03]}><planeGeometry args={[fw + 0.06, 0.06]} /><primitive object={bandMat} attach="material" /></mesh>,
+        <mesh key={`bb${i}`} position={[0, y, -fd / 2 - 0.03]} rotation={[0, Math.PI, 0]}><planeGeometry args={[fw + 0.06, 0.06]} /><primitive object={bandMat} attach="material" /></mesh>,
+        <mesh key={`br${i}`} position={[fw / 2 + 0.03, y, 0]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[fd + 0.06, 0.06]} /><primitive object={bandMat} attach="material" /></mesh>,
+        <mesh key={`bl${i}`} position={[-fw / 2 - 0.03, y, 0]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[fd + 0.06, 0.06]} /><primitive object={bandMat} attach="material" /></mesh>
+      );
+    }
+    return result;
+  }, [h, fw, fd, baseH, isTall]);
 
   return (
     <group position={[b.coordinates.x, 0, b.coordinates.z]}>
       {mainMesh}
-      {/* AO shadow */}
+      {h > 3 && (
+        <mesh position={[0, baseH / 2, 0]} receiveShadow>
+          <boxGeometry args={[fw + 0.08, baseH, fd + 0.08]} />
+          <primitive object={baseMat} attach="material" />
+        </mesh>
+      )}
       <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[fw + 0.8, fd + 0.8]} />
+        <planeGeometry args={[fw + 1.0, fd + 1.0]} />
         <primitive object={aoMat} attach="material" />
       </mesh>
-      {/* Windows on all 4 faces for taller buildings */}
-      {b.height > 2.5 && (
-        <>
-          {/* Front */}
-          <mesh position={[0, windowY, fd / 2 + 0.04]}>
-            <planeGeometry args={[fw * 0.75, windowH]} />
-            <primitive object={getWindowMat(0)} attach="material" />
-          </mesh>
-          {/* Back */}
-          <mesh position={[0, windowY, -fd / 2 - 0.04]} rotation={[0, Math.PI, 0]}>
-            <planeGeometry args={[fw * 0.75, windowH]} />
-            <primitive object={getWindowMat(1)} attach="material" />
-          </mesh>
-          {/* Right */}
-          <mesh position={[fw / 2 + 0.04, windowY, 0]} rotation={[0, Math.PI / 2, 0]}>
-            <planeGeometry args={[fd * 0.75, windowH]} />
-            <primitive object={getWindowMat(2)} attach="material" />
-          </mesh>
-          {/* Left */}
-          <mesh position={[-fw / 2 - 0.04, windowY, 0]} rotation={[0, -Math.PI / 2, 0]}>
-            <planeGeometry args={[fd * 0.75, windowH]} />
-            <primitive object={getWindowMat(3)} attach="material" />
-          </mesh>
-        </>
-      )}
-      {/* Roof ledge for taller buildings */}
-      {b.height > 3.5 && (
-        <mesh position={[0, b.height + 0.08, 0]}>
-          <boxGeometry args={[fw + 0.12, 0.16, fd + 0.12]} />
+      {windowRows}
+      {bands}
+      {h > 3.5 && (
+        <mesh position={[0, h + 0.06, 0]}>
+          <boxGeometry args={[fw + 0.2, 0.12, fd + 0.2]} />
           <primitive object={roofEdgeMat} attach="material" />
         </mesh>
       )}
-      {/* Roof accent for mid buildings */}
-      {b.height > 5 && b.height < 12 && (
-        <mesh position={[0, b.height + 0.2, 0]}>
-          <boxGeometry args={[fw * 0.4, 0.3, fd * 0.4]} />
-          <primitive object={roofMat} attach="material" />
+      {h > 2 && (
+        <mesh position={[0, h + 0.13, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[fw - 0.1, fd - 0.1]} />
+          <primitive object={roofTopMat} attach="material" />
+        </mesh>
+      )}
+      {isTall && (
+        <group position={[0, h + 0.14, 0]}>
+          <mesh position={[0, 0.25, 0]}>
+            <boxGeometry args={[fw * 0.3, 0.5, fd * 0.3]} />
+            <primitive object={roofMat} attach="material" />
+          </mesh>
+          {seed % 3 === 0 && (
+            <mesh position={[fw * 0.15, 0.65, fd * 0.1]}>
+              <cylinderGeometry args={[0.04, 0.04, 0.3, 4]} />
+              <primitive object={roofEdgeMat} attach="material" />
+            </mesh>
+          )}
+        </group>
+      )}
+      {isMid && seed % 2 === 0 && (
+        <mesh position={[0, h * 0.65, 0]}>
+          <boxGeometry args={[fw + 0.15, 0.08, fd + 0.15]} />
+          <primitive object={bandMat} attach="material" />
         </mesh>
       )}
     </group>
