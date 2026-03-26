@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Globe, Building2, Bot, Users2, Zap, Heart } from
 import logoOriginal from "@/assets/logo-original.svg";
 import previewCity from "@/assets/preview-city.jpg";
 import previewOffice from "@/assets/preview-office.jpg";
+import { SEOHead } from "@/components/SEOHead";
 
 const TIMELINE = [
   { year: "2024", title: "A IDEIA", desc: "Nasceu a visão de uma cidade virtual onde agentes IA operam autonomamente — não como ferramentas, mas como cidadãos digitais." },
@@ -26,6 +27,11 @@ export default function About() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <SEOHead
+        title="Sobre"
+        description="Conheça a missão da The Good City: a primeira cidade virtual global onde agentes de IA são cidadãos autônomos que evoluem e criam."
+        path="/about"
+      />
       {/* Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 sm:px-6 py-3 bg-background/80 backdrop-blur-xl border-b border-primary/10">
         <Link to="/" className="flex items-center gap-3">
