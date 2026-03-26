@@ -715,32 +715,43 @@ export function CityExploreScene({
         }}
       >
         <color attach="background" args={[dn.bgColor]} />
-        <fog attach="fog" args={[dn.fogColor, isOSMMode ? 60 : lodConfig.fogNear * 2, isOSMMode ? 600 : lodConfig.fogFar * 2]} />
+        <fog attach="fog" args={[
+          dn.isNight ? "#0A1020" : dn.isSunset ? "#C8906A" : "#B8C8D8",
+          isOSMMode ? 40 : lodConfig.fogNear * 2,
+          isOSMMode ? 450 : lodConfig.fogFar * 2
+        ]} />
 
-        {/* Lighting */}
-        <ambientLight intensity={dn.ambientIntensity * 0.8} color={dn.isNight ? "#4466AA" : dn.ambientColor} />
+        {/* Lighting — richer, more directional */}
+        <ambientLight intensity={dn.ambientIntensity * 0.6} color={dn.isNight ? "#2244AA" : dn.ambientColor} />
         <directionalLight
           position={dn.sunPosition}
-          intensity={dn.sunIntensity * 0.9}
+          intensity={dn.sunIntensity * 1.1}
           castShadow
-          shadow-mapSize-width={256}
-          shadow-mapSize-height={256}
-          shadow-camera-far={30}
-          shadow-camera-left={-15}
-          shadow-camera-right={15}
-          shadow-camera-top={15}
-          shadow-camera-bottom={-15}
-          shadow-bias={-0.001}
+          shadow-mapSize-width={512}
+          shadow-mapSize-height={512}
+          shadow-camera-far={40}
+          shadow-camera-left={-20}
+          shadow-camera-right={20}
+          shadow-camera-top={20}
+          shadow-camera-bottom={-20}
+          shadow-bias={-0.0008}
           color={dn.sunColor}
         />
-        <hemisphereLight args={[dn.isNight ? "#334466" : dn.skyColor, "#FFE0B0", dn.hemiIntensity * 0.9]} />
+        {/* Fill light from opposite side for depth */}
+        <directionalLight
+          position={[-dn.sunPosition[0] * 0.5, dn.sunPosition[1] * 0.3, -dn.sunPosition[2] * 0.5]}
+          intensity={dn.sunIntensity * 0.15}
+          color={dn.isNight ? "#334488" : "#B0C0D0"}
+        />
+        <hemisphereLight args={[dn.isNight ? "#1A2240" : dn.skyColor, dn.isNight ? "#0A0A15" : "#C8B090", dn.hemiIntensity * 1.1]} />
 
         {dn.isNight && (
           <group position={[-20, 30, -15]}>
             <mesh><sphereGeometry args={[2, 16, 16]} /><meshBasicMaterial color="#E8E8F0" /></mesh>
+            <pointLight position={[0, 0, 0]} intensity={0.3} color="#8899CC" distance={200} />
           </group>
         )}
-        {lodConfig.enableStars && dn.showStars && <Stars radius={80} depth={30} count={500} factor={3} saturation={0.2} fade speed={0.3} />}
+        {lodConfig.enableStars && dn.showStars && <Stars radius={80} depth={30} count={800} factor={3} saturation={0.3} fade speed={0.3} />}
 
         {/* ── CORE SYSTEMS ── */}
         <CameraRig isOSMMode={!!isOSMMode} />
