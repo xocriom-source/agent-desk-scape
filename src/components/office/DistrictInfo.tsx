@@ -60,7 +60,7 @@ const DISTRICTS: District[] = [
   },
 ];
 
-export function DistrictInfo({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export const DistrictInfo = memo(function DistrictInfo({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [selected, setSelected] = useState<District | null>(null);
 
   if (!isOpen) return null;

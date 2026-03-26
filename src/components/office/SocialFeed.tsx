@@ -363,4 +363,4 @@ export const SocialFeed = memo(function SocialFeed({ agents, isOpen, onClose, on
       )}
     </AnimatePresence>
   );
-}
+});

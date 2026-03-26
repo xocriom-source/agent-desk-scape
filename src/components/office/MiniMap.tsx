@@ -151,4 +151,4 @@ export const MiniMap = memo(function MiniMap({ player, agents, rooms }: MiniMapP
       </div>
     </motion.div>
   );
-}
+});

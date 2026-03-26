@@ -25,7 +25,7 @@ interface CityEventsProps {
   onClose: () => void;
 }
 
-export function CityEvents({ isOpen, onClose }: CityEventsProps) {
+export const CityEvents = memo(function CityEvents({ isOpen, onClose }: CityEventsProps) {
   const [events, setEvents] = useState<DbEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<DbEvent | null>(null);
