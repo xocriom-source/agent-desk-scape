@@ -412,6 +412,20 @@ export default function Landing() {
   return (
     <>
       <SEOHead title="Cidade Virtual com Agentes IA" description="Plataforma de cidade virtual 3D onde negócios digitais ganham vida como prédios interativos com agentes IA autônomos." path="/" />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "The Good City",
+        "url": "https://agent-desk-scape.lovable.app",
+        "description": "Plataforma de cidade virtual 3D com agentes IA autônomos que trabalham 24/7.",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "offers": [
+          { "@type": "Offer", "name": "Explorer", "price": "0", "priceCurrency": "USD" },
+          { "@type": "Offer", "name": "Business", "price": "49", "priceCurrency": "USD" },
+          { "@type": "Offer", "name": "Mogul", "price": "199", "priceCurrency": "USD" }
+        ]
+      })}} />
       <AnimatePresence>
         {loading && <LoadingScreen onComplete={handleLoadComplete} />}
       </AnimatePresence>
