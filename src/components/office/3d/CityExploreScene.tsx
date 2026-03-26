@@ -158,7 +158,7 @@ function PlayerRig({ aabbs, isOSMMode }: { aabbs: AABB[]; isOSMMode: boolean }) 
     const keys = useInputStore.getState().keys;
 
     let dx = 0, dz = 0;
-    const speed = isOSMMode ? 8 : 4; // units/sec, frame-independent
+    const speed = isOSMMode ? 15 : 4; // units/sec, frame-independent
 
     if (keys.has("w") || keys.has("arrowup")) dz -= speed * dt;
     if (keys.has("s") || keys.has("arrowdown")) dz += speed * dt;
@@ -319,8 +319,8 @@ function CameraRig({ isOSMMode }: { isOSMMode: boolean }) {
       enablePan={false}
       enableZoom
       enableRotate
-      minDistance={isOSMMode ? 15 : 8}
-      maxDistance={isOSMMode ? 200 : 60}
+      minDistance={isOSMMode ? 5 : 8}
+      maxDistance={isOSMMode ? 120 : 60}
       minPolarAngle={Math.PI / 8}
       maxPolarAngle={Math.PI / 2.8}
       zoomSpeed={0.8}
@@ -643,6 +643,17 @@ export function CityExploreScene({
 }: CityExploreSceneProps) {
   const dn = useDayNight();
 
+  // Debug: log OSM data when it arrives
+  useEffect(() => {
+    if (isOSMMode && osmBuildings) {
+      console.log(`[CityScene:osm] ${osmBuildings.length} buildings, bounds:`, osmBounds);
+      if (osmBuildings.length > 0) {
+        const b0 = osmBuildings[0];
+        console.log(`[CityScene:osm] First building at (${b0.coordinates.x.toFixed(1)}, ${b0.coordinates.z.toFixed(1)}), height=${b0.height}`);
+      }
+    }
+  }, [isOSMMode, osmBuildings, osmBounds]);
+
   // LoD system
   const buildingDefs = useMemo(() => CITY_BUILDINGS.map(b => ({ x: b.x, z: b.z, w: b.w, d: b.d, h: b.h, color: b.color, rot: b.rot, mirror: b.mirror, forceClass: (b as any).forceClass })), []);
   const { config: lodConfig, computeFrame } = useCityLod(buildingDefs);
@@ -656,10 +667,10 @@ export function CityExploreScene({
 
   const { visibleBuildings, userBuilding, updateCameraCenter } = useCityBuildings(userId);
 
-  // Safe spawn
+  // Safe spawn — procedural mode
   const hasSpawned = useRef(false);
   useEffect(() => {
-    if (hasSpawned.current) return;
+    if (hasSpawned.current || isOSMMode) return;
     const colliders = buildStaticColliders();
     const staticAABBs = buildNewAABBs(colliders);
     let sx = 0, sz = 5;
@@ -671,8 +682,19 @@ export function CityExploreScene({
     const terrainY = getTerrainHeight(safeX, safeZ);
     useGameStore.getState().setPlayerPosition([safeX, terrainY, safeZ]);
     hasSpawned.current = true;
-    console.log("[CityScene:spawn]", { safeX, safeZ, terrainY });
-  }, [userBuilding]);
+    console.log("[CityScene:spawn:procedural]", { safeX, safeZ, terrainY });
+  }, [userBuilding, isOSMMode]);
+
+  // Safe spawn — OSM mode: teleport player to center of loaded city
+  const osmSpawned = useRef(false);
+  useEffect(() => {
+    if (!isOSMMode || !osmBounds || osmSpawned.current) return;
+    const cx = (osmBounds.minX + osmBounds.maxX) / 2;
+    const cz = (osmBounds.minZ + osmBounds.maxZ) / 2;
+    useGameStore.getState().setPlayerPosition([cx, 0, cz]);
+    osmSpawned.current = true;
+    console.log("[CityScene:spawn:osm]", { cx, cz, bounds: osmBounds });
+  }, [isOSMMode, osmBounds]);
 
   // Dynamic buildings (mapped to city scale)
   const dynamicBuildings = useMemo(() => {
@@ -709,7 +731,7 @@ export function CityExploreScene({
       <Canvas
         shadows
         style={{ touchAction: "none", width: "100%", height: "100%", display: "block" }}
-        camera={{ position: isOSMMode ? [40, 80, 100] : [12, 25, 30], fov: 45, near: 0.5, far: isOSMMode ? 1500 : Math.min(lodConfig.cameraFar, 300) }}
+        camera={{ position: isOSMMode ? [15, 30, 35] : [12, 25, 30], fov: 50, near: 0.5, far: isOSMMode ? 1500 : Math.min(lodConfig.cameraFar, 300) }}
         gl={{ antialias: false, powerPreference: "high-performance", stencil: false, depth: true }}
         dpr={[0.75, 1]}
         frameloop="always"
@@ -724,8 +746,8 @@ export function CityExploreScene({
         <color attach="background" args={[dn.bgColor]} />
         <fog attach="fog" args={[
           dn.isNight ? "#0A1020" : dn.isSunset ? "#C8906A" : "#B8C8D8",
-          isOSMMode ? 40 : lodConfig.fogNear * 2,
-          isOSMMode ? 450 : lodConfig.fogFar * 2
+          isOSMMode ? 20 : lodConfig.fogNear * 2,
+          isOSMMode ? 350 : lodConfig.fogFar * 2
         ]} />
 
         {/* Lighting — richer, more directional */}
@@ -768,25 +790,28 @@ export function CityExploreScene({
         {!isOSMMode && <CameraOcclusion onOccludedBuildings={setOccludedBuildings} />}
 
         {/* ── VEHICLE ── */}
-        <group scale={isOSMMode ? [4, 4, 4] : [1, 1, 1]}>
-          <VehicleR3F aabbs={aabbs} playerName={playerName} />
-        </group>
+        <VehicleR3F aabbs={isOSMMode ? [] : aabbs} playerName={playerName} />
 
         {/* ── PLAYER VISUAL ── */}
-        <PlayerVisual name={playerName} scale={isOSMMode ? 4 : 1} />
+        <PlayerVisual name={playerName} scale={isOSMMode ? 2 : 1} />
 
         {/* ── NPCs (proximity-based, both modes) ── */}
-        <group scale={isOSMMode ? [4, 4, 4] : [1, 1, 1]}>
-          <CityNPCSystem
-            playerX={isOSMMode ? playerPos[0] / 4 : playerPos[0]}
-            playerZ={isOSMMode ? playerPos[2] / 4 : playerPos[2]}
-            aabbs={isOSMMode ? [] : aabbs}
-            maxNPCs={isOSMMode ? 16 : 12}
-            spawnRadius={isOSMMode ? 60 : 40}
-          />
-        </group>
+        <CityNPCSystem
+          playerX={playerPos[0]}
+          playerZ={playerPos[2]}
+          aabbs={isOSMMode ? [] : aabbs}
+          maxNPCs={isOSMMode ? 16 : 12}
+          spawnRadius={isOSMMode ? 30 : 40}
+        />
 
-        {/* ── WORLD: OSM ── */}
+        {/* ── DEBUG HELPERS (temporary — remove after validation) ── */}
+        {isOSMMode && (
+          <group>
+            <gridHelper args={[400, 80, "#444466", "#333344"]} position={[0, 0.01, 0]} />
+            <axesHelper args={[20]} />
+          </group>
+        )}
+
         {isOSMMode && osmBuildings && osmStreets && osmBounds && (
           <OSMWorldRenderer
             buildings={osmBuildings}
