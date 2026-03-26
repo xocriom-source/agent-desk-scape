@@ -27,14 +27,14 @@ export interface VehiclePhysicsState {
 
 export const VEHICLE_CONFIGS: Record<string, VehicleConfig> = {
   car: {
-    maxSpeed: 12,
-    acceleration: 8,
-    brakeForce: 15,
-    friction: 3,
-    steeringSpeed: 2.5,
-    maxSteeringAngle: Math.PI / 5,
-    wheelBase: 0.6,
-    mass: 1,
+    maxSpeed: 14,
+    acceleration: 6,
+    brakeForce: 18,
+    friction: 2.2,
+    steeringSpeed: 2.0,
+    maxSteeringAngle: Math.PI / 5.5,
+    wheelBase: 0.65,
+    mass: 1.2,
   },
   motorcycle: {
     maxSpeed: 16,
