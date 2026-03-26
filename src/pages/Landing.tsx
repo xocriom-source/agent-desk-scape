@@ -441,13 +441,14 @@ export default function Landing() {
           </div>
 
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <button onClick={() => navigate("/login")} className="px-4 py-2 text-xs font-mono tracking-wider text-primary hover:text-primary/80 transition-colors">
               ENTRAR
             </button>
             <button onClick={() => navigate("/signup")} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-mono font-bold tracking-wider hover:bg-primary/90 transition-colors">
               COMEÇAR
             </button>
-            <button onClick={() => setMobileMenu(!mobileMenu)} className="md:hidden p-2 rounded-lg hover:bg-primary/10">
+            <button onClick={() => setMobileMenu(!mobileMenu)} className="md:hidden p-2 rounded-lg hover:bg-primary/10" aria-label="Menu">
               {mobileMenu ? <X className="w-4 h-4 text-primary" /> : <Menu className="w-4 h-4 text-primary" />}
             </button>
           </div>
