@@ -266,8 +266,66 @@ export interface OSMCityData {
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
 }
 
+// ── Road buffer collision helpers ──
+
+interface RoadSegmentBuffer {
+  ax: number; az: number;
+  bx: number; bz: number;
+  halfWidth: number;
+}
+
+/** Check if a point is within a buffered road segment (capsule test) */
+function pointNearRoadSegment(px: number, pz: number, seg: RoadSegmentBuffer): boolean {
+  const dx = seg.bx - seg.ax;
+  const dz = seg.bz - seg.az;
+  const lenSq = dx * dx + dz * dz;
+  if (lenSq < 0.01) return false;
+  let t = ((px - seg.ax) * dx + (pz - seg.az) * dz) / lenSq;
+  t = Math.max(0, Math.min(1, t));
+  const closestX = seg.ax + t * dx;
+  const closestZ = seg.az + t * dz;
+  const distSq = (px - closestX) ** 2 + (pz - closestZ) ** 2;
+  return distSq < seg.halfWidth * seg.halfWidth;
+}
+
+/** Check if a building AABB overlaps any road buffer */
+function buildingOverlapsRoads(
+  cx: number, cz: number, fw: number, fd: number,
+  roadBuffers: RoadSegmentBuffer[]
+): boolean {
+  // Test the centroid and 4 corners
+  const testPoints = [
+    { x: cx, z: cz },
+    { x: cx - fw * 0.4, z: cz - fd * 0.4 },
+    { x: cx + fw * 0.4, z: cz - fd * 0.4 },
+    { x: cx - fw * 0.4, z: cz + fd * 0.4 },
+    { x: cx + fw * 0.4, z: cz + fd * 0.4 },
+  ];
+  for (const pt of testPoints) {
+    for (const seg of roadBuffers) {
+      if (pointNearRoadSegment(pt.x, pt.z, seg)) return true;
+    }
+  }
+  return false;
+}
+
+/** Check if two building AABBs overlap */
+function buildingsOverlap(
+  ax: number, az: number, aw: number, ad: number,
+  bx: number, bz: number, bw: number, bd: number,
+  margin: number = 0.3
+): boolean {
+  return (
+    ax - aw / 2 - margin < bx + bw / 2 &&
+    ax + aw / 2 + margin > bx - bw / 2 &&
+    az - ad / 2 - margin < bz + bd / 2 &&
+    az + ad / 2 + margin > bz - bd / 2
+  );
+}
+
 /**
  * Convert OSM response into city buildings, streets, trees, and green areas.
+ * Two-pass approach: roads first, then buildings filtered against road buffers.
  */
 export function convertOSMToCity(
   osmData: OSMResponse,
@@ -278,17 +336,15 @@ export function convertOSMToCity(
   const streets: OSMStreet[] = [];
   const trees: OSMTreeData[] = [];
   const greenAreas: OSMGreenArea[] = [];
-  const occupiedCells = new Set<string>();
 
-  let buildingCount = 0;
+  // ── PASS 1: Collect roads, trees, parks (non-buildings) ──
+  const roadBuffers: RoadSegmentBuffer[] = [];
   let streetCount = 0;
-  let skippedNoGeom = 0;
-  let skippedTiny = 0;
 
   for (const el of osmData.elements) {
     const tags = el.tags || {};
 
-    // ── Trees (individual nodes) ──
+    // Trees (individual nodes)
     if (tags.natural === "tree" && el.type === "node" && el.lat && el.lon) {
       const pos = toWorld(latLonToMeters(el.lat, el.lon, centerLat, centerLon));
       const seed = hash(`tree-${el.id}`);
@@ -296,7 +352,7 @@ export function convertOSMToCity(
       continue;
     }
 
-    // ── Tree rows ──
+    // Tree rows
     if (tags.natural === "tree_row" && el.geometry) {
       for (const pt of el.geometry) {
         const pos = toWorld(latLonToMeters(pt.lat, pt.lon, centerLat, centerLon));
@@ -306,7 +362,7 @@ export function convertOSMToCity(
       continue;
     }
 
-    // ── Parks and green areas ──
+    // Parks and green areas
     if ((tags.landuse === "grass" || tags.leisure === "park") && el.type === "way" && el.geometry && el.geometry.length >= 3) {
       const verts = el.geometry.map(pt => toWorld(latLonToMeters(pt.lat, pt.lon, centerLat, centerLon)));
       let sx = 0, sz = 0, mnx = Infinity, mxx = -Infinity, mnz = Infinity, mxz = -Infinity;
@@ -322,7 +378,6 @@ export function convertOSMToCity(
         w: mxx - mnx,
         d: mxz - mnz,
       });
-      // Scatter trees inside parks
       const parkSeed = hash(`park-${el.id}`);
       const numTrees = Math.min(20, Math.floor((mxx - mnx) * (mxz - mnz) * 0.02));
       for (let t = 0; t < numTrees; t++) {
@@ -333,93 +388,7 @@ export function convertOSMToCity(
       continue;
     }
 
-    // ── Buildings with REAL polygon footprints ──
-    if (tags.building) {
-      const vertices = extractPolygonGeometry(el, centerLat, centerLon);
-      if (!vertices || vertices.length < 3) {
-        skippedNoGeom++;
-        continue;
-      }
-
-      let sumX = 0, sumZ = 0;
-      let gMinX = Infinity, gMaxX = -Infinity, gMinZ = Infinity, gMaxZ = -Infinity;
-
-      for (const v of vertices) {
-        sumX += v.x;
-        sumZ += v.z;
-        gMinX = Math.min(gMinX, v.x);
-        gMaxX = Math.max(gMaxX, v.x);
-        gMinZ = Math.min(gMinZ, v.z);
-        gMaxZ = Math.max(gMaxZ, v.z);
-      }
-
-      const cx = sumX / vertices.length;
-      const cz = sumZ / vertices.length;
-      const footprintW = gMaxX - gMinX;
-      const footprintD = gMaxZ - gMinZ;
-
-      // Skip tiny buildings (< 3m real size)
-      if (footprintW < 0.8 && footprintD < 0.8) {
-        skippedTiny++;
-        continue;
-      }
-
-      // De-duplicate by grid cell — NO overlap allowed
-      // Cell size = 2 units = 4m — ensures buildings don't stack on top of each other
-      const cellSize = 2;
-      const cellKey = `${Math.round(cx / cellSize)}_${Math.round(cz / cellSize)}`;
-      if (occupiedCells.has(cellKey)) continue;
-      occupiedCells.add(cellKey);
-
-      const seed = hash(`osm-${el.id}`);
-      const style = osmTagsToStyle(tags);
-      const district = osmTagsToDistrict(tags);
-      const heightMeters = osmHeightMeters(tags, seed);
-      const heightUnits = metersToUnits(heightMeters);
-      const colors = STYLE_COLORS[style];
-      const primaryColor = colors[seed % colors.length];
-
-      const customizations: BuildingCustomizations = {
-        neonSign: style === "corporate" || style === "agency" ? seededRandom(seed + 5) > 0.4 : false,
-        rooftop: seededRandom(seed + 6) > 0.7,
-        garden: style === "minimal" ? seededRandom(seed + 7) > 0.5 : false,
-        outdoor: style === "creative" ? seededRandom(seed + 8) > 0.6 : false,
-        sculptures: false,
-        hologram: style === "futuristic" ? seededRandom(seed + 9) > 0.5 : false,
-      };
-
-      const name = tags.name || generateBuildingName(style, seed);
-
-      // Store polygon vertices relative to centroid for ExtrudeGeometry
-      const relativeVertices = vertices.map(v => ({
-        x: v.x - cx,
-        z: v.z - cz,
-      }));
-
-      buildings.push({
-        id: `osm-${el.id}`,
-        name,
-        ownerName: tags.operator || tags["addr:housename"] || "City",
-        district,
-        style,
-        floors: Math.max(1, Math.ceil(heightMeters / 3.5)),
-        height: heightUnits,
-        primaryColor,
-        secondaryColor: "#1A2030",
-        bio: tags.description || "",
-        links: tags.website ? [tags.website] : [],
-        customizations,
-        createdAt: new Date().toISOString(),
-        coordinates: { x: cx, z: cz },
-        claimed: true,
-        ownerId: "osm",
-        polygon: { vertices: relativeVertices, w: footprintW, d: footprintD },
-      } as CityBuilding & { polygon: BuildingPolygon });
-
-      buildingCount++;
-    }
-
-    // ── Roads with FULL geometry ──
+    // Roads — collect first so buildings can check against them
     if (tags.highway && el.type === "way") {
       const streetType = osmHighwayToType(tags.highway);
       if (!streetType) continue;
@@ -432,17 +401,152 @@ export function convertOSMToCity(
       }
 
       const widthMeters = osmHighwayToWidthMeters(tags.highway);
+      const widthUnits = metersToUnits(widthMeters);
 
       streets.push({
         segments,
-        width: metersToUnits(widthMeters),
+        width: widthUnits,
         type: streetType,
         name: tags.name,
         lanes: osmHighwayToLanes(tags.highway),
       });
 
+      // Build road buffer segments for building collision checks
+      // Buffer = road half-width + sidewalk + margin (1.5 units extra)
+      const bufferHalfWidth = widthUnits / 2 + 1.5;
+      for (let i = 0; i < segments.length - 1; i++) {
+        roadBuffers.push({
+          ax: segments[i].x, az: segments[i].z,
+          bx: segments[i + 1].x, bz: segments[i + 1].z,
+          halfWidth: bufferHalfWidth,
+        });
+      }
       streetCount++;
     }
+  }
+
+  console.log(`[OSM] Pass 1 complete: ${streetCount} streets, ${roadBuffers.length} road buffer segments, ${trees.length} trees, ${greenAreas.length} parks`);
+
+  // ── PASS 2: Collect buildings, filtered against road buffers ──
+  let buildingCount = 0;
+  let skippedNoGeom = 0;
+  let skippedTiny = 0;
+  let skippedOnRoad = 0;
+  let skippedOverlap = 0;
+
+  // Track placed buildings for overlap detection
+  const placedBuildings: Array<{ cx: number; cz: number; w: number; d: number }> = [];
+
+  for (const el of osmData.elements) {
+    const tags = el.tags || {};
+
+    // ONLY process elements with building tag
+    if (!tags.building) continue;
+
+    const vertices = extractPolygonGeometry(el, centerLat, centerLon);
+    if (!vertices || vertices.length < 3) {
+      skippedNoGeom++;
+      continue;
+    }
+
+    let sumX = 0, sumZ = 0;
+    let gMinX = Infinity, gMaxX = -Infinity, gMinZ = Infinity, gMaxZ = -Infinity;
+
+    for (const v of vertices) {
+      sumX += v.x;
+      sumZ += v.z;
+      gMinX = Math.min(gMinX, v.x);
+      gMaxX = Math.max(gMaxX, v.x);
+      gMinZ = Math.min(gMinZ, v.z);
+      gMaxZ = Math.max(gMaxZ, v.z);
+    }
+
+    const cx = sumX / vertices.length;
+    const cz = sumZ / vertices.length;
+    const footprintW = gMaxX - gMinX;
+    const footprintD = gMaxZ - gMinZ;
+
+    // Skip invalid coordinates
+    if (!isFinite(cx) || !isFinite(cz)) {
+      skippedNoGeom++;
+      continue;
+    }
+
+    // Skip tiny buildings (< 3m real size)
+    if (footprintW < 0.8 && footprintD < 0.8) {
+      skippedTiny++;
+      continue;
+    }
+
+    // ── ROAD COLLISION CHECK ──
+    // Skip buildings whose footprint overlaps any road buffer
+    if (buildingOverlapsRoads(cx, cz, footprintW, footprintD, roadBuffers)) {
+      skippedOnRoad++;
+      continue;
+    }
+
+    // ── BUILDING OVERLAP CHECK ──
+    let hasOverlap = false;
+    for (const placed of placedBuildings) {
+      if (buildingsOverlap(cx, cz, footprintW, footprintD, placed.cx, placed.cz, placed.w, placed.d)) {
+        hasOverlap = true;
+        break;
+      }
+    }
+    if (hasOverlap) {
+      skippedOverlap++;
+      continue;
+    }
+
+    // Register as placed
+    placedBuildings.push({ cx, cz, w: footprintW, d: footprintD });
+
+    const seed = hash(`osm-${el.id}`);
+    const style = osmTagsToStyle(tags);
+    const district = osmTagsToDistrict(tags);
+    const heightMeters = osmHeightMeters(tags, seed);
+    const heightUnits = metersToUnits(heightMeters);
+    const colors = STYLE_COLORS[style];
+    const primaryColor = colors[seed % colors.length];
+
+    const customizations: BuildingCustomizations = {
+      neonSign: style === "corporate" || style === "agency" ? seededRandom(seed + 5) > 0.4 : false,
+      rooftop: seededRandom(seed + 6) > 0.7,
+      garden: style === "minimal" ? seededRandom(seed + 7) > 0.5 : false,
+      outdoor: style === "creative" ? seededRandom(seed + 8) > 0.6 : false,
+      sculptures: false,
+      hologram: style === "futuristic" ? seededRandom(seed + 9) > 0.5 : false,
+    };
+
+    const name = tags.name || generateBuildingName(style, seed);
+
+    // Store polygon vertices relative to centroid for ExtrudeGeometry
+    const relativeVertices = vertices.map(v => ({
+      x: v.x - cx,
+      z: v.z - cz,
+    }));
+
+    buildings.push({
+      id: `osm-${el.id}`,
+      name,
+      ownerName: tags.operator || tags["addr:housename"] || "City",
+      district,
+      style,
+      floors: Math.max(1, Math.ceil(heightMeters / 3.5)),
+      height: heightUnits,
+      primaryColor,
+      secondaryColor: "#1A2030",
+      bio: tags.description || "",
+      links: tags.website ? [tags.website] : [],
+      customizations,
+      createdAt: new Date().toISOString(),
+      coordinates: { x: cx, z: cz },
+      claimed: true,
+      ownerId: "osm",
+      polygon: { vertices: relativeVertices, w: footprintW, d: footprintD },
+    } as CityBuilding & { polygon: BuildingPolygon });
+
+    buildingCount++;
   }
 
   // Generate procedural street trees along roads if we got few from OSM
@@ -466,7 +570,6 @@ export function convertOSMToCity(
           const pz = a.z + dz * frac + nz * (st.width / 2 + 1.5);
           const seed = hash(`stree-${i}-${t}`);
           trees.push({ x: px, z: pz, size: 0.5 + seededRandom(seed) * 0.6 });
-          // Other side
           if (seededRandom(seed + 1) > 0.3) {
             trees.push({
               x: a.x + dx * frac - nx * (st.width / 2 + 1.5),
@@ -479,7 +582,8 @@ export function convertOSMToCity(
     }
   }
 
-  console.log(`[OSM] Converted: ${buildingCount} buildings, ${streetCount} streets, ${trees.length} trees, ${greenAreas.length} parks (skipped: ${skippedNoGeom} no-geom, ${skippedTiny} tiny)`);
+  console.log(`[OSM] Converted: ${buildingCount} buildings, ${streetCount} streets, ${trees.length} trees, ${greenAreas.length} parks`);
+  console.log(`[OSM] Filtered: ${skippedNoGeom} no-geom, ${skippedTiny} tiny, ${skippedOnRoad} on-road, ${skippedOverlap} overlap`);
   return { buildings, streets, trees, greenAreas };
 }
 
