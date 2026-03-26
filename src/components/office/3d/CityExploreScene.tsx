@@ -158,7 +158,7 @@ function PlayerRig({ aabbs, isOSMMode }: { aabbs: AABB[]; isOSMMode: boolean }) 
     const keys = useInputStore.getState().keys;
 
     let dx = 0, dz = 0;
-    const speed = isOSMMode ? 15 : 4; // units/sec, frame-independent
+    const speed = isOSMMode ? 18 : 5; // units/sec — brisk walk speed
 
     if (keys.has("w") || keys.has("arrowup")) dz -= speed * dt;
     if (keys.has("s") || keys.has("arrowdown")) dz += speed * dt;
