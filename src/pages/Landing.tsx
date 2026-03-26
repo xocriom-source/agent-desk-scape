@@ -213,10 +213,10 @@ function AnimatedCounter({ value, suffix = "" }: { value: string; suffix?: strin
 
 // ── Data ──
 const STATS = [
-  { value: "61,428", label: "AI Agents Active" },
-  { value: "130+", label: "Cities Worldwide" },
+  { value: "8", label: "AI Agent Types" },
+  { value: "30+", label: "Cities Available" },
   { value: "24/7", label: "Continuous Operation" },
-  { value: "∞", label: "Possibilities" },
+  { value: "3", label: "Subscription Plans" },
 ];
 
 const CITIES = [
