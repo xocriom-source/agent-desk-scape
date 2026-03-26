@@ -22,23 +22,22 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     
     let cancelled = false;
     
-    supabase
-      .rpc("has_role", { _user_id: user.id, _role: requiredRole })
-      .then(({ data, error }) => {
+    const checkRole = async () => {
+      try {
+        const { data, error } = await supabase.rpc("has_role", { _user_id: user.id, _role: requiredRole });
         if (cancelled) return;
         if (error) {
           console.warn("[ProtectedRoute] Role check failed:", error.message);
           setRoleError(true);
         }
         setHasRole(!!data);
-        setRoleChecked(true);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setRoleError(true);
-          setRoleChecked(true);
-        }
-      });
+      } catch {
+        if (!cancelled) setRoleError(true);
+      } finally {
+        if (!cancelled) setRoleChecked(true);
+      }
+    };
+    checkRole();
 
     return () => { cancelled = true; };
   }, [user, requiredRole]);
