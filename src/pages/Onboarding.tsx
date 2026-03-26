@@ -155,6 +155,23 @@ export default function Onboarding() {
     const buildingType = selectedBuilding || "corporate";
     const colors = STYLE_COLORS[buildingType];
 
+    // Deterministic position: query current building count to place in grid
+    let gridX = 4;
+    let gridZ = 4;
+    try {
+      const { count } = await supabase
+        .from("city_buildings")
+        .select("id", { count: "exact", head: true })
+        .not("owner_id", "is", null);
+      const idx = count || 0;
+      const col = idx % 10;
+      const row = Math.floor(idx / 10);
+      gridX = (col - 5) * 8 + 4;
+      gridZ = (row - 5) * 8 + 4;
+    } catch {
+      console.warn("[Onboarding] Could not compute grid position, using default");
+    }
+
     const buildingPayload = {
       name: spaceName,
       owner_id: user.id,
@@ -162,8 +179,8 @@ export default function Onboarding() {
       district: "central",
       floors: building.defaultFloors,
       height: building.defaultHeight,
-      position_x: Math.round((Math.random() * 180 - 90) * 100) / 100,
-      position_z: Math.round((Math.random() * 180 - 90) * 100) / 100,
+      position_x: gridX,
+      position_z: gridZ,
       primary_color: colors.primary,
       secondary_color: colors.secondary,
       city: city.name,

@@ -720,12 +720,8 @@ export function CityExploreScene({
   const buildingDefs = useMemo(() => CITY_BUILDINGS.map(b => ({ x: b.x, z: b.z, w: b.w, d: b.d, h: b.h, color: b.color, rot: b.rot, mirror: b.mirror, forceClass: (b as any).forceClass })), []);
   const { config: lodConfig, computeFrame } = useCityLod(buildingDefs);
 
-  const userId = useMemo(() => {
-    try {
-      const stored = localStorage.getItem("agentoffice_user");
-      return stored ? JSON.parse(stored).email || "" : "";
-    } catch { return ""; }
-  }, []);
+  // userId is no longer needed here - buildings are passed from parent
+  const userId = "";
 
   const { visibleBuildings, userBuilding, updateCameraCenter } = useCityBuildings(userId);
 
@@ -737,8 +733,8 @@ export function CityExploreScene({
     const staticAABBs = buildNewAABBs(colliders);
     let sx = 0, sz = 5;
     if (userBuilding) {
-      sx = Math.max(-35, Math.min(35, userBuilding.coordinates.x * 0.4));
-      sz = Math.max(-35, Math.min(35, userBuilding.coordinates.z * 0.4));
+      sx = Math.max(-80, Math.min(80, userBuilding.coordinates.x));
+      sz = Math.max(-80, Math.min(80, userBuilding.coordinates.z));
     }
     const [safeX, safeZ] = findSafeSpawn(sx + 2, sz + 2, 0.25, staticAABBs);
     const terrainY = getTerrainHeight(safeX, safeZ);
@@ -758,12 +754,9 @@ export function CityExploreScene({
     console.log("[CityScene:spawn:osm]", { cx, cz, bounds: osmBounds });
   }, [isOSMMode, osmBounds]);
 
-  // Dynamic buildings (mapped to city scale)
+  // Dynamic buildings — use coordinates as stored (no scaling)
   const dynamicBuildings = useMemo(() => {
-    return visibleBuildings.slice(0, 20).map(b => ({
-      ...b,
-      coordinates: { ...b.coordinates, x: b.coordinates.x * 0.4, z: b.coordinates.z * 0.4 },
-    }));
+    return visibleBuildings.slice(0, 20);
   }, [visibleBuildings]);
 
   // Build unified AABBs
@@ -782,9 +775,9 @@ export function CityExploreScene({
   const lodFrame = useMemo(() => computeFrame(playerPos[0], playerPos[2]), [computeFrame, playerPos]);
   const [occludedBuildings, setOccludedBuildings] = useState<Set<string>>(new Set());
 
-  // Sync camera center for building loading
+  // Sync camera center for building loading — use player position directly
   useEffect(() => {
-    updateCameraCenter(playerPos[0] * 2.5, playerPos[2] * 2.5);
+    updateCameraCenter(playerPos[0], playerPos[2]);
   }, [playerPos, updateCameraCenter]);
 
   return (

@@ -43,6 +43,7 @@ import type { TransportType } from "@/types/building";
 import { useGameStore, type PanelName } from "@/stores/gameStore";
 import { initInputListeners } from "@/stores/inputStore";
 import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function CityExplore() {
   const navigate = useNavigate();
@@ -78,16 +79,8 @@ export default function CityExplore() {
     } catch { return "Chefe"; }
   }, []);
 
-  const userId = useMemo(() => {
-    try {
-      const stored = localStorage.getItem("sb-pamvmngaqtcruyipzrpr-auth-token");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        return parsed?.user?.id || "";
-      }
-      return "";
-    } catch { return ""; }
-  }, []);
+  const { user } = useAuth();
+  const userId = user?.id || "";
 
   const { visibleBuildings, userBuilding } = useCityBuildings(userId);
 
