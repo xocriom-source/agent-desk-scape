@@ -1,6 +1,6 @@
 /**
- * CityHUD — Clean, categorized heads-up display.
- * Replaces the 20+ individual buttons with grouped menus.
+ * CityHUD — Clean, minimal heads-up display.
+ * Uses design tokens for visual consistency.
  */
 
 import { memo, useState, useCallback } from "react";
@@ -8,54 +8,44 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Car, Plane, MessageCircle, Target, ShoppingBag,
-  Briefcase, Bot, Globe, Settings, Map, Users, Gamepad2,
+  Bot, Settings, Map, Users,
   ChevronUp, X, Zap,
 } from "lucide-react";
 import { useGameStore, type PanelName } from "@/stores/gameStore";
 
 const MENU_GROUPS = [
   {
-    id: "nav" as const,
+    id: "nav",
     label: "Navegação",
     icon: Map,
     items: [
-      { panel: "teleport" as PanelName, icon: Zap, label: "Teleporte", color: "text-cyan-400" },
-      { panel: "vehicleShop" as PanelName, icon: Car, label: "Veículos", color: "text-blue-400" },
+      { panel: "teleport" as PanelName, icon: Zap, label: "Teleporte" },
+      { panel: "vehicleShop" as PanelName, icon: Car, label: "Veículos" },
     ],
   },
   {
-    id: "social" as const,
+    id: "social",
     label: "Social",
     icon: Users,
     items: [
-      { panel: "chat" as PanelName, icon: MessageCircle, label: "Chat", color: "text-emerald-400" },
-      { panel: "proximity" as PanelName, icon: Users, label: "Próximos", color: "text-green-400" },
-      { panel: "publicSpaces" as PanelName, icon: Globe, label: "Espaços", color: "text-sky-400" },
+      { panel: "chat" as PanelName, icon: MessageCircle, label: "Chat" },
+      { panel: "proximity" as PanelName, icon: Users, label: "Próximos" },
     ],
   },
   {
-    id: "work" as const,
+    id: "work",
     label: "Trabalho",
-    icon: Briefcase,
+    icon: Target,
     items: [
-      { panel: "missions" as PanelName, icon: Target, label: "Missões", color: "text-red-400", badge: 3 },
-      { panel: "marketplace" as PanelName, icon: ShoppingBag, label: "Marketplace", color: "text-amber-400" },
-      { panel: "personalAgent" as PanelName, icon: Bot, label: "Agente IA", color: "text-violet-400" },
-    ],
-  },
-  {
-    id: "more" as const,
-    label: "Mais",
-    icon: Gamepad2,
-    items: [
-      { panel: "leaderboard" as PanelName, icon: Gamepad2, label: "Ranking", color: "text-yellow-400" },
-      { panel: "settings" as PanelName, icon: Settings, label: "Config", color: "text-gray-400" },
+      { panel: "missions" as PanelName, icon: Target, label: "Missões" },
+      { panel: "marketplace" as PanelName, icon: ShoppingBag, label: "Marketplace" },
+      { panel: "personalAgent" as PanelName, icon: Bot, label: "Agente IA" },
     ],
   },
 ];
 
 function GroupMenu({ group, onSelect, isOpen, onToggle }: {
-  group: typeof MENU_GROUPS[0];
+  group: (typeof MENU_GROUPS)[0];
   onSelect: (panel: PanelName) => void;
   isOpen: boolean;
   onToggle: () => void;
@@ -66,7 +56,11 @@ function GroupMenu({ group, onSelect, isOpen, onToggle }: {
     <div className="relative">
       <button
         onClick={onToggle}
-        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-white/10 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium"
+        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl backdrop-blur-md border transition-all text-xs font-medium ${
+          isOpen
+            ? "bg-primary/20 border-primary/40 text-primary"
+            : "bg-card/60 border-border text-foreground hover:bg-muted/40"
+        }`}
       >
         <Icon className="w-3.5 h-3.5" />
         <span className="hidden sm:inline">{group.label}</span>
@@ -76,27 +70,22 @@ function GroupMenu({ group, onSelect, isOpen, onToggle }: {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -8, scale: 0.95 }}
+            initial={{ opacity: 0, y: -6, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            className="absolute bottom-full mb-1.5 left-0 min-w-[140px] rounded-xl bg-black/80 backdrop-blur-lg border border-white/10 overflow-hidden z-50"
+            exit={{ opacity: 0, y: -6, scale: 0.96 }}
+            transition={{ duration: 0.12 }}
+            className="absolute bottom-full mb-1.5 left-0 min-w-[150px] rounded-xl glass-panel border border-border overflow-hidden z-50 shadow-xl"
           >
             {group.items.map((item) => {
               const ItemIcon = item.icon;
               return (
                 <button
                   key={item.panel}
-                  onClick={() => { onSelect(item.panel); }}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-300 hover:text-white hover:bg-white/10 transition-colors"
+                  onClick={() => onSelect(item.panel)}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 text-xs text-foreground hover:bg-muted/40 transition-colors"
                 >
-                  <ItemIcon className={`w-3.5 h-3.5 ${item.color}`} />
+                  <ItemIcon className="w-3.5 h-3.5 text-muted-foreground" />
                   <span>{item.label}</span>
-                  {item.badge && (
-                    <span className="ml-auto text-[8px] bg-red-500 text-white px-1 rounded-sm font-bold">
-                      {item.badge}
-                    </span>
-                  )}
                 </button>
               );
             })}
@@ -111,8 +100,7 @@ export const CityHUD = memo(function CityHUD() {
   const navigate = useNavigate();
   const {
     world, player, vehicle, ui,
-    togglePanel, openPanel, setMovementMode,
-    enterVehicle, exitVehicle, setShowIntro,
+    openPanel, setMovementMode,
   } = useGameStore();
 
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -139,27 +127,23 @@ export const CityHUD = memo(function CityHUD() {
         className="absolute top-0 left-0 right-0 z-40 pointer-events-none"
       >
         <div className="mx-auto max-w-5xl px-3 py-2.5 flex items-center justify-between pointer-events-auto">
-          {/* Left: Back + City info */}
+          {/* Left: Back + City */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => navigate("/city")}
-              className="p-2 rounded-xl bg-black/60 backdrop-blur-md border border-white/10 text-gray-300 hover:text-white transition-all"
+              className="p-2 rounded-xl glass-panel border border-border text-foreground hover:bg-muted/30 transition-all"
+              aria-label="Voltar"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
 
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-white/10">
-              <span className="text-sm font-bold text-white">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl glass-panel border border-border">
+              <span className="text-sm font-bold text-foreground">
                 {world.currentCity.flag} {world.currentCity.name}
               </span>
-              <span className="text-[10px] text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded-full">
+              <span className="text-[11px] text-accent bg-accent/10 px-1.5 py-0.5 rounded-full font-medium">
                 Live
               </span>
-            </div>
-
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-amber-700/30">
-              <span className="text-xs">🪙</span>
-              <span className="text-xs font-bold text-amber-400 font-mono">1,250</span>
             </div>
           </div>
 
@@ -179,9 +163,9 @@ export const CityHUD = memo(function CityHUD() {
           {/* Right: Quick actions */}
           <div className="flex items-center gap-1.5">
             {vehicle.isInVehicle && (
-              <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-400/20 backdrop-blur-md border border-emerald-400/50 text-emerald-400 text-xs font-medium font-mono">
+              <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-accent/20 backdrop-blur-md border border-accent/40 text-accent text-xs font-medium">
                 <Car className="w-3.5 h-3.5" />
-                <span className="text-[8px] bg-black/40 px-1 py-0.5 rounded">[E] Sair</span>
+                <kbd className="text-[10px] bg-background/40 px-1 py-0.5 rounded">E Sair</kbd>
               </div>
             )}
 
@@ -189,41 +173,49 @@ export const CityHUD = memo(function CityHUD() {
               onClick={() => setMovementMode(isFlying ? "walk" : "fly")}
               className={`p-2 rounded-xl backdrop-blur-md border text-xs transition-all ${
                 isFlying
-                  ? "bg-emerald-400/20 border-emerald-400/50 text-emerald-400"
-                  : "bg-black/60 border-white/10 text-gray-300 hover:text-white"
+                  ? "bg-accent/20 border-accent/40 text-accent"
+                  : "glass-panel border-border text-foreground hover:bg-muted/30"
               }`}
               title="Modo Voo"
+              aria-label="Alternar modo de voo"
             >
               <Plane className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              className="p-2 rounded-xl glass-panel border border-border text-foreground hover:bg-muted/30 transition-all"
+              title="Configurações"
+              aria-label="Configurações"
+            >
+              <Settings className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
       </motion.div>
 
-      {/* ── Active panel close button ── */}
+      {/* ── Active panel close ── */}
       {ui.activePanel && (
         <button
           onClick={() => useGameStore.getState().closePanel()}
-          className="absolute top-16 right-4 z-50 p-2 rounded-xl bg-black/60 backdrop-blur-md border border-white/10 text-gray-300 hover:text-white transition-all"
+          className="absolute top-14 right-4 z-50 p-2 rounded-xl glass-panel border border-border text-foreground hover:bg-muted/30 transition-all"
+          aria-label="Fechar painel"
         >
           <X className="w-4 h-4" />
         </button>
       )}
 
-      {/* ── Bottom: Mini objective + controls hint ── */}
+      {/* ── Bottom: Controls hint ── */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40"
       >
-        <div className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-black/50 backdrop-blur-md border border-white/8 text-[10px] text-gray-400 font-mono">
-          <span>WASD Mover</span>
-          <span className="text-white/20">|</span>
-          <span>Mouse Câmera</span>
-          <span className="text-white/20">|</span>
-          <span>E Veículo</span>
-          <span className="text-white/20">|</span>
-          <span>Click Destino</span>
+        <div className="flex items-center gap-3 px-4 py-2 rounded-xl glass-panel border border-border text-xs text-muted-foreground">
+          <span><kbd className="font-semibold text-foreground">WASD</kbd> Mover</span>
+          <span className="text-border">|</span>
+          <span><kbd className="font-semibold text-foreground">Mouse</kbd> Câmera</span>
+          <span className="text-border">|</span>
+          <span><kbd className="font-semibold text-foreground">E</kbd> Veículo</span>
         </div>
       </motion.div>
     </>
