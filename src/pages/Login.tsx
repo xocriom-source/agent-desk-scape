@@ -107,6 +107,12 @@ export default function Login() {
             )}
           </div>
 
+          <div className="flex justify-end">
+            <Link to="/forgot-password" className="text-[10px] font-mono text-primary/70 hover:text-primary transition-colors">
+              Esqueceu a senha?
+            </Link>
+          </div>
+
           <button type="submit" disabled={loading} className="w-full flex items-center justify-center gap-2 py-3 rounded-lg font-mono font-bold text-sm tracking-wider disabled:opacity-50 transition-all bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20">
             {loading ? <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> : <>ENTRAR <ArrowRight className="w-4 h-4" /></>}
           </button>
