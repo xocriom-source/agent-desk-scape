@@ -99,6 +99,7 @@ export interface GameStore {
   selectBuilding: (id: string | null) => void;
   selectAgent: (id: string | null) => void;
   setHudVisible: (visible: boolean) => void;
+  setCityViewMode: (mode: CityViewMode) => void;
 
   // Camera
   camera: CameraState;
