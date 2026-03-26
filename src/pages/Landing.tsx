@@ -538,11 +538,11 @@ export default function Landing() {
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
               <button
-                onClick={() => navigate("/city-explore")}
+                onClick={() => navigate("/features")}
                 className="group px-8 py-4 rounded-xl border border-primary/30 text-primary font-mono font-bold text-sm tracking-wider hover:bg-primary/5 transition-all flex items-center gap-2"
               >
                 <Play className="w-4 h-4" />
-                EXPLORAR CIDADE
+                VER PLATAFORMA
               </button>
             </motion.div>
 
