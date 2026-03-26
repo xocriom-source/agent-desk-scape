@@ -720,7 +720,7 @@ export function CityExploreScene({
       <Canvas
         shadows
         style={{ touchAction: "none", width: "100%", height: "100%", display: "block" }}
-        camera={{ position: isOSMMode ? [40, 80, 100] : [12, 25, 30], fov: 45, near: 0.5, far: isOSMMode ? 1500 : Math.min(lodConfig.cameraFar, 300) }}
+        camera={{ position: isOSMMode ? [15, 30, 35] : [12, 25, 30], fov: 50, near: 0.5, far: isOSMMode ? 1500 : Math.min(lodConfig.cameraFar, 300) }}
         gl={{ antialias: false, powerPreference: "high-performance", stencil: false, depth: true }}
         dpr={[0.75, 1]}
         frameloop="always"
