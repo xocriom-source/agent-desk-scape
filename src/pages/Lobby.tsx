@@ -1,267 +1,256 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mic, MicOff, Video, VideoOff, ChevronUp } from "lucide-react";
+import {
+  Building2, Bot, MapPin, ArrowRight, Plus, BarChart3,
+  Globe, Activity, Clock, Star, Sparkles, TrendingUp,
+} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { PlanBadge } from "@/components/plan/PlanBadge";
+import { LoadingState, EmptyState } from "@/components/ui/LoadingState";
+import { fetchUserBuildings, fetchRecentActivity, type BuildingSummary } from "@/services/buildingService";
 import logoOriginal from "@/assets/logo-original.svg";
 
-const SKIN_TONES = [
-  { id: "light", color: "#FDDCB5" },
-  { id: "medium", color: "#E8B88A" },
-  { id: "tan", color: "#C8956C" },
-  { id: "dark", color: "#8D5B3E" },
-];
-
-function AvatarPreview({ color, skinTone, hairStyle, outfit, accessory }: {
-  color: string; skinTone: string; hairStyle: string; outfit: string; accessory: string;
-}) {
-  const skin = SKIN_TONES.find(s => s.id === skinTone)?.color || "#E8B88A";
-  return (
-    <svg width="120" height="120" viewBox="0 0 96 96">
-      <rect x="30" y="82" width="10" height="5" rx="2" fill="hsl(var(--foreground))" />
-      <rect x="56" y="82" width="10" height="5" rx="2" fill="hsl(var(--foreground))" />
-      <rect x="32" y="70" width="8" height="14" fill="hsl(var(--muted-foreground))" />
-      <rect x="56" y="70" width="8" height="14" fill="hsl(var(--muted-foreground))" />
-      <rect x="26" y="40" width="44" height="32" rx="4" fill={color} />
-      {outfit === "suit" && (
-        <>
-          <rect x="46" y="42" width="3" height="20" fill="hsl(var(--destructive))" />
-          <rect x="32" y="38" width="32" height="5" rx="2" fill="hsl(var(--primary-foreground))" />
-        </>
-      )}
-      {outfit === "tech" && (
-        <>
-          <rect x="26" y="40" width="44" height="32" rx="4" fill="hsl(var(--foreground))" />
-          <circle cx="48" cy="56" r="4" fill={color} />
-        </>
-      )}
-      {outfit === "lab" && (
-        <>
-          <rect x="24" y="38" width="48" height="36" rx="4" fill="hsl(var(--muted))" />
-          <rect x="38" y="42" width="20" height="12" rx="2" fill={color} />
-        </>
-      )}
-      <rect x="30" y="16" width="36" height="26" rx="6" fill={skin} />
-      {hairStyle === "spiky" && <path d="M28 22 L36 6 L42 16 L48 4 L54 16 L60 6 L68 22" fill="hsl(var(--foreground))" />}
-      {hairStyle === "flat" && <rect x="28" y="10" width="40" height="14" rx="6" fill="#4A3728" />}
-      {hairStyle === "mohawk" && <rect x="42" y="2" width="12" height="20" rx="4" fill="hsl(var(--destructive))" />}
-      {hairStyle === "curly" && (
-        <>
-          <circle cx="34" cy="14" r="6" fill="hsl(var(--accent))" />
-          <circle cx="42" cy="12" r="6" fill="hsl(var(--accent))" />
-          <circle cx="50" cy="12" r="6" fill="hsl(var(--accent))" />
-          <circle cx="58" cy="14" r="6" fill="hsl(var(--accent))" />
-        </>
-      )}
-      <rect x="36" y="26" width="6" height="6" rx="2" fill="hsl(var(--primary-foreground))" />
-      <rect x="54" y="26" width="6" height="6" rx="2" fill="hsl(var(--primary-foreground))" />
-      <rect x="38" y="28" width="3" height="3" rx="1" fill="hsl(var(--foreground))" />
-      <rect x="56" y="28" width="3" height="3" rx="1" fill="hsl(var(--foreground))" />
-      <rect x="42" y="36" width="12" height="2" rx="1" fill={skin} opacity="0.6" />
-      {accessory === "glasses" && (
-        <>
-          <rect x="34" y="24" width="10" height="8" rx="2" fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth="1.5" />
-          <rect x="52" y="24" width="10" height="8" rx="2" fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth="1.5" />
-          <line x1="44" y1="28" x2="52" y2="28" stroke="hsl(var(--muted-foreground))" strokeWidth="1.5" />
-        </>
-      )}
-      {accessory === "headphones" && (
-        <>
-          <path d="M28 26 Q28 8 48 8 Q68 8 68 26" fill="none" stroke="hsl(var(--muted-foreground))" strokeWidth="3" />
-          <rect x="24" y="22" width="6" height="10" rx="2" fill="hsl(var(--muted-foreground))" />
-          <rect x="66" y="22" width="6" height="10" rx="2" fill="hsl(var(--muted-foreground))" />
-        </>
-      )}
-      <text x="48" y="8" textAnchor="middle" fontSize="14">👑</text>
-    </svg>
-  );
-}
+const TYPE_EMOJIS: Record<string, string> = {
+  corporate: "🏢", studio: "🎨", research: "🔬", hub: "🤝",
+};
 
 export default function Lobby() {
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
+  const [buildings, setBuildings] = useState<BuildingSummary[]>([]);
+  const [activity, setActivity] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [name, setName] = useState(() => profile?.display_name || "");
-  const [micOn, setMicOn] = useState(false);
-  const [camOn, setCamOn] = useState(false);
-  const [skipLobby, setSkipLobby] = useState(false);
+  useEffect(() => {
+    if (!user) return;
+    Promise.all([
+      fetchUserBuildings(user.id),
+      fetchRecentActivity(user.id, 5),
+    ]).then(([b, a]) => {
+      setBuildings(b);
+      setActivity(a);
+    }).finally(() => setLoading(false));
+  }, [user]);
 
-  // Load saved visual config (cosmetic only, safe in localStorage)
-  const config = useMemo(() => {
-    try {
-      const saved = localStorage.getItem("playerConfig");
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return { color: "#4F46E5", hairStyle: "spiky", outfitStyle: "suit", skinTone: "medium", accessory: "none" };
+  const userName = profile?.display_name || "Usuário";
+  const primaryBuilding = buildings[0];
+  const totalFloors = buildings.reduce((s, b) => s + b.floors, 0);
+
+  const quickStats = useMemo(() => [
+    { icon: Building2, label: "Espaços", value: buildings.length },
+    { icon: TrendingUp, label: "Andares", value: totalFloors },
+    { icon: Globe, label: "Cidades", value: new Set(buildings.map(b => b.city).filter(Boolean)).size || 0 },
+  ], [buildings, totalFloors]);
+
+  const greeting = useMemo(() => {
+    const h = new Date().getHours();
+    if (h < 12) return "Bom dia";
+    if (h < 18) return "Boa tarde";
+    return "Boa noite";
   }, []);
 
-  const buildingName = profile?.company_name || "Meu Espaço";
-
-  // Memoize floating stars so they don't re-generate on every render
-  const stars = useMemo(() =>
-    Array.from({ length: 20 }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: Math.random() > 0.7 ? "text-lg" : "text-xs",
-      delay: Math.random() * 4,
-    })),
-  []);
-
-  const handleJoin = () => {
-    navigate("/office");
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <LoadingState message="Preparando seu espaço..." />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden flex flex-col items-center justify-center">
-      {/* Floating stars */}
-      {stars.map(star => (
-        <motion.span
-          key={star.id}
-          className={`absolute ${star.size} text-muted-foreground/30 pointer-events-none select-none`}
-          style={{ left: `${star.x}%`, top: `${star.y}%` }}
-          animate={{ opacity: [0.2, 0.8, 0.2], scale: [0.8, 1.2, 0.8] }}
-          transition={{ duration: 3 + star.delay * 0.5, repeat: Infinity, delay: star.delay }}
-        >
-          ✦
-        </motion.span>
-      ))}
+    <div className="min-h-screen bg-background">
+      {/* Nav */}
+      <nav className="border-b border-border/30 bg-card/80 backdrop-blur-sm sticky top-0 z-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14">
+          <div className="flex items-center gap-3">
+            <img src={logoOriginal} alt="" className="w-7 h-7" />
+            <span className="text-primary font-bold text-sm tracking-wider font-mono hidden sm:block">THE GOOD CITY</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <PlanBadge />
+            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+              {userName.charAt(0).toUpperCase()}
+            </div>
+          </div>
+        </div>
+      </nav>
 
-      {/* Logo top-left */}
-      <div className="absolute top-4 left-6 flex items-center gap-2">
-        <img src={logoOriginal} alt="Logo" className="w-8 h-8" />
-        <span className="text-primary font-bold text-sm tracking-wider font-mono">THE GOOD CITY</span>
-      </div>
-      <div className="absolute top-4 right-6">
-        <PlanBadge />
-      </div>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Greeting */}
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+            {greeting}, <span className="text-primary">{userName}</span>
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            {buildings.length > 0
+              ? `Você tem ${buildings.length} espaço${buildings.length > 1 ? "s" : ""} ativo${buildings.length > 1 ? "s" : ""}`
+              : "Crie seu primeiro espaço para começar"}
+          </p>
+        </motion.div>
 
-      {/* Title */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-10"
-      >
-        <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-          Este é o Espaço{" "}
-          <span className="text-primary">{buildingName}</span>
-        </h1>
-      </motion.div>
-
-      {/* Main content */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="flex flex-col md:flex-row items-center gap-8 md:gap-12"
-      >
-        {/* Camera/Audio preview box */}
-        <div className="w-72 h-56 rounded-xl border-2 border-border/50 bg-card/50 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
-          {camOn ? (
-            <div className="text-muted-foreground text-sm">📹 Câmera ativa</div>
-          ) : (
-            <>
-              <p className="text-muted-foreground text-sm">Seu áudio está desativado</p>
-              <p className="text-muted-foreground text-sm">Sua câmera está desligada</p>
-            </>
-          )}
+        {/* Quick stats */}
+        <div className="grid grid-cols-3 gap-3 mb-8">
+          {quickStats.map((s, i) => (
+            <motion.div
+              key={s.label}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="bg-card border border-border/30 rounded-xl p-4 flex items-center gap-3"
+            >
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <s.icon className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-xl font-bold text-foreground">{s.value}</p>
+                <p className="text-[10px] text-muted-foreground font-mono tracking-wider">{s.label.toUpperCase()}</p>
+              </div>
+            </motion.div>
+          ))}
         </div>
 
-        {/* Right side: Avatar + Name + Join */}
-        <div className="flex flex-col items-center gap-4">
-          {/* Avatar */}
-          <div className="relative">
-            <div className="w-20 h-20 rounded-full bg-card/60 border-2 border-border/50 flex items-center justify-center overflow-hidden">
-              <AvatarPreview
-                color={config.color}
-                skinTone={config.skinTone || "medium"}
-                hairStyle={config.hairStyle || "spiky"}
-                outfit={config.outfitStyle || "suit"}
-                accessory={config.accessory || "none"}
-              />
+        <div className="grid md:grid-cols-3 gap-6">
+          {/* Main: Buildings */}
+          <div className="md:col-span-2 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-primary" /> Seus Espaços
+              </h2>
+              <button
+                onClick={() => navigate("/onboarding?mode=new")}
+                className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" /> Novo espaço
+              </button>
             </div>
-            <button
-              onClick={() => navigate("/onboarding")}
-              className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-xs text-muted-foreground hover:text-primary transition-colors"
-            >
-              Editar
-            </button>
+
+            {buildings.length === 0 ? (
+              <EmptyState
+                icon={<Building2 className="w-10 h-10" />}
+                title="Nenhum espaço encontrado"
+                description="Crie seu primeiro prédio virtual e comece a operar na cidade."
+                action={
+                  <button
+                    onClick={() => navigate("/onboarding")}
+                    className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" /> Criar meu primeiro espaço
+                  </button>
+                }
+              />
+            ) : (
+              <div className="space-y-3">
+                {buildings.map((b, i) => (
+                  <motion.div
+                    key={b.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.08 }}
+                    onClick={() => navigate("/office")}
+                    className="bg-card border border-border/30 rounded-xl p-4 cursor-pointer hover:border-primary/40 hover:shadow-md transition-all group"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div
+                        className="w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0"
+                        style={{ backgroundColor: `${b.primary_color || "#3b82f6"}22` }}
+                      >
+                        {TYPE_EMOJIS[b.style] || "🏢"}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-semibold text-foreground truncate">{b.name}</h3>
+                        <div className="flex items-center gap-3 mt-1">
+                          <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                            <MapPin className="w-3 h-3" /> {b.city || "Sem cidade"}
+                          </span>
+                          <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                            <Star className="w-3 h-3" /> {b.floors} andares
+                          </span>
+                          <span className="text-[10px] text-muted-foreground capitalize">{b.style}</span>
+                        </div>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            {/* Quick actions */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
+              {[
+                { label: "Cidade", icon: Globe, path: "/city-explore", color: "text-accent" },
+                { label: "Mapa Global", icon: MapPin, path: "/world", color: "text-primary" },
+                { label: "Marketplace", icon: BarChart3, path: "/marketplace/businesses", color: "text-amber-500" },
+                { label: "Ecossistema", icon: Sparkles, path: "/ecosystem", color: "text-purple-500" },
+              ].map((action) => (
+                <button
+                  key={action.label}
+                  onClick={() => navigate(action.path)}
+                  className="flex flex-col items-center gap-2 bg-card border border-border/30 rounded-xl p-4 hover:border-primary/30 hover:bg-card/80 transition-all"
+                >
+                  <action.icon className={`w-5 h-5 ${action.color}`} />
+                  <span className="text-[10px] font-mono text-muted-foreground tracking-wider">{action.label.toUpperCase()}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Name input */}
-          <input
-            type="text"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            placeholder="Seu nome..."
-            maxLength={20}
-            className="w-56 px-4 py-2.5 rounded-lg bg-card/80 border border-border/50 text-foreground text-center text-base font-medium placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all"
-          />
+          {/* Sidebar: Recent activity */}
+          <div className="space-y-4">
+            <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+              <Activity className="w-4 h-4 text-accent" /> Atividade recente
+            </h2>
+            <div className="bg-card border border-border/30 rounded-xl overflow-hidden">
+              {activity.length === 0 ? (
+                <div className="p-6 text-center">
+                  <Clock className="w-6 h-6 text-muted-foreground/30 mx-auto mb-2" />
+                  <p className="text-xs text-muted-foreground">Nenhuma atividade ainda</p>
+                  <p className="text-[10px] text-muted-foreground/60 mt-1">
+                    Suas ações aparecerão aqui
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-border/20">
+                  {activity.map((item) => (
+                    <div key={item.id} className="px-4 py-3 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-xs text-foreground truncate">
+                            <span className="font-medium">{item.actor_name}</span>{" "}
+                            <span className="text-muted-foreground">{item.action}</span>
+                          </p>
+                          <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+                            {new Date(item.created_at).toLocaleDateString("pt-BR", {
+                              day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
-          {/* Join button */}
-          <button
-            onClick={handleJoin}
-            disabled={!name.trim()}
-            className="w-56 py-3 rounded-lg bg-accent hover:bg-accent/90 disabled:bg-muted disabled:text-muted-foreground text-accent-foreground font-bold text-base transition-all shadow-lg shadow-accent/20 hover:shadow-accent/30"
-          >
-            Participar
-          </button>
-
-          {/* Skip checkbox */}
-          <label className="flex items-center gap-2 cursor-pointer mt-1">
-            <input
-              type="checkbox"
-              checked={skipLobby}
-              onChange={e => setSkipLobby(e.target.checked)}
-              className="w-4 h-4 rounded border-border/50 bg-card/50 accent-primary"
-            />
-            <span className="text-xs text-muted-foreground">
-              Salvar minhas configurações e pular esta etapa
-            </span>
-          </label>
+            {/* Plan info */}
+            <div className="bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span className="text-xs font-bold text-foreground">Seu plano</span>
+              </div>
+              <PlanBadge />
+              <button
+                onClick={() => navigate("/pricing")}
+                className="w-full mt-3 text-[10px] text-primary hover:text-primary/80 font-mono tracking-wider transition-colors"
+              >
+                VER PLANOS →
+              </button>
+            </div>
+          </div>
         </div>
-      </motion.div>
-
-      {/* Audio/Video toggle buttons below preview */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="flex gap-3 mt-6"
-      >
-        <button
-          onClick={() => setMicOn(!micOn)}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all ${
-            micOn
-              ? "bg-card/60 text-foreground border border-border/50"
-              : "bg-destructive/80 text-destructive-foreground"
-          }`}
-        >
-          {micOn ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
-          <ChevronUp className="w-3 h-3" />
-        </button>
-        <button
-          onClick={() => setCamOn(!camOn)}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all ${
-            camOn
-              ? "bg-card/60 text-foreground border border-border/50"
-              : "bg-destructive/80 text-destructive-foreground"
-          }`}
-        >
-          {camOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
-          <ChevronUp className="w-3 h-3" />
-        </button>
-      </motion.div>
-
-      {/* Footer */}
-      <p className="absolute bottom-6 text-xs text-muted-foreground/50 text-center max-w-md px-4">
-        Ao entrar neste Espaço, você concorda com os nossos{" "}
-        <span className="underline cursor-pointer hover:text-muted-foreground">Termos de serviço</span>{" "}
-        e{" "}
-        <span className="underline cursor-pointer hover:text-muted-foreground">Política de privacidade</span>{" "}
-        e confirma que é maior de 18 anos.
-      </p>
+      </div>
     </div>
   );
 }
