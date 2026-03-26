@@ -29,29 +29,38 @@ Deno.serve(async (req) => {
     const sig = req.headers.get("stripe-signature");
     const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
 
-    let event: Stripe.Event;
-    if (webhookSecret && sig) {
-      try {
-        event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
-      } catch (err) {
-        logStep("Signature verification failed", { error: err instanceof Error ? err.message : String(err) });
-        return new Response(JSON.stringify({ error: "Invalid signature" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-    } else {
-      event = JSON.parse(body);
+    // ── MANDATORY signature verification ──
+    if (!webhookSecret) {
+      logStep("ERROR: STRIPE_WEBHOOK_SECRET not configured — rejecting all events");
+      return new Response(JSON.stringify({ error: "Webhook secret not configured" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    logStep("Event received", { type: event.type });
+    if (!sig) {
+      logStep("ERROR: Missing stripe-signature header");
+      return new Response(JSON.stringify({ error: "Missing signature" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    let event: Stripe.Event;
+    try {
+      event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+    } catch (err) {
+      logStep("Signature verification FAILED", { error: err instanceof Error ? err.message : String(err) });
+      return new Response(JSON.stringify({ error: "Invalid signature" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    logStep("Event verified", { type: event.type });
 
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.metadata?.user_id;
         const assetId = session.metadata?.asset_id;
-        const feePercent = parseFloat(session.metadata?.fee_percent || "5");
 
         logStep("Checkout completed", { userId, mode: session.mode });
 
@@ -62,8 +71,6 @@ Deno.serve(async (req) => {
 
         if (session.mode === "subscription") {
           const plan = session.metadata?.plan || "business";
-          
-          // Sync user_plans table
           if (userId) {
             await supabase.from("user_plans").upsert({
               user_id: userId,
@@ -75,9 +82,7 @@ Deno.serve(async (req) => {
             logStep("Plan updated", { userId, plan });
           }
         } else if (assetId && assetId !== "") {
-          // Create escrow for asset purchase
           const amount = (session.amount_total || 0) / 100;
-          
           const { data: business } = await supabase
             .from("digital_businesses")
             .select("owner_id")
@@ -92,7 +97,6 @@ Deno.serve(async (req) => {
               amount,
               status: "holding",
             });
-
             logStep("Escrow created", { assetId, amount });
           }
         }
@@ -112,15 +116,11 @@ Deno.serve(async (req) => {
       case "customer.subscription.updated": {
         const sub = event.data.object as Stripe.Subscription;
         const productId = sub.items.data[0]?.price?.product as string;
-        
-        // Map product to plan
         const planMap: Record<string, string> = {
           "prod_UAAoLCk0ESELPg": "business",
           "prod_UAAqS62X5nnqac": "mogul",
         };
         const detectedPlan = planMap[productId] || "explorer";
-        
-        // Find user by customer ID
         const customerId = sub.customer as string;
         const customer = await stripe.customers.retrieve(customerId);
         const email = (customer as any).email;
@@ -169,8 +169,7 @@ Deno.serve(async (req) => {
   } catch (err: any) {
     logStep("ERROR", { message: err.message });
     return new Response(JSON.stringify({ error: err.message }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
