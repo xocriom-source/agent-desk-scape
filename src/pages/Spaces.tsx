@@ -121,9 +121,21 @@ export default function Spaces() {
         {/* Spaces grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {loading ? (
-            <div className="col-span-full">
-              <LoadingState message="Carregando espaços..." />
-            </div>
+            <>
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="rounded-2xl border border-border/30 bg-card overflow-hidden">
+                  <div className="h-36 bg-muted animate-pulse" />
+                  <div className="p-4 space-y-3">
+                    <div className="w-3/4 h-5 rounded bg-muted animate-pulse" />
+                    <div className="w-1/2 h-3 rounded bg-muted animate-pulse" />
+                    <div className="flex gap-2">
+                      <div className="w-16 h-6 rounded-full bg-muted animate-pulse" />
+                      <div className="w-16 h-6 rounded-full bg-muted animate-pulse" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </>
           ) : (
             <>
               {filteredSpaces.length === 0 && !loading && (
