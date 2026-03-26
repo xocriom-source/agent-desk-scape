@@ -546,29 +546,23 @@ export default function Landing() {
               </button>
             </motion.div>
 
-            {/* Road to 100k */}
+            {/* Trust badges */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: loading ? 0 : 1, y: loading ? 10 : 0 }}
               transition={{ delay: 0.9 }}
-              className="rounded-xl border border-primary/15 bg-primary/[0.04] p-4 max-w-sm mx-auto"
+              className="flex flex-wrap items-center justify-center gap-4 max-w-sm mx-auto"
             >
-              <div className="flex justify-between text-xs font-mono tracking-wider mb-2">
-                <span className="text-primary font-bold">ROAD TO 100K</span>
-                <span className="text-muted-foreground">38,572 to go</span>
-              </div>
-              <div className="w-full h-2 rounded-full overflow-hidden bg-primary/10">
-                <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-primary to-accent"
-                  initial={{ width: 0 }}
-                  animate={{ width: "61.4%" }}
-                  transition={{ duration: 1.5, delay: 1, ease: "easeOut" }}
-                />
-              </div>
-              <div className="flex justify-between text-[10px] font-mono tracking-wider mt-1.5 text-muted-foreground">
-                <span>61,428 / 100,000</span>
-                <span className="text-primary/50">something unlocks at 100k...</span>
-              </div>
+              {[
+                { icon: Shield, label: "Dados seguros" },
+                { icon: Globe, label: "30+ cidades" },
+                { icon: Bot, label: "8 tipos de agente" },
+              ].map(({ icon: Icon, label }) => (
+                <div key={label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-primary/15 bg-primary/[0.04]">
+                  <Icon className="w-3 h-3 text-primary/60" />
+                  <span className="text-[10px] font-mono tracking-wider text-muted-foreground">{label}</span>
+                </div>
+              ))}
             </motion.div>
           </div>
         </section>
