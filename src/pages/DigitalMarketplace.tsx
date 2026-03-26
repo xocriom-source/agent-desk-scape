@@ -288,6 +288,7 @@ export default function DigitalMarketplace() {
 
   return (
     <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
+      <SEOHead title="The Good Realty" description="Marketplace global de negócios digitais. Compre e venda ativos com métricas reais." path="/marketplace/businesses" />
       {/* ─── Top Bar ─── */}
       <header className="h-11 border-b border-green-800/40 bg-gradient-to-r from-green-900/95 to-green-800/90 backdrop-blur-xl flex items-center px-3 gap-2 shrink-0 z-30">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)} className="text-green-300 hover:text-white h-7 w-7">
