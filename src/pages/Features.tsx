@@ -8,6 +8,7 @@ import {
   Building2, Map, Palette, Music, BookOpen, Workflow
 } from "lucide-react";
 import logoOriginal from "@/assets/logo-original.svg";
+import { SEOHead } from "@/components/SEOHead";
 import previewOffice from "@/assets/preview-office.jpg";
 import previewCity from "@/assets/preview-city.jpg";
 import previewMarketplace from "@/assets/preview-marketplace.jpg";
