@@ -157,7 +157,10 @@ export const CityNPCSystem = memo(function CityNPCSystem({
 }: CityNPCSystemProps) {
   const allNPCs = useMemo(() => generateNPCs(20, 60), []);
 
-  // Only render NPCs within spawn radius of player
+  // Throttle: only recalculate when player moves significantly (>2 units)
+  const quantizedX = Math.round(playerX / 2) * 2;
+  const quantizedZ = Math.round(playerZ / 2) * 2;
+
   const visibleNPCs = useMemo(() => {
     return allNPCs
       .filter((npc) => {
@@ -165,7 +168,8 @@ export const CityNPCSystem = memo(function CityNPCSystem({
         return dist < spawnRadius;
       })
       .slice(0, maxNPCs);
-  }, [allNPCs, playerX, playerZ, spawnRadius, maxNPCs]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allNPCs, quantizedX, quantizedZ, spawnRadius, maxNPCs]);
 
   return (
     <group>

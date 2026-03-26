@@ -81,12 +81,16 @@ export const VehicleR3F = memo(function VehicleR3F({ aabbs, playerName }: Vehicl
     setPlayerRotation(heading);
     setVehicleVelocity(velocity);
 
-    // Update visual
+    // Update visual position
     ref.current.position.set(x, 0, z);
     ref.current.rotation.y = heading;
 
+    // Body lean on turns (subtle roll)
+    const leanAngle = -steeringAngle * Math.min(1, Math.abs(velocity) / 5) * 0.08;
+    ref.current.rotation.z = leanAngle;
+
     // Wheel spin animation
-    const wheelSpeed = velocity * delta * 10;
+    const wheelSpeed = velocity * dt * 10;
     wheelRefs.current.forEach((wheel) => {
       if (wheel) wheel.rotation.x += wheelSpeed;
     });
