@@ -127,14 +127,9 @@ const Index = () => {
 
   const handleSaveCharacter = (config: PlayerConfig) => {
     setPlayerConfig(config);
-    localStorage.setItem("playerConfig", JSON.stringify(config));
-    localStorage.setItem("playerName", config.name);
-    const user = localStorage.getItem("agentoffice_user");
-    if (user) {
-      const parsed = JSON.parse(user);
-      parsed.name = config.name;
-      localStorage.setItem("agentoffice_user", JSON.stringify(parsed));
-    }
+    try {
+      localStorage.setItem("playerConfig", JSON.stringify(config));
+    } catch {}
   };
 
   const handleUpdateRooms = (newRooms: RoomDef[]) => {

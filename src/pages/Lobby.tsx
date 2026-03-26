@@ -110,27 +110,8 @@ export default function Lobby() {
   []);
 
   const handleJoin = () => {
-    if (name.trim()) {
-      localStorage.setItem("playerName", name.trim());
-    }
-    localStorage.setItem("lobbyMic", micOn ? "1" : "0");
-    localStorage.setItem("lobbyCam", camOn ? "1" : "0");
-    if (skipLobby) localStorage.setItem("skipLobby", "1");
     navigate("/office");
   };
-
-  // Skip if user previously checked "skip" — use useMemo to avoid useEffect flash
-  useMemo(() => {
-    if (localStorage.getItem("skipLobby") === "1") {
-      // Will redirect on first render
-    }
-  }, []);
-
-  // Redirect immediately if skip is set (safe in render since navigate is stable)
-  if (localStorage.getItem("skipLobby") === "1") {
-    navigate("/office", { replace: true });
-    return null;
-  }
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden flex flex-col items-center justify-center">

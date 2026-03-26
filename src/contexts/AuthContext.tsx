@@ -116,8 +116,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    localStorage.removeItem("agentoffice_user");
     setProfile(null);
+    setIsAdmin(false);
   };
 
   const updateProfile = async (data: Partial<Profile>) => {

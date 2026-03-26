@@ -69,8 +69,6 @@ export default function Spaces() {
   const userName = profile?.display_name || "Usuário";
 
   const handleEnterSpace = (space: SpaceData) => {
-    localStorage.setItem("buildingName", space.name);
-    localStorage.setItem("currentSpaceId", space.id);
     navigate("/lobby");
   };
 
