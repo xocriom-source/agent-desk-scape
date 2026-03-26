@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin, Music, Palette, BookOpen, Code, Coffee, ShoppingBag, Gamepad2, Building2, Flower2, Brain } from "lucide-react";
 
