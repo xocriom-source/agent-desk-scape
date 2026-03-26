@@ -28,7 +28,7 @@ interface ObserverCardProps {
   onClose: () => void;
 }
 
-export function ObserverCard({ agent, isOpen, onClose }: ObserverCardProps) {
+export const ObserverCard = memo(function ObserverCard({ agent, isOpen, onClose }: ObserverCardProps) {
   if (!agent) return null;
 
   const daysLabel = agent.daysSinceArrival === 1 ? "dia" : "dias";
