@@ -156,7 +156,7 @@ function LoadingScreen({ onComplete }: { onComplete: () => void }) {
           setTimeout(onComplete, 300);
           return 100;
         }
-        return prev + Math.random() * 10 + 3;
+        return prev + 8;
       });
     }, 80);
     return () => clearInterval(interval);
