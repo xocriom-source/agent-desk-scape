@@ -1,73 +1,104 @@
-# Welcome to your Lovable project
+# 🏙️ Agent Desk Scape — Virtual City Platform
 
-## Project info
+Uma plataforma de cidade virtual 3D onde negócios digitais ganham vida como prédios interativos em um mundo renderizado com dados reais do OpenStreetMap.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## 🌐 Links
 
-## How can I edit this code?
+- **Preview**: https://id-preview--1f7e6bab-04b6-4793-8e49-cccf75176ac3.lovable.app
+- **Produção**: https://agent-desk-scape.lovable.app
+- **Lovable**: https://lovable.dev/projects/1f7e6bab-04b6-4793-8e49-cccf75176ac3
 
-There are several ways of editing your application.
+## ✨ Funcionalidades
 
-**Use Lovable**
+### 🏗️ Cidade 3D em Tempo Real
+- Renderização baseada em dados reais do **OpenStreetMap**
+- Carregamento progressivo por chunks (sem travamento)
+- Sistema de LOD em 3 níveis (GLB → Extrude → Instanced)
+- Suporte a múltiplas cidades (Manhattan, São Paulo, Tokyo, London, Dubai)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### 🤖 Agentes de IA
+- Agentes autônomos com personalidades únicas
+- Sistema de skills, reputação e missões
+- Wallets e contratos entre agentes
+- Marketplace de serviços de agentes
 
-Changes made via Lovable will be committed automatically to this repo.
+### 🏢 Marketplace Digital
+- Listagem e venda de negócios digitais (SaaS, e-commerce, apps)
+- Sistema de ofertas, escrow e milestones
+- Métricas financeiras (MRR, crescimento, múltiplos)
+- KYC e verificação de usuários
 
-**Use your preferred IDE**
+### 🗺️ Exploração
+- Navegação livre pela cidade em 3D
+- Distritos temáticos (Tech, Creator, Startup, Agency, AI)
+- Veículos e sistema de transporte
+- Chat de proximidade e eventos na cidade
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 🔐 Autenticação & Segurança
+- Login/Signup com verificação de email
+- Roles e permissões granulares
+- RLS (Row Level Security) em todas as tabelas
+- Sistema de moderação e logs de admin
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 🛠️ Stack Tecnológica
 
-Follow these steps:
+| Camada | Tecnologia |
+|--------|-----------|
+| Frontend | React 18 + TypeScript + Vite |
+| 3D Engine | Three.js + React Three Fiber + Drei |
+| Estilo | Tailwind CSS + shadcn/ui |
+| Backend | Lovable Cloud (Supabase) |
+| Estado | Zustand + TanStack Query |
+| Mapas | MapLibre GL + OpenStreetMap |
+| Animações | Framer Motion |
+| Pagamentos | Stripe |
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+## 📁 Estrutura do Projeto
+
+```
+src/
+├── components/
+│   ├── city/          # Componentes da cidade 3D (OSM, veículos, chat)
+│   ├── office/        # Escritório virtual e painéis
+│   ├── building/      # Interior de prédios e assistentes IA
+│   ├── marketplace/   # Marketplace de negócios
+│   ├── workspace/     # Ferramentas de colaboração
+│   ├── ecosystem/     # Ecossistema de agentes
+│   ├── admin/         # Painel administrativo
+│   └── ui/            # Componentes shadcn/ui
+├── engine/            # Motor 3D (WorldEngine, LOD, Instancing)
+├── systems/city/      # Geração procedural e OSM
+├── data/              # Serviços e registros de dados
+├── hooks/             # React hooks customizados
+├── pages/             # Rotas da aplicação
+├── types/             # TypeScript types
+└── contexts/          # React contexts (Auth)
+supabase/
+├── functions/         # Edge Functions (AI, pagamentos, webhooks)
+└── config.toml        # Configuração do projeto
+```
+
+## 🚀 Desenvolvimento Local
+
+```bash
 git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
 cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## 📊 Banco de Dados
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+O projeto utiliza **55+ tabelas** cobrindo:
 
-**Use GitHub Codespaces**
+- **Usuários**: profiles, roles, permissões, verificações, wallets
+- **Ativos**: assets, métricas, categorias, tags, tecnologias
+- **Cidade**: buildings, distritos, eventos, transações
+- **Agentes**: skills, reputação, missões, contratos, protocolos
+- **Marketplace**: serviços, propostas, ofertas, deals, escrow
+- **Financeiro**: pagamentos, fees, logs financeiros
+- **Comunicação**: canais de chat, mensagens, conversas
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 📝 Licença
 
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Projeto privado — todos os direitos reservados.
