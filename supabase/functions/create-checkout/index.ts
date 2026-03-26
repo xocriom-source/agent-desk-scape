@@ -1,9 +1,14 @@
-import Stripe from "https://esm.sh/stripe@17.7.0?target=deno";
+import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+const logStep = (step: string, details?: any) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[CREATE-CHECKOUT] ${step}${detailsStr}`);
 };
 
 Deno.serve(async (req) => {
@@ -14,61 +19,68 @@ Deno.serve(async (req) => {
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY not configured");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnon = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+    if (!authHeader) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const supabase = createClient(supabaseUrl, supabaseAnon, {
+    // Use service role for DB ops, but validate user token
+    const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: corsHeaders });
+    const { data: { user }, error: authError } = await anonClient.auth.getUser();
+    if (authError || !user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    logStep("User authenticated", { userId: user.id, email: user.email });
 
-    const { mode, price_id, asset_id, asset_type, amount, currency, plan, success_url, cancel_url } = await req.json();
+    const body = await req.json();
+    const { mode, price_id, asset_id, asset_type, amount, currency, plan, success_url, cancel_url } = body;
+    logStep("Request body", { mode, price_id, asset_id, plan });
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2024-12-18.acacia" });
+    // Input validation
+    if (mode === "subscription" && !price_id) {
+      return new Response(JSON.stringify({ error: "price_id is required for subscriptions" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } });
 
     // Get or create Stripe customer
     let customerId: string;
-    const { data: sub } = await supabase.from("subscriptions").select("stripe_customer_id").eq("user_id", user.id).single();
+    const customers = await stripe.customers.list({ email: user.email!, limit: 1 });
     
-    if (sub?.stripe_customer_id) {
-      customerId = sub.stripe_customer_id;
+    if (customers.data.length > 0) {
+      customerId = customers.data[0].id;
+      logStep("Found existing customer", { customerId });
     } else {
       const customer = await stripe.customers.create({
-        email: user.email,
+        email: user.email!,
         metadata: { user_id: user.id },
       });
       customerId = customer.id;
-      await supabase.from("subscriptions").upsert({
-        user_id: user.id,
-        stripe_customer_id: customerId,
-        plan: "free",
-        status: "active",
-      }, { onConflict: "user_id" });
+      logStep("Created new customer", { customerId });
     }
+
+    const origin = req.headers.get("origin") || "https://agent-desk-scape.lovable.app";
 
     let sessionConfig: any = {
       customer: customerId,
-      success_url: success_url || `${req.headers.get("origin")}/lobby?payment=success`,
-      cancel_url: cancel_url || `${req.headers.get("origin")}/lobby?payment=cancelled`,
+      success_url: success_url || `${origin}/lobby?payment=success`,
+      cancel_url: cancel_url || `${origin}/pricing?cancelled=true`,
       metadata: { user_id: user.id, asset_id: asset_id || "", asset_type: asset_type || "" },
     };
 
     if (mode === "subscription") {
-      // Subscription checkout
       sessionConfig.mode = "subscription";
       sessionConfig.line_items = [{ price: price_id, quantity: 1 }];
-      sessionConfig.metadata.plan = plan || "pro";
+      sessionConfig.metadata.plan = plan || "business";
     } else {
-      // One-time payment - validate price server-side
+      // One-time payment
       if (!amount || amount <= 0) {
-        return new Response(JSON.stringify({ error: "Invalid amount" }), { status: 400, headers: corsHeaders });
+        return new Response(JSON.stringify({ error: "Invalid amount" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
-      // If asset_id provided, validate from DB
+      // Validate asset if provided
       if (asset_id && asset_type === "business") {
         const { data: business } = await supabase
           .from("digital_businesses")
@@ -77,7 +89,7 @@ Deno.serve(async (req) => {
           .single();
         
         if (!business) {
-          return new Response(JSON.stringify({ error: "Asset not found" }), { status: 404, headers: corsHeaders });
+          return new Response(JSON.stringify({ error: "Asset not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
         }
       }
 
@@ -89,7 +101,7 @@ Deno.serve(async (req) => {
         .single();
       
       const feePercent = feeConfig?.percentage || 5;
-      const unitAmount = Math.round(amount * 100); // cents
+      const unitAmount = Math.round(amount * 100);
 
       sessionConfig.mode = "payment";
       sessionConfig.line_items = [{
@@ -105,6 +117,7 @@ Deno.serve(async (req) => {
     }
 
     const session = await stripe.checkout.sessions.create(sessionConfig);
+    logStep("Checkout session created", { sessionId: session.id, url: session.url });
 
     // Log payment
     await supabase.from("payments").insert({
@@ -130,7 +143,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err: any) {
-    console.error("Checkout error:", err);
+    logStep("ERROR", { message: err.message });
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
