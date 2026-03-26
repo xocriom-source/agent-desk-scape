@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Star, Users, Zap, Brain, Heart, Clock, TrendingUp, Sparkles, Target, BookOpen, Music, Palette, Code, FileText, FlaskConical } from "lucide-react";
 import type { Agent } from "@/types/agent";
