@@ -779,9 +779,7 @@ export function CityExploreScene({
         {!isOSMMode && <CameraOcclusion onOccludedBuildings={setOccludedBuildings} />}
 
         {/* ── VEHICLE ── */}
-        <group scale={isOSMMode ? [4, 4, 4] : [1, 1, 1]}>
-          <VehicleR3F aabbs={aabbs} playerName={playerName} />
-        </group>
+        <VehicleR3F aabbs={isOSMMode ? [] : aabbs} playerName={playerName} />
 
         {/* ── PLAYER VISUAL ── */}
         <PlayerVisual name={playerName} scale={isOSMMode ? 4 : 1} />
