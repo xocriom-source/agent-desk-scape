@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { SEOHead } from "@/components/SEOHead";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -39,6 +40,7 @@ export default function EcosystemHub() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex">
+      <SEOHead title="Ecossistema de Agentes" description="Monitore a evolução autônoma dos agentes IA no ecossistema." path="/ecosystem" />
       {/* Sidebar */}
       <div className="w-60 bg-gray-900/50 border-r border-gray-800 flex flex-col shrink-0">
         <div className="p-4 border-b border-gray-800">

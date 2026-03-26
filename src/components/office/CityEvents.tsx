@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { X, Calendar, MapPin, Users2, Clock, Flame, Music, Code, Palette, Trophy, Megaphone, Star, Sparkles, ArrowRight, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -25,7 +25,7 @@ interface CityEventsProps {
   onClose: () => void;
 }
 
-export function CityEvents({ isOpen, onClose }: CityEventsProps) {
+export const CityEvents = memo(function CityEvents({ isOpen, onClose }: CityEventsProps) {
   const [events, setEvents] = useState<DbEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<DbEvent | null>(null);
@@ -144,4 +144,4 @@ export function CityEvents({ isOpen, onClose }: CityEventsProps) {
       </div>
     </div>
   );
-}
+});

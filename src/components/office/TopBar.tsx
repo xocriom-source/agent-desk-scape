@@ -52,10 +52,10 @@ function LocalClock() {
 
 function NavBtn({ onClick, title, icon: Icon, color, badge }: { onClick?: () => void; title: string; icon: typeof MessageSquare; color: string; badge?: number }) {
   return (
-    <button onClick={onClick} className="relative p-2 rounded-xl hover:bg-muted/30 transition-colors shrink-0" title={title}>
+    <button onClick={onClick} className="relative p-2 rounded-xl hover:bg-muted/30 transition-colors shrink-0" title={title} aria-label={title}>
       <Icon className="w-4 h-4" style={{ color }} />
       {badge && badge > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-3.5 flex items-center justify-center bg-destructive text-destructive-foreground text-[8px] font-bold rounded-full px-0.5">
+        <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-3.5 flex items-center justify-center bg-destructive text-destructive-foreground text-[8px] font-bold rounded-full px-0.5" aria-label={`${badge} notificações`}>
           {badge > 99 ? "99+" : badge}
         </span>
       )}
@@ -129,20 +129,20 @@ export function TopBar({ agentCount, activeCount, nearbyAgent, onCustomize, onRo
         </div>
 
         {onRoomEditor && (
-          <button onClick={onRoomEditor} className="glass-panel rounded-2xl p-2 hover:bg-muted/30 transition-colors shadow-lg" title="Editor de Salas">
+          <button onClick={onRoomEditor} className="glass-panel rounded-2xl p-2 hover:bg-muted/30 transition-colors shadow-lg" title="Editor de Salas" aria-label="Editor de Salas">
             <Home className="w-4 h-4 text-foreground" />
           </button>
         )}
         {onCustomize && (
-          <button onClick={onCustomize} className="glass-panel rounded-2xl p-2 hover:bg-muted/30 transition-colors shadow-lg" title="Personalizar">
+          <button onClick={onCustomize} className="glass-panel rounded-2xl p-2 hover:bg-muted/30 transition-colors shadow-lg" title="Personalizar" aria-label="Personalizar">
             <Palette className="w-4 h-4 text-foreground" />
           </button>
         )}
-        <button className="glass-panel rounded-2xl p-2 hover:bg-muted/30 transition-colors shadow-lg">
+        <button className="glass-panel rounded-2xl p-2 hover:bg-muted/30 transition-colors shadow-lg" aria-label="Configurações" title="Configurações">
           <Settings className="w-4 h-4 text-foreground" />
         </button>
         {onLogout && (
-          <button onClick={onLogout} className="glass-panel rounded-2xl p-2 hover:bg-destructive/20 transition-colors shadow-lg" title="Sair">
+          <button onClick={onLogout} className="glass-panel rounded-2xl p-2 hover:bg-destructive/20 transition-colors shadow-lg" title="Sair" aria-label="Sair do escritório">
             <LogOut className="w-4 h-4 text-foreground" />
           </button>
         )}

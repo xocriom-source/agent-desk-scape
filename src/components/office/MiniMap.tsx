@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import { motion } from "framer-motion";
 import type { Agent, Player } from "@/types/agent";
 import type { RoomDef } from "@/data/officeMap";
@@ -14,7 +14,7 @@ const SCALE = 4; // pixels per tile
 const W = MAP_COLS * SCALE;
 const H = MAP_ROWS * SCALE;
 
-export function MiniMap({ player, agents, rooms }: MiniMapProps) {
+export const MiniMap = memo(function MiniMap({ player, agents, rooms }: MiniMapProps) {
   const roomRects = useMemo(
     () =>
       rooms.map((r) => ({
@@ -151,4 +151,4 @@ export function MiniMap({ player, agents, rooms }: MiniMapProps) {
       </div>
     </motion.div>
   );
-}
+});

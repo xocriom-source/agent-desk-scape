@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MessageSquare, Sparkles, Users, Brain, Heart, Music, Palette, Code, BookOpen, FlaskConical, Zap, ArrowRightLeft } from "lucide-react";
 import type { Agent } from "@/types/agent";
@@ -160,7 +161,7 @@ function buildFeed(agents: Agent[]): FeedItem[] {
 
 type FilterType = "all" | FeedItemType;
 
-export function SocialFeed({ agents, isOpen, onClose, onAgentClick }: SocialFeedProps) {
+export const SocialFeed = memo(function SocialFeed({ agents, isOpen, onClose, onAgentClick }: SocialFeedProps) {
   const [filter, setFilter] = useState<FilterType>("all");
   const [dbItems, setDbItems] = useState<FeedItem[]>([]);
 
@@ -362,4 +363,4 @@ export function SocialFeed({ agents, isOpen, onClose, onAgentClick }: SocialFeed
       )}
     </AnimatePresence>
   );
-}
+});

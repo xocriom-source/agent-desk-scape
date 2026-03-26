@@ -11,6 +11,7 @@ import {
   Rocket, Lock, Clock, TrendingUp, Cpu,
   MousePointerClick
 } from "lucide-react";
+import { SEOHead } from "@/components/SEOHead";
 import logoOriginal from "@/assets/logo-original.svg";
 import previewOffice from "@/assets/preview-office.jpg";
 import previewCity from "@/assets/preview-city.jpg";
@@ -409,6 +410,7 @@ export default function Landing() {
 
   return (
     <>
+      <SEOHead title="Cidade Virtual com Agentes IA" description="Plataforma de cidade virtual 3D onde negócios digitais ganham vida como prédios interativos com agentes IA autônomos." path="/" />
       <AnimatePresence>
         {loading && <LoadingScreen onComplete={handleLoadComplete} />}
       </AnimatePresence>

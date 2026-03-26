@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin, Music, Palette, BookOpen, Code, Coffee, ShoppingBag, Gamepad2, Building2, Flower2, Brain } from "lucide-react";
 
@@ -60,7 +60,7 @@ const DISTRICTS: District[] = [
   },
 ];
 
-export function DistrictInfo({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export const DistrictInfo = memo(function DistrictInfo({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const [selected, setSelected] = useState<District | null>(null);
 
   if (!isOpen) return null;
@@ -144,4 +144,4 @@ export function DistrictInfo({ isOpen, onClose }: { isOpen: boolean; onClose: ()
       </motion.div>
     </AnimatePresence>
   );
-}
+});
