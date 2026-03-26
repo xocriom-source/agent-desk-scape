@@ -785,15 +785,13 @@ export function CityExploreScene({
         <PlayerVisual name={playerName} scale={isOSMMode ? 2 : 1} />
 
         {/* ── NPCs (proximity-based, both modes) ── */}
-        <group scale={isOSMMode ? [4, 4, 4] : [1, 1, 1]}>
-          <CityNPCSystem
-            playerX={isOSMMode ? playerPos[0] / 4 : playerPos[0]}
-            playerZ={isOSMMode ? playerPos[2] / 4 : playerPos[2]}
-            aabbs={isOSMMode ? [] : aabbs}
-            maxNPCs={isOSMMode ? 16 : 12}
-            spawnRadius={isOSMMode ? 60 : 40}
-          />
-        </group>
+        <CityNPCSystem
+          playerX={playerPos[0]}
+          playerZ={playerPos[2]}
+          aabbs={isOSMMode ? [] : aabbs}
+          maxNPCs={isOSMMode ? 16 : 12}
+          spawnRadius={isOSMMode ? 30 : 40}
+        />
 
         {/* ── WORLD: OSM ── */}
         {isOSMMode && osmBuildings && osmStreets && osmBounds && (
