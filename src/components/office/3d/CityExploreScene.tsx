@@ -6,7 +6,7 @@
 
 import { useRef, useState, useMemo, useCallback, useEffect, memo } from "react";
 import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
-import { OrbitControls, Html, Stars } from "@react-three/drei";
+import { Html, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import { WorldTerrain } from "@/components/city/WorldTerrain";
 import { WorldChunkRenderer } from "@/components/city/WorldChunkRenderer";

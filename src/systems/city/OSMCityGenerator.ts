@@ -533,15 +533,21 @@ export function convertOSMToCity(
       continue;
     }
 
-    // Skip tiny buildings (< 3m real size)
+    // Skip tiny buildings (< 3m real footprint area)
     if (footprintW < 0.8 && footprintD < 0.8) {
       skippedTiny++;
       continue;
     }
 
+    // Validate polygon area — skip degenerate/sliver footprints
+    const area = polygonArea(vertices);
+    if (area < 0.5) {
+      skippedTiny++;
+      continue;
+    }
+
     // ── ROAD COLLISION CHECK ──
-    // Skip buildings whose footprint overlaps any road buffer
-    if (buildingOverlapsRoads(cx, cz, footprintW, footprintD, roadBuffers)) {
+    if (buildingOverlapsRoads(cx, cz, footprintW, footprintD, roadBuffers, junctions)) {
       skippedOnRoad++;
       continue;
     }
