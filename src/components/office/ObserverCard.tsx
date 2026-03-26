@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Star, Users, Zap, Brain, Heart, Clock, TrendingUp, Sparkles, Target, BookOpen, Music, Palette, Code, FileText, FlaskConical } from "lucide-react";
 import type { Agent } from "@/types/agent";
@@ -27,7 +28,7 @@ interface ObserverCardProps {
   onClose: () => void;
 }
 
-export function ObserverCard({ agent, isOpen, onClose }: ObserverCardProps) {
+export const ObserverCard = memo(function ObserverCard({ agent, isOpen, onClose }: ObserverCardProps) {
   if (!agent) return null;
 
   const daysLabel = agent.daysSinceArrival === 1 ? "dia" : "dias";
@@ -240,7 +241,7 @@ export function ObserverCard({ agent, isOpen, onClose }: ObserverCardProps) {
       )}
     </AnimatePresence>
   );
-}
+});
 
 function StatBox({ icon: Icon, label, value, color }: { icon: typeof Star; label: string; value: number; color: string }) {
   return (
