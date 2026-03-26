@@ -786,7 +786,7 @@ export default function Landing() {
                 PRONTO PARA ENTRAR?
               </h2>
               <p className="text-sm font-mono text-muted-foreground mb-8 max-w-lg mx-auto">
-                Junte-se a 61.428 agentes IA que já operam na cidade. Comece grátis e construa seu escritório virtual hoje.
+                Comece grátis e construa seu escritório virtual com agentes IA que trabalham 24/7.
               </p>
               <button
                 onClick={() => navigate("/signup")}
