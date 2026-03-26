@@ -6,7 +6,7 @@
 
 import { useRef, useState, useMemo, useCallback, useEffect, memo } from "react";
 import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
-import { OrbitControls, Html, Stars } from "@react-three/drei";
+import { Html, Stars } from "@react-three/drei";
 import * as THREE from "three";
 import { WorldTerrain } from "@/components/city/WorldTerrain";
 import { WorldChunkRenderer } from "@/components/city/WorldChunkRenderer";
@@ -158,7 +158,7 @@ function PlayerRig({ aabbs, isOSMMode }: { aabbs: AABB[]; isOSMMode: boolean }) 
     const keys = useInputStore.getState().keys;
 
     let dx = 0, dz = 0;
-    const speed = isOSMMode ? 15 : 4; // units/sec, frame-independent
+    const speed = isOSMMode ? 18 : 5; // units/sec — brisk walk speed
 
     if (keys.has("w") || keys.has("arrowup")) dz -= speed * dt;
     if (keys.has("s") || keys.has("arrowdown")) dz += speed * dt;
@@ -288,46 +288,108 @@ function PlayerVisual({ name, scale = 1 }: { name: string; scale?: number }) {
   );
 }
 
-// ── CameraRig: follows player, handles orbit + fly mode ──
+// ── CameraRig: proper chase camera that follows player smoothly ──
 function CameraRig({ isOSMMode }: { isOSMMode: boolean }) {
-  const controlsRef = useRef<any>(null);
+  const { camera } = useThree();
   const playerPos = useGameStore(s => s.player.position);
+  const playerRot = useGameStore(s => s.player.rotation);
   const movementMode = useGameStore(s => s.player.movementMode);
+  const isInVehicle = useGameStore(s => s.vehicle.isInVehicle);
   const isFlying = movementMode === "fly";
 
-  // Ground camera follow
+  const cameraState = useRef({
+    targetX: 0, targetY: 0, targetZ: 0,
+    azimuth: Math.PI * 0.15,
+    polar: Math.PI / 3.5,
+    distance: isOSMMode ? 25 : 18,
+    initialized: false,
+  });
+
+  // Mouse orbit
+  useEffect(() => {
+    let isDragging = false;
+    let lastX = 0, lastY = 0;
+
+    const onDown = (e: PointerEvent) => {
+      if (e.button === 0 || e.button === 2) { isDragging = true; lastX = e.clientX; lastY = e.clientY; }
+    };
+    const onUp = () => { isDragging = false; };
+    const onMove = (e: PointerEvent) => {
+      if (!isDragging || isFlying) return;
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      lastX = e.clientX; lastY = e.clientY;
+      const s = cameraState.current;
+      s.azimuth -= dx * 0.005;
+      s.polar = Math.max(0.3, Math.min(Math.PI / 2.3, s.polar + dy * 0.005));
+    };
+    const onWheel = (e: WheelEvent) => {
+      if (isFlying) return;
+      const s = cameraState.current;
+      const min = isOSMMode ? 8 : 5;
+      const max = isOSMMode ? 80 : 45;
+      s.distance = Math.max(min, Math.min(max, s.distance + e.deltaY * 0.03));
+    };
+    const onCtx = (e: MouseEvent) => e.preventDefault();
+
+    window.addEventListener("pointerdown", onDown);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("wheel", onWheel, { passive: true });
+    window.addEventListener("contextmenu", onCtx);
+    return () => {
+      window.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("contextmenu", onCtx);
+    };
+  }, [isFlying, isOSMMode]);
+
   useFrame((_, delta) => {
-    if (isFlying || !controlsRef.current) return;
+    if (isFlying) return;
     const dt = Math.min(delta, 0.05);
-    const factor = 1 - Math.exp(-6 * dt);
-    const t = controlsRef.current.target;
-    t.x += (playerPos[0] - t.x) * factor;
-    t.z += (playerPos[2] - t.z) * factor;
-    t.y += (0.5 - t.y) * factor;
-    controlsRef.current.update();
+    const s = cameraState.current;
+
+    // Chase: lerp target to player
+    const followSpeed = isInVehicle ? 8 : 10;
+    const factor = 1 - Math.exp(-followSpeed * dt);
+    s.targetX += (playerPos[0] - s.targetX) * factor;
+    s.targetZ += (playerPos[2] - s.targetZ) * factor;
+    s.targetY += ((playerPos[1] + (isOSMMode ? 1 : 0.5)) - s.targetY) * factor;
+
+    // Vehicle: gently pull azimuth toward vehicle heading
+    if (isInVehicle) {
+      const targetAzimuth = playerRot + Math.PI;
+      let azDiff = targetAzimuth - s.azimuth;
+      while (azDiff > Math.PI) azDiff -= Math.PI * 2;
+      while (azDiff < -Math.PI) azDiff += Math.PI * 2;
+      s.azimuth += azDiff * 0.03;
+      s.distance += ((isOSMMode ? 35 : 22) - s.distance) * factor * 0.3;
+    }
+
+    // Compute camera position from spherical coords
+    const dist = s.distance;
+    const offX = Math.sin(s.azimuth) * Math.cos(s.polar) * dist;
+    const offY = Math.sin(s.polar) * dist;
+    const offZ = Math.cos(s.azimuth) * Math.cos(s.polar) * dist;
+
+    const camX = s.targetX + offX;
+    const camY = Math.max(1, s.targetY + offY);
+    const camZ = s.targetZ + offZ;
+
+    // Smooth camera position
+    camera.position.x += (camX - camera.position.x) * factor;
+    camera.position.y += (camY - camera.position.y) * factor;
+    camera.position.z += (camZ - camera.position.z) * factor;
+    camera.lookAt(s.targetX, s.targetY, s.targetZ);
   });
 
   if (isFlying) {
     return <FlightCamera playerPos={playerPos} />;
   }
 
-  return (
-    <OrbitControls
-      ref={controlsRef}
-      enableDamping
-      dampingFactor={0.15}
-      enablePan={false}
-      enableZoom
-      enableRotate
-      minDistance={isOSMMode ? 5 : 8}
-      maxDistance={isOSMMode ? 120 : 60}
-      minPolarAngle={Math.PI / 8}
-      maxPolarAngle={Math.PI / 2.8}
-      zoomSpeed={0.8}
-      rotateSpeed={0.5}
-      target={[playerPos[0], playerPos[1] + 0.5, playerPos[2]]}
-    />
-  );
+  return null;
 }
 
 // ── Flight Camera ──
@@ -731,48 +793,54 @@ export function CityExploreScene({
       <Canvas
         shadows
         style={{ touchAction: "none", width: "100%", height: "100%", display: "block" }}
-        camera={{ position: isOSMMode ? [15, 30, 35] : [12, 25, 30], fov: 50, near: 0.5, far: isOSMMode ? 1500 : Math.min(lodConfig.cameraFar, 300) }}
-        gl={{ antialias: false, powerPreference: "high-performance", stencil: false, depth: true }}
-        dpr={[0.75, 1]}
+        camera={{ position: isOSMMode ? [15, 30, 35] : [12, 25, 30], fov: 50, near: 0.5, far: isOSMMode ? 2000 : Math.min(lodConfig.cameraFar, 400) }}
+        gl={{ antialias: true, powerPreference: "high-performance", stencil: false, depth: true }}
+        dpr={[0.85, 1.25]}
         frameloop="always"
         performance={{ min: 0.5 }}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = Math.max(dn.exposure, 1.1);
+          gl.toneMappingExposure = Math.max(dn.exposure, 1.2);
           onReady?.();
-          console.log("[CityScene:ready] Canvas initialized, exposure:", dn.exposure);
+          console.log("[CityScene:ready] Canvas initialized");
         }}
       >
         <color attach="background" args={[dn.bgColor]} />
         <fog attach="fog" args={[
           dn.fogColor,
-          isOSMMode ? Math.max(dn.fogNear, 60) : lodConfig.fogNear * 2,
-          isOSMMode ? Math.max(dn.fogFar, 300) : lodConfig.fogFar * 2
+          isOSMMode ? Math.max(dn.fogNear, 80) : lodConfig.fogNear * 2.5,
+          isOSMMode ? Math.max(dn.fogFar, 500) : lodConfig.fogFar * 2.5
         ]} />
 
-        {/* Lighting — bright and readable */}
-        <ambientLight intensity={dn.ambientIntensity} color={dn.ambientColor} />
+        {/* Lighting — bright, warm, readable */}
+        <ambientLight intensity={Math.max(dn.ambientIntensity, 0.5)} color={dn.ambientColor} />
         <directionalLight
           position={dn.sunPosition}
-          intensity={dn.sunIntensity * 1.3}
+          intensity={dn.sunIntensity * 1.5}
           castShadow
-          shadow-mapSize-width={512}
-          shadow-mapSize-height={512}
-          shadow-camera-far={60}
-          shadow-camera-left={-30}
-          shadow-camera-right={30}
-          shadow-camera-top={30}
-          shadow-camera-bottom={-30}
-          shadow-bias={-0.0008}
+          shadow-mapSize-width={1024}
+          shadow-mapSize-height={1024}
+          shadow-camera-far={80}
+          shadow-camera-left={-40}
+          shadow-camera-right={40}
+          shadow-camera-top={40}
+          shadow-camera-bottom={-40}
+          shadow-bias={-0.0005}
           color={dn.sunColor}
         />
-        {/* Fill light for depth — prevents pitch-black shadows */}
+        {/* Fill light — prevents pitch-black shadows */}
         <directionalLight
           position={[-dn.sunPosition[0] * 0.6, dn.sunPosition[1] * 0.5, -dn.sunPosition[2] * 0.6]}
-          intensity={dn.sunIntensity * 0.35}
-          color={dn.isNight ? "#4466AA" : "#C0D0E0"}
+          intensity={dn.sunIntensity * 0.45}
+          color={dn.isNight ? "#4466AA" : "#D0DDE8"}
         />
-        <hemisphereLight args={[dn.skyColor, dn.groundColor, dn.hemiIntensity * 1.2]} />
+        {/* Rim/back light for depth */}
+        <directionalLight
+          position={[dn.sunPosition[0] * 0.3, dn.sunPosition[1] * 0.8, dn.sunPosition[2] * -1]}
+          intensity={dn.sunIntensity * 0.2}
+          color="#E8D8C8"
+        />
+        <hemisphereLight args={[dn.skyColor, dn.groundColor, dn.hemiIntensity * 1.4]} />
 
         {dn.isNight && (
           <group position={[-20, 30, -15]}>
@@ -804,13 +872,7 @@ export function CityExploreScene({
           spawnRadius={isOSMMode ? 30 : 40}
         />
 
-        {/* ── DEBUG HELPERS (temporary — remove after validation) ── */}
-        {isOSMMode && (
-          <group>
-            <gridHelper args={[400, 80, "#444466", "#333344"]} position={[0, 0.01, 0]} />
-            <axesHelper args={[20]} />
-          </group>
-        )}
+        {/* ── Coordinate axes (only dev, hidden from production feel) ── */}
 
         {isOSMMode && osmBuildings && osmStreets && osmBounds && (
           <OSMWorldRenderer

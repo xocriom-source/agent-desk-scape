@@ -274,6 +274,12 @@ interface RoadSegmentBuffer {
   halfWidth: number;
 }
 
+/** Intersection / junction zone (circle around a road node with many connections) */
+interface JunctionZone {
+  x: number; z: number;
+  radius: number;
+}
+
 /** Check if a point is within a buffered road segment (capsule test) */
 function pointNearRoadSegment(px: number, pz: number, seg: RoadSegmentBuffer): boolean {
   const dx = seg.bx - seg.ax;
@@ -288,18 +294,40 @@ function pointNearRoadSegment(px: number, pz: number, seg: RoadSegmentBuffer): b
   return distSq < seg.halfWidth * seg.halfWidth;
 }
 
-/** Check if a building AABB overlaps any road buffer */
+/** Robust building-road overlap: test center + 8 perimeter points + 4 edge midpoints */
 function buildingOverlapsRoads(
   cx: number, cz: number, fw: number, fd: number,
-  roadBuffers: RoadSegmentBuffer[]
+  roadBuffers: RoadSegmentBuffer[],
+  junctions: JunctionZone[]
 ): boolean {
-  // Test the centroid and 4 corners
+  // Check junction zones first (fast circle test)
+  for (const j of junctions) {
+    const dx = cx - j.x;
+    const dz = cz - j.z;
+    const maxR = j.radius + Math.max(fw, fd) * 0.5;
+    if (dx * dx + dz * dz < maxR * maxR) return true;
+  }
+
+  // 13-point sampling: center + 4 corners + 4 edge midpoints + 4 inner points
+  const hw = fw * 0.48;
+  const hd = fd * 0.48;
   const testPoints = [
     { x: cx, z: cz },
-    { x: cx - fw * 0.4, z: cz - fd * 0.4 },
-    { x: cx + fw * 0.4, z: cz - fd * 0.4 },
-    { x: cx - fw * 0.4, z: cz + fd * 0.4 },
-    { x: cx + fw * 0.4, z: cz + fd * 0.4 },
+    // Corners
+    { x: cx - hw, z: cz - hd },
+    { x: cx + hw, z: cz - hd },
+    { x: cx - hw, z: cz + hd },
+    { x: cx + hw, z: cz + hd },
+    // Edge midpoints
+    { x: cx, z: cz - hd },
+    { x: cx, z: cz + hd },
+    { x: cx - hw, z: cz },
+    { x: cx + hw, z: cz },
+    // Inner quarter points
+    { x: cx - hw * 0.5, z: cz - hd * 0.5 },
+    { x: cx + hw * 0.5, z: cz - hd * 0.5 },
+    { x: cx - hw * 0.5, z: cz + hd * 0.5 },
+    { x: cx + hw * 0.5, z: cz + hd * 0.5 },
   ];
   for (const pt of testPoints) {
     for (const seg of roadBuffers) {
@@ -309,11 +337,11 @@ function buildingOverlapsRoads(
   return false;
 }
 
-/** Check if two building AABBs overlap */
+/** Check if two building AABBs overlap with margin */
 function buildingsOverlap(
   ax: number, az: number, aw: number, ad: number,
   bx: number, bz: number, bw: number, bd: number,
-  margin: number = 0.3
+  margin: number = 0.5
 ): boolean {
   return (
     ax - aw / 2 - margin < bx + bw / 2 &&
@@ -321,6 +349,17 @@ function buildingsOverlap(
     az - ad / 2 - margin < bz + bd / 2 &&
     az + ad / 2 + margin > bz - bd / 2
   );
+}
+
+/** Compute signed area of polygon (positive = CCW) */
+function polygonArea(vertices: Array<{ x: number; z: number }>): number {
+  let area = 0;
+  for (let i = 0; i < vertices.length; i++) {
+    const j = (i + 1) % vertices.length;
+    area += vertices[i].x * vertices[j].z;
+    area -= vertices[j].x * vertices[i].z;
+  }
+  return Math.abs(area) / 2;
 }
 
 /**
@@ -412,8 +451,8 @@ export function convertOSMToCity(
       });
 
       // Build road buffer segments for building collision checks
-      // Buffer = road half-width + sidewalk + margin (1.5 units extra)
-      const bufferHalfWidth = widthUnits / 2 + 1.5;
+      // Buffer = road half-width + sidewalk + margin (2.0 units extra for safety)
+      const bufferHalfWidth = widthUnits / 2 + 2.0;
       for (let i = 0; i < segments.length - 1; i++) {
         roadBuffers.push({
           ax: segments[i].x, az: segments[i].z,
@@ -425,7 +464,29 @@ export function convertOSMToCity(
     }
   }
 
-  console.log(`[OSM] Pass 1 complete: ${streetCount} streets, ${roadBuffers.length} road buffer segments, ${trees.length} trees, ${greenAreas.length} parks`);
+  // ── Build junction zones from road intersection points ──
+  const junctions: JunctionZone[] = [];
+  const nodeMap = new Map<string, number>();
+  for (const st of streets) {
+    for (const pt of st.segments) {
+      const key = `${Math.round(pt.x * 2)}_${Math.round(pt.z * 2)}`;
+      nodeMap.set(key, (nodeMap.get(key) || 0) + 1);
+    }
+  }
+  for (const st of streets) {
+    for (const pt of st.segments) {
+      const key = `${Math.round(pt.x * 2)}_${Math.round(pt.z * 2)}`;
+      if ((nodeMap.get(key) || 0) >= 2) {
+        // Junction: clear a larger area at intersections
+        const existing = junctions.find(j => Math.abs(j.x - pt.x) < 2 && Math.abs(j.z - pt.z) < 2);
+        if (!existing) {
+          junctions.push({ x: pt.x, z: pt.z, radius: st.width / 2 + 3.0 });
+        }
+      }
+    }
+  }
+
+  console.log(`[OSM] Pass 1 complete: ${streetCount} streets, ${roadBuffers.length} road segments, ${junctions.length} junctions, ${trees.length} trees, ${greenAreas.length} parks`);
 
   // ── PASS 2: Collect buildings, filtered against road buffers ──
   let buildingCount = 0;
@@ -472,15 +533,21 @@ export function convertOSMToCity(
       continue;
     }
 
-    // Skip tiny buildings (< 3m real size)
+    // Skip tiny buildings (< 3m real footprint area)
     if (footprintW < 0.8 && footprintD < 0.8) {
       skippedTiny++;
       continue;
     }
 
+    // Validate polygon area — skip degenerate/sliver footprints
+    const area = polygonArea(vertices);
+    if (area < 0.5) {
+      skippedTiny++;
+      continue;
+    }
+
     // ── ROAD COLLISION CHECK ──
-    // Skip buildings whose footprint overlaps any road buffer
-    if (buildingOverlapsRoads(cx, cz, footprintW, footprintD, roadBuffers)) {
+    if (buildingOverlapsRoads(cx, cz, footprintW, footprintD, roadBuffers, junctions)) {
       skippedOnRoad++;
       continue;
     }

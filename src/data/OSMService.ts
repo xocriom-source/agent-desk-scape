@@ -147,6 +147,11 @@ interface RoadSegBuffer {
   halfWidth: number;
 }
 
+interface JunctionZone {
+  x: number; z: number;
+  radius: number;
+}
+
 function pointNearRoad(px: number, pz: number, seg: RoadSegBuffer): boolean {
   const dx = seg.bx - seg.ax;
   const dz = seg.bz - seg.az;
@@ -159,13 +164,25 @@ function pointNearRoad(px: number, pz: number, seg: RoadSegBuffer): boolean {
   return (px - cx) ** 2 + (pz - cz) ** 2 < seg.halfWidth * seg.halfWidth;
 }
 
-function footprintOverlapsRoad(cx: number, cz: number, w: number, d: number, roads: RoadSegBuffer[]): boolean {
+function footprintOverlapsRoad(cx: number, cz: number, w: number, d: number, roads: RoadSegBuffer[], junctions: JunctionZone[]): boolean {
+  // Check junctions first
+  for (const j of junctions) {
+    const dx = cx - j.x;
+    const dz = cz - j.z;
+    const maxR = j.radius + Math.max(w, d) * 0.5;
+    if (dx * dx + dz * dz < maxR * maxR) return true;
+  }
+  // 13-point sampling
+  const hw = w * 0.48;
+  const hd = d * 0.48;
   const pts = [
     { x: cx, z: cz },
-    { x: cx - w * 0.4, z: cz - d * 0.4 },
-    { x: cx + w * 0.4, z: cz - d * 0.4 },
-    { x: cx - w * 0.4, z: cz + d * 0.4 },
-    { x: cx + w * 0.4, z: cz + d * 0.4 },
+    { x: cx - hw, z: cz - hd }, { x: cx + hw, z: cz - hd },
+    { x: cx - hw, z: cz + hd }, { x: cx + hw, z: cz + hd },
+    { x: cx, z: cz - hd }, { x: cx, z: cz + hd },
+    { x: cx - hw, z: cz }, { x: cx + hw, z: cz },
+    { x: cx - hw * 0.5, z: cz - hd * 0.5 }, { x: cx + hw * 0.5, z: cz - hd * 0.5 },
+    { x: cx - hw * 0.5, z: cz + hd * 0.5 }, { x: cx + hw * 0.5, z: cz + hd * 0.5 },
   ];
   for (const pt of pts) {
     for (const seg of roads) {
@@ -176,8 +193,17 @@ function footprintOverlapsRoad(cx: number, cz: number, w: number, d: number, roa
 }
 
 function aabbOverlap(ax: number, az: number, aw: number, ad: number, bx: number, bz: number, bw: number, bd: number): boolean {
-  return ax - aw / 2 - 0.3 < bx + bw / 2 && ax + aw / 2 + 0.3 > bx - bw / 2 &&
-    az - ad / 2 - 0.3 < bz + bd / 2 && az + ad / 2 + 0.3 > bz - bd / 2;
+  return ax - aw / 2 - 0.5 < bx + bw / 2 && ax + aw / 2 + 0.5 > bx - bw / 2 &&
+    az - ad / 2 - 0.5 < bz + bd / 2 && az + ad / 2 + 0.5 > bz - bd / 2;
+}
+
+function polygonArea(vertices: Array<{ x: number; z: number }>): number {
+  let area = 0;
+  for (let i = 0; i < vertices.length; i++) {
+    const j = (i + 1) % vertices.length;
+    area += vertices[i].x * vertices[j].z - vertices[j].x * vertices[i].z;
+  }
+  return Math.abs(area) / 2;
 }
 
 // ── Main conversion (two-pass: roads first, then filtered buildings) ──
@@ -237,14 +263,34 @@ export function convertOSMElements(elements: OSMElement[], center: GeoCenter): O
       const widthM = roadWidth(type);
       roads.push({ id: `road-${el.id}`, segments, widthMeters: widthM, type, name: tags.name });
 
-      // Build road buffer (half-width + 1.5 unit margin)
-      const bufferHW = metersToUnits(widthM) / 2 + 1.5;
+      // Build road buffer (half-width + 2.0 unit margin)
+      const bufferHW = metersToUnits(widthM) / 2 + 2.0;
       for (let i = 0; i < segments.length - 1; i++) {
         roadBuffers.push({
           ax: segments[i].x, az: segments[i].z,
           bx: segments[i + 1].x, bz: segments[i + 1].z,
           halfWidth: bufferHW,
         });
+      }
+    }
+  }
+
+  // Build junction zones
+  const junctions: JunctionZone[] = [];
+  const nodeMap = new Map<string, number>();
+  for (const r of roads) {
+    for (const pt of r.segments) {
+      const key = `${Math.round(pt.x * 2)}_${Math.round(pt.z * 2)}`;
+      nodeMap.set(key, (nodeMap.get(key) || 0) + 1);
+    }
+  }
+  for (const r of roads) {
+    for (const pt of r.segments) {
+      const key = `${Math.round(pt.x * 2)}_${Math.round(pt.z * 2)}`;
+      if ((nodeMap.get(key) || 0) >= 2) {
+        if (!junctions.find(j => Math.abs(j.x - pt.x) < 2 && Math.abs(j.z - pt.z) < 2)) {
+          junctions.push({ x: pt.x, z: pt.z, radius: metersToUnits(roadWidth(r.type)) / 2 + 3.0 });
+        }
       }
     }
   }
@@ -271,9 +317,12 @@ export function convertOSMElements(elements: OSMElement[], center: GeoCenter): O
     const d = mxz - mnz;
     if (w < 0.8 && d < 0.8) { skippedBuildings++; continue; }
     if (!isFinite(cx) || !isFinite(cz)) { skippedBuildings++; continue; }
+    // Validate polygon area
+    const area = polygonArea(verts);
+    if (area < 0.5) { skippedBuildings++; continue; }
 
     // Road collision check
-    if (footprintOverlapsRoad(cx, cz, w, d, roadBuffers)) { skippedOnRoad++; continue; }
+    if (footprintOverlapsRoad(cx, cz, w, d, roadBuffers, junctions)) { skippedOnRoad++; continue; }
 
     // Building overlap check
     let hasOverlap = false;
