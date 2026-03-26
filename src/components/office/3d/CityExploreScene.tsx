@@ -251,13 +251,13 @@ function PlayerVisual({ name, scale = 1 }: { name: string; scale?: number }) {
   return (
     <group ref={ref} position={playerPos} scale={[s, s, s]}>
       {/* Feet */}
-      <mesh position={[-0.15, 0.06, 0.05]}><boxGeometry args={[0.15, 0.12, 0.25]} /><meshStandardMaterial color="#333" /></mesh>
-      <mesh position={[0.15, 0.06, 0.05]}><boxGeometry args={[0.15, 0.12, 0.25]} /><meshStandardMaterial color="#333" /></mesh>
+      <mesh position={[-0.15, 0.06, 0.05]}><boxGeometry args={[0.15, 0.12, 0.25]} /><meshStandardMaterial color="#2A2A2A" /></mesh>
+      <mesh position={[0.15, 0.06, 0.05]}><boxGeometry args={[0.15, 0.12, 0.25]} /><meshStandardMaterial color="#2A2A2A" /></mesh>
       {/* Legs */}
-      <mesh position={[-0.15, 0.3, 0]}><boxGeometry args={[0.18, 0.35, 0.2]} /><meshStandardMaterial color="#4A90D9" /></mesh>
-      <mesh position={[0.15, 0.3, 0]}><boxGeometry args={[0.18, 0.35, 0.2]} /><meshStandardMaterial color="#4A90D9" /></mesh>
+      <mesh position={[-0.15, 0.3, 0]}><boxGeometry args={[0.18, 0.35, 0.2]} /><meshStandardMaterial color="#3B6DAA" /></mesh>
+      <mesh position={[0.15, 0.3, 0]}><boxGeometry args={[0.18, 0.35, 0.2]} /><meshStandardMaterial color="#3B6DAA" /></mesh>
       {/* Body / Torso */}
-      <mesh position={[0, 0.7, 0]} castShadow><boxGeometry args={[0.6, 0.55, 0.35]} /><meshStandardMaterial color="#2E8B57" /></mesh>
+      <mesh position={[0, 0.7, 0]} castShadow><boxGeometry args={[0.6, 0.55, 0.35]} /><meshStandardMaterial color="#10B981" /></mesh>
       {/* Arms */}
       <mesh position={[-0.42, 0.65, 0]}><boxGeometry args={[0.15, 0.5, 0.18]} /><meshStandardMaterial color="#F5DEB3" /></mesh>
       <mesh position={[0.42, 0.65, 0]}><boxGeometry args={[0.15, 0.5, 0.18]} /><meshStandardMaterial color="#F5DEB3" /></mesh>
@@ -266,15 +266,22 @@ function PlayerVisual({ name, scale = 1 }: { name: string; scale?: number }) {
       {/* Eyes */}
       <mesh position={[-0.1, 1.18, 0.21]}><boxGeometry args={[0.1, 0.08, 0.02]} /><meshStandardMaterial color="#FFF" /></mesh>
       <mesh position={[0.1, 1.18, 0.21]}><boxGeometry args={[0.1, 0.08, 0.02]} /><meshStandardMaterial color="#FFF" /></mesh>
+      <mesh position={[-0.1, 1.19, 0.22]}><boxGeometry args={[0.05, 0.04, 0.01]} /><meshStandardMaterial color="#222" /></mesh>
+      <mesh position={[0.1, 1.19, 0.22]}><boxGeometry args={[0.05, 0.04, 0.01]} /><meshStandardMaterial color="#222" /></mesh>
       {/* Hair */}
       <mesh position={[0, 1.4, -0.02]}><boxGeometry args={[0.48, 0.12, 0.44]} /><meshStandardMaterial color="#4A3020" /></mesh>
+      {/* Ground glow ring */}
+      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.3, 0.45, 16]} />
+        <meshBasicMaterial color="#10B981" transparent opacity={0.25} />
+      </mesh>
       {/* Shadow */}
-      <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.35, 8]} /><meshBasicMaterial color="#000" transparent opacity={0.18} /></mesh>
+      <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.35, 8]} /><meshBasicMaterial color="#000" transparent opacity={0.2} /></mesh>
       {/* Name label */}
       <Html position={[0, 1.8, 0]} center>
-        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full whitespace-nowrap pointer-events-none select-none bg-emerald-700 shadow-lg">
-          <div className="w-2 h-2 rounded-full bg-emerald-400" />
-          <span className="text-[11px] text-white font-bold">{name}</span>
+        <div className="flex items-center gap-1 px-2.5 py-1 rounded-full whitespace-nowrap pointer-events-none select-none shadow-lg" style={{ background: "rgba(16, 185, 129, 0.9)" }}>
+          <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+          <span className="text-[11px] text-white font-bold tracking-wide">{name}</span>
         </div>
       </Html>
     </group>
@@ -715,32 +722,43 @@ export function CityExploreScene({
         }}
       >
         <color attach="background" args={[dn.bgColor]} />
-        <fog attach="fog" args={[dn.fogColor, isOSMMode ? 60 : lodConfig.fogNear * 2, isOSMMode ? 600 : lodConfig.fogFar * 2]} />
+        <fog attach="fog" args={[
+          dn.isNight ? "#0A1020" : dn.isSunset ? "#C8906A" : "#B8C8D8",
+          isOSMMode ? 40 : lodConfig.fogNear * 2,
+          isOSMMode ? 450 : lodConfig.fogFar * 2
+        ]} />
 
-        {/* Lighting */}
-        <ambientLight intensity={dn.ambientIntensity * 0.8} color={dn.isNight ? "#4466AA" : dn.ambientColor} />
+        {/* Lighting — richer, more directional */}
+        <ambientLight intensity={dn.ambientIntensity * 0.6} color={dn.isNight ? "#2244AA" : dn.ambientColor} />
         <directionalLight
           position={dn.sunPosition}
-          intensity={dn.sunIntensity * 0.9}
+          intensity={dn.sunIntensity * 1.1}
           castShadow
-          shadow-mapSize-width={256}
-          shadow-mapSize-height={256}
-          shadow-camera-far={30}
-          shadow-camera-left={-15}
-          shadow-camera-right={15}
-          shadow-camera-top={15}
-          shadow-camera-bottom={-15}
-          shadow-bias={-0.001}
+          shadow-mapSize-width={512}
+          shadow-mapSize-height={512}
+          shadow-camera-far={40}
+          shadow-camera-left={-20}
+          shadow-camera-right={20}
+          shadow-camera-top={20}
+          shadow-camera-bottom={-20}
+          shadow-bias={-0.0008}
           color={dn.sunColor}
         />
-        <hemisphereLight args={[dn.isNight ? "#334466" : dn.skyColor, "#FFE0B0", dn.hemiIntensity * 0.9]} />
+        {/* Fill light from opposite side for depth */}
+        <directionalLight
+          position={[-dn.sunPosition[0] * 0.5, dn.sunPosition[1] * 0.3, -dn.sunPosition[2] * 0.5]}
+          intensity={dn.sunIntensity * 0.15}
+          color={dn.isNight ? "#334488" : "#B0C0D0"}
+        />
+        <hemisphereLight args={[dn.isNight ? "#1A2240" : dn.skyColor, dn.isNight ? "#0A0A15" : "#C8B090", dn.hemiIntensity * 1.1]} />
 
         {dn.isNight && (
           <group position={[-20, 30, -15]}>
             <mesh><sphereGeometry args={[2, 16, 16]} /><meshBasicMaterial color="#E8E8F0" /></mesh>
+            <pointLight position={[0, 0, 0]} intensity={0.3} color="#8899CC" distance={200} />
           </group>
         )}
-        {lodConfig.enableStars && dn.showStars && <Stars radius={80} depth={30} count={500} factor={3} saturation={0.2} fade speed={0.3} />}
+        {lodConfig.enableStars && dn.showStars && <Stars radius={80} depth={30} count={800} factor={3} saturation={0.3} fade speed={0.3} />}
 
         {/* ── CORE SYSTEMS ── */}
         <CameraRig isOSMMode={!!isOSMMode} />
