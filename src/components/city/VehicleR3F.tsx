@@ -43,6 +43,9 @@ export const VehicleR3F = memo(function VehicleR3F({ aabbs, playerName }: Vehicl
     steering: 0,
   });
 
+  // Vehicle scale — OSM world is in meters, vehicle needs proper size
+  const vScale = 2.5;
+
   // Sync initial position and heading when entering vehicle
   useEffect(() => {
     if (vehicle.isInVehicle) {
@@ -106,7 +109,7 @@ export const VehicleR3F = memo(function VehicleR3F({ aabbs, playerName }: Vehicl
   const speedKmh = Math.abs(physicsState.current.velocity * 3.6).toFixed(0);
 
   return (
-    <group ref={ref} position={[playerPos[0], 0, playerPos[2]]}>
+    <group ref={ref} position={[playerPos[0], 0, playerPos[2]]} scale={[vScale, vScale, vScale]}>
       {/* Car body */}
       <mesh position={[0, 0.18, 0]} castShadow>
         <boxGeometry args={[0.45, 0.22, 0.9]} />
