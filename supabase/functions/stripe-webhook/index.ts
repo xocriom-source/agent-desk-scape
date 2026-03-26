@@ -1,9 +1,14 @@
-import Stripe from "https://esm.sh/stripe@17.7.0?target=deno";
+import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+const logStep = (step: string, details?: any) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[STRIPE-WEBHOOK] ${step}${detailsStr}`);
 };
 
 Deno.serve(async (req) => {
@@ -13,8 +18,12 @@ Deno.serve(async (req) => {
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY not configured");
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2024-12-18.acacia" });
-    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      { auth: { persistSession: false } }
+    );
 
     const body = await req.text();
     const sig = req.headers.get("stripe-signature");
@@ -22,12 +31,20 @@ Deno.serve(async (req) => {
 
     let event: Stripe.Event;
     if (webhookSecret && sig) {
-      event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+      try {
+        event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+      } catch (err) {
+        logStep("Signature verification failed", { error: err instanceof Error ? err.message : String(err) });
+        return new Response(JSON.stringify({ error: "Invalid signature" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     } else {
       event = JSON.parse(body);
     }
 
-    console.log("Stripe event:", event.type);
+    logStep("Event received", { type: event.type });
 
     switch (event.type) {
       case "checkout.session.completed": {
@@ -36,6 +53,8 @@ Deno.serve(async (req) => {
         const assetId = session.metadata?.asset_id;
         const feePercent = parseFloat(session.metadata?.fee_percent || "5");
 
+        logStep("Checkout completed", { userId, mode: session.mode });
+
         // Update payment status
         await supabase.from("payments")
           .update({ status: "completed", stripe_payment_intent: session.payment_intent as string })
@@ -43,15 +62,7 @@ Deno.serve(async (req) => {
 
         if (session.mode === "subscription") {
           const plan = session.metadata?.plan || "business";
-          await supabase.from("subscriptions").upsert({
-            user_id: userId,
-            plan,
-            status: "active",
-            stripe_subscription_id: session.subscription as string,
-            stripe_customer_id: session.customer as string,
-            current_period_start: new Date().toISOString(),
-          }, { onConflict: "user_id" });
-
+          
           // Sync user_plans table
           if (userId) {
             await supabase.from("user_plans").upsert({
@@ -61,20 +72,19 @@ Deno.serve(async (req) => {
               activated_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             }, { onConflict: "user_id" });
+            logStep("Plan updated", { userId, plan });
           }
-        } else if (assetId) {
+        } else if (assetId && assetId !== "") {
           // Create escrow for asset purchase
           const amount = (session.amount_total || 0) / 100;
           
-          // Find seller
           const { data: business } = await supabase
             .from("digital_businesses")
             .select("owner_id")
             .eq("id", assetId)
             .single();
 
-          if (business) {
-            // Create escrow
+          if (business && userId) {
             await supabase.from("escrows").insert({
               deal_id: assetId,
               buyer_id: userId,
@@ -83,60 +93,71 @@ Deno.serve(async (req) => {
               status: "holding",
             });
 
-            // Record platform fee
-            const feeAmount = amount * (feePercent / 100);
-            await supabase.from("platform_fees").insert({
-              deal_id: assetId,
-              category: "business",
-              percentage: feePercent,
-              amount: feeAmount,
-            });
+            logStep("Escrow created", { assetId, amount });
           }
         }
 
-        await supabase.from("financial_logs").insert({
-          user_id: userId,
-          event_type: "payment_completed",
-          amount: (session.amount_total || 0) / 100,
-          description: `Pagamento concluído: ${session.id}`,
-          metadata: { session_id: session.id, mode: session.mode },
-        });
+        if (userId) {
+          await supabase.from("financial_logs").insert({
+            user_id: userId,
+            event_type: "payment_completed",
+            amount: (session.amount_total || 0) / 100,
+            description: `Pagamento concluído: ${session.id}`,
+            metadata: { session_id: session.id, mode: session.mode },
+          });
+        }
         break;
       }
 
       case "customer.subscription.updated": {
         const sub = event.data.object as Stripe.Subscription;
-        const customerId = sub.customer as string;
+        const productId = sub.items.data[0]?.price?.product as string;
         
-        await supabase.from("subscriptions")
-          .update({
-            status: sub.status === "active" ? "active" : "inactive",
-            current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
-          })
-          .eq("stripe_customer_id", customerId);
+        // Map product to plan
+        const planMap: Record<string, string> = {
+          "prod_UAAoLCk0ESELPg": "business",
+          "prod_UAAqS62X5nnqac": "mogul",
+        };
+        const detectedPlan = planMap[productId] || "explorer";
+        
+        // Find user by customer ID
+        const customerId = sub.customer as string;
+        const customer = await stripe.customers.retrieve(customerId);
+        const email = (customer as any).email;
+        
+        if (email) {
+          const { data: userData } = await supabase.auth.admin.listUsers();
+          const user = userData?.users?.find(u => u.email === email);
+          if (user) {
+            await supabase.from("user_plans").upsert({
+              user_id: user.id,
+              plan_id: sub.status === "active" ? detectedPlan : "explorer",
+              status: sub.status === "active" ? "active" : "inactive",
+              updated_at: new Date().toISOString(),
+            }, { onConflict: "user_id" });
+            logStep("Subscription updated", { userId: user.id, plan: detectedPlan, status: sub.status });
+          }
+        }
         break;
       }
 
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
-        // Get user from subscription
-        const { data: subRecord } = await supabase.from("subscriptions")
-          .select("user_id")
-          .eq("stripe_subscription_id", sub.id)
-          .single();
+        const customerId = sub.customer as string;
+        const customer = await stripe.customers.retrieve(customerId);
+        const email = (customer as any).email;
         
-        await supabase.from("subscriptions")
-          .update({ status: "cancelled", plan: "explorer" })
-          .eq("stripe_subscription_id", sub.id);
-
-        // Revert to explorer plan
-        if (subRecord?.user_id) {
-          await supabase.from("user_plans").update({
-            plan_id: "explorer",
-            status: "active",
-            updated_at: new Date().toISOString(),
-          }).eq("user_id", subRecord.user_id);
+        if (email) {
+          const { data: userData } = await supabase.auth.admin.listUsers();
+          const user = userData?.users?.find(u => u.email === email);
+          if (user) {
+            await supabase.from("user_plans").update({
+              plan_id: "explorer",
+              status: "active",
+              updated_at: new Date().toISOString(),
+            }).eq("user_id", user.id);
+            logStep("Subscription cancelled, reverted to explorer", { userId: user.id });
+          }
         }
         break;
       }
@@ -146,7 +167,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err: any) {
-    console.error("Webhook error:", err);
+    logStep("ERROR", { message: err.message });
     return new Response(JSON.stringify({ error: err.message }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

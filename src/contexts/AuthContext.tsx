@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useRef, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
@@ -35,6 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const initialized = useRef(false);
 
   const checkAdminRole = useCallback(async (userId: string) => {
     try {
@@ -55,11 +56,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (error) {
-        // Profile might not exist yet (race condition with trigger)
         if (error.code === "PGRST116") {
-          console.log("[Auth] Profile not ready yet, will retry...");
-          // Retry once after a short delay
-          await new Promise(r => setTimeout(r, 1500));
+          console.log("[Auth:fetchProfile] Profile not ready yet, retrying...");
+          await new Promise(r => setTimeout(r, 2000));
           const { data: retryData } = await supabase
             .from("profiles")
             .select("*")
@@ -83,68 +82,95 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user) await fetchProfile(user.id);
   }, [user, fetchProfile]);
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+  const handleUserSession = useCallback((session: Session | null) => {
+    setSession(session);
+    setUser(session?.user ?? null);
 
-        if (session?.user) {
-          // Defer to avoid Supabase auth deadlock
-          setTimeout(() => {
-            fetchProfile(session.user.id);
-            checkAdminRole(session.user.id);
-          }, 0);
-        } else {
-          setProfile(null);
-          setIsAdmin(false);
-        }
+    if (session?.user) {
+      // Defer to avoid Supabase auth deadlock
+      setTimeout(() => {
+        fetchProfile(session.user.id);
+        checkAdminRole(session.user.id);
+      }, 0);
+    } else {
+      setProfile(null);
+      setIsAdmin(false);
+    }
+  }, [fetchProfile, checkAdminRole]);
+
+  useEffect(() => {
+    // Set up auth state listener FIRST (per Supabase best practices)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log("[Auth:stateChange]", event);
+        handleUserSession(session);
 
         if (event === "INITIAL_SESSION") {
           setLoading(false);
+          initialized.current = true;
         }
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-        checkAdminRole(session.user.id);
+    // Fallback: if INITIAL_SESSION doesn't fire within 3s, force loading=false
+    const timeout = setTimeout(() => {
+      if (!initialized.current) {
+        console.warn("[Auth] INITIAL_SESSION timeout, forcing loading=false");
+        setLoading(false);
+        initialized.current = true;
       }
-      setLoading(false);
-    });
+    }, 3000);
 
-    return () => subscription.unsubscribe();
-  }, [fetchProfile, checkAdminRole]);
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
+  }, [handleUserSession]);
 
   const signUp = useCallback(async (email: string, password: string, displayName: string, companyName?: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { display_name: displayName, company_name: companyName || "" } },
-    });
-    return { error: error ? new Error(error.message) : null };
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { display_name: displayName, company_name: companyName || "" } },
+      });
+      return { error: error ? new Error(error.message) : null };
+    } catch (err) {
+      return { error: err instanceof Error ? err : new Error("Erro inesperado ao criar conta") };
+    }
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error ? new Error(error.message) : null };
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      return { error: error ? new Error(error.message) : null };
+    } catch (err) {
+      return { error: err instanceof Error ? err : new Error("Erro inesperado ao fazer login") };
+    }
   }, []);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.warn("[Auth:signOut] Error:", err);
+    }
     setProfile(null);
     setIsAdmin(false);
+    setUser(null);
+    setSession(null);
   }, []);
 
   const updateProfile = useCallback(async (data: Partial<Profile>) => {
     if (!user) return { error: new Error("Not authenticated") };
-    const { error } = await supabase.from("profiles").update(data).eq("id", user.id);
-    if (error) return { error: new Error(error.message) };
-    setProfile(prev => prev ? { ...prev, ...data } : null);
-    return { error: null };
+    try {
+      const { error } = await supabase.from("profiles").update(data).eq("id", user.id);
+      if (error) return { error: new Error(error.message) };
+      setProfile(prev => prev ? { ...prev, ...data } : null);
+      return { error: null };
+    } catch (err) {
+      return { error: err instanceof Error ? err : new Error("Erro ao atualizar perfil") };
+    }
   }, [user]);
 
   return (
