@@ -700,35 +700,6 @@ export function CityExploreScene({
 
   return (
     <div className="absolute inset-0 w-full h-full">
-      {/* Quality UI */}
-      <div className="absolute top-2 right-2 z-20 flex flex-col items-end gap-1">
-        <button
-          onClick={() => setShowQualityMenu(!showQualityMenu)}
-          className="px-2 py-1 text-[10px] rounded bg-background/80 border border-border text-foreground backdrop-blur-sm hover:bg-accent transition-colors"
-        >
-          ⚙ {quality.toUpperCase()}
-        </button>
-        {showQualityMenu && (
-          <div className="flex flex-col gap-0.5 p-1.5 rounded-lg bg-background/90 border border-border backdrop-blur-sm">
-            {(["low", "medium", "high", "ultra"] as QualityLevel[]).map(q => (
-              <button
-                key={q}
-                onClick={() => { changeQuality(q); setShowQualityMenu(false); }}
-                className={`px-3 py-1 text-[10px] rounded transition-colors ${quality === q ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-accent"}`}
-              >
-                {q.toUpperCase()}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* LoD Stats */}
-      <div className="absolute bottom-2 left-2 z-20 px-2 py-1 text-[9px] rounded bg-background/60 text-muted-foreground backdrop-blur-sm pointer-events-none">
-        LOD: {lodFrame.lodBuildings.filter(b => b.lod === 0).length} HD |{" "}
-        {lodFrame.lodBuildings.filter(b => b.lod === 1).length} Med |{" "}
-        {lodFrame.lodBuildings.filter(b => b.lod >= 2).length} Low
-      </div>
 
       <Canvas
         shadows
