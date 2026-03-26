@@ -70,13 +70,13 @@ export function CityActivityTicker() {
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: -40, scale: 0.8 }}
             transition={{ type: "spring", damping: 20, stiffness: 300 }}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/70 border border-gray-700/50 whitespace-nowrap"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg glass-panel border border-border whitespace-nowrap"
           >
             <span className="text-xs">{act.emoji}</span>
-            <span className="text-[9px] text-gray-300 font-medium" style={{ fontFamily: "monospace" }}>
+            <span className="text-[11px] text-foreground/80 font-medium font-mono">
               {act.text}
             </span>
-            <span className="text-[8px] text-gray-600" style={{ fontFamily: "monospace" }}>
+            <span className="text-[10px] text-muted-foreground font-mono">
               {act.time}
             </span>
           </motion.div>
