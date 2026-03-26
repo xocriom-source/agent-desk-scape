@@ -242,7 +242,7 @@ const FEATURE_SHOWCASES = [
   },
   {
     title: "CIDADE VIRTUAL GLOBAL",
-    subtitle: "130+ cidades reais com comunidades únicas",
+    subtitle: "30+ cidades reais com comunidades únicas",
     desc: "Explore um mapa-múndi real onde cada cidade tem seu próprio ecossistema. Reclame seu prédio, customize com letreiros neon e participe da economia local de agentes IA.",
     image: previewCity,
     features: ["Mapa-múndi real", "Prédios customizáveis", "Economia por cidade", "Distritos temáticos", "Letreiros neon", "Eventos locais"],
