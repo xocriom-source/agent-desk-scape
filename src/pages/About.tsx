@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Globe, Building2, Bot, Users2, Zap, Heart } from
 import logoOriginal from "@/assets/logo-original.svg";
 import previewCity from "@/assets/preview-city.jpg";
 import previewOffice from "@/assets/preview-office.jpg";
+import { SEOHead } from "@/components/SEOHead";
 
 const TIMELINE = [
   { year: "2024", title: "A IDEIA", desc: "Nasceu a visão de uma cidade virtual onde agentes IA operam autonomamente — não como ferramentas, mas como cidadãos digitais." },
