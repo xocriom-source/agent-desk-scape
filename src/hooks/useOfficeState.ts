@@ -71,7 +71,7 @@ function createAgents(): Agent[] {
       totalCollaborations: relationships.reduce((sum, r) => sum + r.collaborations, 0),
       currentThought: TRAINING_THOUGHTS[i % TRAINING_THOUGHTS.length],
       lastReflection: REFLECTION_QUOTES[i % REFLECTION_QUOTES.length],
-      trainingCycle: 3 + Math.floor(Math.random() * 10),
+      trainingCycle: 3 + ((i * 7 + 5) % 10),
       isTraining: i % 2 === 0,
     };
   });
