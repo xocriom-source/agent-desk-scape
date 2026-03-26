@@ -793,7 +793,14 @@ export function CityExploreScene({
           spawnRadius={isOSMMode ? 30 : 40}
         />
 
-        {/* ── WORLD: OSM ── */}
+        {/* ── DEBUG HELPERS (temporary — remove after validation) ── */}
+        {isOSMMode && (
+          <group>
+            <gridHelper args={[400, 80, "#444466", "#333344"]} position={[0, 0.01, 0]} />
+            <axesHelper args={[20]} />
+          </group>
+        )}
+
         {isOSMMode && osmBuildings && osmStreets && osmBounds && (
           <OSMWorldRenderer
             buildings={osmBuildings}
