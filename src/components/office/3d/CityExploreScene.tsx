@@ -752,21 +752,23 @@ export function CityExploreScene({
         {!isOSMMode && <CameraOcclusion onOccludedBuildings={setOccludedBuildings} />}
 
         {/* ── VEHICLE ── */}
-        <VehicleR3F aabbs={aabbs} playerName={playerName} />
+        <group scale={isOSMMode ? [4, 4, 4] : [1, 1, 1]}>
+          <VehicleR3F aabbs={aabbs} playerName={playerName} />
+        </group>
 
         {/* ── PLAYER VISUAL ── */}
-        <PlayerVisual name={playerName} />
+        <PlayerVisual name={playerName} scale={isOSMMode ? 4 : 1} />
 
-        {/* ── NPCs (new system, proximity-based) ── */}
-        {!isOSMMode && lodConfig.enableNPCs && (
+        {/* ── NPCs (proximity-based, both modes) ── */}
+        <group scale={isOSMMode ? [4, 4, 4] : [1, 1, 1]}>
           <CityNPCSystem
-            playerX={playerPos[0]}
-            playerZ={playerPos[2]}
-            aabbs={aabbs}
-            maxNPCs={12}
-            spawnRadius={40}
+            playerX={isOSMMode ? playerPos[0] / 4 : playerPos[0]}
+            playerZ={isOSMMode ? playerPos[2] / 4 : playerPos[2]}
+            aabbs={isOSMMode ? [] : aabbs}
+            maxNPCs={isOSMMode ? 16 : 12}
+            spawnRadius={isOSMMode ? 60 : 40}
           />
-        )}
+        </group>
 
         {/* ── WORLD: OSM ── */}
         {isOSMMode && osmBuildings && osmStreets && osmBounds && (
