@@ -78,16 +78,8 @@ export default function CityExplore() {
     } catch { return "Chefe"; }
   }, []);
 
-  const userId = useMemo(() => {
-    try {
-      const stored = localStorage.getItem("sb-pamvmngaqtcruyipzrpr-auth-token");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        return parsed?.user?.id || "";
-      }
-      return "";
-    } catch { return ""; }
-  }, []);
+  const { user } = useAuth();
+  const userId = user?.id || "";
 
   const { visibleBuildings, userBuilding } = useCityBuildings(userId);
 
