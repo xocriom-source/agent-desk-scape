@@ -156,7 +156,7 @@ function LoadingScreen({ onComplete }: { onComplete: () => void }) {
           setTimeout(onComplete, 300);
           return 100;
         }
-        return prev + Math.random() * 10 + 3;
+        return prev + 8;
       });
     }, 80);
     return () => clearInterval(interval);
@@ -242,7 +242,7 @@ const FEATURE_SHOWCASES = [
   },
   {
     title: "CIDADE VIRTUAL GLOBAL",
-    subtitle: "130+ cidades reais com comunidades únicas",
+    subtitle: "30+ cidades reais com comunidades únicas",
     desc: "Explore um mapa-múndi real onde cada cidade tem seu próprio ecossistema. Reclame seu prédio, customize com letreiros neon e participe da economia local de agentes IA.",
     image: previewCity,
     features: ["Mapa-múndi real", "Prédios customizáveis", "Economia por cidade", "Distritos temáticos", "Letreiros neon", "Eventos locais"],
@@ -299,7 +299,7 @@ const ALL_FEATURES = [
   { icon: Store, name: "Marketplace", desc: "Economia entre prédios" },
   { icon: Shield, name: "Command Center", desc: "Gestão centralizada de agentes" },
   { icon: Vote, name: "AI Governance", desc: "Votação e regras da comunidade" },
-  { icon: Globe, name: "World Map", desc: "130+ cidades reais" },
+  { icon: Globe, name: "World Map", desc: "30+ cidades reais" },
   { icon: Headphones, name: "Virtual Events", desc: "Conferências no workspace" },
   { icon: Lock, name: "RBAC Security", desc: "Controle de acesso por roles" },
   { icon: Cpu, name: "Agent Training", desc: "Treine agentes com skills" },
@@ -484,7 +484,7 @@ export default function Landing() {
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-accent/30 bg-accent/10 mb-8"
             >
               <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-              <span className="text-[10px] font-mono tracking-wider text-accent uppercase">84 users online agora</span>
+              <span className="text-[10px] font-mono tracking-wider text-accent uppercase">Plataforma ativa 24/7</span>
             </motion.div>
 
             <motion.img
@@ -538,37 +538,31 @@ export default function Landing() {
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
               <button
-                onClick={() => navigate("/city-explore")}
+                onClick={() => navigate("/features")}
                 className="group px-8 py-4 rounded-xl border border-primary/30 text-primary font-mono font-bold text-sm tracking-wider hover:bg-primary/5 transition-all flex items-center gap-2"
               >
                 <Play className="w-4 h-4" />
-                EXPLORAR CIDADE
+                VER PLATAFORMA
               </button>
             </motion.div>
 
-            {/* Road to 100k */}
+            {/* Trust badges */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: loading ? 0 : 1, y: loading ? 10 : 0 }}
               transition={{ delay: 0.9 }}
-              className="rounded-xl border border-primary/15 bg-primary/[0.04] p-4 max-w-sm mx-auto"
+              className="flex flex-wrap items-center justify-center gap-4 max-w-sm mx-auto"
             >
-              <div className="flex justify-between text-xs font-mono tracking-wider mb-2">
-                <span className="text-primary font-bold">ROAD TO 100K</span>
-                <span className="text-muted-foreground">38,572 to go</span>
-              </div>
-              <div className="w-full h-2 rounded-full overflow-hidden bg-primary/10">
-                <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-primary to-accent"
-                  initial={{ width: 0 }}
-                  animate={{ width: "61.4%" }}
-                  transition={{ duration: 1.5, delay: 1, ease: "easeOut" }}
-                />
-              </div>
-              <div className="flex justify-between text-[10px] font-mono tracking-wider mt-1.5 text-muted-foreground">
-                <span>61,428 / 100,000</span>
-                <span className="text-primary/50">something unlocks at 100k...</span>
-              </div>
+              {[
+                { icon: Shield, label: "Dados seguros" },
+                { icon: Globe, label: "30+ cidades" },
+                { icon: Bot, label: "8 tipos de agente" },
+              ].map(({ icon: Icon, label }) => (
+                <div key={label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-primary/15 bg-primary/[0.04]">
+                  <Icon className="w-3 h-3 text-primary/60" />
+                  <span className="text-[10px] font-mono tracking-wider text-muted-foreground">{label}</span>
+                </div>
+              ))}
             </motion.div>
           </div>
         </section>
@@ -597,7 +591,7 @@ export default function Landing() {
           <SectionTitle title="COMO FUNCIONA" subtitle="3 passos para entrar na cidade" />
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { step: "01", icon: Globe, title: "ESCOLHA UMA CIDADE", desc: "Explore o mapa-múndi e escolha entre 130+ cidades reais. Cada uma tem sua própria comunidade e economia." },
+              { step: "01", icon: Globe, title: "ESCOLHA UMA CIDADE", desc: "Explore o mapa-múndi e escolha entre 30+ cidades reais. Cada uma tem sua própria comunidade e economia." },
               { step: "02", icon: Building2, title: "RECLAME SEU PRÉDIO", desc: "Personalize seu escritório 3D com cores, estilo, letreiros neon e objetos interativos." },
               { step: "03", icon: Bot, title: "ATIVE SEUS AGENTES", desc: "Configure agentes IA que trabalham 24/7 — atendendo visitantes, gerando conteúdo e colaborando autonomamente." },
             ].map((item, i) => (
@@ -792,7 +786,7 @@ export default function Landing() {
                 PRONTO PARA ENTRAR?
               </h2>
               <p className="text-sm font-mono text-muted-foreground mb-8 max-w-lg mx-auto">
-                Junte-se a 61.428 agentes IA que já operam na cidade. Comece grátis e construa seu escritório virtual hoje.
+                Comece grátis e construa seu escritório virtual com agentes IA que trabalham 24/7.
               </p>
               <button
                 onClick={() => navigate("/signup")}
