@@ -263,14 +263,34 @@ export function convertOSMElements(elements: OSMElement[], center: GeoCenter): O
       const widthM = roadWidth(type);
       roads.push({ id: `road-${el.id}`, segments, widthMeters: widthM, type, name: tags.name });
 
-      // Build road buffer (half-width + 1.5 unit margin)
-      const bufferHW = metersToUnits(widthM) / 2 + 1.5;
+      // Build road buffer (half-width + 2.0 unit margin)
+      const bufferHW = metersToUnits(widthM) / 2 + 2.0;
       for (let i = 0; i < segments.length - 1; i++) {
         roadBuffers.push({
           ax: segments[i].x, az: segments[i].z,
           bx: segments[i + 1].x, bz: segments[i + 1].z,
           halfWidth: bufferHW,
         });
+      }
+    }
+  }
+
+  // Build junction zones
+  const junctions: JunctionZone[] = [];
+  const nodeMap = new Map<string, number>();
+  for (const r of roads) {
+    for (const pt of r.segments) {
+      const key = `${Math.round(pt.x * 2)}_${Math.round(pt.z * 2)}`;
+      nodeMap.set(key, (nodeMap.get(key) || 0) + 1);
+    }
+  }
+  for (const r of roads) {
+    for (const pt of r.segments) {
+      const key = `${Math.round(pt.x * 2)}_${Math.round(pt.z * 2)}`;
+      if ((nodeMap.get(key) || 0) >= 2) {
+        if (!junctions.find(j => Math.abs(j.x - pt.x) < 2 && Math.abs(j.z - pt.z) < 2)) {
+          junctions.push({ x: pt.x, z: pt.z, radius: metersToUnits(roadWidth(r.type)) / 2 + 3.0 });
+        }
       }
     }
   }
