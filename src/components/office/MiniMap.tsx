@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import { motion } from "framer-motion";
 import type { Agent, Player } from "@/types/agent";
 import type { RoomDef } from "@/data/officeMap";
