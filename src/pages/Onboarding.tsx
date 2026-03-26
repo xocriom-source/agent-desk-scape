@@ -230,6 +230,14 @@ export default function Onboarding() {
 
       // Building saved to DB — no localStorage needed
 
+      // Mark onboarding as complete
+      if (!isNewSpace) {
+        await supabase
+          .from("user_onboarding")
+          .update({ completed: true, current_step: 3 })
+          .eq("user_id", user.id);
+      }
+
       awardXP(2);
       toast.success(isNewSpace ? "Espaço criado com sucesso" : "Espaço configurado com sucesso", {
         description: `${spaceName} • ${city.name} • +${STEP_XP[2]} XP`,
