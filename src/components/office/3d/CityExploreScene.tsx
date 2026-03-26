@@ -656,10 +656,10 @@ export function CityExploreScene({
 
   const { visibleBuildings, userBuilding, updateCameraCenter } = useCityBuildings(userId);
 
-  // Safe spawn
+  // Safe spawn — procedural mode
   const hasSpawned = useRef(false);
   useEffect(() => {
-    if (hasSpawned.current) return;
+    if (hasSpawned.current || isOSMMode) return;
     const colliders = buildStaticColliders();
     const staticAABBs = buildNewAABBs(colliders);
     let sx = 0, sz = 5;
@@ -671,8 +671,19 @@ export function CityExploreScene({
     const terrainY = getTerrainHeight(safeX, safeZ);
     useGameStore.getState().setPlayerPosition([safeX, terrainY, safeZ]);
     hasSpawned.current = true;
-    console.log("[CityScene:spawn]", { safeX, safeZ, terrainY });
-  }, [userBuilding]);
+    console.log("[CityScene:spawn:procedural]", { safeX, safeZ, terrainY });
+  }, [userBuilding, isOSMMode]);
+
+  // Safe spawn — OSM mode: teleport player to center of loaded city
+  const osmSpawned = useRef(false);
+  useEffect(() => {
+    if (!isOSMMode || !osmBounds || osmSpawned.current) return;
+    const cx = (osmBounds.minX + osmBounds.maxX) / 2;
+    const cz = (osmBounds.minZ + osmBounds.maxZ) / 2;
+    useGameStore.getState().setPlayerPosition([cx, 0, cz]);
+    osmSpawned.current = true;
+    console.log("[CityScene:spawn:osm]", { cx, cz, bounds: osmBounds });
+  }, [isOSMMode, osmBounds]);
 
   // Dynamic buildings (mapped to city scale)
   const dynamicBuildings = useMemo(() => {
