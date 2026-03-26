@@ -106,32 +106,35 @@ export function stepVehiclePhysics(
     }
   }
 
-  // ── Acceleration / braking ──
+  // ── Acceleration / braking with weight feel ──
+  const massFactor = 1 / Math.max(config.mass, 0.3);
   if (throttle > 0.01) {
-    // Accelerating forward
     if (velocity < 0) {
       // Braking from reverse
-      velocity += config.brakeForce * dt;
+      velocity += config.brakeForce * massFactor * dt;
       if (velocity > 0) velocity = 0;
     } else {
-      velocity += throttle * config.acceleration * dt;
+      // Progressive acceleration (slower at high speed)
+      const speedRatio = Math.abs(velocity) / config.maxSpeed;
+      const accCurve = 1 - speedRatio * speedRatio * 0.6;
+      velocity += throttle * config.acceleration * massFactor * accCurve * dt;
     }
   } else if (throttle < -0.01) {
-    // Braking or reversing
     if (velocity > 0.5) {
-      // Brake
-      velocity -= config.brakeForce * dt;
+      // Brake with weight
+      velocity -= config.brakeForce * massFactor * dt;
       if (velocity < 0) velocity = 0;
     } else {
-      // Reverse (slower)
-      velocity += throttle * config.acceleration * 0.4 * dt;
+      // Reverse (slower, heavier)
+      velocity += throttle * config.acceleration * 0.3 * massFactor * dt;
     }
   } else {
-    // Friction (coast to stop)
-    if (Math.abs(velocity) < 0.1) {
+    // Friction (coast to stop) — heavier = slower coast
+    const frictionForce = config.friction * (0.5 + 0.5 * massFactor);
+    if (Math.abs(velocity) < 0.15) {
       velocity = 0;
     } else {
-      velocity -= Math.sign(velocity) * config.friction * dt;
+      velocity -= Math.sign(velocity) * frictionForce * dt;
     }
   }
 
