@@ -53,6 +53,7 @@ export default function Spaces() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead title="Espaços" description="Gerencie todos os seus espaços virtuais no The Good City." path="/spaces" />
       {/* Top nav */}
       <nav className="border-b border-border/30 bg-card">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

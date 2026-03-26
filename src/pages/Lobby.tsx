@@ -53,8 +53,41 @@ export default function Lobby() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <LoadingState message="Preparando seu espaço..." />
+      <div className="min-h-screen bg-background">
+        <SEOHead title="Lobby" description="Gerencie seus prédios e agentes IA no The Good City." path="/spaces" />
+        <nav className="border-b border-border/30 bg-card/80 backdrop-blur-sm sticky top-0 z-20">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-14">
+            <div className="flex items-center gap-3">
+              <div className="w-7 h-7 rounded bg-muted animate-pulse" />
+              <div className="w-24 h-4 rounded bg-muted animate-pulse hidden sm:block" />
+            </div>
+            <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
+          </div>
+        </nav>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-8 space-y-2">
+            <div className="w-64 h-8 rounded bg-muted animate-pulse" />
+            <div className="w-48 h-4 rounded bg-muted animate-pulse" />
+          </div>
+          <div className="grid grid-cols-3 gap-3 mb-8">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="rounded-xl border border-border/40 bg-card p-4 space-y-2">
+                <div className="w-8 h-8 rounded-lg bg-muted animate-pulse" />
+                <div className="w-12 h-6 rounded bg-muted animate-pulse" />
+                <div className="w-16 h-3 rounded bg-muted animate-pulse" />
+              </div>
+            ))}
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="rounded-xl border border-border/40 bg-card p-5 space-y-3">
+                <div className="w-full h-24 rounded-lg bg-muted animate-pulse" />
+                <div className="w-3/4 h-5 rounded bg-muted animate-pulse" />
+                <div className="w-1/2 h-3 rounded bg-muted animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

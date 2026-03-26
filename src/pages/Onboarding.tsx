@@ -3,11 +3,12 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Building2, Home, Landmark, Briefcase, ArrowRight,
-  ArrowLeft, Globe, Check, Search, MapPin
+  ArrowLeft, Globe, Check, Search, MapPin, AlertCircle
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { SEOHead } from "@/components/SEOHead";
 import logoOriginal from "@/assets/logo-original.svg";
 import { OnboardingStepIndicator, STEP_XP } from "@/components/onboarding/OnboardingStepIndicator";
 import { XPRewardPopup } from "@/components/onboarding/XPRewardPopup";
