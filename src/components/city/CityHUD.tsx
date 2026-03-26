@@ -1,6 +1,6 @@
 /**
- * CityHUD — Clean, minimal heads-up display.
- * Uses design tokens for visual consistency.
+ * CityHUD — Clean, minimal heads-up display for Flyover mode.
+ * Includes mode toggle to switch back to Canvas view.
  */
 
 import { memo, useState, useCallback } from "react";
@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Car, Plane, MessageCircle, Target, ShoppingBag,
   Bot, Settings, Map, Users,
-  ChevronUp, X, Zap,
+  ChevronUp, X, Zap, LayoutGrid,
 } from "lucide-react";
 import { useGameStore, type PanelName } from "@/stores/gameStore";
 
