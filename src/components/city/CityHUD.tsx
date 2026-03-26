@@ -100,7 +100,7 @@ export const CityHUD = memo(function CityHUD() {
   const navigate = useNavigate();
   const {
     world, player, vehicle, ui,
-    openPanel, setMovementMode,
+    openPanel, setMovementMode, setCityViewMode,
   } = useGameStore();
 
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
