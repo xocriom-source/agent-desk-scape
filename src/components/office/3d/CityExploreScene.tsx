@@ -234,13 +234,16 @@ function PlayerVisual({ name, scale = 1 }: { name: string; scale?: number }) {
     if (!ref.current || isInVehicle) return;
     const terrainY = getTerrainHeight(playerPos[0], playerPos[2]);
     const targetPos = new THREE.Vector3(playerPos[0], terrainY, playerPos[2]);
-    smoothPos.current.lerp(targetPos, 0.25);
+    smoothPos.current.lerp(targetPos, 0.35);
     ref.current.position.copy(smoothPos.current);
-    // Rotation: snap faster to avoid "spinning on its own" feel
-    let diff = playerRot - ref.current.rotation.y;
-    while (diff > Math.PI) diff -= Math.PI * 2;
-    while (diff < -Math.PI) diff += Math.PI * 2;
-    ref.current.rotation.y += diff * 0.3;
+    // Rotation: snap HARD to prevent "spinning on its own" — only rotate when actually moving
+    const isMoving = useGameStore.getState().player.isMoving;
+    if (isMoving) {
+      let diff = playerRot - ref.current.rotation.y;
+      while (diff > Math.PI) diff -= Math.PI * 2;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      ref.current.rotation.y += diff * 0.5;
+    }
   });
 
   if (isInVehicle) return null;
@@ -366,16 +369,16 @@ function CameraRig({ isOSMMode }: { isOSMMode: boolean }) {
     s.targetZ += (playerPos[2] - s.targetZ) * factor;
     s.targetY += ((playerPos[1] + (isOSMMode ? 1 : 0.5)) - s.targetY) * factor;
 
-    // Vehicle: pull azimuth toward vehicle heading more aggressively
+    // Vehicle: pull azimuth toward vehicle heading AGGRESSIVELY to prevent camera drift
     if (isInVehicle) {
       const targetAzimuth = playerRot + Math.PI;
       let azDiff = targetAzimuth - s.azimuth;
       while (azDiff > Math.PI) azDiff -= Math.PI * 2;
       while (azDiff < -Math.PI) azDiff += Math.PI * 2;
-      s.azimuth += azDiff * 0.08;
-      // Converge distance quickly
-      const targetDist = isOSMMode ? 30 : 22;
-      s.distance += (targetDist - s.distance) * factor;
+      s.azimuth += azDiff * 0.25;
+      // Lock distance to prevent it drifting away
+      const targetDist = isOSMMode ? 28 : 20;
+      s.distance += (targetDist - s.distance) * 0.15;
     }
 
     // Compute camera position from spherical coords

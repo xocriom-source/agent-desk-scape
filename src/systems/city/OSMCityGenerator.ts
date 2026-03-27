@@ -341,7 +341,7 @@ function buildingOverlapsRoads(
 function buildingsOverlap(
   ax: number, az: number, aw: number, ad: number,
   bx: number, bz: number, bw: number, bd: number,
-  margin: number = 0.5
+  margin: number = 0.15
 ): boolean {
   return (
     ax - aw / 2 - margin < bx + bw / 2 &&
@@ -451,8 +451,8 @@ export function convertOSMToCity(
       });
 
       // Build road buffer segments for building collision checks
-      // Buffer = road half-width + sidewalk + margin (2.0 units extra for safety)
-      const bufferHalfWidth = widthUnits / 2 + 2.0;
+      // Buffer = road half-width + sidewalk only (0.5 units) — buildings should be CLOSE to streets like real cities
+      const bufferHalfWidth = widthUnits / 2 + 0.5;
       for (let i = 0; i < segments.length - 1; i++) {
         roadBuffers.push({
           ax: segments[i].x, az: segments[i].z,
@@ -476,11 +476,11 @@ export function convertOSMToCity(
   for (const st of streets) {
     for (const pt of st.segments) {
       const key = `${Math.round(pt.x * 2)}_${Math.round(pt.z * 2)}`;
-      if ((nodeMap.get(key) || 0) >= 2) {
-        // Junction: clear a larger area at intersections
+      if ((nodeMap.get(key) || 0) >= 3) {
+        // Junction: clear area at major intersections only (3+ roads converging)
         const existing = junctions.find(j => Math.abs(j.x - pt.x) < 2 && Math.abs(j.z - pt.z) < 2);
         if (!existing) {
-          junctions.push({ x: pt.x, z: pt.z, radius: st.width / 2 + 3.0 });
+          junctions.push({ x: pt.x, z: pt.z, radius: st.width / 2 + 1.5 });
         }
       }
     }
