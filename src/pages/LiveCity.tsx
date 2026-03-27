@@ -92,9 +92,9 @@ function CityPlayer({ position, name }: { position: [number, number, number]; na
       <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.16, 16]} /><meshBasicMaterial color="#000" transparent opacity={0.18} /></mesh>
       <Html position={[0, 0.95, 0]} center><span className="text-sm select-none pointer-events-none">👑</span></Html>
       <Html position={[0, 1.05, 0]} center>
-        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full whitespace-nowrap pointer-events-none select-none bg-emerald-700">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-          <span className="text-[9px] text-white font-bold">{name}</span>
+        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full whitespace-nowrap pointer-events-none select-none bg-primary">
+          <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground/80" />
+          <span className="text-[9px] text-primary-foreground font-bold">{name}</span>
         </div>
       </Html>
     </group>
@@ -308,14 +308,14 @@ export default function LiveCity() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/city")}
-              className="p-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all"
+              className="p-2 rounded-xl bg-card/80 backdrop-blur-md border border-border text-muted-foreground hover:text-foreground hover:bg-card transition-all"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-card/80 backdrop-blur-md border border-border">
               <img src={logo} alt="" className="w-5 h-5" />
-              <span className="text-sm font-bold text-white">🏙️ Cidade Viva</span>
-              <span className="text-[10px] text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded-full">
+              <span className="text-sm font-bold text-foreground">🏙️ Cidade Viva</span>
+              <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
                 {visibleBuildings.length} prédios
               </span>
             </div>
@@ -324,21 +324,21 @@ export default function LiveCity() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => navigate("/find-building")}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-card/80 backdrop-blur-md border border-border text-muted-foreground hover:text-foreground hover:bg-card transition-all text-xs font-medium"
             >
               <Search className="w-3.5 h-3.5" />
               Buscar Prédio
             </button>
             <button
               onClick={() => navigate("/city-explore")}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-card/80 backdrop-blur-md border border-border text-muted-foreground hover:text-foreground hover:bg-card transition-all text-xs font-medium"
             >
               <Compass className="w-3.5 h-3.5" />
               Explorar
             </button>
             <button
               onClick={() => navigate("/office")}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary/80 backdrop-blur-md border border-primary/50 text-white hover:bg-primary transition-all text-xs font-medium"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary backdrop-blur-md border border-primary/50 text-primary-foreground hover:bg-primary/90 transition-all text-xs font-medium"
             >
               <Building2 className="w-3.5 h-3.5" />
               Meu Escritório
@@ -354,20 +354,20 @@ export default function LiveCity() {
         transition={{ delay: 1 }}
         className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40"
       >
-        <div className="flex items-center gap-4 px-4 py-2 rounded-2xl bg-black/60 backdrop-blur-md border border-gray-700/50">
-          <span className="text-[10px] text-gray-400">
-            <span className="text-white font-bold">WASD</span> andar
+        <div className="flex items-center gap-4 px-4 py-2 rounded-2xl bg-card/80 backdrop-blur-md border border-border">
+          <span className="text-[10px] text-muted-foreground">
+            <span className="text-foreground font-bold">WASD</span> andar
           </span>
-          <span className="text-gray-600">•</span>
-          <span className="text-[10px] text-gray-400">
-            <span className="text-white font-bold">CLICK</span> teleportar
+          <span className="text-border">•</span>
+          <span className="text-[10px] text-muted-foreground">
+            <span className="text-foreground font-bold">CLICK</span> teleportar
           </span>
-          <span className="text-gray-600">•</span>
-          <span className="text-[10px] text-gray-400">
-            <span className="text-white font-bold">SCROLL</span> zoom
+          <span className="text-border">•</span>
+          <span className="text-[10px] text-muted-foreground">
+            <span className="text-foreground font-bold">SCROLL</span> zoom
           </span>
-          <span className="text-gray-600">•</span>
-          <span className="text-[10px] text-gray-400">
+          <span className="text-border">•</span>
+          <span className="text-[10px] text-muted-foreground">
             Clique em prédios para visitar
           </span>
         </div>
@@ -380,10 +380,10 @@ export default function LiveCity() {
         transition={{ delay: 0.8 }}
         className="absolute bottom-4 left-4 z-40"
       >
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50">
-          <Users2 className="w-3.5 h-3.5 text-emerald-400" />
-          <span className="text-[10px] text-gray-300">
-            <span className="text-white font-bold">{visibleBuildings.length}</span> prédios visíveis
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-card/80 backdrop-blur-md border border-border">
+          <Users2 className="w-3.5 h-3.5 text-primary" />
+          <span className="text-[10px] text-muted-foreground">
+            <span className="text-foreground font-bold">{visibleBuildings.length}</span> prédios visíveis
           </span>
         </div>
       </motion.div>
