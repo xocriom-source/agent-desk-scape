@@ -380,10 +380,10 @@ export default function LiveCity() {
         transition={{ delay: 0.8 }}
         className="absolute bottom-4 left-4 z-40"
       >
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50">
-          <Users2 className="w-3.5 h-3.5 text-emerald-400" />
-          <span className="text-[10px] text-gray-300">
-            <span className="text-white font-bold">{visibleBuildings.length}</span> prédios visíveis
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-card/80 backdrop-blur-md border border-border">
+          <Users2 className="w-3.5 h-3.5 text-primary" />
+          <span className="text-[10px] text-muted-foreground">
+            <span className="text-foreground font-bold">{visibleBuildings.length}</span> prédios visíveis
           </span>
         </div>
       </motion.div>

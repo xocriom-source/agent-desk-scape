@@ -13,8 +13,9 @@ export function CinematicIntro({ cityName, cityFlag, playerName, onComplete }: C
   const [phase, setPhase] = useState<"loading" | "city" | "welcome">("loading");
   const [skipped, setSkipped] = useState(false);
 
-  const mainColor = "#6b8fc4";
-  const darkColor = "#4a6fa5";
+  // Use CSS custom properties for theming
+  const mainColor = "hsl(215, 40%, 60%)";
+  const darkColor = "hsl(215, 35%, 48%)";
 
   // Skyline buildings
   const buildings = useMemo(() =>
