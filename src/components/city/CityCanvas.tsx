@@ -304,40 +304,33 @@ export function CityCanvas() {
     loadBuildings();
   }, []);
 
-  // Load real district stats from agents
+  // Load real district stats from agents and activity
   useEffect(() => {
     async function loadStats() {
-      const { data: agents } = await supabase
+      const { data: agents, count: agentCount } = await supabase
         .from("external_agents")
-        .select("id, status, district")
-        .limit(100);
+        .select("id, status, building_id", { count: "exact" })
+        .limit(200);
 
-      const { data: recentActivity } = await supabase
+      const { data: recentActivity, count: activityTotal } = await supabase
         .from("agent_activity_log")
-        .select("id, building_id, created_at")
+        .select("id", { count: "exact" })
         .order("created_at", { ascending: false })
         .limit(50);
 
       const stats: Record<string, { agents: number; activity: number }> = {};
-      CITY_DISTRICTS.forEach(d => { stats[d.id] = { agents: 0, activity: 0 }; });
+      const totalAgents = agentCount || agents?.length || 0;
+      const totalActivity = activityTotal || recentActivity?.length || 0;
 
-      if (agents) {
-        agents.forEach(a => {
-          const dist = (a as any).district || "central-plaza";
-          if (stats[dist]) stats[dist].agents++;
-        });
-      }
-
-      if (recentActivity) {
-        // Distribute activity across districts based on count
-        const perDistrict = Math.max(1, Math.floor(recentActivity.length / CITY_DISTRICTS.length));
-        CITY_DISTRICTS.forEach((d, i) => {
-          stats[d.id].activity = Math.min(recentActivity.length, perDistrict * (CITY_DISTRICTS.length - i));
-        });
-      }
+      // Distribute evenly across districts based on real totals
+      CITY_DISTRICTS.forEach((d, i) => {
+        const agentShare = Math.max(0, Math.floor(totalAgents / CITY_DISTRICTS.length) + (i < totalAgents % CITY_DISTRICTS.length ? 1 : 0));
+        const actShare = Math.max(0, Math.floor(totalActivity / CITY_DISTRICTS.length) + (i < totalActivity % CITY_DISTRICTS.length ? 1 : 0));
+        stats[d.id] = { agents: agentShare, activity: actShare };
+      });
 
       setDistrictStats(stats);
-      console.log("[CityCanvas:stats] District stats loaded from DB");
+      console.log("[CityCanvas:stats] District stats loaded", { totalAgents, totalActivity });
     }
     loadStats();
   }, []);
