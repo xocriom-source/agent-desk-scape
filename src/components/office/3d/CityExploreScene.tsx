@@ -369,16 +369,16 @@ function CameraRig({ isOSMMode }: { isOSMMode: boolean }) {
     s.targetZ += (playerPos[2] - s.targetZ) * factor;
     s.targetY += ((playerPos[1] + (isOSMMode ? 1 : 0.5)) - s.targetY) * factor;
 
-    // Vehicle: pull azimuth toward vehicle heading more aggressively
+    // Vehicle: pull azimuth toward vehicle heading AGGRESSIVELY to prevent camera drift
     if (isInVehicle) {
       const targetAzimuth = playerRot + Math.PI;
       let azDiff = targetAzimuth - s.azimuth;
       while (azDiff > Math.PI) azDiff -= Math.PI * 2;
       while (azDiff < -Math.PI) azDiff += Math.PI * 2;
-      s.azimuth += azDiff * 0.08;
-      // Converge distance quickly
-      const targetDist = isOSMMode ? 30 : 22;
-      s.distance += (targetDist - s.distance) * factor;
+      s.azimuth += azDiff * 0.25;
+      // Lock distance to prevent it drifting away
+      const targetDist = isOSMMode ? 28 : 20;
+      s.distance += (targetDist - s.distance) * 0.15;
     }
 
     // Compute camera position from spherical coords

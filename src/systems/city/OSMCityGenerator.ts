@@ -476,11 +476,11 @@ export function convertOSMToCity(
   for (const st of streets) {
     for (const pt of st.segments) {
       const key = `${Math.round(pt.x * 2)}_${Math.round(pt.z * 2)}`;
-      if ((nodeMap.get(key) || 0) >= 2) {
-        // Junction: clear a larger area at intersections
+      if ((nodeMap.get(key) || 0) >= 3) {
+        // Junction: clear area at major intersections only (3+ roads converging)
         const existing = junctions.find(j => Math.abs(j.x - pt.x) < 2 && Math.abs(j.z - pt.z) < 2);
         if (!existing) {
-          junctions.push({ x: pt.x, z: pt.z, radius: st.width / 2 + 3.0 });
+          junctions.push({ x: pt.x, z: pt.z, radius: st.width / 2 + 1.5 });
         }
       }
     }
