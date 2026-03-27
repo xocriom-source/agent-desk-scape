@@ -2,6 +2,7 @@
  * CityExplore — Dual-mode city experience.
  * Canvas mode: premium isometric social view.
  * Flyover mode: 3D exploration with player/vehicle.
+ * Both share the same world data and state via gameStore.
  */
 
 import { useMemo, useCallback, Suspense, useEffect } from "react";
@@ -10,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { useGameStore, type PanelName } from "@/stores/gameStore";
 import { initInputListeners } from "@/stores/inputStore";
 import { useAuth } from "@/contexts/AuthContext";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Canvas mode
 import { CityCanvas } from "@/components/city/CityCanvas";
@@ -23,7 +25,6 @@ import { CityMiniMap } from "@/components/city/CityMiniMap";
 import { CityActivityTicker } from "@/components/city/CityActivityTicker";
 import { CinematicIntro } from "@/components/city/CinematicIntro";
 import { useCityBuildings } from "@/hooks/useCityBuildings";
-import { motion } from "framer-motion";
 import type { TransportType } from "@/types/building";
 
 // Overlay panels
@@ -52,7 +53,7 @@ import { ScreenSharing } from "@/components/workspace/ScreenSharing";
 import { ToolIntegrations } from "@/components/workspace/ToolIntegrations";
 import { TeamEngagement } from "@/components/workspace/TeamEngagement";
 
-// ── Flyover sub-page (extracted from old CityExplore) ──
+// ── Flyover sub-page ──
 function FlyoverMode() {
   const navigate = useNavigate();
   const activePanel = useGameStore(s => s.ui.activePanel);
@@ -102,7 +103,13 @@ function FlyoverMode() {
   const isPanelOpen = (panel: PanelName) => activePanel === panel;
 
   return (
-    <>
+    <motion.div
+      className="absolute inset-0"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.4 }}
+    >
       {showIntro && (
         <CinematicIntro
           cityName={world.currentCity.name}
@@ -190,7 +197,7 @@ function FlyoverMode() {
           <TeamEngagement isOpen={isPanelOpen("engagement")} onClose={closePanel} />
         </>
       )}
-    </>
+    </motion.div>
   );
 }
 
@@ -205,11 +212,22 @@ export default function CityExplore() {
     <div className="relative w-screen h-screen overflow-hidden select-none bg-background">
       <SEOHead title="Agent City" description="Explore the AI city — social canvas or 3D flyover." path="/city-explore" />
 
-      {viewMode === "canvas" ? (
-        <CityCanvas />
-      ) : (
-        <FlyoverMode />
-      )}
+      <AnimatePresence mode="wait">
+        {viewMode === "canvas" ? (
+          <motion.div
+            key="canvas"
+            className="absolute inset-0"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.02 }}
+            transition={{ duration: 0.3 }}
+          >
+            <CityCanvas />
+          </motion.div>
+        ) : (
+          <FlyoverMode key="flyover" />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
