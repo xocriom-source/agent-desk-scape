@@ -308,14 +308,14 @@ export default function LiveCity() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/city")}
-              className="p-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all"
+              className="p-2 rounded-xl bg-card/80 backdrop-blur-md border border-border text-muted-foreground hover:text-foreground hover:bg-card transition-all"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-card/80 backdrop-blur-md border border-border">
               <img src={logo} alt="" className="w-5 h-5" />
-              <span className="text-sm font-bold text-white">🏙️ Cidade Viva</span>
-              <span className="text-[10px] text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded-full">
+              <span className="text-sm font-bold text-foreground">🏙️ Cidade Viva</span>
+              <span className="text-[10px] text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
                 {visibleBuildings.length} prédios
               </span>
             </div>
