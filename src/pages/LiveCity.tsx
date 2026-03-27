@@ -92,9 +92,9 @@ function CityPlayer({ position, name }: { position: [number, number, number]; na
       <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}><circleGeometry args={[0.16, 16]} /><meshBasicMaterial color="#000" transparent opacity={0.18} /></mesh>
       <Html position={[0, 0.95, 0]} center><span className="text-sm select-none pointer-events-none">👑</span></Html>
       <Html position={[0, 1.05, 0]} center>
-        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full whitespace-nowrap pointer-events-none select-none bg-emerald-700">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-          <span className="text-[9px] text-white font-bold">{name}</span>
+        <div className="flex items-center gap-1 px-2 py-0.5 rounded-full whitespace-nowrap pointer-events-none select-none bg-primary">
+          <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground/80" />
+          <span className="text-[9px] text-primary-foreground font-bold">{name}</span>
         </div>
       </Html>
     </group>
