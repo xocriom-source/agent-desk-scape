@@ -324,21 +324,21 @@ export default function LiveCity() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => navigate("/find-building")}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-card/80 backdrop-blur-md border border-border text-muted-foreground hover:text-foreground hover:bg-card transition-all text-xs font-medium"
             >
               <Search className="w-3.5 h-3.5" />
               Buscar Prédio
             </button>
             <button
               onClick={() => navigate("/city-explore")}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-gray-700/50 text-gray-300 hover:text-white hover:bg-black/80 transition-all text-xs font-medium"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-card/80 backdrop-blur-md border border-border text-muted-foreground hover:text-foreground hover:bg-card transition-all text-xs font-medium"
             >
               <Compass className="w-3.5 h-3.5" />
               Explorar
             </button>
             <button
               onClick={() => navigate("/office")}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary/80 backdrop-blur-md border border-primary/50 text-white hover:bg-primary transition-all text-xs font-medium"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary backdrop-blur-md border border-primary/50 text-primary-foreground hover:bg-primary/90 transition-all text-xs font-medium"
             >
               <Building2 className="w-3.5 h-3.5" />
               Meu Escritório
