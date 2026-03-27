@@ -7,14 +7,15 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
-  MapPin, Users, Zap, ChevronRight, Eye, Building2,
+  MapPin, Users, Zap, ChevronRight, Building2,
   Coffee, BookOpen, Wrench, Palette, ShoppingBag, Telescope,
-  Activity, Bot, Crown,
+  Activity, Bot, Crown, ArrowLeft,
 } from "lucide-react";
 import { CITY_DISTRICTS, type CityDistrict } from "@/data/cityDistricts";
 import { useGameStore } from "@/stores/gameStore";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { CityModeSwitcher } from "@/components/city/CityModeSwitcher";
 import type { CityBuilding } from "@/types/building";
 
 const DISTRICT_ICONS: Record<string, typeof Coffee> = {
@@ -28,9 +29,8 @@ const DISTRICT_ICONS: Record<string, typeof Coffee> = {
 };
 
 // ── Isometric Building Component ──
-function IsoBuildingIcon({ building, districtColor, scale = 1, onClick }: {
+function IsoBuildingIcon({ building, scale = 1, onClick }: {
   building: { name: string; emoji: string; height: number; width: number; color: string };
-  districtColor: string;
   scale?: number;
   onClick?: () => void;
 }) {
@@ -45,7 +45,6 @@ function IsoBuildingIcon({ building, districtColor, scale = 1, onClick }: {
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       onClick={onClick}
     >
-      {/* Building body */}
       <div
         className="absolute bottom-0 left-0 right-0 rounded-t-md border border-white/10 transition-all group-hover:border-white/25"
         style={{
@@ -54,18 +53,13 @@ function IsoBuildingIcon({ building, districtColor, scale = 1, onClick }: {
           boxShadow: `0 4px 20px ${building.color}40`,
         }}
       >
-        {/* Windows */}
         <div className="absolute inset-2 grid grid-cols-2 gap-1 opacity-40">
           {Array.from({ length: Math.min(building.height * 2, 8) }).map((_, i) => (
             <div key={i} className="bg-white/30 rounded-[1px]" />
           ))}
         </div>
       </div>
-      {/* Emoji label */}
-      <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-sm">
-        {building.emoji}
-      </div>
-      {/* Name tooltip on hover */}
+      <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-sm">{building.emoji}</div>
       <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap text-[9px] text-muted-foreground font-medium">
         {building.name}
       </div>
@@ -95,7 +89,6 @@ function DistrictCard({ district, isSelected, onClick, agentCount, recentActivit
       whileTap={{ scale: 0.99 }}
       layout
     >
-      {/* Background gradient */}
       <div className="absolute inset-0 opacity-20 rounded-2xl" style={{ background: district.bgGradient }} />
 
       <div className="relative z-10">
@@ -149,14 +142,13 @@ function ActivityItem({ action, actor, time }: { action: string; actor: string; 
   );
 }
 
-// ── Isometric City View ──
+// ── Isometric City Map ──
 function IsometricCityMap({ districts, selectedId, onSelectDistrict, userBuildings }: {
   districts: CityDistrict[];
   selectedId: string | null;
   onSelectDistrict: (id: string) => void;
   userBuildings: CityBuilding[];
 }) {
-  // Map scale: districts are placed at x,z coordinates, we project to isometric
   const toIso = (x: number, z: number) => ({
     left: (x - z) * 1.8 + 50,
     top: (x + z) * 0.9 + 50,
@@ -164,13 +156,11 @@ function IsometricCityMap({ districts, selectedId, onSelectDistrict, userBuildin
 
   return (
     <div className="relative w-full h-full min-h-[400px] overflow-hidden">
-      {/* Grid pattern background */}
       <div className="absolute inset-0 opacity-5" style={{
         backgroundImage: "radial-gradient(circle, hsl(var(--foreground)) 1px, transparent 1px)",
         backgroundSize: "24px 24px",
       }} />
 
-      {/* Roads connecting districts */}
       <svg className="absolute inset-0 w-full h-full" style={{ pointerEvents: "none" }}>
         {districts.map((d, i) => {
           if (i === 0) return null;
@@ -190,28 +180,24 @@ function IsometricCityMap({ districts, selectedId, onSelectDistrict, userBuildin
         })}
       </svg>
 
-      {/* District nodes */}
       {districts.map((district) => {
         const pos = toIso(district.x, district.z);
         const isSelected = selectedId === district.id;
-        const Icon = DISTRICT_ICONS[district.id] || Building2;
 
         return (
           <motion.button
             key={district.id}
-            className={`absolute -translate-x-1/2 -translate-y-1/2 z-10 group`}
+            className="absolute -translate-x-1/2 -translate-y-1/2 z-10 group"
             style={{ left: `${pos.left}%`, top: `${pos.top}%` }}
             onClick={() => onSelectDistrict(district.id)}
             whileHover={{ scale: 1.15 }}
             whileTap={{ scale: 0.95 }}
           >
-            {/* Glow ring */}
             <div
               className={`absolute inset-0 rounded-full blur-xl transition-opacity ${isSelected ? "opacity-40" : "opacity-0 group-hover:opacity-20"}`}
               style={{ background: district.color, transform: "scale(2)" }}
             />
-            {/* Node */}
-            <div className={`relative flex flex-col items-center gap-1`}>
+            <div className="relative flex flex-col items-center gap-1">
               <div
                 className={`p-3 rounded-xl border-2 backdrop-blur-sm transition-all shadow-lg ${
                   isSelected
@@ -232,7 +218,6 @@ function IsometricCityMap({ districts, selectedId, onSelectDistrict, userBuildin
         );
       })}
 
-      {/* User buildings markers */}
       {userBuildings.map((b) => {
         const pos = toIso(b.coordinates.x, b.coordinates.z);
         return (
@@ -262,7 +247,7 @@ export function CityCanvas() {
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>("central-plaza");
   const [activities, setActivities] = useState<{ action: string; actor: string; time: string }[]>([]);
   const [userBuildings, setUserBuildings] = useState<CityBuilding[]>([]);
-  const openPanel = useGameStore(s => s.openPanel);
+  const [districtStats, setDistrictStats] = useState<Record<string, { agents: number; activity: number }>>({});
   const setCityViewMode = useGameStore(s => s.setCityViewMode);
 
   // Load real activity feed
@@ -272,7 +257,7 @@ export function CityCanvas() {
         .from("activity_feed")
         .select("action, actor_name, created_at")
         .order("created_at", { ascending: false })
-        .limit(10);
+        .limit(20);
 
       if (data) {
         setActivities(data.map(d => ({
@@ -281,9 +266,9 @@ export function CityCanvas() {
           time: new Date(d.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         })));
       }
+      console.log("[CityCanvas:init] Loaded activity feed");
     }
     loadFeed();
-    console.log("[CityCanvas:init] Loaded activity feed");
   }, []);
 
   // Load user buildings
@@ -319,6 +304,44 @@ export function CityCanvas() {
     loadBuildings();
   }, []);
 
+  // Load real district stats from agents
+  useEffect(() => {
+    async function loadStats() {
+      const { data: agents } = await supabase
+        .from("external_agents")
+        .select("id, status, district")
+        .limit(100);
+
+      const { data: recentActivity } = await supabase
+        .from("agent_activity_log")
+        .select("id, building_id, created_at")
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      const stats: Record<string, { agents: number; activity: number }> = {};
+      CITY_DISTRICTS.forEach(d => { stats[d.id] = { agents: 0, activity: 0 }; });
+
+      if (agents) {
+        agents.forEach(a => {
+          const dist = (a as any).district || "central-plaza";
+          if (stats[dist]) stats[dist].agents++;
+        });
+      }
+
+      if (recentActivity) {
+        // Distribute activity across districts based on count
+        const perDistrict = Math.max(1, Math.floor(recentActivity.length / CITY_DISTRICTS.length));
+        CITY_DISTRICTS.forEach((d, i) => {
+          stats[d.id].activity = Math.min(recentActivity.length, perDistrict * (CITY_DISTRICTS.length - i));
+        });
+      }
+
+      setDistrictStats(stats);
+      console.log("[CityCanvas:stats] District stats loaded from DB");
+    }
+    loadStats();
+  }, []);
+
   const selected = useMemo(
     () => CITY_DISTRICTS.find(d => d.id === selectedDistrict) || null,
     [selectedDistrict]
@@ -329,11 +352,26 @@ export function CityCanvas() {
     console.log("[CityCanvas:enter] Switching to flyover mode");
   }, [setCityViewMode]);
 
+  const totalBuildings = userBuildings.length + CITY_DISTRICTS.reduce((sum, d) => sum + d.buildings.length, 0);
+  const totalAgents = Object.values(districtStats).reduce((sum, s) => sum + s.agents, 0);
+
   return (
-    <div className="flex flex-col h-full bg-background text-foreground overflow-hidden">
+    <motion.div
+      className="flex flex-col h-full bg-background text-foreground overflow-hidden"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
       {/* ── Top Bar ── */}
       <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border/50 bg-card/30 backdrop-blur-md">
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate("/lobby")}
+            className="p-2 rounded-xl bg-card/60 border border-border/50 text-foreground hover:bg-muted/40 transition-all"
+            aria-label="Voltar ao lobby"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
           <h1 className="text-lg font-bold tracking-tight">
             <span className="text-accent">●</span> Agent City
           </h1>
@@ -341,15 +379,12 @@ export function CityCanvas() {
             Live
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleEnterDistrict}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-all"
-          >
-            <Eye className="w-3.5 h-3.5" />
-            Flyover 3D
-          </button>
-        </div>
+
+        <CityModeSwitcher
+          buildingCount={totalBuildings}
+          agentCount={totalAgents}
+          activityCount={activities.length}
+        />
       </div>
 
       {/* ── Main Content ── */}
@@ -380,7 +415,6 @@ export function CityCanvas() {
 
         {/* Right: District Detail Panel */}
         <div className="w-[340px] shrink-0 border-l border-border/50 bg-card/20 backdrop-blur-sm flex flex-col overflow-hidden">
-          {/* Districts list */}
           <div className="flex-1 overflow-y-auto p-3 space-y-2">
             <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider px-1 mb-2">
               Districts
@@ -391,13 +425,12 @@ export function CityCanvas() {
                 district={d}
                 isSelected={selectedDistrict === d.id}
                 onClick={() => setSelectedDistrict(d.id)}
-                agentCount={Math.floor(Math.random() * 8) + 1}
-                recentActivity={Math.floor(Math.random() * 12)}
+                agentCount={districtStats[d.id]?.agents ?? 0}
+                recentActivity={districtStats[d.id]?.activity ?? 0}
               />
             ))}
           </div>
 
-          {/* Selected district detail */}
           <AnimatePresence>
             {selected && (
               <motion.div
@@ -410,25 +443,18 @@ export function CityCanvas() {
                   <h3 className="text-sm font-bold">{selected.emoji} {selected.name}</h3>
                   <button
                     onClick={handleEnterDistrict}
-                    className="text-[10px] px-2 py-1 rounded-md bg-accent/10 text-accent font-medium hover:bg-accent/20 transition-all"
+                    className="text-[10px] px-2.5 py-1 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-all"
                   >
-                    Enter →
+                    Explore 3D →
                   </button>
                 </div>
 
-                {/* Buildings in this district */}
                 <div className="flex gap-2 mb-3 overflow-x-auto pb-1">
                   {selected.buildings.map(b => (
-                    <IsoBuildingIcon
-                      key={b.id}
-                      building={b}
-                      districtColor={selected.color}
-                      scale={0.7}
-                    />
+                    <IsoBuildingIcon key={b.id} building={b} scale={0.7} />
                   ))}
                 </div>
 
-                {/* Activity feed */}
                 <div className="max-h-24 overflow-y-auto">
                   {activities.slice(0, 4).map((a, i) => (
                     <ActivityItem key={i} action={a.action} actor={a.actor} time={a.time} />
@@ -442,6 +468,6 @@ export function CityCanvas() {
           </AnimatePresence>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
