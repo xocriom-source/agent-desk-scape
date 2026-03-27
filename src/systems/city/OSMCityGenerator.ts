@@ -451,8 +451,8 @@ export function convertOSMToCity(
       });
 
       // Build road buffer segments for building collision checks
-      // Buffer = road half-width + sidewalk + margin (2.0 units extra for safety)
-      const bufferHalfWidth = widthUnits / 2 + 2.0;
+      // Buffer = road half-width + sidewalk only (0.5 units) — buildings should be CLOSE to streets like real cities
+      const bufferHalfWidth = widthUnits / 2 + 0.5;
       for (let i = 0; i < segments.length - 1; i++) {
         roadBuffers.push({
           ax: segments[i].x, az: segments[i].z,
