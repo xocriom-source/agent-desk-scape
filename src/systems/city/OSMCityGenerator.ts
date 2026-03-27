@@ -341,7 +341,7 @@ function buildingOverlapsRoads(
 function buildingsOverlap(
   ax: number, az: number, aw: number, ad: number,
   bx: number, bz: number, bw: number, bd: number,
-  margin: number = 0.5
+  margin: number = 0.15
 ): boolean {
   return (
     ax - aw / 2 - margin < bx + bw / 2 &&
